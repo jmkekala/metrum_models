@@ -1,0 +1,36 @@
+# Reference imagery is never committed — see the Reference Image Policy
+# in CLAUDE.md. Keep it local only.
+reference/
+
+# Review renders, contact sheets and temporary mips: working evidence for the
+# checks in CLAUDE.md, not deliverables. Local only; see Blender MCP Workflow.
+review/
+
+# Blender's numbered backups, including multi-digit versions.
+*.blend[0-9]*
+
+# Python bytecode, local environments, and tool caches.
+__pycache__/
+*.py[co]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Editor swap and backup files.
+*.swp
+*.swo
+*~
+
+# OS-generated cruft.
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Window-glass comparison study: generated copies of an asset, heavy binaries,
+# not catalog content. Delete or adopt into an asset; never commit as-is.
+studies/
+
+# Local MCP client config: machine-specific paths to the Blender MCP server.
+.mcp.json
