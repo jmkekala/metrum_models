@@ -3,7 +3,7 @@
   "version": 1,
   "name": "tehdas_brick_gable",
   "path": "buildings/industrial/tehdas_brick_gable",
-  "source": {"commit": "6c12ac2d4d4005b266090078f44729e14656b1cc", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "157d8f2bc2ffc06e27157ed6bcc640e96b587127", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-21.3, 0.0, -14.125], "max": [21.3, 10.042, 14.125]},
   "footprint": [
@@ -26,14 +26,14 @@
   ],
   "dwellings": 0,
   "doors": [
-    {"id": "front", "position": [6.5, 0.0, 9.0], "facing": [0.0, 0.0, 1.0], "width_m": 1.9062, "height_m": 2.125, "main": true},
-    {"id": "stair", "position": [-18.5, 0.0, 9.0], "facing": [0.0, 0.0, 1.0], "width_m": 1.0625, "height_m": 2.125, "main": false},
-    {"id": "east_porch", "position": [18.0, 0.0, 4.5], "facing": [1.0, 0.0, 0.0], "width_m": 1.9062, "height_m": 2.125, "main": false},
-    {"id": "rear", "position": [3.5, 0.0, -3.0], "facing": [0.0, 0.0, -1.0], "width_m": 1.0, "height_m": 2.125, "main": false},
-    {"id": "west", "position": [-21.0, 0.0, 6.5], "facing": [-1.0, 0.0, 0.0], "width_m": 1.0, "height_m": 2.125, "main": false},
-    {"id": "loading", "position": [-21.0, 0.0, 1.5], "facing": [-1.0, 0.0, 0.0], "width_m": 4.0, "height_m": 3.75, "main": false},
-    {"id": "front_wing", "position": [17.4, 0.0, 12.4], "facing": [1.0, 0.0, 0.0], "width_m": 1.0, "height_m": 2.125, "main": false},
-    {"id": "back_wing", "position": [17.4, 0.0, -5.2], "facing": [1.0, 0.0, 0.0], "width_m": 1.0, "height_m": 2.125, "main": false}
+    {"id": "front", "kind": "entrance", "position": [6.5, 0.0, 9.0], "facing": [0.0, 0.0, 1.0], "width_m": 1.9062, "height_m": 2.125, "main": true},
+    {"id": "stair", "kind": "entrance", "position": [-18.5, 0.0, 9.0], "facing": [0.0, 0.0, 1.0], "width_m": 1.0625, "height_m": 2.125, "main": false},
+    {"id": "east_porch", "kind": "entrance", "position": [18.0, 0.0, 4.5], "facing": [1.0, 0.0, 0.0], "width_m": 1.9062, "height_m": 2.125, "main": false},
+    {"id": "rear", "kind": "service", "position": [3.5, 0.0, -3.0], "facing": [0.0, 0.0, -1.0], "width_m": 1.0, "height_m": 2.125, "main": false},
+    {"id": "west", "kind": "service", "position": [-21.0, 0.0, 6.5], "facing": [-1.0, 0.0, 0.0], "width_m": 1.0, "height_m": 2.125, "main": false},
+    {"id": "loading", "kind": "vehicle", "position": [-21.0, 0.0, 1.5], "facing": [-1.0, 0.0, 0.0], "width_m": 4.0, "height_m": 3.75, "main": false},
+    {"id": "front_wing", "kind": "service", "position": [17.4, 0.0, 12.4], "facing": [1.0, 0.0, 0.0], "width_m": 1.0, "height_m": 2.125, "main": false},
+    {"id": "back_wing", "kind": "service", "position": [17.4, 0.0, -5.2], "facing": [1.0, 0.0, 0.0], "width_m": 1.0, "height_m": 2.125, "main": false}
   ],
   "lods": [
     {"file": "tehdas_brick_gable_lod0.glb", "triangles": 3780, "sha256": "e1bcedbf7fa976ca3317a7ff6d0f33151e586ef9d70bc9bb5e5bcb812ab0ad43"},

@@ -45,8 +45,8 @@ their conventions and budgets are specified and waiting for the first one.
 
 ## Requirements
 
-- **Blender 5.2 or newer** — the catalog's `.blend` files are saved in 5.2
-  and will not open in older versions.
+- **Blender 5.3 or newer** — the newest of the catalog's `.blend` files are
+  saved in 5.3 and will not open in older versions.
 - **Git LFS** — every `.blend`, `.glb` and `.png` is stored in LFS.
 - **Python with numpy, scipy and Pillow** — for the texture generators
   (supersampled atlases with normal maps and weathering, via

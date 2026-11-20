@@ -1237,25 +1237,23 @@ def facts():
     doors = []
     for k in range(UNITS):
         doors.append(model_facts.wall_door(
-            "unit_%d" % (k + 1), front["p0"], front["p1"], k * UNIT_W + L.DOOR_S,
+            "unit_%d" % (k + 1), "entrance", front["p0"], front["p1"],
+            k * UNIT_W + L.DOOR_S,
             L.Z_FLOOR, *L.OPENINGS["door_front"][:2]))
-    # the entrance a visitor uses: the front door nearest the exported x = 0,
-    # the one on the +X side on a tie
-    px = BUILD.pivot[0] if BUILD.pivot else 0.0
-    main = min(doors, key=lambda d: (round(abs(d["position"][0] - px), 4),
-                                     -d["position"][0]))
-    main["main"] = True
+    # the entrance a visitor uses: the unit just to the +X side of the centre
+    doors[UNITS // 2]["main"] = True
     for k in reversed(range(UNITS)):
         # the alcove's far side wall, as build_alcove() frames it
         s1 = k * UNIT_W + ls1
         doors.append(model_facts.wall_door(
-            "unit_%d_back" % unit(k), fr.P(s1, 0.0, depth)[:2], fr.P(s1, 0.0)[:2],
+            "unit_%d_back" % unit(k), "service", fr.P(s1, 0.0, depth)[:2],
+            fr.P(s1, 0.0)[:2],
             depth - L.ALCOVE_DOOR_S, L.Z_FLOOR, *glazed))
     for k in reversed(range(UNITS)):
         for kind, s, z in L.REAR_UP_UNIT:
             if kind == "door_glazed":
                 doors.append(model_facts.wall_door(
-                    "unit_%d_balcony" % unit(k), rear["p0"], rear["p1"],
+                    "unit_%d_balcony" % unit(k), "balcony", rear["p0"], rear["p1"],
                     k * UNIT_W + s, z, *glazed))
     plate = 2 * HX * (Y_REAR - Y_FRONT)
     return {

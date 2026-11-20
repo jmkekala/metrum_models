@@ -80,7 +80,12 @@ is no floor-to-floor rhythm that has to line up with the housing.
 
 ## Door leaf height
 
-- **Entrance, sliding pair:** leaf **2.3125 m**, within the 2.0–2.4 m band. The
+- **Entrance, sliding pair:** leaf **2.3125 m from the pavement**, within the
+  2.0–2.4 m band. The unit **stands on the ground**, with a threshold strip at
+  its foot and no step, while the shopfront glazing each side of it stands on
+  the 0.375 m plinth; the plinth stops at the unit's edges and returns into
+  the lobby to the door plane. The leaf height and the transom line are both
+  measured from the ground. The
   opening continues to the shopfront head at 3.25 m, so the 0.9375 m above the
   leaves is a **transom light**, and the transom bar is drawn across it in the
   entrance's own atlas region and continues across the whole shopfront at the
@@ -97,7 +102,8 @@ is no floor-to-floor rhythm that has to line up with the housing.
 The two staff windows on the rear wall sit at **1.0 m**, below the 1.4 m line
 CLAUDE.md warns about, and are 1.3 m tall. The shopfront sill is 0.375 m —
 shop glazing goes nearly to the ground, which is correct for the type and is
-what makes the entrance leaves read at the right size beside it.
+what makes the entrance leaves read at the right size beside it. The entrance
+unit has no sill: its leaves run from the pavement (Door leaf height).
 
 ## Eave overhang
 
@@ -191,12 +197,31 @@ is broken into separate faces.
 The entrance is the one place where a recess steps back twice: the shopfront
 bay is set 0.20 m into the wall, and the doors 0.50 m further into a lobby. The
 bay's sill and head reveals are broken at the lobby's jambs so the deeper
-opening's side faces meet them on shared vertices, and the hole the bay needs
-in its wall carries those two vertices whether the entrance is a recess or, at
-`LOD2` and `LOD3`, a painted rectangle.
+opening's side faces meet them on shared vertices.
 
-An opening that stands on the ground — the goods door and both staff doors —
-gets **no floor of its own**. The strip it would lay at z = 0 is inside the
+### The entrance bay is a notch in the wall's foot
+
+The glazing stands on the plinth but the entrance unit stands on the ground,
+so the chamfer's bay is not a hole in its wall but a **notch in the bottom
+edge** of the wall's lower course: the outline rises at the unit's edge from
+the ground to the sill line, runs out along the plinth top to the bay's jamb,
+up to the head, across, and back down the other side the same way
+(`build_wall()`'s `notch`, built from `entrance_span()`). The plinth under
+each side's glazing is the wall left between that outline and the ground.
+The outline carries every vertex the bay's own faces put on it, so the wall
+and the bay meet on shared vertices and the ring stays closed.
+
+Every face of the unit is **split at the sill line** (z 0.375 m), because that
+is where the plinth's cut ends, the sill reveal and the glazing beside the unit
+meet its edge: the door plane (on the lobby's back at `LOD0`/`LOD1`, flush on
+the wall at `LOD2`/`LOD3`) and the lobby's two sides are each two faces, below
+and above that line. Below it the lobby's sides take the concrete plinth
+patch, so the plinth returns from its cut end back to the doors; above it they
+keep the light reveal. There is no sill under the unit and no lobby floor;
+the floor cap covers the lobby at z = 0, as below.
+
+An opening that stands on the ground — the goods door, both staff doors and
+the entrance — gets **no floor of its own**. The strip it would lay at z = 0 is inside the
 building's own footprint and would sit on top of the floor the wall ring is
 capped with; the two coplanar faces left the export non-manifold at the
 threshold until `recess()` was given a `floor` flag. Left out, the rim simply
@@ -208,10 +233,14 @@ Measured on the exported, triangulated GLBs by `scripts/validate_asset.py`:
 
 | Tier | Triangles | Ceiling | Status |
 | --- | --- | --- | --- |
-| `LOD0` | 856 | 12,000 | far under, explained |
-| `LOD1` | 704 | 4,000 | far under, explained |
-| `LOD2` | 450 | 1,500 | far under, explained |
-| `LOD3` | 396 | 500 | under |
+| `LOD0` | 868 | 12,000 | far under, explained |
+| `LOD1` | 716 | 4,000 | far under, explained |
+| `LOD2` | 458 | 1,500 | far under, explained |
+| `LOD3` | 404 | 500 | under |
+
+The entrance standing on the ground costs 12 triangles at `LOD0` and `LOD1`
+and 8 at `LOD2` and `LOD3`: the plinth's cut ends, the lobby sides and the
+door plane split at the sill line, and the wall's notched outline.
 
 The low counts have one cause, and it is not
 under-modelling. The building is a box: one storey, one flat roof, four
@@ -370,7 +399,16 @@ stay welded to the wall.
 
 Everything singular gets a region of its own above the bands: the entrance, the
 sign panel, the goods door, the staff door, a staff window, the roof deck, the
-loading-bay ceiling, and four small plates for the roof plant. `facade_atlas.py`'s `check_regions()` asserts that no two of
+loading-bay ceiling, and four small plates for the roof plant.
+
+The **entrance region** is **205 x 208 px** at (4, 760), for the 3.203 m wide
+unit from the **ground to the shopfront head** (0–3.25 m) at 64 px/m: the
+leaves and side screens up to the transom bar at 148 px (2.3125 m), the
+transom light above it, and the threshold strip in its bottom rows. It grew
+from 184 px when the unit came down off the plinth, and took the space the
+staff door and staff window had below it: those two moved, unchanged in size
+and density, to **(788, 948)** and **(836, 948)**, beside the patch row.
+`facade_atlas.py`'s `check_regions()` asserts that no two of
 them overlap, that none runs off the sheet, and that none collides with the
 bands; `check_bands()` asserts that no band contains an id it should not,
 because a stray pixel in a tiling band is not a local blemish — every surface
@@ -551,8 +589,8 @@ mipmaps, which this repository does not own.
 
 ## Glazing treatment
 
-- Measured glass, all four variants: mean **sRGB 53**, linear **0.032**,
-  **0.23x** the 99th percentile of everything else on the sheet.
+- Measured glass, all four variants: mean **sRGB 55**, linear **0.035**,
+  **0.23–0.25x** the trim, by `scripts/validate_asset.py`.
 - Roughness **0.08**, metallic **0**, from `scripts/glazing.ROUGHNESS`.
 - Panes painted by `scripts/glazing.py`'s `rooms()`, called on the finished
   albedo after the id/shade/AO pass, exactly as CLAUDE.md's default requires.
@@ -613,7 +651,7 @@ the badge becomes a dark block with the initial punched bright through it. A sho
 measuring it against the glazing band would be meaningless, so
 `scripts/validate_asset.py` now separates the two: neutral bright mask pixels
 are glazing and get measured, coloured ones are reported as a fixture for a
-reviewer. This asset contributes 30,576 fixture pixels, all of them the sign.
+reviewer. This asset contributes 29,008 fixture pixels, all of them the sign.
 
 **Reference lit factor: linear (1.0, 0.88, 0.72).** This asset states its own
 rather than taking the catalog's residential default of (1.0, 0.55, 0.23),
@@ -702,7 +740,18 @@ strips the placeholder `bufferView` keep-originals leaves.
 
 Completed in this repository:
 
-- `scripts/validate_asset.py`: no FAIL and no WARN.
+- `scripts/validate_asset.py`: no FAIL. The one WARN is the facts sidecar's
+  `source.dirty`, which clears once the sidecar is rewritten from a committed
+  tree.
+- The entrance brought down to the ground, before against after with
+  `scripts/review_compare.py`: `LOD0`/`LOD1` oblique, front and rear at 20 and
+  40 m, `LOD2`/`LOD3` oblique and rear at 70 and 120 m, under noon and
+  reverse light; the catalog preview; `variants.png`; and the six views at
+  `LOD0` and `LOD2`. The leaves now reach the pavement on every tier, the
+  transom bar lines up with the shopfront's each side, the plinth stops at the
+  unit with a concrete return, the lobby recess holds at `LOD0`/`LOD1`, the
+  night row still lights the entrance glass, and the staff door and staff
+  windows sample their moved regions cleanly.
 - Six pre-export views inspected: orthographic front, rear, east, west,
   top-down, plus a raised three-quarter aerial off the entrance corner, a
   second off the rear, and a third aimed into the loading bay.
@@ -754,9 +803,11 @@ Pending, and outside this repository:
 
 ## Tooling versions
 
-- **Blender 5.2.2 LTS** (hash `d13f752e3b9c`, build date 2026-09-15). Recorded
-  as a known-good diagnostic, not a pin; the repository's floor is 5.2 and
-  `build.py` asserts both that floor and the presence of every glTF exporter
+- **Blender 5.3.0** (hash `02f0899d78e3`, build date 2026-11-11), which
+  rebuilt the tiers and saved `source.blend`. Earlier passes used 5.2.2 LTS
+  (hash `d13f752e3b9c`). Recorded
+  as a known-good diagnostic, not a pin;
+  `build.py` asserts both the version floor and the presence of every glTF exporter
   flag it sets, so an upgrade that renames one fails with a message rather than
   a distant `TypeError`.
 - **Blender MCP server addon: not used for this asset.** It was built headless,
@@ -766,9 +817,9 @@ Pending, and outside this repository:
   LOD pairs and mip stress above, each fed back into the atlas and the massing —
   but through `render_views()` rather than through MCP screenshots. Anyone
   reproducing this can do the same without the addon installed.
-- `source.blend` is saved by 5.2.2, which is why the repository's floor is
-  5.2: Blender opens older files and not newer ones. The `.glb` and PNG exports
-  are unaffected and stay portable.
+- `source.blend` is saved by **5.3.0**, so this file now needs **Blender 5.3 or
+  newer**: Blender opens older files and not newer ones. The `.glb` and PNG
+  exports are unaffected and stay portable.
 - Textures baked standalone with CPython and numpy/Pillow:
   `python3 facade_atlas.py export`.
 
@@ -776,6 +827,19 @@ Pending, and outside this repository:
   texture export.
 
 ## Revision log
+
+- **2026-11-20 — the entrance stands on the ground.** The sliding unit had
+  been built from the plinth top to the head, so its leaves were 1.9375 m and
+  stood 0.375 m up with no step. It now stands on the pavement, leaf 2.3125 m
+  to the transom bar, while the glazing each side stays on the plinth
+  (Door leaf height). `build.py` makes the bay a notch in the wall's foot and
+  splits the unit's faces at the sill line (Construction); the facts sidecar
+  gives the main door a threshold of 0 and a height of 2.3125 m.
+  `facade_atlas.py`'s entrance region grew to 205 x 208 px, ground to head,
+  and the staff door and staff window regions moved to make room (Texture
+  set). Every PNG, all four GLBs (+12/+12/+8/+8 triangles), `preview.png`,
+  `variants.png` and `source.blend` were regenerated; `source.blend` is now
+  saved by Blender 5.3.0.
 
 - **2026-09-25 — weathering.** `facade_atlas.py` gained `weather()`, which
   places the shared `scripts/weathering.py` fields: dirt, algae, rust, faded

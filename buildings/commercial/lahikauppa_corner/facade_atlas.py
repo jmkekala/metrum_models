@@ -108,14 +108,14 @@ SHOP_BAY = 2.0          # 128 px; the shopfront's structural mullion pitch
 # ------------------------------------------------------------ unique regions
 # (x, y, w, h) in pixels. check_regions() asserts they neither overlap nor run
 # off the sheet; the metres each one stands for are beside it.
-DOOR_UNIT = (4, 760, 205, 184)        # 3.203125 x 2.875 m at 64 px/m
+DOOR_UNIT = (4, 760, 205, 208)        # 3.203125 x 3.25 m at 64 px/m: ground to head
 DOOR_UNIT_W = 205 / PPM
 PLACARD = (547, 760, 304, 106)        # SIGN_W x SIGN_H at 64 px/m
 GOODS_DOOR = (871, 760, 136, 132)     # 3.4 x 3.3 m at 40 px/m
 BAY_CEILING = (547, 870, 112, 74)     # 7 x 5 m of loading-bay ceiling
 ROOF_DECK = (213, 760, 330, 184)      # 32 x 18 m of membrane at ~10 px/m
-SERVICE_DOOR = (148, 948, 44, 74)     # 1.3 x 2.225 m at ~33 px/m
-STAFF_WINDOW = (196, 948, 68, 74)     # 1.38 x 1.48 m at ~49 px/m
+SERVICE_DOOR = (788, 948, 44, 74)     # 1.3 x 2.225 m at ~33 px/m
+STAFF_WINDOW = (836, 948, 68, 74)     # 1.38 x 1.48 m at ~49 px/m
 AHU_SIDE = (268, 948, 96, 43)         # 2.0 x 0.9 m of plant casing at 48 px/m
 AHU_TOP = (368, 948, 96, 64)          # 2.0 x 1.33 m of plant lid
 COWL = (468, 948, 60, 48)             # a roof fan's drum and hood
@@ -483,7 +483,9 @@ def paint_door_unit(c):
     x, y, w, h = DOOR_UNIT
     c.paint(x, x + w, y, y + h, ID_GLASS, 1.0, 1.0, height=0.0)
     _frame(c, DOOR_UNIT, 5, ID_FRAME, 1.0, 0.84, FRAME_H)
-    yt = y + m(Z_TRANSOM - Z_SILL)
+    # the unit stands on the pavement, not on the plinth the shopfront has:
+    # its region runs from the ground to the shopfront head
+    yt = y + m(Z_TRANSOM)
 
     def bar(a0, a1, b0, b1, shade, ao, axes):
         c.paint(a0, a1, b0, b1, ID_FRAME, shade, ao)

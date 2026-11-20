@@ -1117,9 +1117,9 @@ def facts():
     x0, x1, y0, _y1 = WALLS[3]                      # the centre entrance bay
     p0, p1 = (x0, y0), (x1, y0)                     # its front, s = x + 5.5
 
-    def door(door_id, tag, top=None, main=False):
+    def door(door_id, kind, tag, top=None, main=False):
         s, hw, z0, z1, _ = next(o for o in ENTRANCE_OPENINGS if o[4] == tag)
-        return model_facts.wall_door(door_id, p0, p1, s, z0, 2.0 * hw,
+        return model_facts.wall_door(door_id, kind, p0, p1, s, z0, 2.0 * hw,
                                      (top or z1) - z0, main)
 
     return {
@@ -1127,8 +1127,8 @@ def facts():
         "dwellings": 0,
         "footprint": outline,
         "storeys": [(Z_GROUND_FLOOR, area), (Z_UPPER_FLOOR, area)],
-        "doors": [door("front", "door", DOOR_TRANSOM, main=True),
-                  door("balcony", "bal")],
+        "doors": [door("front", "entrance", "door", DOOR_TRANSOM, main=True),
+                  door("balcony", "balcony", "bal")],
     }
 
 

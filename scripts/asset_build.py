@@ -40,13 +40,13 @@ from variant_previews import render_sheet
 from window_emission import LIT_FACTOR, attach, rewrite_glb_emission, set_state
 
 # ------------------------------------------------------------ toolchain
-# Too old: the catalog's source.blend files are saved by Blender 5.2, which an
-# older Blender cannot open, and running a build script on 4.x fails as a bare
+# Too old: the newest of the catalog's source.blend files are saved by Blender
+# 5.3, which an older Blender cannot open, and running a build script on 4.x fails as a bare
 # AttributeError deep in the build. Too new: export_all() passes glTF exporter
 # flags by keyword, the part most exposed to an upgrade, so each is checked to
 # still exist. A flag that keeps its name while changing its default is no
 # error at all, which is why notes.md records the export settings too.
-BLENDER_MIN = (5, 2)
+BLENDER_MIN = (5, 3)
 GLTF_EXPORT_FLAGS = (
     "export_format", "use_selection", "export_yup", "export_apply",
     "export_keep_originals", "export_cameras", "export_lights",
@@ -71,7 +71,7 @@ def check_toolchain():
     """Fail early and legibly on a Blender these scripts cannot drive."""
     if bpy.app.version < BLENDER_MIN:
         raise RuntimeError(
-            "Blender %s is below the %s floor, the version the catalog's "
+            "Blender %s is below the %s floor, the newest version the catalog's "
             "source.blend files are saved in — see CLAUDE.md's Tech Stack. "
             "Nothing above that floor is pinned."
             % (bpy.app.version_string, ".".join(str(v) for v in BLENDER_MIN)))

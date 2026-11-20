@@ -22,12 +22,14 @@ A build.py declares:
             "dwellings": 1,
             "footprint": [(x, y), ...],          # outer wall outline, build frame
             "storeys": [(floor_z, area_m2), ...],  # occupied storeys, lowest first
-            "doors": [model_facts.wall_door("front", p0, p1, s, z, w, h, main=True)],
+            "doors": [model_facts.wall_door("front", "entrance", p0, p1, s, z,
+                                            w, h, main=True)],
         }
 
-and asset_build.Asset.write_facts() adds everything that is read from the
-build and the exported files. Triangle counts and bounds are read from the
-.glb files themselves, so the sidecar describes what ships.
+Every door names its kind, one of DOOR_KINDS, and exactly one door, an
+entrance, is main. asset_build.Asset.write_facts() adds everything that is
+read from the build and the exported files. Triangle counts and bounds are
+read from the .glb files themselves, so the sidecar describes what ships.
 
 Pure Python, no bpy: scripts/validate_asset.py runs check() on what is on disk.
 """
@@ -47,7 +49,12 @@ DOOR_TOL = 0.05                  # a door's distance from a footprint edge, metr
 KEYS = ("schema", "version", "name", "path", "source", "license", "bounds",
         "footprint", "storeys", "dwellings", "doors", "lods", "textures",
         "variants", "default_variant", "preview", "hero")
-DOOR_KEYS = ("id", "position", "facing", "width_m", "height_m", "main")
+DOOR_KEYS = ("id", "kind", "position", "facing", "width_m", "height_m", "main")
+# entrance: a pedestrian door people use to enter the occupied space from the
+# ground. service: a staff or back pedestrian door at ground level. vehicle:
+# loading and goods doors. balcony: any door not reachable from the ground,
+# upper-floor doors included. store: doors of sheds and unheated stores.
+DOOR_KINDS = ("entrance", "service", "vehicle", "balcony", "store")
 
 
 def _r(x):
@@ -68,8 +75,11 @@ def sidecar_path(here, name):
 
 
 # ------------------------------------------------------------ build frame
-def wall_door(door_id, p0, p1, s, z, width, height, main=False):
-    """A door in the wall from plan point *p0* to *p1*, in the build frame.
+def wall_door(door_id, kind, p0, p1, s, z, width, height, main=False):
+    """A door of *kind* (DOOR_KINDS) in the wall from plan point *p0* to *p1*,
+    in the build frame. The one *main* door is the entrance a visitor uses,
+    tagged by the build.py; in a row of equal units, the unit just to the +X
+    side of the centre (the middle one in an odd row).
 
     The catalog's walls run counter-clockwise seen from above, so the outward
     normal is on the right of p0 -> p1. *s* is the door's centre along the
@@ -80,7 +90,7 @@ def wall_door(door_id, p0, p1, s, z, width, height, main=False):
     dx, dy = p1[0] - p0[0], p1[1] - p0[1]
     length = math.hypot(dx, dy)
     tx, ty = dx / length, dy / length
-    return {"id": door_id,
+    return {"id": door_id, "kind": kind,
             "position": (p0[0] + tx * s, p0[1] + ty * s, z),
             "facing": (ty, -tx),
             "width_m": width, "height_m": height, "main": bool(main)}
@@ -202,7 +212,8 @@ def compose(name, here, variants, default_variant, levels, pivot, facts, blender
             raise ValueError("door %r: keys %s" % (d.get("id"), sorted(d)))
         fx, fy = d["facing"]
         n = math.hypot(fx, fy)
-        doors.append({"id": d["id"], "position": point(d["position"]),
+        doors.append({"id": d["id"], "kind": d["kind"],
+                      "position": point(d["position"]),
                       "facing": [_r(fx / n), 0.0, _r(-fy / n)],
                       "width_m": _r(d["width_m"]), "height_m": _r(d["height_m"]),
                       "main": bool(d["main"])})
@@ -318,9 +329,10 @@ def check(doc, export_dir):
 
     Covers what a reader relies on: the schema's keys and nothing else, each
     hash against its file, triangle counts and bounds against the tiers, one
-    simple footprint inside the bounds, exactly one main door, and every door
-    on a footprint edge (within DOOR_TOL) or inside the outline, facing out
-    along a unit horizontal normal.
+    simple footprint inside the bounds, exactly one main door and that one an
+    entrance, and every door of a DOOR_KINDS kind, on a footprint edge
+    (within DOOR_TOL) or inside the outline, facing out along a unit
+    horizontal normal.
     """
     problems = []
     if tuple(doc) != KEYS:
@@ -436,6 +448,12 @@ def check(doc, export_dir):
         if fy != 0 or abs(math.hypot(fx, fz) - 1.0) > 1e-3:
             problems.append("door %r: facing %s is not a unit horizontal vector"
                             % (d["id"], d["facing"]))
+        if d["kind"] not in DOOR_KINDS:
+            problems.append("door %r: kind %r is not one of %s"
+                            % (d["id"], d["kind"], list(DOOR_KINDS)))
+        if d["main"] and d["kind"] != "entrance":
+            problems.append("door %r: the main door must be an entrance, not %r"
+                            % (d["id"], d["kind"]))
         if not (d["width_m"] > 0 and d["height_m"] > 0 and d["position"][1] >= 0):
             problems.append("door %r: size or threshold height is not positive" % d["id"])
     return problems

@@ -1057,11 +1057,11 @@ def facts():
     underside is 1.6 m or more over its floor."""
     walls = {w[0]: w for w in HOUSE_WALLS}
 
-    def door(door_id, wall, kind, main=False):
+    def door(door_id, kind, wall, item, main=False):
         p0, p1, items = walls[wall][1], walls[wall][2], walls[wall][4]
-        s, z = next((s, z) for k, s, z in items if k == kind)
-        w, h = L.OPENINGS[kind][:2]
-        return model_facts.wall_door(door_id, p0, p1, s, z, w, h, main)
+        s, z = next((s, z) for k, s, z in items if k == item)
+        w, h = L.OPENINGS[item][:2]
+        return model_facts.wall_door(door_id, kind, p0, p1, s, z, w, h, main)
 
     attic_w = model_facts.roof_clear_width(2 * HX, Z_ATTIC, L.Z_EAVE, TAN)
     return {
@@ -1069,9 +1069,9 @@ def facts():
         "dwellings": 1,
         "footprint": [(-HX, HY), (-HX, -HY), (HX, -HY), (HX, HY)],
         "storeys": [(L.Z_FLOOR, 2 * HX * 2 * HY), (Z_ATTIC, attic_w * 2 * HY)],
-        "doors": [door("front", "front", "door_front", main=True),
-                  door("back", "rear", "door_back"),
-                  door("balcony", "front", "door_balcony")],
+        "doors": [door("front", "entrance", "front", "door_front", main=True),
+                  door("back", "service", "rear", "door_back"),
+                  door("balcony", "balcony", "front", "door_balcony")],
     }
 
 # ================================================================ previews

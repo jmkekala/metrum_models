@@ -309,7 +309,7 @@ def uv_item(fr, kind, ol, ob):
 def uv_door_unit(fr, d0):
     x, y, w, h = L.DOOR_UNIT
     return lambda co: (x + (fr.s_of(co) - d0) / L.DOOR_UNIT_W * w,
-                       y + (co.z - L.Z_SILL) / (L.Z_HEAD - L.Z_SILL) * h)
+                       y + co.z / L.Z_HEAD * h)
 
 
 def uv_soffit(fr):
@@ -431,14 +431,30 @@ def build_item(B, fr, kind, s, z, level):
     return o
 
 
+def entrance_span(s0, s1):
+    """The entrance unit's two edges, centred in its bay s0..s1."""
+    d0 = (s0 + s1) / 2.0 - L.DOOR_UNIT_W / 2.0
+    return d0, d0 + L.DOOR_UNIT_W
+
+
 def build_glazing(B, fr, spec, s0, s1, level):
     """One shopfront bay: a recess in the wall, glazed across, with the sliding
     entrance set back again in the middle of it where the wall is the chamfer.
+
+    The glazing stands on the plinth; the entrance unit breaks through it and
+    stands on the ground, so its leaves are a door's height from the pavement.
+    Every face of the unit is split at the sill line, where the plinth's
+    return and the glazing beside it meet its edge.
     """
     mode = item_mode(level)
     entrance = spec.get("entrance", False)
-    d0 = (s0 + s1) / 2.0 - L.DOOR_UNIT_W / 2.0
-    d1 = d0 + L.DOOR_UNIT_W
+    d0, d1 = entrance_span(s0, s1)
+    door_uv = uv_door_unit(fr, d0)
+
+    def door_plane(out):
+        for za, zb in ((0.0, L.Z_SILL), (L.Z_SILL, L.Z_HEAD)):
+            B.face([fr.P(d0, za, out), fr.P(d1, za, out),
+                    fr.P(d1, zb, out), fr.P(d0, zb, out)], door_uv)
     # The entrance breaks the bay's sill and head lines whether it is a recess
     # or a painted rectangle, so the hole this bay needs in its wall carries
     # those two vertices either way.
@@ -450,8 +466,7 @@ def build_glazing(B, fr, spec, s0, s1, level):
         if entrance:
             B.face([fr.P(s0, L.Z_SILL), fr.P(d0, L.Z_SILL),
                     fr.P(d0, L.Z_HEAD), fr.P(s0, L.Z_HEAD)], uv_shop(fr, s0))
-            B.face([fr.P(d0, L.Z_SILL), fr.P(d1, L.Z_SILL),
-                    fr.P(d1, L.Z_HEAD), fr.P(d0, L.Z_HEAD)], uv_door_unit(fr, d0))
+            door_plane(0.0)
             B.face([fr.P(d1, L.Z_SILL), fr.P(s1, L.Z_SILL),
                     fr.P(s1, L.Z_HEAD), fr.P(d1, L.Z_HEAD)], uv_shop(fr, d1))
         else:
@@ -469,18 +484,25 @@ def build_glazing(B, fr, spec, s0, s1, level):
                 fr.P(sj, L.Z_SILL, -L.GLAZE_DEPTH)], rev)
     for zz in (L.Z_SILL, L.Z_HEAD):
         for a, b in zip(brk, brk[1:]):
+            if entrance and zz == L.Z_SILL and a == d0:
+                continue                  # no sill under the entrance unit
             B.face([fr.P(a, zz), fr.P(b, zz),
                     fr.P(b, zz, -L.GLAZE_DEPTH),
                     fr.P(a, zz, -L.GLAZE_DEPTH)], rev)
+    if entrance:
+        # the plinth's cut ends, each side of the way in
+        for dj in (d0, d1):
+            B.face([fr.P(dj, 0.0), fr.P(dj, L.Z_SILL),
+                    fr.P(dj, L.Z_SILL, -L.GLAZE_DEPTH),
+                    fr.P(dj, 0.0, -L.GLAZE_DEPTH)], uv_patch("plinth_top"))
     if not lobby:
         if entrance:
-            for a, b, fn in ((s0, d0, uv_shop(fr, s0)),
-                             (d0, d1, uv_door_unit(fr, d0)),
-                             (d1, s1, uv_shop(fr, d1))):
+            for a, b, fn in ((s0, d0, uv_shop(fr, s0)), (d1, s1, uv_shop(fr, d1))):
                 B.face([fr.P(a, L.Z_SILL, -L.GLAZE_DEPTH),
                         fr.P(b, L.Z_SILL, -L.GLAZE_DEPTH),
                         fr.P(b, L.Z_HEAD, -L.GLAZE_DEPTH),
                         fr.P(a, L.Z_HEAD, -L.GLAZE_DEPTH)], fn)
+            door_plane(-L.GLAZE_DEPTH)
         else:
             B.face([fr.P(s0, L.Z_SILL, -L.GLAZE_DEPTH),
                     fr.P(s1, L.Z_SILL, -L.GLAZE_DEPTH),
@@ -496,8 +518,17 @@ def build_glazing(B, fr, spec, s0, s1, level):
                 fr.P(b, L.Z_SILL, -L.GLAZE_DEPTH),
                 fr.P(b, L.Z_HEAD, -L.GLAZE_DEPTH),
                 fr.P(a, L.Z_HEAD, -L.GLAZE_DEPTH)], fn)
-    recess(B, fr, (d0, d1, L.Z_SILL, L.Z_HEAD), -L.GLAZE_DEPTH,
-           L.DOOR_DEPTH - L.GLAZE_DEPTH, uv_door_unit(fr, d0), rev)
+    # the lobby's sides, split at the sill line like the unit itself: below it
+    # the plinth carries on from its cut end back to the doors, above it the
+    # light reveal; then its head. It has no floor of its own (see recess()).
+    for dj in (d0, d1):
+        for za, zb, fn in ((0.0, L.Z_SILL, uv_patch("plinth_top")),
+                           (L.Z_SILL, L.Z_HEAD, rev)):
+            B.face([fr.P(dj, za, -L.GLAZE_DEPTH), fr.P(dj, zb, -L.GLAZE_DEPTH),
+                    fr.P(dj, zb, -L.DOOR_DEPTH), fr.P(dj, za, -L.DOOR_DEPTH)], fn)
+    B.face([fr.P(d0, L.Z_HEAD, -L.GLAZE_DEPTH), fr.P(d1, L.Z_HEAD, -L.GLAZE_DEPTH),
+            fr.P(d1, L.Z_HEAD, -L.DOOR_DEPTH), fr.P(d0, L.Z_HEAD, -L.DOOR_DEPTH)], rev)
+    door_plane(-L.DOOR_DEPTH)
     return outline
 
 
@@ -563,9 +594,19 @@ def build_wall(B, fr, spec, level):
                              build=lambda f=(kind, s, z): build_item(
                                  B, fr, f[0], f[1], f[2], level)))
     for s0, s1 in spec["glazing"]:
-        features.append(dict(l=s0, r=s1, b=L.Z_SILL, t=L.Z_HEAD,
-                             build=lambda a=s0, b=s1: build_glazing(
-                                 B, fr, spec, a, b, level)))
+        f = dict(l=s0, r=s1, b=L.Z_SILL, t=L.Z_HEAD,
+                 build=lambda a=s0, b=s1: build_glazing(B, fr, spec, a, b, level))
+        if spec.get("entrance"):
+            # The entrance unit stands on the ground while the glazing each
+            # side stands on the plinth, so the bay is a notch in the wall's
+            # foot whose outline steps up from the door to the sill; it
+            # carries every vertex the bay's own faces put on it.
+            d0, d1 = entrance_span(s0, s1)
+            f["b"] = 0.0
+            f["notch"] = [(d0, 0.0), (d0, L.Z_SILL), (s0, L.Z_SILL), (s0, L.Z_HEAD),
+                          (d0, L.Z_HEAD), (d1, L.Z_HEAD), (s1, L.Z_HEAD),
+                          (s1, L.Z_SILL), (d1, L.Z_SILL), (d1, 0.0)]
+        features.append(f)
     built = {}
 
     for s0, s1, band in spec["panels"]:
@@ -618,8 +659,9 @@ def build_wall(B, fr, spec, level):
                 cur = a
                 for f in nb:
                     outline += [(s, z0) for s in cb if cur < s < f["l"] - EPS]
-                    outline += [(f["l"], z0), (f["l"], min(f["t"], z1)),
-                                (f["r"], min(f["t"], z1)), (f["r"], z0)]
+                    outline += f.get("notch") or [
+                        (f["l"], z0), (f["l"], min(f["t"], z1)),
+                        (f["r"], min(f["t"], z1)), (f["r"], z0)]
                     cur = f["r"]
                 outline += [(s, z0) for s in cb if s > cur + EPS]
                 outline += [(b, z0), (b, z1)]
@@ -1028,28 +1070,29 @@ def facts():
     of it: the roof passes over the bay, but its two walls are outer walls and
     the column at its open corner is a post, not a wall. The entrance is given
     on the chamfer's wall plane, though the shopfront stands GLAZE_DEPTH back
-    in it and the doors DOOR_DEPTH. Its threshold is the plinth the shopfront
-    stands on (Z_SILL) and its height runs from there to the transom bar; the
-    pair is the two sliding leaves without the fixed screens at their sides.
+    in it and the doors DOOR_DEPTH. Its threshold is the pavement and its
+    height runs from there to the transom bar; the pair is the two sliding
+    leaves without the fixed screens at their sides.
     One retail storey, floored at the ground the service and goods doors
     open onto.
     """
     ring = [w["p0"] for w in WALLS]
     area = abs(sum(a[0] * b[1] - b[0] * a[1]
                    for a, b in zip(ring, ring[1:] + ring[:1]))) / 2.0
-    names = {("chamfer", 0): "main", ("bay_rear", 0): "loading",
-             ("bay_east", 0): "loading_staff", ("rear", 0): "staff"}
+    names = {("chamfer", 0): ("main", "entrance"), ("bay_rear", 0): ("loading", "vehicle"),
+             ("bay_east", 0): ("loading_staff", "service"),
+             ("rear", 0): ("staff", "service")}
     doors = []
     for spec in WALLS:
         found = [(k, s, z) + L.OPENINGS[k][:2] for k, s, z in spec["items"]
                  if k.endswith("_door")]
         if spec.get("entrance"):
             s0, s1 = spec["glazing"][0]
-            found.append(("entrance", (s0 + s1) / 2.0, L.Z_SILL,
-                          2 * ENTRANCE_LEAF, L.Z_TRANSOM - L.Z_SILL))
+            found.append(("entrance", (s0 + s1) / 2.0, 0.0,
+                          2 * ENTRANCE_LEAF, L.Z_TRANSOM))
         for i, (kind, s, z, w, h) in enumerate(found):
             doors.append(model_facts.wall_door(
-                names[(spec["name"], i)], spec["p0"], spec["p1"], s, z, w, h,
+                *names[(spec["name"], i)], spec["p0"], spec["p1"], s, z, w, h,
                 main=kind == "entrance"))
     return {"hero": False, "dwellings": 0, "footprint": ring,
             "storeys": [(0.0, area)], "doors": doors}

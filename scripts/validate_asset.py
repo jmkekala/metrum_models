@@ -535,9 +535,10 @@ def check_facts(results, asset, adir, hero):
     """The facts sidecar (scripts/model_facts.py) against the files it names.
 
     Decides only what a file can: the schema, the hashes, the tiers' triangle
-    counts and bounds, one main door, doors on the footprint. Whether a door
-    or a storey is where the building has one stays with the build.py's
-    facts() and its reviewer.
+    counts and bounds, one main door and that an entrance, each door's kind
+    one of DOOR_KINDS, doors on the footprint. Whether a door, its kind or a
+    storey is what the building has stays with the build.py's facts() and its
+    reviewer.
     """
     path = model_facts.sidecar_path(adir, asset)
     problems = model_facts.check_file(path)
@@ -560,7 +561,8 @@ def check_facts(results, asset, adir, hero):
             results.append(("WARN", "facts", "source.dirty is true: rewrite the "
                                              "sidecar from a committed tree "
                                              "(build.py -- facts)"))
-        results.append(("MANUAL", "facts", "doors, footprint, storeys and "
+        results.append(("MANUAL", "facts", "doors and their kinds, the main "
+                                           "door, footprint, storeys and "
                                            "dwellings describe the building as "
                                            "built"))
 

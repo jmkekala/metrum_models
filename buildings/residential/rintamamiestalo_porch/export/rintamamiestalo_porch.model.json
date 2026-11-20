@@ -3,7 +3,7 @@
   "version": 1,
   "name": "rintamamiestalo_porch",
   "path": "buildings/residential/rintamamiestalo_porch",
-  "source": {"commit": "6c12ac2d4d4005b266090078f44729e14656b1cc", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "157d8f2bc2ffc06e27157ed6bcc640e96b587127", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-5.35, 0.0, -6.84], "max": [5.35, 9.5625, 6.84]},
   "footprint": [
@@ -22,8 +22,8 @@
   ],
   "dwellings": 1,
   "doors": [
-    {"id": "front", "position": [-1.2, 0.7, 5.1], "facing": [0.0, 0.0, 1.0], "width_m": 0.9, "height_m": 2.1, "main": true},
-    {"id": "back", "position": [1.5, 0.7, -5.1], "facing": [0.0, 0.0, -1.0], "width_m": 0.9, "height_m": 2.1, "main": false}
+    {"id": "front", "kind": "entrance", "position": [-1.2, 0.7, 5.1], "facing": [0.0, 0.0, 1.0], "width_m": 0.9, "height_m": 2.1, "main": true},
+    {"id": "back", "kind": "service", "position": [1.5, 0.7, -5.1], "facing": [0.0, 0.0, -1.0], "width_m": 0.9, "height_m": 2.1, "main": false}
   ],
   "lods": [
     {"file": "rintamamiestalo_porch_lod0.glb", "triangles": 2642, "sha256": "9729cbe0649a29cace4df2d3f04418d3e8033130c25acabca2cf53e9340b75fb"},

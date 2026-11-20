@@ -3,7 +3,7 @@
   "version": 1,
   "name": "brick_clocktower_hall",
   "path": "buildings/service/brick_clocktower_hall",
-  "source": {"commit": "6c12ac2d4d4005b266090078f44729e14656b1cc", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "157d8f2bc2ffc06e27157ed6bcc640e96b587127", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-24.85, 0.0, -14.175], "max": [24.85, 24.6, 14.175]},
   "footprint": [
@@ -34,8 +34,8 @@
   ],
   "dwellings": 0,
   "doors": [
-    {"id": "front", "position": [0.0, 0.15, 12.975], "facing": [0.0, 0.0, 1.0], "width_m": 2.0, "height_m": 2.35, "main": true},
-    {"id": "balcony", "position": [0.0, 5.6, 12.975], "facing": [0.0, 0.0, 1.0], "width_m": 1.24, "height_m": 3.5, "main": false}
+    {"id": "front", "kind": "entrance", "position": [0.0, 0.15, 12.975], "facing": [0.0, 0.0, 1.0], "width_m": 2.0, "height_m": 2.35, "main": true},
+    {"id": "balcony", "kind": "balcony", "position": [0.0, 5.6, 12.975], "facing": [0.0, 0.0, 1.0], "width_m": 1.24, "height_m": 3.5, "main": false}
   ],
   "lods": [
     {"file": "brick_clocktower_hall_lod0.glb", "triangles": 5204, "sha256": "4798f9ff1e0463336b6f19f6ee9ca44bb4f8aca63f5b060e463a020521874e74"},

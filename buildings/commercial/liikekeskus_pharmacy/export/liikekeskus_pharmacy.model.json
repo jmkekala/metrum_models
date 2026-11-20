@@ -3,7 +3,7 @@
   "version": 1,
   "name": "liikekeskus_pharmacy",
   "path": "buildings/commercial/liikekeskus_pharmacy",
-  "source": {"commit": "6c12ac2d4d4005b266090078f44729e14656b1cc", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "157d8f2bc2ffc06e27157ed6bcc640e96b587127", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-12.9, 0.0, -9.24], "max": [12.9, 11.925, 9.24]},
   "footprint": [
@@ -17,10 +17,10 @@
   ],
   "dwellings": 0,
   "doors": [
-    {"id": "pharmacy", "position": [-3.4, 0.0, 8.0], "facing": [0.0, 0.0, 1.0], "width_m": 2.0, "height_m": 2.25, "main": true},
-    {"id": "salon", "position": [-8.6, 0.0, 8.0], "facing": [0.0, 0.0, 1.0], "width_m": 1.0, "height_m": 2.25, "main": false},
-    {"id": "barber", "position": [8.6, 0.0, 8.0], "facing": [0.0, 0.0, 1.0], "width_m": 1.0, "height_m": 2.25, "main": false},
-    {"id": "maintenance", "position": [1.0, 0.0, -8.0], "facing": [0.0, 0.0, -1.0], "width_m": 1.0, "height_m": 2.25, "main": false}
+    {"id": "pharmacy", "kind": "entrance", "position": [-3.4, 0.0, 8.0], "facing": [0.0, 0.0, 1.0], "width_m": 2.0, "height_m": 2.25, "main": true},
+    {"id": "salon", "kind": "entrance", "position": [-8.6, 0.0, 8.0], "facing": [0.0, 0.0, 1.0], "width_m": 1.0, "height_m": 2.25, "main": false},
+    {"id": "barber", "kind": "entrance", "position": [8.6, 0.0, 8.0], "facing": [0.0, 0.0, 1.0], "width_m": 1.0, "height_m": 2.25, "main": false},
+    {"id": "maintenance", "kind": "service", "position": [1.0, 0.0, -8.0], "facing": [0.0, 0.0, -1.0], "width_m": 1.0, "height_m": 2.25, "main": false}
   ],
   "lods": [
     {"file": "liikekeskus_pharmacy_lod0.glb", "triangles": 1018, "sha256": "661367759ea64f4f38bb82723d130547ef4da545c5b6812ef13ae07b215d5dac"},

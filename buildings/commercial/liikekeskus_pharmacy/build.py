@@ -1114,11 +1114,11 @@ def facts():
     front = ((-HX, -HY), (HX, -HY))
     rear = ((HX, HY), (-HX, HY))
     ids = {"pharmacy_left": "pharmacy", "salon": "salon", "barber": "barber"}
-    doors = [model_facts.wall_door(ids[bay], *front, s, 0.0, L.DOOR_W[n],
+    doors = [model_facts.wall_door(ids[bay], "entrance", *front, s, 0.0, L.DOOR_W[n],
                                    L.Z_LEAF, main=bay == "pharmacy_left")
              for bay, s, n in L.DOORS]
     w, h = L.OPENINGS["maint_door"][:2]
-    doors.append(model_facts.wall_door("maintenance", *rear, L.MAINT_DOOR_S,
+    doors.append(model_facts.wall_door("maintenance", "service", *rear, L.MAINT_DOOR_S,
                                        0.0, w, h))
     return {"hero": False, "dwellings": 0,
             "footprint": [(-HX, -HY), (HX, -HY), (HX, HY), (-HX, HY)],

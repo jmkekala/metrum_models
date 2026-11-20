@@ -126,10 +126,11 @@ budgets; style ambition never raises a ceiling.
 
 ## Tech Stack
 
-- **Blender 5.2 or newer.** This is a floor, not a pin; newer releases are
-  expected to work. The catalog's `source.blend` files are saved by 5.2, and
-  Blender cannot open files saved by a newer version, so 5.2 is the lowest
-  version that can work on them (the MCP extension itself installs on 5.1).
+- **Blender 5.3 or newer.** This is a floor, not a pin; newer releases are
+  expected to work. The newest of the catalog's `source.blend` files are saved
+  by 5.3, and Blender cannot open files saved by a newer version, so 5.3 is
+  the lowest version that can work on all of them (the MCP extension itself
+  installs on 5.1).
   Every `build.py` asserts the floor as `BLENDER_MIN`. Record the actual version
   in `notes.md`.
 - **Blender MCP server addon**, bound to `localhost` only. The MCP client
@@ -364,9 +365,10 @@ thumbnail, so the index is browsable without opening asset folders.
   - It states the `LOD0` bounds, the outer wall outline at ground level
     (without eaves, steps, fences and ladders), the occupied storeys with
     their floor areas (under a roof, only where the underside is 1.6 m or
-    more over the floor), the dwellings, every door in an outer wall
-    (threshold centre on the outer wall plane, outward facing, the leaf's
-    clear size, and the one `main` entrance), the hero status, and the name,
+    more over the floor), the dwellings, every door in an outer wall (its
+    kind: entrance, service, vehicle, balcony or store; threshold centre on
+    the outer wall plane, outward facing, the leaf's clear size, and the one
+    `main` door, an entrance the `build.py` tags), the hero status, and the name,
     triangle count and SHA-256 of every exported file, with the commit and
     Blender version it was written from.
   - Geometry and files only: no zones, lots, capacities, anchors or other
@@ -795,8 +797,8 @@ blender --background --python scripts/validate_asset.py -- props/lighting/your_a
 It checks required exports, GLB structure, image references, material count and
 transparency, triangle counts against the budgets, welded topology, pivot and
 bounds, PNG size and format, `notes.md` section order, the facts sidecar
-(schema, hashes, tier counts and bounds, one `main` door, doors on the
-footprint), and a sampled hidden-surface test. For buildings with an emission PNG it also checks the
+(schema, hashes, tier counts and bounds, door kinds, one `main` entrance,
+doors on the footprint), and a sampled hidden-surface test. For buildings with an emission PNG it also checks the
 emission binding, its UV attribute and default-off factor, and measures the
 albedo under the mask against the glazing band. A `PASS` covers only its
 printed check.

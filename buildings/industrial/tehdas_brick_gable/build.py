@@ -1126,11 +1126,11 @@ def facts():
              "porch": MAIN_WALLS["porch"] + (PORCH_ITEMS,)}
     walls.update(wings)
 
-    def door(door_id, wall, kind, main=False):
+    def door(door_id, kind, wall, item, main=False):
         p0, p1, items = walls[wall]
-        (c, z), = [(c, z) for k, c, z in items if k == kind]
-        return model_facts.wall_door(door_id, p0, p1, Frame(p0, p1).s_at(c), z,
-                                     LEAF_W[kind], LEAF_H.get(kind, L.Z_LEAF), main)
+        (c, z), = [(c, z) for k, c, z in items if k == item]
+        return model_facts.wall_door(door_id, kind, p0, p1, Frame(p0, p1).s_at(c), z,
+                                     LEAF_W[item], LEAF_H.get(item, L.Z_LEAF), main)
 
     return {
         "hero": False,
@@ -1143,14 +1143,14 @@ def facts():
              + (BW[1] - BW[0]) * (BW[3] - BW[2])),
             (L.Z_STOREY, 2 * HX * 2 * HY),
         ],
-        "doors": [door("front", "front", "entrance", main=True),
-                  door("stair", "front", "glazed_door"),
-                  door("east_porch", "porch", "entrance"),
-                  door("rear", "rear", "service_door"),
-                  door("west", "west", "service_door"),
-                  door("loading", "west", "loading_door"),
-                  door("front_wing", "fw_east", "service_door"),
-                  door("back_wing", "bw_east", "service_door")],
+        "doors": [door("front", "entrance", "front", "entrance", main=True),
+                  door("stair", "entrance", "front", "glazed_door"),
+                  door("east_porch", "entrance", "porch", "entrance"),
+                  door("rear", "service", "rear", "service_door"),
+                  door("west", "service", "west", "service_door"),
+                  door("loading", "vehicle", "west", "loading_door"),
+                  door("front_wing", "service", "fw_east", "service_door"),
+                  door("back_wing", "service", "bw_east", "service_door")],
     }
 
 

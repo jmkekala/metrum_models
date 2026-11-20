@@ -1043,22 +1043,19 @@ def facts():
     for k in range(UNITS):
         s = k * UNIT_W + DOOR_S
         doors.append(model_facts.wall_door(
-            "unit_%d" % (k + 1), front[0], front[1], s, L.Z_FLOOR, *leaf("door_front")))
-    # the entrance a visitor uses: the front door nearest the exported x = 0,
-    # the one on the +X side on a tie
-    px = BUILD.pivot[0] if BUILD.pivot else 0.0
-    main = min(doors, key=lambda d: (round(abs(d["position"][0] - px), 4),
-                                     -d["position"][0]))
-    main["main"] = True
+            "unit_%d" % (k + 1), "entrance", front[0], front[1], s, L.Z_FLOOR,
+            *leaf("door_front")))
+    # the entrance a visitor uses: the unit just to the +X side of the centre
+    doors[UNITS // 2]["main"] = True
     for k, x in reversed(list(enumerate(patio_door_x()))):
         # patio_door_x() runs from the +X end, the way the rear wall does
         doors.append(model_facts.wall_door(
-            "unit_%d_back" % (UNITS - k), rear[0], rear[1], HX - x, L.Z_FLOOR,
+            "unit_%d_back" % (UNITS - k), "service", rear[0], rear[1], HX - x, L.Z_FLOOR,
             *leaf("door_patio")))
     for k, xc in enumerate(shed_x()):
         x0, x1, yf = xc - SHED_W / 2.0, xc + SHED_W / 2.0, -HY - SHED_OUT
         doors.append(model_facts.wall_door(
-            "store_%d" % (k + 1), (x0, yf), (x1, yf), SHED_W / 2.0, L.Z_FLOOR,
+            "store_%d" % (k + 1), "store", (x0, yf), (x1, yf), SHED_W / 2.0, L.Z_FLOOR,
             *leaf("door_shed")))
     plate = 2 * HX * 2 * HY
     return {
