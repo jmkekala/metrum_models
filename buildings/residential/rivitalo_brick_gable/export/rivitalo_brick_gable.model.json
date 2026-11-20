@@ -1,0 +1,71 @@
+{
+  "schema": "metrum-model-facts",
+  "version": 1,
+  "name": "rivitalo_brick_gable",
+  "path": "buildings/residential/rivitalo_brick_gable",
+  "source": {"commit": "6c12ac2d4d4005b266090078f44729e14656b1cc", "dirty": false, "blender": "5.3.0"},
+  "license": "CC-BY-4.0",
+  "bounds": {"min": [-15.69, 0.0, -7.72], "max": [15.69, 8.8475, 7.72]},
+  "footprint": [
+    [-14.91, -0.88],
+    [-12.81, -0.88],
+    [-12.81, 0.52],
+    [-11.51, 0.52],
+    [-11.51, -0.88],
+    [-5.31, -0.88],
+    [-5.31, 0.52],
+    [-4.01, 0.52],
+    [-4.01, -0.88],
+    [2.19, -0.88],
+    [2.19, 0.52],
+    [3.49, 0.52],
+    [3.49, -0.88],
+    [9.69, -0.88],
+    [9.69, 0.52],
+    [10.99, 0.52],
+    [10.99, -0.88],
+    [15.09, -0.88],
+    [15.09, 7.12],
+    [-14.91, 7.12]
+  ],
+  "storeys": [
+    {"floor_y_m": 0.3125, "area_m2": 232.72},
+    {"floor_y_m": 3.4375, "area_m2": 240.0}
+  ],
+  "dwellings": 4,
+  "doors": [
+    {"id": "unit_1", "position": [-11.16, 0.3125, 7.12], "facing": [0.0, 0.0, 1.0], "width_m": 1.0, "height_m": 2.1, "main": false},
+    {"id": "unit_2", "position": [-3.66, 0.3125, 7.12], "facing": [0.0, 0.0, 1.0], "width_m": 1.0, "height_m": 2.1, "main": true},
+    {"id": "unit_3", "position": [3.84, 0.3125, 7.12], "facing": [0.0, 0.0, 1.0], "width_m": 1.0, "height_m": 2.1, "main": false},
+    {"id": "unit_4", "position": [11.34, 0.3125, 7.12], "facing": [0.0, 0.0, 1.0], "width_m": 1.0, "height_m": 2.1, "main": false},
+    {"id": "unit_1_back", "position": [-12.81, 0.3125, -0.18], "facing": [1.0, 0.0, 0.0], "width_m": 1.0, "height_m": 2.1, "main": false},
+    {"id": "unit_2_back", "position": [-5.31, 0.3125, -0.18], "facing": [1.0, 0.0, 0.0], "width_m": 1.0, "height_m": 2.1, "main": false},
+    {"id": "unit_3_back", "position": [2.19, 0.3125, -0.18], "facing": [1.0, 0.0, 0.0], "width_m": 1.0, "height_m": 2.1, "main": false},
+    {"id": "unit_4_back", "position": [9.69, 0.3125, -0.18], "facing": [1.0, 0.0, 0.0], "width_m": 1.0, "height_m": 2.1, "main": false},
+    {"id": "unit_1_balcony", "position": [-8.61, 3.4375, -0.88], "facing": [0.0, 0.0, -1.0], "width_m": 1.0, "height_m": 2.1, "main": false},
+    {"id": "unit_2_balcony", "position": [-1.11, 3.4375, -0.88], "facing": [0.0, 0.0, -1.0], "width_m": 1.0, "height_m": 2.1, "main": false},
+    {"id": "unit_3_balcony", "position": [6.39, 3.4375, -0.88], "facing": [0.0, 0.0, -1.0], "width_m": 1.0, "height_m": 2.1, "main": false},
+    {"id": "unit_4_balcony", "position": [13.89, 3.4375, -0.88], "facing": [0.0, 0.0, -1.0], "width_m": 1.0, "height_m": 2.1, "main": false}
+  ],
+  "lods": [
+    {"file": "rivitalo_brick_gable_lod0.glb", "triangles": 5652, "sha256": "f8e35c9bd529e031e13a45a5bf77cc747262231210ffe7a16817e0dbaf38d7b2"},
+    {"file": "rivitalo_brick_gable_lod1.glb", "triangles": 3686, "sha256": "d9f3eeb7c27f8dd22bc2ff283337f4d0084a41180fd949c53ad17b5511e1cd36"},
+    {"file": "rivitalo_brick_gable_lod2.glb", "triangles": 1172, "sha256": "88739c2ad7157870ded449251bb66f8864ad718741c9892b1075795c532089c0"},
+    {"file": "rivitalo_brick_gable_lod3.glb", "triangles": 492, "sha256": "b8baa8dc20500277d383f84bc54dd58ea7fe052fc2744750ca9d253646fc7b7d"}
+  ],
+  "textures": {
+    "orm": {"file": "rivitalo_brick_gable_orm.png", "sha256": "0e4f3399f2d79dfe15ed4b0e668113f6cfbb427507decbe38c58cd96c6a25082"},
+    "normal": {"file": "rivitalo_brick_gable_normal.png", "sha256": "fc678649e2df2103ee0bc2cbbd08692685a89c4a21f9e3d9cff584807337b79c"},
+    "emission": {"file": "rivitalo_brick_gable_emission.png", "sha256": "8ff4d614dd0c4fcfc2cca4ec150340f5f0efca6a1940483e100c48f5b3a73700"}
+  },
+  "variants": [
+    {"id": "brown", "albedo": "rivitalo_brick_gable_albedo_brown.png", "sha256": "9de77523c21fd14ade2662fb8d4b0250c2a2ca57969bd9656f8e6644b8af9ac4"},
+    {"id": "red", "albedo": "rivitalo_brick_gable_albedo_red.png", "sha256": "b90acf842968421589b29bdbcbcde08428a74ba01c9c9725d943258ae64593f3"},
+    {"id": "ochre", "albedo": "rivitalo_brick_gable_albedo_ochre.png", "sha256": "33765dda27f1d2674b7ce343a749f90b8aa4f840648f35a93659e9943a8bfcfe"},
+    {"id": "grey", "albedo": "rivitalo_brick_gable_albedo_grey.png", "sha256": "14e693947a91ab0e5081806d57f291d996fdbf742add7a8071706f2a0afb1998"},
+    {"id": "green", "albedo": "rivitalo_brick_gable_albedo_green.png", "sha256": "c2d3de283985907b53aaf6db29521279e8f8f3824cdea140007ea3ca7e24b142"}
+  ],
+  "default_variant": "brown",
+  "preview": {"file": "../preview.png", "sha256": "5f3e2cde16023a1db2939204651b9ee28d582f02c81cb96afafbfae6ea13aa51"},
+  "hero": false
+}

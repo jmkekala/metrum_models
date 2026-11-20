@@ -1,0 +1,58 @@
+{
+  "schema": "metrum-model-facts",
+  "version": 1,
+  "name": "tehdas_brick_gable",
+  "path": "buildings/industrial/tehdas_brick_gable",
+  "source": {"commit": "6c12ac2d4d4005b266090078f44729e14656b1cc", "dirty": false, "blender": "5.3.0"},
+  "license": "CC-BY-4.0",
+  "bounds": {"min": [-21.3, 0.0, -14.125], "max": [21.3, 10.042, 14.125]},
+  "footprint": [
+    [-21.0, -3.0],
+    [6.0, -3.0],
+    [6.0, -14.0],
+    [17.4, -14.0],
+    [17.4, -3.0],
+    [18.0, -3.0],
+    [18.0, 9.0],
+    [17.4, 9.0],
+    [17.4, 14.0],
+    [9.0, 14.0],
+    [9.0, 9.0],
+    [-21.0, 9.0]
+  ],
+  "storeys": [
+    {"floor_y_m": 0.0, "area_m2": 635.4},
+    {"floor_y_m": 3.3125, "area_m2": 504.0}
+  ],
+  "dwellings": 0,
+  "doors": [
+    {"id": "front", "position": [6.5, 0.0, 9.0], "facing": [0.0, 0.0, 1.0], "width_m": 1.9062, "height_m": 2.125, "main": true},
+    {"id": "stair", "position": [-18.5, 0.0, 9.0], "facing": [0.0, 0.0, 1.0], "width_m": 1.0625, "height_m": 2.125, "main": false},
+    {"id": "east_porch", "position": [18.0, 0.0, 4.5], "facing": [1.0, 0.0, 0.0], "width_m": 1.9062, "height_m": 2.125, "main": false},
+    {"id": "rear", "position": [3.5, 0.0, -3.0], "facing": [0.0, 0.0, -1.0], "width_m": 1.0, "height_m": 2.125, "main": false},
+    {"id": "west", "position": [-21.0, 0.0, 6.5], "facing": [-1.0, 0.0, 0.0], "width_m": 1.0, "height_m": 2.125, "main": false},
+    {"id": "loading", "position": [-21.0, 0.0, 1.5], "facing": [-1.0, 0.0, 0.0], "width_m": 4.0, "height_m": 3.75, "main": false},
+    {"id": "front_wing", "position": [17.4, 0.0, 12.4], "facing": [1.0, 0.0, 0.0], "width_m": 1.0, "height_m": 2.125, "main": false},
+    {"id": "back_wing", "position": [17.4, 0.0, -5.2], "facing": [1.0, 0.0, 0.0], "width_m": 1.0, "height_m": 2.125, "main": false}
+  ],
+  "lods": [
+    {"file": "tehdas_brick_gable_lod0.glb", "triangles": 3780, "sha256": "e1bcedbf7fa976ca3317a7ff6d0f33151e586ef9d70bc9bb5e5bcb812ab0ad43"},
+    {"file": "tehdas_brick_gable_lod1.glb", "triangles": 2692, "sha256": "074fd13a5815925a4fd541b123f1478b66d7745f0fc75a6d7ab8a2155e7dd208"},
+    {"file": "tehdas_brick_gable_lod2.glb", "triangles": 1288, "sha256": "f5e1664c79896aad0555979e0fda7a757e2df3849f33683f4bab94df09d78c4e"},
+    {"file": "tehdas_brick_gable_lod3.glb", "triangles": 488, "sha256": "3dd7b0a2af2b853a84b1864c973706cd3ddf2c3ce43abdc1126d2bd8372d14a3"}
+  ],
+  "textures": {
+    "orm": {"file": "tehdas_brick_gable_orm.png", "sha256": "962c97859bbb152ba25e64ee640f5119d988935c2fec3ea91ec33632ba4646e4"},
+    "normal": {"file": "tehdas_brick_gable_normal.png", "sha256": "7020c2d6634a5d583ea877382246ca4789b17b27e6da96fa296ea0d4055c71df"},
+    "emission": {"file": "tehdas_brick_gable_emission.png", "sha256": "2259baa03fc503f6968f294c185bfceb1d8ab80192535b23106666dff0379164"}
+  },
+  "variants": [
+    {"id": "red_brick", "albedo": "tehdas_brick_gable_albedo_red_brick.png", "sha256": "c66cab0035053b2c33c264ed547213b4373bb12f87681b0a94ab07c02dcfd37f"},
+    {"id": "brown_brick", "albedo": "tehdas_brick_gable_albedo_brown_brick.png", "sha256": "4f603b9c01ec50f321f70b1d3c118328be5cd8281a65d3677740349eac8e704b"},
+    {"id": "yellow_brick", "albedo": "tehdas_brick_gable_albedo_yellow_brick.png", "sha256": "320f70963177115e13382c16bbf411382a9f1dce9b2d00eb034d8feb16e9208d"},
+    {"id": "grey_brick", "albedo": "tehdas_brick_gable_albedo_grey_brick.png", "sha256": "0da0311c2558d84ae3e626fb47c714f8d0fcef4ec8edb6036b12468d3333076f"}
+  ],
+  "default_variant": "red_brick",
+  "preview": {"file": "../preview.png", "sha256": "5c98d2522e209509f582c7b21bdd836c6404f9897954f8a2e981c7489886227f"},
+  "hero": false
+}

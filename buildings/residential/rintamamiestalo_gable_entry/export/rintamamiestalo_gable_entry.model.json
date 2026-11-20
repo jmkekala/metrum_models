@@ -1,0 +1,46 @@
+{
+  "schema": "metrum-model-facts",
+  "version": 1,
+  "name": "rintamamiestalo_gable_entry",
+  "path": "buildings/residential/rintamamiestalo_gable_entry",
+  "source": {"commit": "6c12ac2d4d4005b266090078f44729e14656b1cc", "dirty": false, "blender": "5.3.0"},
+  "license": "CC-BY-4.0",
+  "bounds": {"min": [-4.54, 0.0, -7.49], "max": [4.54, 9.5625, 7.49]},
+  "footprint": [
+    [4.09, -5.75],
+    [4.09, 4.25],
+    [-3.91, 4.25],
+    [-3.91, -5.75]
+  ],
+  "storeys": [
+    {"floor_y_m": 0.7, "area_m2": 80.0},
+    {"floor_y_m": 3.9, "area_m2": 56.0}
+  ],
+  "dwellings": 1,
+  "doors": [
+    {"id": "front", "position": [0.09, 0.7, 4.25], "facing": [0.0, 0.0, 1.0], "width_m": 0.9, "height_m": 2.1, "main": true},
+    {"id": "back", "position": [1.89, 0.7, -5.75], "facing": [0.0, 0.0, -1.0], "width_m": 0.9, "height_m": 2.1, "main": false},
+    {"id": "balcony", "position": [0.09, 3.9, 4.25], "facing": [0.0, 0.0, 1.0], "width_m": 1.4, "height_m": 2.1, "main": false}
+  ],
+  "lods": [
+    {"file": "rintamamiestalo_gable_entry_lod0.glb", "triangles": 2572, "sha256": "8209a578dabf1d98d4abc1f5d1a41803d879a8476eea1afdd7328428325f7f67"},
+    {"file": "rintamamiestalo_gable_entry_lod1.glb", "triangles": 2008, "sha256": "d325f70d125c1fd2763ffbff8dbf8c5cfa5e339799115c3d0076da33f5e8efc1"},
+    {"file": "rintamamiestalo_gable_entry_lod2.glb", "triangles": 762, "sha256": "118c79a9e7099e3993afbaa33cdef8b4e633d76905b42301fc6c43e6e14ee4d5"},
+    {"file": "rintamamiestalo_gable_entry_lod3.glb", "triangles": 470, "sha256": "a46db108afd83b22e3e02733b8966de831124612a30a1850183c6ebe4951497b"}
+  ],
+  "textures": {
+    "orm": {"file": "rintamamiestalo_gable_entry_orm.png", "sha256": "33dc0e25175b84f16be08265c5e1eb47833afc6929c034019e388b84750dbdc9"},
+    "normal": {"file": "rintamamiestalo_gable_entry_normal.png", "sha256": "66930f5733867da887812c3aff13529b481e2717659ae2e010b413e027a896f8"},
+    "emission": {"file": "rintamamiestalo_gable_entry_emission.png", "sha256": "e83a374f3040116c37f6bd0ae1e98745978c3a8ba2fc791a5206897fbb1ccc0c"}
+  },
+  "variants": [
+    {"id": "red", "albedo": "rintamamiestalo_gable_entry_albedo_red.png", "sha256": "7dbce2773fe9084d55716b3333c8a5989547ebc0295b3cc1afc28b6602537a03"},
+    {"id": "yellow", "albedo": "rintamamiestalo_gable_entry_albedo_yellow.png", "sha256": "f2e93d0c50f0a19b9ab1a1b64d95a2dfe379da30ae27b0466f8c4bd6497e3be8"},
+    {"id": "white", "albedo": "rintamamiestalo_gable_entry_albedo_white.png", "sha256": "9323ae11f859097f83fb2536f73ab0787057021ada9e58f82f8c4f3bef31f637"},
+    {"id": "blue", "albedo": "rintamamiestalo_gable_entry_albedo_blue.png", "sha256": "fdc706991ba0c57620a0170f91c651181107dfed4e3a48dbb942fc2d679e889b"},
+    {"id": "green", "albedo": "rintamamiestalo_gable_entry_albedo_green.png", "sha256": "8bc849efdbbc1ae6324ce7ca83ae0db2c878af1c0a7ef4e4881fdaa6d6edf142"}
+  ],
+  "default_variant": "red",
+  "preview": {"file": "../preview.png", "sha256": "a48e955d6f5967f83167035384e4113918c02d46185269f4e00fbe9348a83d67"},
+  "hero": false
+}

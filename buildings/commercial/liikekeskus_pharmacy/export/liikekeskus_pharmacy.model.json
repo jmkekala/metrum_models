@@ -1,0 +1,45 @@
+{
+  "schema": "metrum-model-facts",
+  "version": 1,
+  "name": "liikekeskus_pharmacy",
+  "path": "buildings/commercial/liikekeskus_pharmacy",
+  "source": {"commit": "6c12ac2d4d4005b266090078f44729e14656b1cc", "dirty": false, "blender": "5.3.0"},
+  "license": "CC-BY-4.0",
+  "bounds": {"min": [-12.9, 0.0, -9.24], "max": [12.9, 11.925, 9.24]},
+  "footprint": [
+    [-12.0, -8.0],
+    [12.0, -8.0],
+    [12.0, 8.0],
+    [-12.0, 8.0]
+  ],
+  "storeys": [
+    {"floor_y_m": 0.0, "area_m2": 384.0}
+  ],
+  "dwellings": 0,
+  "doors": [
+    {"id": "pharmacy", "position": [-3.4, 0.0, 8.0], "facing": [0.0, 0.0, 1.0], "width_m": 2.0, "height_m": 2.25, "main": true},
+    {"id": "salon", "position": [-8.6, 0.0, 8.0], "facing": [0.0, 0.0, 1.0], "width_m": 1.0, "height_m": 2.25, "main": false},
+    {"id": "barber", "position": [8.6, 0.0, 8.0], "facing": [0.0, 0.0, 1.0], "width_m": 1.0, "height_m": 2.25, "main": false},
+    {"id": "maintenance", "position": [1.0, 0.0, -8.0], "facing": [0.0, 0.0, -1.0], "width_m": 1.0, "height_m": 2.25, "main": false}
+  ],
+  "lods": [
+    {"file": "liikekeskus_pharmacy_lod0.glb", "triangles": 1018, "sha256": "661367759ea64f4f38bb82723d130547ef4da545c5b6812ef13ae07b215d5dac"},
+    {"file": "liikekeskus_pharmacy_lod1.glb", "triangles": 894, "sha256": "c03ab65d672f4893c7322f9dfd5a04e7614f1d8c7ebbee0532abcbb449fc9fb2"},
+    {"file": "liikekeskus_pharmacy_lod2.glb", "triangles": 428, "sha256": "a7be8200b057865fcf2661b16ea6d96d4ab30791ab4a0819f044cc38dc447ecb"},
+    {"file": "liikekeskus_pharmacy_lod3.glb", "triangles": 348, "sha256": "bc9d4994f05a5233ba18af26d8c2c23b8f11a8a5621439f1df045e2de6e01e0b"}
+  ],
+  "textures": {
+    "orm": {"file": "liikekeskus_pharmacy_orm.png", "sha256": "aa925282f5859a317f6e995a4a5cc172ceeff90965906ec1082d604619906a97"},
+    "normal": {"file": "liikekeskus_pharmacy_normal.png", "sha256": "5fa0fedc5522794fcaea50279466bf9b650d04d1fc3636b4e798ea0bd5a672e9"},
+    "emission": {"file": "liikekeskus_pharmacy_emission.png", "sha256": "322f474daa9a41ea20dfcccf4c9d30dec83a2b8caada09bb7287ef47f88fc4d5"}
+  },
+  "variants": [
+    {"id": "grey_stone", "albedo": "liikekeskus_pharmacy_albedo_grey_stone.png", "sha256": "dd695f76b2b9eae03c270317f4e1c69300a08063dd32c9de7a2b97a119d4a211"},
+    {"id": "beige_stone", "albedo": "liikekeskus_pharmacy_albedo_beige_stone.png", "sha256": "59a7f8bb75c300584a8b30226445491b0d3d30188462e9352a81021cef91eaf7"},
+    {"id": "red_stone", "albedo": "liikekeskus_pharmacy_albedo_red_stone.png", "sha256": "c46ccb09d249cdd1e5272915ef37ee394a51c71bf6233ba968015693b628d1d2"},
+    {"id": "brown_stone", "albedo": "liikekeskus_pharmacy_albedo_brown_stone.png", "sha256": "8767d25be869b6c8eb46debd90329c97bb1e5e06bf6cf5f3448cf0aed7ba054f"}
+  ],
+  "default_variant": "grey_stone",
+  "preview": {"file": "../preview.png", "sha256": "c004fd2297ccb9a799939c40f4c5f47e4ca1455cd898068cda3ed8e5d5d3893a"},
+  "hero": false
+}

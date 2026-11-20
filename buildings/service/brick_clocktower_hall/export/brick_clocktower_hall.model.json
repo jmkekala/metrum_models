@@ -1,0 +1,57 @@
+{
+  "schema": "metrum-model-facts",
+  "version": 1,
+  "name": "brick_clocktower_hall",
+  "path": "buildings/service/brick_clocktower_hall",
+  "source": {"commit": "6c12ac2d4d4005b266090078f44729e14656b1cc", "dirty": false, "blender": "5.3.0"},
+  "license": "CC-BY-4.0",
+  "bounds": {"min": [-24.85, 0.0, -14.175], "max": [24.85, 24.6, 14.175]},
+  "footprint": [
+    [-24.4, -13.725],
+    [-13.4, -13.725],
+    [-13.4, -3.225],
+    [-6.0, -3.225],
+    [-6.0, -8.225],
+    [6.0, -8.225],
+    [6.0, -3.225],
+    [13.4, -3.225],
+    [13.4, -13.725],
+    [24.4, -13.725],
+    [24.4, 12.375],
+    [16.4, 12.375],
+    [16.4, 10.775],
+    [5.5, 10.775],
+    [5.5, 12.975],
+    [-5.5, 12.975],
+    [-5.5, 10.775],
+    [-16.4, 10.775],
+    [-16.4, 12.375],
+    [-24.4, 12.375]
+  ],
+  "storeys": [
+    {"floor_y_m": 0.95, "area_m2": 1024.0},
+    {"floor_y_m": 5.1, "area_m2": 1024.0}
+  ],
+  "dwellings": 0,
+  "doors": [
+    {"id": "front", "position": [0.0, 0.15, 12.975], "facing": [0.0, 0.0, 1.0], "width_m": 2.0, "height_m": 2.35, "main": true},
+    {"id": "balcony", "position": [0.0, 5.6, 12.975], "facing": [0.0, 0.0, 1.0], "width_m": 1.24, "height_m": 3.5, "main": false}
+  ],
+  "lods": [
+    {"file": "brick_clocktower_hall_lod0.glb", "triangles": 5204, "sha256": "4798f9ff1e0463336b6f19f6ee9ca44bb4f8aca63f5b060e463a020521874e74"},
+    {"file": "brick_clocktower_hall_lod1.glb", "triangles": 3980, "sha256": "64f1859d41199043b5d6d034062e944bdcda990a4a3abbe4af1760f08d980dda"},
+    {"file": "brick_clocktower_hall_lod2.glb", "triangles": 584, "sha256": "b8e678fc243dfbd82d36ee6fe359276b969dc755520e6a49aacbda5a21268eb6"},
+    {"file": "brick_clocktower_hall_lod3.glb", "triangles": 564, "sha256": "f0b46fdd480a4029e999ab1c7076df77494c2427d23e5eb785721f150dd10129"}
+  ],
+  "textures": {
+    "orm": {"file": "brick_clocktower_hall_orm.png", "sha256": "3e376f6f6fd9e6a32dc01b6b1c9475d4ae8b037200424aad0474fa6fb26d47d3"},
+    "normal": {"file": "brick_clocktower_hall_normal.png", "sha256": "01b7bc3eded79741bc4cf4abce5dea3393dc94097c7e9d7816d1af111b4cd0e7"},
+    "emission": {"file": "brick_clocktower_hall_emission.png", "sha256": "3d65ac63ba5a1a450006c0ea640f11e8209e32c6c8e4aca34dba41208ec0a797"}
+  },
+  "variants": [
+    {"id": "red_brick", "albedo": "brick_clocktower_hall_albedo_red_brick.png", "sha256": "f1d777f75805e40e508472c1fb704fabaf7b59ce0ae4014beb10a46a05d11372"}
+  ],
+  "default_variant": "red_brick",
+  "preview": {"file": "../preview.png", "sha256": "eef166e5c39c0ea5ae464a0df86b93bd73d3c4493b50bd18b3c8c6c11bd22481"},
+  "hero": true
+}
