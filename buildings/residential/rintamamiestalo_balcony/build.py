@@ -61,6 +61,7 @@ ASSET = L.ASSET
 EXPORT_DIR = os.path.join(HERE, "export")
 sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "scripts"))
 import asset_build  # noqa: E402
+import model_facts  # noqa: E402
 from asset_build import bounds as _bounds, pivot_offset, to_object, union  # noqa: E402,F401
 import downpipes as DP  # noqa: E402
 import handrails as HR  # noqa: E402
@@ -1097,6 +1098,44 @@ def build_all():
     return BUILD.build_all(check_layout, build_lod)
 
 
+# =================================================================== facts
+# Storeys: the ground floor on the plinth and the attic, whose floor is the
+# balcony door's threshold, 5 cm over the deck.
+Z_ATTIC = DECK_Z + 0.05
+
+
+def facts():
+    """The geometry facts sidecar's per-asset half (scripts/model_facts.py),
+    in the build frame. The footprint is the main block with the enclosed
+    porch, whose walls stand on the ground like the block's own; the balcony
+    on the porch's roof is open and counts in no storey. The attic counts
+    where a roof's underside is 1.6 m or more over its floor: the strip under
+    the main roof, and in front of it the dormer's width out to the front
+    wall, where the dormer's roof is the higher one."""
+    def door(door_id, wall, kind, main=False):
+        p0, p1, items = WALLS[wall][1], WALLS[wall][2], WALLS[wall][4]
+        s, z = next((s, z) for k, s, z in items if k == kind)
+        w, h = L.OPENINGS[kind][:2]
+        return model_facts.wall_door(door_id, p0, p1, s, z, w, h, main)
+
+    attic_w = model_facts.roof_clear_width(2 * HY, Z_ATTIC, L.Z_EAVE, TAN)
+    lost = (2 * HY - attic_w) / 2.0              # the low strip along each eave
+    if DZ_EAVE < Z_ATTIC + 1.6:
+        raise ValueError("the dormer's soffit is under 1.6 m over the attic floor")
+    return {
+        "hero": False,
+        "dwellings": 1,
+        "footprint": [(-HX, HY), (-HX, -HY), (BX0, -HY), (BX0, PY_FRONT),
+                      (BX1, PY_FRONT), (BX1, -HY), (HX, -HY), (HX, HY)],
+        "storeys": [
+            (L.Z_FLOOR, 2 * HX * 2 * HY + (BX1 - BX0) * (-HY - PY_FRONT)),
+            (Z_ATTIC, 2 * HX * attic_w + (BX1 - BX0) * lost),
+        ],
+        "doors": [door("front", "porch_front", "door_front", main=True),
+                  door("back", "rear_m", "door_back"),
+                  door("balcony", "dormer_front", "door_balcony")],
+    }
+
 # ================================================================ previews
 
 
@@ -1144,4 +1183,4 @@ def render_views(out_dir, level=0, res=(1400, 1000)):
 
 
 if __name__ == "__main__":
-    BUILD.main(build_all)
+    BUILD.main(build_all, facts)

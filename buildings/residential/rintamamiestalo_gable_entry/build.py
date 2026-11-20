@@ -59,6 +59,7 @@ ASSET = L.ASSET
 EXPORT_DIR = os.path.join(HERE, "export")
 sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "scripts"))
 import asset_build  # noqa: E402
+import model_facts  # noqa: E402
 from asset_build import bounds as _bounds, pivot_offset, to_object, union  # noqa: E402,F401
 import downpipes as DP  # noqa: E402
 import handrails as HR  # noqa: E402
@@ -1042,6 +1043,37 @@ def build_all():
     return BUILD.build_all(check_layout, build_lod)
 
 
+# =================================================================== facts
+# Storeys: the ground floor on the plinth and the attic, whose floor is the
+# balcony doors' threshold, 5 cm over the balcony deck.
+Z_ATTIC = BAL_DOOR_SILL
+
+
+def facts():
+    """The geometry facts sidecar's per-asset half (scripts/model_facts.py),
+    in the build frame. The footprint is the house's four walls: the terrace
+    is an open deck in front of them and the balcony a slab off the gable, so
+    neither is wall outline or storey area. The attic counts where the roof's
+    underside is 1.6 m or more over its floor."""
+    walls = {w[0]: w for w in HOUSE_WALLS}
+
+    def door(door_id, wall, kind, main=False):
+        p0, p1, items = walls[wall][1], walls[wall][2], walls[wall][4]
+        s, z = next((s, z) for k, s, z in items if k == kind)
+        w, h = L.OPENINGS[kind][:2]
+        return model_facts.wall_door(door_id, p0, p1, s, z, w, h, main)
+
+    attic_w = model_facts.roof_clear_width(2 * HX, Z_ATTIC, L.Z_EAVE, TAN)
+    return {
+        "hero": False,
+        "dwellings": 1,
+        "footprint": [(-HX, HY), (-HX, -HY), (HX, -HY), (HX, HY)],
+        "storeys": [(L.Z_FLOOR, 2 * HX * 2 * HY), (Z_ATTIC, attic_w * 2 * HY)],
+        "doors": [door("front", "front", "door_front", main=True),
+                  door("back", "rear", "door_back"),
+                  door("balcony", "front", "door_balcony")],
+    }
+
 # ================================================================ previews
 
 
@@ -1089,4 +1121,4 @@ def render_views(out_dir, level=0, res=(1400, 1000)):
 
 
 if __name__ == "__main__":
-    BUILD.main(build_all)
+    BUILD.main(build_all, facts)

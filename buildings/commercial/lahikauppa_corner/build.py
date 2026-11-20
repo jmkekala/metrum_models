@@ -61,6 +61,7 @@ ASSET = L.ASSET
 EXPORT_DIR = os.path.join(HERE, "export")
 sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "scripts"))
 import asset_build  # noqa: E402
+import model_facts  # noqa: E402
 from asset_build import bounds as _bounds, pivot_offset, to_object, union  # noqa: E402,F401
 
 asset_build.check_toolchain()
@@ -1018,6 +1019,46 @@ def build_all():
     return BUILD.build_all(check_layout, build_lod)
 
 
+# =================================================================== facts
+def facts():
+    """The geometry facts sidecar's per-asset half (scripts/model_facts.py),
+    in the build frame.
+
+    The footprint is the wall ring itself, so the loading bay's notch is out
+    of it: the roof passes over the bay, but its two walls are outer walls and
+    the column at its open corner is a post, not a wall. The entrance is given
+    on the chamfer's wall plane, though the shopfront stands GLAZE_DEPTH back
+    in it and the doors DOOR_DEPTH. Its threshold is the plinth the shopfront
+    stands on (Z_SILL) and its height runs from there to the transom bar; the
+    pair is the two sliding leaves without the fixed screens at their sides.
+    One retail storey, floored at the ground the service and goods doors
+    open onto.
+    """
+    ring = [w["p0"] for w in WALLS]
+    area = abs(sum(a[0] * b[1] - b[0] * a[1]
+                   for a, b in zip(ring, ring[1:] + ring[:1]))) / 2.0
+    names = {("chamfer", 0): "main", ("bay_rear", 0): "loading",
+             ("bay_east", 0): "loading_staff", ("rear", 0): "staff"}
+    doors = []
+    for spec in WALLS:
+        found = [(k, s, z) + L.OPENINGS[k][:2] for k, s, z in spec["items"]
+                 if k.endswith("_door")]
+        if spec.get("entrance"):
+            s0, s1 = spec["glazing"][0]
+            found.append(("entrance", (s0 + s1) / 2.0, L.Z_SILL,
+                          2 * ENTRANCE_LEAF, L.Z_TRANSOM - L.Z_SILL))
+        for i, (kind, s, z, w, h) in enumerate(found):
+            doors.append(model_facts.wall_door(
+                names[(spec["name"], i)], spec["p0"], spec["p1"], s, z, w, h,
+                main=kind == "entrance"))
+    return {"hero": False, "dwellings": 0, "footprint": ring,
+            "storeys": [(0.0, area)], "doors": doors}
+
+
+# One sliding leaf of the entrance, as facade_atlas.paint_door_unit() draws
+# the pair: meeting on the centre line, a 0.35 m fixed screen outside each.
+ENTRANCE_LEAF = 1.2
+
 # ================================================================ previews
 
 
@@ -1069,4 +1110,4 @@ def render_views(out_dir, level=0, res=(1400, 1000)):
 
 
 if __name__ == "__main__":
-    BUILD.main(build_all)
+    BUILD.main(build_all, facts)

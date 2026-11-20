@@ -101,11 +101,12 @@ budgets; style ambition never raises a ceiling.
 
 ## Target Consumer
 
-- The eventual output is game content packs. Packaging, manifests and pack
-  tooling belong to the consumer.
-- Current handoff: copy the finished `.glb` files and textures by hand into the
-  target project's source-art location. No manifests or automation until an
-  importer can consume them.
+- The eventual output is game content packs. Packaging, pack manifests and
+  pack tooling belong to the consumer.
+- Handoff is by files: the `.glb` tiers, the textures and the facts sidecar
+  `export/<asset_name>.model.json` (Output Contract), which the consumer's
+  importer reads. The sidecar states geometry and files only and names no
+  consumer concept; nothing here depends on the importer.
 - This document owns per-class coordinates and budgets, so authoring and checks
   do not depend on consumer tooling.
 
@@ -164,6 +165,7 @@ metrum_models/
           <asset_name>_orm.png                # required; shared by all variants (_orm_<variant>.png only if a variant changes the pattern)
           <asset_name>_normal.png             # required; shared likewise (_normal_<variant>.png only if the pattern changes)
           <asset_name>_emission.png           # night-lit buildings (the default for glazed buildings); see Output Contract
+          <asset_name>.model.json             # required; geometry facts sidecar written by the build, see Output Contract
         notes.md             # see Notes.md & Catalog Template below — no reference material, images or prose
         preview.png          # required; LOD0, default variant, standard daytime catalog setup
         variants.png         # night-lit buildings: day/night rows for every colour
@@ -214,9 +216,9 @@ constants in `build.py` are the same numbers; keep them adjacent (e.g.
 other. When the same function appears in two assets' scripts, move it to
 `scripts/`. Everything a `build.py` does that does not describe its building
 (the toolchain check, the material, the export, the previews, the tier
-bookkeeping and the headless entry point) is `scripts/asset_build.py`'s:
-`build.py` keeps the massing, UVs and layout checks and hands the rest to one
-`asset_build.Asset`.
+bookkeeping, the facts sidecar's writing and the headless entry point) is
+`scripts/asset_build.py`'s: `build.py` keeps the massing, UVs, layout checks
+and its `facts()` and hands the rest to one `asset_build.Asset`.
 
 ### Shared scripts
 
@@ -224,7 +226,8 @@ bookkeeping and the headless entry point) is `scripts/asset_build.py`'s:
 | --- | --- |
 | `atlas.py` | Rasterises every atlas: a supersampled `Canvas` with id, shade, AO and height channels, rect, bevel and shape primitives (stroke, disc, rounded rect), and `pad()`; periodic `noise()`; `cavity()`; and resolvers for albedo, ORM, normal map and emission (Texture Requirements). |
 | `weathering.py` | Weathering as per-sample fields (dirt, algae, rust, faded paint, rain runs) that the canvas carries through `pad()` and `atlas.albedo()`/`orm()` resolve per variant, with helpers for a plinth, splash-back, a sheltered eave, runs under a drip, a roof band, a window and a door. Each atlas's `weather()` places them. |
-| `asset_build.py` | The shared half of every `build.py`: `check_toolchain()`, the catalog preview constants, `open_stack()` (a chimney or stack open at the top round a sooted flue), `union()` (the exact boolean, which triangulates any keyhole face it returns round a hole before the build's weld can fold it), and an `Asset` with `material()`, `build_all()`, `export_all()`, `render_preview()`, `render_variants()` and `main()`. Runs inside Blender only. |
+| `asset_build.py` | The shared half of every `build.py`: `check_toolchain()`, the catalog preview constants, `open_stack()` (a chimney or stack open at the top round a sooted flue), `union()` (the exact boolean, which triangulates any keyhole face it returns round a hole before the build's weld can fold it), and an `Asset` with `material()`, `build_all()`, `export_all()`, `render_preview()`, `render_variants()`, `write_facts()` and `main()`. Runs inside Blender only. |
+| `model_facts.py` | The facts sidecar `export/<asset_name>.model.json`: its schema, the build-frame to glTF conversion, `wall_door()` and `roof_clear_width()` for a `build.py`'s `facts()`, `compose()`/`write()`, and `check()`, which `validate_asset.py` runs on the file. Pure Python. |
 | `glazing.py` | Paints glass as the room behind it: `rooms()` on the finished albedo by day, `night_rooms()` on the emission mask by night. Called by texture generators. |
 | `downpipes.py` | Downpipes as swept, mitred closed solids for `build.py` to union: a `Pipe` placed on a wall, swan-neck and shoe, UVs on the atlas's painted gutter (`PIPE_STRIP`), per-tier `MODES`, and `problems()` for `check_layout()`. Runs inside Blender only. |
 | `roof_safety.py` | Roof safety equipment as closed solids for `build.py` to union: the wall ladder, the roof ladder and the walkway, UVs on the painted gutter (`PIPE_STRIP`) or a fixed patch, per-tier `MODES`, and `problems()` for `check_layout()`. Runs inside Blender only. |
@@ -353,7 +356,25 @@ thumbnail, so the index is browsable without opening asset folders.
   one material/texture set; no per-tier textures.
 - **Textures:** 1024 square; 2048 only for a documented hero/landmark exception.
   Target 64 texels/metre and record intentional local deviations.
-- No asset/pack manifests or approval state. The Validation Checklist is the
+- **Facts sidecar:** every building ships `export/<asset_name>.model.json`,
+  written by `asset_build`'s `write_facts()` from the `build.py`'s `facts()`
+  (`scripts/model_facts.py` holds the schema).
+  - It is in the frame of the exported `.glb` files: metres, `+Y` up, `+Z`
+    front, origin at the pivot.
+  - It states the `LOD0` bounds, the outer wall outline at ground level
+    (without eaves, steps, fences and ladders), the occupied storeys with
+    their floor areas (under a roof, only where the underside is 1.6 m or
+    more over the floor), the dwellings, every door in an outer wall
+    (threshold centre on the outer wall plane, outward facing, the leaf's
+    clear size, and the one `main` entrance), the hero status, and the name,
+    triangle count and SHA-256 of every exported file, with the commit and
+    Blender version it was written from.
+  - Geometry and files only: no zones, lots, capacities, anchors or other
+    consumer terms.
+  - A full rebuild rewrites it. `blender --background --python build.py --
+    facts` rewrites it alone, after checking the build against the files in
+    `export/`; run it from a committed tree, so `source.dirty` is false.
+- No pack manifests or approval state. The Validation Checklist is the
   review gate.
 
 ### LOD Budgets and Review Assumptions
@@ -773,8 +794,9 @@ blender --background --python scripts/validate_asset.py -- props/lighting/your_a
 
 It checks required exports, GLB structure, image references, material count and
 transparency, triangle counts against the budgets, welded topology, pivot and
-bounds, PNG size and format, `notes.md` section order, and a sampled
-hidden-surface test. For buildings with an emission PNG it also checks the
+bounds, PNG size and format, `notes.md` section order, the facts sidecar
+(schema, hashes, tier counts and bounds, one `main` door, doors on the
+footprint), and a sampled hidden-surface test. For buildings with an emission PNG it also checks the
 emission binding, its UV attribute and default-off factor, and measures the
 albedo under the mask against the glazing band. A `PASS` covers only its
 printed check.
@@ -835,6 +857,8 @@ is exterior surface.
   adjacent pairs and against `LOD0`: roofs, recesses, window rhythm, corner
   contrast.
 - Every tier faces `-Y` and shares the authored ground-level origin.
+- The facts sidecar passes the validator with `source.dirty` false, and its
+  doors, footprint, storeys and dwellings describe the building as built.
 - Geometry and Construction defaults followed, or exceptions carry comparison
   evidence and cost. Opaque glass and door closures; no exposed interior;
   roof-hiding parapets on every tier.
@@ -864,8 +888,8 @@ with rationale in owning sections.
 - Never commit reference images, in any commit.
 - No pre-compressed source textures: clean/lossless PNG; consumer importer
   owns compression/mipmaps.
-- No asset/pack manifests until consuming importer exists; raw `.glb` +
-  textures only.
+- No pack manifests or consumer terms: raw `.glb` + textures, plus facts
+  sidecar holding geometry and file facts only (Output Contract).
 - No large binary commits outside Git LFS.
 - No tracked scratch/test `.blend` files.
 - No `.py` commits without `# SPDX-License-Identifier:

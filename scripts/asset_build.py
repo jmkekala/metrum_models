@@ -6,7 +6,7 @@ Each build.py keeps its massing, UVs and layout checks; this module owns the
 parts that must be the same for every asset: the toolchain check, the one
 material slot and its bindings, the export and its image/emission repairs,
 the catalog's fixed preview setup, the day/night sheet, the tier bookkeeping
-in build_all() and the headless entry point. A change to any of those is made
+in build_all(), the facts sidecar and the headless entry point. A change to any of those is made
 here once instead of in every asset.
 
     import asset_build
@@ -17,19 +17,24 @@ here once instead of in every asset.
     def build_all():
         return A.build_all(check_layout, build_lod)
 
+    def facts():
+        return {...}                # scripts/model_facts.py says what
+
     if __name__ == "__main__":
-        A.main(build_all)
+        A.main(build_all, facts)
 
 Runs inside Blender only.
 """
 
 import math
 import os
+import sys
 
 import bmesh
 import bpy
 from mathutils import Euler, Vector
 
+import model_facts
 from glb_images import strip_embedded_images
 from variant_previews import render_sheet
 from window_emission import LIT_FACTOR, attach, rewrite_glb_emission, set_state
@@ -257,6 +262,7 @@ class Asset:
         self.tint = LIT_FACTOR if tint is None else tuple(tint)
         self.levels = tuple(levels)
         self.camera_location = camera_location
+        self.pivot = None               # set by build_all(): LOD0's pivot offset
 
     def lod(self, level):
         return bpy.data.objects["{}_LOD{}".format(self.name, level)]
@@ -363,6 +369,7 @@ class Asset:
         mat = self.material()
         objs = [build_lod(level) for level in self.levels]
         off = pivot_offset(objs[0])
+        self.pivot = tuple(off)
         stats = {}
         for level, obj in zip(self.levels, objs):
             for v in obj.data.vertices:
@@ -502,12 +509,73 @@ class Asset:
         return render_sheet(self.name, self.here, self.variants, self.material,
                             self.preview_studio, self.show_only, tile_w, self.tint)
 
+    # ---------------------------------------------------------------- facts
+    def check_export(self, tol=1e-3):
+        """Problems that say the tiers in the scene are not the exported ones:
+        a triangle count or LOD0 bounds that differ from the .glb on disk."""
+        problems = []
+        for level in self.levels:
+            me = self.lod(level).data
+            me.calc_loop_triangles()
+            fn = "{}_lod{}.glb".format(self.name, level)
+            on_disk = model_facts.glb_stats(os.path.join(self.export_dir, fn))
+            if len(me.loop_triangles) != on_disk["triangles"]:
+                problems.append("%s has %d triangles, the build %d"
+                                % (fn, on_disk["triangles"], len(me.loop_triangles)))
+            if level == self.levels[0]:
+                # Blender (x, y, z) is glTF (x, z, -y)
+                pts = [(v.co.x, v.co.z, -v.co.y) for v in me.vertices]
+                for key, pick in (("min", min), ("max", max)):
+                    here = [pick(p[i] for p in pts) for i in range(3)]
+                    if any(abs(a - b) > tol for a, b in zip(here, on_disk[key])):
+                        problems.append("%s bounds.%s is %s, the build's %s"
+                                        % (fn, key, on_disk[key],
+                                           [round(c, 4) for c in here]))
+        return problems
+
+    def write_facts(self, facts):
+        """Write export/<name>.model.json (scripts/model_facts.py) for the
+        tiers build_all() left in the scene and the files in export/.
+
+        *facts* is the build.py's facts(), in the build frame; the pivot is
+        applied here. Refuses when the scene's tiers are not the exported
+        ones, since the doors and footprint would then describe other files.
+        """
+        if self.pivot is None:
+            raise RuntimeError("write_facts() needs build_all() first: the "
+                               "pivot offset comes from that build")
+        problems = self.check_export()
+        if problems:
+            raise ValueError("the build does not match export/:\n  "
+                             + "\n  ".join(problems))
+        doc = model_facts.compose(
+            self.name, self.here, self.variants, self.default_variant,
+            self.levels, self.pivot, facts() if callable(facts) else facts,
+            bpy.app.version_string)
+        return model_facts.write(model_facts.sidecar_path(self.here, self.name), doc)
+
     # ---------------------------------------------------------------- main
-    def main(self, build_all):
-        """The headless rebuild: build, export, preview, variants, save.
+    def main(self, build_all, facts=None):
+        """The headless rebuild: build, export, preview, variants, save, and
+        the facts sidecar when the build.py declares *facts*.
 
             blender --background source.blend --python build.py
+
+        With the word `facts` after `--` it builds the tiers in memory, checks
+        them against the files already in export/ and writes only the sidecar;
+        nothing else is exported, rendered or saved:
+
+            blender --background --python build.py -- facts
         """
+        argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+        if argv == ["facts"]:
+            if facts is None:
+                raise RuntimeError("%s declares no facts()" % self.name)
+            print(build_all())
+            print(self.write_facts(facts))
+            return
+        if argv:
+            raise RuntimeError("unknown arguments %s; the only one is `facts`" % argv)
         if not bpy.data.filepath:
             # started from the factory scene rather than source.blend: its
             # cube, light and camera would sit in the renders, so clear them,
@@ -520,3 +588,5 @@ class Asset:
         print(self.render_preview())
         print(self.render_variants())
         bpy.ops.wm.save_mainfile()
+        if facts is not None:
+            print(self.write_facts(facts))

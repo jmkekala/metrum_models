@@ -62,6 +62,7 @@ ASSET = L.ASSET
 EXPORT_DIR = os.path.join(HERE, "export")
 sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "scripts"))
 import asset_build  # noqa: E402
+import model_facts  # noqa: E402
 from asset_build import bounds as _bounds, pivot_offset, to_object, union  # noqa: E402,F401
 
 asset_build.check_toolchain()
@@ -1098,6 +1099,31 @@ def build_all():
     return BUILD.build_all(check_layout, build_lod)
 
 
+# =================================================================== facts
+def facts():
+    """The geometry facts sidecar's per-asset half (scripts/model_facts.py),
+    in the build frame.
+
+    The footprint is the 24 x 16 m wall ring; the middle pier and the side
+    buttresses are relief applied to it, and the air handler hangs on it.
+    Every shopfront door is given on the front wall's plane, though the
+    glazing stands GLAZE_DEPTH back in its bay. A leaf runs from the pavement
+    to Z_LEAF, under a transom light. The pharmacy's pair is the main door:
+    the unit with half the frontage. One storey; the gable is roof space.
+    """
+    front = ((-HX, -HY), (HX, -HY))
+    rear = ((HX, HY), (-HX, HY))
+    ids = {"pharmacy_left": "pharmacy", "salon": "salon", "barber": "barber"}
+    doors = [model_facts.wall_door(ids[bay], *front, s, 0.0, L.DOOR_W[n],
+                                   L.Z_LEAF, main=bay == "pharmacy_left")
+             for bay, s, n in L.DOORS]
+    w, h = L.OPENINGS["maint_door"][:2]
+    doors.append(model_facts.wall_door("maintenance", *rear, L.MAINT_DOOR_S,
+                                       0.0, w, h))
+    return {"hero": False, "dwellings": 0,
+            "footprint": [(-HX, -HY), (HX, -HY), (HX, HY), (-HX, HY)],
+            "storeys": [(0.0, 2 * HX * 2 * HY)], "doors": doors}
+
 # ================================================================ previews
 
 
@@ -1150,4 +1176,4 @@ def render_views(out_dir, level=0, res=(1400, 1000)):
 
 
 if __name__ == "__main__":
-    BUILD.main(build_all)
+    BUILD.main(build_all, facts)

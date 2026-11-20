@@ -41,6 +41,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 EXPORT_DIR = os.path.join(HERE, "export")
 sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "scripts"))
 import asset_build  # noqa: E402
+import model_facts  # noqa: E402
 from asset_build import bounds as _bounds, pivot_offset, to_object, union  # noqa: E402,F401
 
 asset_build.check_toolchain()
@@ -1091,6 +1092,46 @@ def build_all():
     return BUILD.build_all(check_massing, build_lod)
 
 
+# =================================================================== facts
+# The two storeys' floors: the ground floor on the plinth's top and the upper
+# floor at the string course's foot, 4.15 m above it (facade_atlas.py's
+# Z_PLINTH_TOP and Z_STRING_BOT). The entrance's pair of leaves ends at the
+# transom, where facade_atlas.paint_entrance() draws it; the fanlight above
+# is not part of the leaf.
+Z_GROUND_FLOOR, Z_UPPER_FLOOR = 0.95, 5.10
+DOOR_TRANSOM = 2.50
+
+
+def facts():
+    """The geometry facts sidecar's per-asset half (scripts/model_facts.py),
+    in the build frame. The footprint is the wall ring's own outline, without
+    the quoin blocks that stand 0.08 m proud of it. Both storeys fill that
+    outline: the upper one ends under the cornice, below the roof. The tower
+    and the clock attic are not floors. The one door at ground level is the
+    arched entrance in the centre bay; the balcony door above it is in the
+    same outer wall, a storey up."""
+    outline = union_outline(WALLS)
+    n = len(outline)
+    area = sum(outline[i][0] * outline[(i + 1) % n][1]
+               - outline[(i + 1) % n][0] * outline[i][1] for i in range(n)) / 2.0
+    x0, x1, y0, _y1 = WALLS[3]                      # the centre entrance bay
+    p0, p1 = (x0, y0), (x1, y0)                     # its front, s = x + 5.5
+
+    def door(door_id, tag, top=None, main=False):
+        s, hw, z0, z1, _ = next(o for o in ENTRANCE_OPENINGS if o[4] == tag)
+        return model_facts.wall_door(door_id, p0, p1, s, z0, 2.0 * hw,
+                                     (top or z1) - z0, main)
+
+    return {
+        "hero": True,
+        "dwellings": 0,
+        "footprint": outline,
+        "storeys": [(Z_GROUND_FLOOR, area), (Z_UPPER_FLOOR, area)],
+        "doors": [door("front", "door", DOOR_TRANSOM, main=True),
+                  door("balcony", "bal")],
+    }
+
+
 def render_views(out_dir, level=0, res=(1400, 1000)):
     """The six working views CLAUDE.md asks for before export: four
     orthographic elevations, a plan from above, and a raised three-quarter
@@ -1138,4 +1179,4 @@ def render_views(out_dir, level=0, res=(1400, 1000)):
 
 
 if __name__ == "__main__":
-    BUILD.main(build_all)
+    BUILD.main(build_all, facts)

@@ -62,6 +62,7 @@ ASSET = L.ASSET
 EXPORT_DIR = os.path.join(HERE, "export")
 sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "scripts"))
 import asset_build  # noqa: E402
+import model_facts  # noqa: E402
 from asset_build import bounds as _bounds, pivot_offset, to_object, union  # noqa: E402,F401
 import downpipes as DP  # noqa: E402
 import roof_safety as RS  # noqa: E402
@@ -1097,6 +1098,62 @@ def build_all():
     return BUILD.build_all(check_layout, build_lod)
 
 
+# =================================================================== facts
+# Clear leaf widths, as facade_atlas.py paints them inside each door region's
+# frame: paint_entrance()'s pair of leaves between the side lights (122 px),
+# paint_glazed_door()'s and paint_service_door()'s one leaf inside a 4 px
+# frame. The loading door is its whole sectional opening.
+LEAF_W = {"entrance": 122 / PPM,
+          "glazed_door": (L.GLAZED_DOOR[2] - 8) / PPM,
+          "service_door": (L.SERVICE_DOOR[2] - 8) / PPM,
+          "loading_door": L.OPENINGS["loading_door"][0]}
+LEAF_H = {"loading_door": L.OPENINGS["loading_door"][1]}      # the rest: L.Z_LEAF
+
+
+def facts():
+    """The geometry facts sidecar's per-asset half (scripts/model_facts.py),
+    in the build frame. The footprint is the walls that stand on the ground:
+    the ground storey, which stops at the porch wall PX under the oversailing
+    east end (the pillars are open), and both wings; the entrance lobby is a
+    recess in the front wall and leaves the outline straight. Two storeys:
+    the ground floor with its wings, and the whole 42 x 12 m upper floor,
+    which has 3.69 m to the eave."""
+    wings = {n: (p0, p1, items) for n, p0, p1, items
+             in FRONT_WING_WALLS + BACK_WING_WALLS}
+    walls = {"front": MAIN_WALLS["front"] + (FRONT_ITEMS,),
+             "rear": MAIN_WALLS["rear"] + (REAR_ITEMS,),
+             "west": MAIN_WALLS["west"] + (WEST_ITEMS,),
+             "porch": MAIN_WALLS["porch"] + (PORCH_ITEMS,)}
+    walls.update(wings)
+
+    def door(door_id, wall, kind, main=False):
+        p0, p1, items = walls[wall]
+        (c, z), = [(c, z) for k, c, z in items if k == kind]
+        return model_facts.wall_door(door_id, p0, p1, Frame(p0, p1).s_at(c), z,
+                                     LEAF_W[kind], LEAF_H.get(kind, L.Z_LEAF), main)
+
+    return {
+        "hero": False,
+        "dwellings": 0,
+        "footprint": [(-HX, -HY), (FW[0], -HY), (FW[0], FW[2]), (FW[1], FW[2]),
+                      (FW[1], -HY), (PX, -HY), (PX, HY), (BW[1], HY),
+                      (BW[1], BW[3]), (BW[0], BW[3]), (BW[0], HY), (-HX, HY)],
+        "storeys": [
+            (0.0, (PX + HX) * 2 * HY + (FW[1] - FW[0]) * (FW[3] - FW[2])
+             + (BW[1] - BW[0]) * (BW[3] - BW[2])),
+            (L.Z_STOREY, 2 * HX * 2 * HY),
+        ],
+        "doors": [door("front", "front", "entrance", main=True),
+                  door("stair", "front", "glazed_door"),
+                  door("east_porch", "porch", "entrance"),
+                  door("rear", "rear", "service_door"),
+                  door("west", "west", "service_door"),
+                  door("loading", "west", "loading_door"),
+                  door("front_wing", "fw_east", "service_door"),
+                  door("back_wing", "bw_east", "service_door")],
+    }
+
+
 # ================================================================ previews
 def render_views(out_dir, level=0, res=(1400, 1000)):
     """The six working views CLAUDE.md asks for before export: four
@@ -1151,4 +1208,4 @@ def render_views(out_dir, level=0, res=(1400, 1000)):
 
 
 if __name__ == "__main__":
-    BUILD.main(build_all)
+    BUILD.main(build_all, facts)

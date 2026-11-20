@@ -67,6 +67,7 @@ ASSET = L.ASSET
 EXPORT_DIR = os.path.join(HERE, "export")
 sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "scripts"))
 import asset_build  # noqa: E402
+import model_facts  # noqa: E402
 from asset_build import bounds as _bounds, pivot_offset, to_object, union  # noqa: E402,F401
 import downpipes as DP  # noqa: E402
 import roof_safety as RS  # noqa: E402
@@ -1200,6 +1201,73 @@ def build_all():
     return BUILD.build_all(check_layout, build_lod)
 
 
+# =================================================================== facts
+def facts():
+    """The geometry facts sidecar's per-asset half (scripts/model_facts.py),
+    in the build frame.
+
+    The footprint is the heated block's outer wall at ground level, so it
+    turns in round each yard alcove: the pocket is open to the yard from the
+    floor up, and its side wall, which carries the yard door, is outer wall.
+    That door is given where it stands, facing along the row into its pocket.
+    The roof, the balconies and their posts, the terrace paving, the steps,
+    the yard fences and the gable ladder are left out; a fence gate is not a
+    door. The ground storey is the plate less the alcoves, the upper storey
+    the whole plate: the roof's underside is 3.0 m or more over it at both
+    walls. The balcony doors are doors in an outer wall and are listed, at
+    the upper floor's level.
+    """
+    front, rear = MAIN_WALLS["front"], MAIN_WALLS["rear"]
+    fr = Frame(rear["p0"], rear["p1"])
+    ls0, ls1, _z0, _z1, depth = L.ALCOVE
+    glazed = L.OPENINGS["door_glazed"][:2]
+
+    def unit(k):
+        """The dwelling, counted from the west, of the rear wall's bay *k*,
+        which that wall counts from its start at the east end."""
+        return UNITS - k
+
+    footprint = [(-HX, Y_FRONT), (HX, Y_FRONT), (HX, Y_REAR)]
+    for k in range(UNITS):
+        s0, s1 = k * UNIT_W + ls0, k * UNIT_W + ls1
+        footprint += [fr.P(s0, 0.0)[:2], fr.P(s0, 0.0, depth)[:2],
+                      fr.P(s1, 0.0, depth)[:2], fr.P(s1, 0.0)[:2]]
+    footprint.append((-HX, Y_REAR))
+
+    doors = []
+    for k in range(UNITS):
+        doors.append(model_facts.wall_door(
+            "unit_%d" % (k + 1), front["p0"], front["p1"], k * UNIT_W + L.DOOR_S,
+            L.Z_FLOOR, *L.OPENINGS["door_front"][:2]))
+    # the entrance a visitor uses: the front door nearest the exported x = 0,
+    # the one on the +X side on a tie
+    px = BUILD.pivot[0] if BUILD.pivot else 0.0
+    main = min(doors, key=lambda d: (round(abs(d["position"][0] - px), 4),
+                                     -d["position"][0]))
+    main["main"] = True
+    for k in reversed(range(UNITS)):
+        # the alcove's far side wall, as build_alcove() frames it
+        s1 = k * UNIT_W + ls1
+        doors.append(model_facts.wall_door(
+            "unit_%d_back" % unit(k), fr.P(s1, 0.0, depth)[:2], fr.P(s1, 0.0)[:2],
+            depth - L.ALCOVE_DOOR_S, L.Z_FLOOR, *glazed))
+    for k in reversed(range(UNITS)):
+        for kind, s, z in L.REAR_UP_UNIT:
+            if kind == "door_glazed":
+                doors.append(model_facts.wall_door(
+                    "unit_%d_balcony" % unit(k), rear["p0"], rear["p1"],
+                    k * UNIT_W + s, z, *glazed))
+    plate = 2 * HX * (Y_REAR - Y_FRONT)
+    return {
+        "hero": False,
+        "dwellings": UNITS,
+        "footprint": footprint,
+        "storeys": [(L.Z_FLOOR, plate - UNITS * (ls1 - ls0) * depth),
+                    (L.Z_STOREY, plate)],
+        "doors": doors,
+    }
+
+
 # ================================================================ previews
 
 
@@ -1250,4 +1318,4 @@ def render_views(out_dir, level=0, res=(1400, 1000)):
 
 
 if __name__ == "__main__":
-    BUILD.main(build_all)
+    BUILD.main(build_all, facts)

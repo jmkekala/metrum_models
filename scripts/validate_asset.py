@@ -32,6 +32,9 @@ import bpy
 from mathutils import Vector
 from mathutils.bvhtree import BVHTree
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import model_facts  # noqa: E402
+
 # Per-tier triangle bands (floor, ceiling), from CLAUDE.md's budgets. Buildings
 # run LOD0..LOD3 across a free camera's ~20-150 m; props run LOD0..LOD2 with the
 # last optional, because a prop culls out long before a building's far tiers
@@ -528,6 +531,40 @@ def check_notes(results, adir, kind):
                                          "and in order"))
 
 
+def check_facts(results, asset, adir, hero):
+    """The facts sidecar (scripts/model_facts.py) against the files it names.
+
+    Decides only what a file can: the schema, the hashes, the tiers' triangle
+    counts and bounds, one main door, doors on the footprint. Whether a door
+    or a storey is where the building has one stays with the build.py's
+    facts() and its reviewer.
+    """
+    path = model_facts.sidecar_path(adir, asset)
+    problems = model_facts.check_file(path)
+    if not problems:
+        with open(path, encoding="utf-8") as fh:
+            doc = json.load(fh)
+        if doc["hero"] != hero:
+            problems.append("hero is %s, the validator was run with hero %s"
+                            % (doc["hero"], hero))
+        if doc["name"] != asset:
+            problems.append("name is %r" % doc["name"])
+    for problem in problems:
+        results.append(("FAIL", "facts", problem))
+    if not problems:
+        results.append(("PASS", "facts", "%s: schema, hashes, tiers, footprint "
+                                         "and %d door%s consistent"
+                        % (os.path.basename(path), len(doc["doors"]),
+                           "" if len(doc["doors"]) == 1 else "s")))
+        if doc["source"]["dirty"]:
+            results.append(("WARN", "facts", "source.dirty is true: rewrite the "
+                                             "sidecar from a committed tree "
+                                             "(build.py -- facts)"))
+        results.append(("MANUAL", "facts", "doors, footprint, storeys and "
+                                           "dwellings describe the building as "
+                                           "built"))
+
+
 def validate(adir, kind="building", hero=False):
     if kind not in ("building", "prop_small", "prop_medium"):
         raise ValueError("kind must be building, prop_small or prop_medium, "
@@ -547,6 +584,8 @@ def validate(adir, kind="building", hero=False):
     for level in range(len(BUDGETS[(kind, hero)])):
         check_tier(results, asset, adir, level, kind, hero)
     check_textures(results, asset, adir, kind, hero)
+    if kind == "building":
+        check_facts(results, asset, adir, hero)
     for note in ("material palette within the muted/realistic range",
                  "silhouette, roofline and major recesses match across tiers",
                  "front faces -Y" if kind == "building" else

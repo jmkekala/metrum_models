@@ -55,6 +55,7 @@ ASSET = L.ASSET
 EXPORT_DIR = os.path.join(HERE, "export")
 sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "scripts"))
 import asset_build  # noqa: E402
+import model_facts  # noqa: E402
 from asset_build import bounds as _bounds, pivot_offset, to_object, union  # noqa: E402,F401
 import downpipes as DP  # noqa: E402
 import roof_safety as RS  # noqa: E402
@@ -1014,6 +1015,61 @@ def build_all():
     return BUILD.build_all(check_layout, build_lod)
 
 
+# =================================================================== facts
+def facts():
+    """The geometry facts sidecar's per-asset half (scripts/model_facts.py),
+    in the build frame.
+
+    The footprint is the main block with the six stores sheds, whose walls
+    stand on the ground; the canopies, landings, yard screen walls and the
+    gable ladder are left out. Both storeys are the main block's whole plate:
+    the upper floor has 3.0 m to the eave, so the shallow roof takes nothing
+    from it, and the sheds are unheated stores, not floor area. The yard
+    gates hang in the screen walls, not in an outer wall, so they are not
+    doors here.
+    """
+    front, rear = MAIN_WALLS["front"], MAIN_WALLS["rear"]
+
+    def leaf(kind):
+        return L.OPENINGS[kind][:2]
+
+    footprint = [(-HX, HY), (-HX, -HY)]
+    for xc in shed_x():
+        x0, x1 = xc - SHED_W / 2.0, xc + SHED_W / 2.0
+        footprint += [(x0, -HY), (x0, -HY - SHED_OUT), (x1, -HY - SHED_OUT), (x1, -HY)]
+    footprint += [(HX, -HY), (HX, HY)]
+
+    doors = []
+    for k in range(UNITS):
+        s = k * UNIT_W + DOOR_S
+        doors.append(model_facts.wall_door(
+            "unit_%d" % (k + 1), front[0], front[1], s, L.Z_FLOOR, *leaf("door_front")))
+    # the entrance a visitor uses: the front door nearest the exported x = 0,
+    # the one on the +X side on a tie
+    px = BUILD.pivot[0] if BUILD.pivot else 0.0
+    main = min(doors, key=lambda d: (round(abs(d["position"][0] - px), 4),
+                                     -d["position"][0]))
+    main["main"] = True
+    for k, x in reversed(list(enumerate(patio_door_x()))):
+        # patio_door_x() runs from the +X end, the way the rear wall does
+        doors.append(model_facts.wall_door(
+            "unit_%d_back" % (UNITS - k), rear[0], rear[1], HX - x, L.Z_FLOOR,
+            *leaf("door_patio")))
+    for k, xc in enumerate(shed_x()):
+        x0, x1, yf = xc - SHED_W / 2.0, xc + SHED_W / 2.0, -HY - SHED_OUT
+        doors.append(model_facts.wall_door(
+            "store_%d" % (k + 1), (x0, yf), (x1, yf), SHED_W / 2.0, L.Z_FLOOR,
+            *leaf("door_shed")))
+    plate = 2 * HX * 2 * HY
+    return {
+        "hero": False,
+        "dwellings": UNITS,
+        "footprint": footprint,
+        "storeys": [(L.Z_FLOOR, plate), (L.Z_STOREY, plate)],
+        "doors": doors,
+    }
+
+
 # ================================================================ previews
 
 
@@ -1061,4 +1117,4 @@ def render_views(out_dir, level=0, res=(1400, 1000)):
 
 
 if __name__ == "__main__":
-    BUILD.main(build_all)
+    BUILD.main(build_all, facts)

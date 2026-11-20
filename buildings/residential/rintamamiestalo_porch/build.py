@@ -52,6 +52,7 @@ ASSET = L.ASSET
 EXPORT_DIR = os.path.join(HERE, "export")
 sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "scripts"))
 import asset_build  # noqa: E402
+import model_facts  # noqa: E402
 from asset_build import bounds as _bounds, pivot_offset, to_object, union  # noqa: E402,F401
 import downpipes as DP  # noqa: E402
 import handrails as HR  # noqa: E402
@@ -838,6 +839,37 @@ def build_all():
     return BUILD.build_all(check_layout, build_lod)
 
 
+# =================================================================== facts
+# Storeys: the ground floor on the plinth and the attic 3.10 m above it.
+Z_ATTIC = L.Z_FLOOR + 3.10
+
+
+def facts():
+    """The geometry facts sidecar's per-asset half (scripts/model_facts.py),
+    in the build frame. The footprint is the main block with the enclosed
+    porch, whose walls stand on the ground like the block's own. The attic
+    counts where the roof's underside is 1.6 m or more over its floor."""
+    def door(door_id, wall, kind, main=False):
+        p0, p1, items = wall[0], wall[1], wall[3]
+        s, z = next((s, z) for k, s, z in items if k == kind)
+        w, h = L.OPENINGS[kind][:2]
+        return model_facts.wall_door(door_id, p0, p1, s, z, w, h, main)
+
+    attic_w = model_facts.roof_clear_width(2 * HY, Z_ATTIC, L.Z_EAVE, TAN)
+    return {
+        "hero": False,
+        "dwellings": 1,
+        "footprint": [(-HX, HY), (-HX, -HY), (PX0, -HY), (PX0, PY_FRONT),
+                      (PX1, PY_FRONT), (PX1, -HY), (HX, -HY), (HX, HY)],
+        "storeys": [
+            (L.Z_FLOOR, 2 * HX * 2 * HY + (PX1 - PX0) * (-HY - PY_FRONT)),
+            (Z_ATTIC, 2 * HX * attic_w),
+        ],
+        "doors": [door("front", PORCH_WALLS["front"], "door_front", main=True),
+                  door("back", MAIN_WALLS["rear"], "door_back")],
+    }
+
+
 # ================================================================ previews
 
 
@@ -885,4 +917,4 @@ def render_views(out_dir, level=0, res=(1400, 1000)):
 
 
 if __name__ == "__main__":
-    BUILD.main(build_all)
+    BUILD.main(build_all, facts)
