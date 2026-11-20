@@ -148,13 +148,15 @@ ID_GUTTER = 9                # gutter, downpipes and snow guard: galvanised stee
 # sheet's underside is bare galvanised steel gone dull under dust and
 # condensation, kept nearly dielectric: a brighter metallic underside reflected
 # the sky into the open bays and lit their ceiling like a skylight. The
-# rainwater goods and the snow guard are galvanised steel gone dull: a light
-# grey, part metallic, rough with its zinc patina, the same in every variant.
+# rainwater goods and the snow guard are the farm buildings' one galvanised
+# steel, the same in every variant and on navetta_board_gable and
+# viljakuivuri_tower: sRGB (134, 137, 137), part metallic, dulled by its zinc
+# patina.
 SURFACE = {
     ID_WALL: (0.84, 0.0), ID_TRIM: (0.62, 0.0), ID_FOOT: (0.90, 0.0),
     ID_ROOF: (0.50, 0.10), ID_DOOR: (0.80, 0.0), ID_INNER: (0.88, 0.0),
     ID_SHEET: (0.72, 0.15), ID_BLANK: (0.95, 0.0), ID_HW: (0.55, 0.60),
-    ID_GUTTER: (0.50, 0.40),
+    ID_GUTTER: (0.48, 0.60),
 }
 
 # ---------------------------------------------------------------- palettes
@@ -171,7 +173,7 @@ VARIANTS = {
 DEFAULT_VARIANT = "red_ochre"
 FIXED = {
     ID_FOOT: (146, 144, 138), ID_INNER: (104, 90, 72), ID_SHEET: (88, 90, 90),
-    ID_BLANK: (52, 52, 52), ID_HW: (44, 44, 44), ID_GUTTER: (120, 122, 121),
+    ID_BLANK: (52, 52, 52), ID_HW: (44, 44, 44), ID_GUTTER: (134, 137, 137),
 }
 
 # Which ids each tiling band may contain.
@@ -382,7 +384,8 @@ def paint_eave_roof(c):
     c.mid[sy, sx] = np.where(rail, ID_GUTTER, mid)
     c.height[sy, sx], c.shade[sy, sx], c.ao[sy, sx] = height, shade, ao
     # the rail's own weather replaces the sheet's: light dust, rust at the
-    # brackets; debris held on the sheet just above it
+    # brackets, as on the farm's other two snow guards; debris held on the
+    # sheet just above it
     for key in w.f:
         w.f[key][sy, sx] = np.where(rail, 0.0, w.f[key][sy, sx])
     w.add("D", 0, ATLAS, y0 + g - 3, y0 + g + 4.5,
@@ -586,12 +589,16 @@ def weather(c):
     # fascia: runs down the board from the flashing
     w.runs(0, ATLAS, FASC_Y0 - 2, FASC_Y0 + FASC_H - 4, (ID_TRIM,), 0.18, fall=6.0,
            lo=0.4, hi=1.6)
-    # rear fascia: runs down the board from the gutter, a dirty belly
-    g0 = EAVE_ROOF_Y0 - 1 - GUTTER_PX
+    # rear fascia: runs down the board from the gutter; the gutter's dirty
+    # belly and light runs down its face from the lip, the same treatment as
+    # the farm's other two gutters
+    top = EAVE_ROOF_Y0
+    g0 = top - 1 - GUTTER_PX
     w.add("D", 0, ATLAS, FASC_R_Y0 - 2, g0, 0.06, (ID_TRIM,))
     w.runs(0, ATLAS, FASC_R_Y0 - 2, g0, (ID_TRIM,), 0.22, fall=6.0, lo=0.4, hi=1.6)
     w.add("D", 0, ATLAS, g0, g0 + 4, lambda Y, X, nz: 0.10 + 0.12 * nz("blotch"),
           (ID_GUTTER,))
+    w.runs(0, ATLAS, g0, top - 1, (ID_GUTTER,), 0.08, fall=4.0, lo=0.4, hi=1.6)
     # inside the bays: dust settled on everything, thicker toward the floor
     for x0, x1, yg, yt in ((0, ATLAS, INT_Y0, INT_Y0 + m(INT_TOP) + 2),
                            (SIDE[0] - 2, SIDE[0] + SIDE[2] + 2, SIDE[1],

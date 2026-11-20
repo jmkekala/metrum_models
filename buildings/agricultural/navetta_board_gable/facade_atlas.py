@@ -127,19 +127,25 @@ def item_size_px(kind):
 # ----------------------------------------------------------- material ids
 ID_WALL, ID_TRIM, ID_SASH, ID_GLASS, ID_PLINTH, ID_METAL = 0, 1, 2, 3, 4, 5
 ID_ROOF, ID_DOOR, ID_BLANK, ID_IRON = 6, 7, 8, 9
-# (roughness, metallic)
+ID_GUTTER = 10       # gutter, downpipes and snow guard: galvanised steel
+# (roughness, metallic). The rainwater goods and the snow guard are the farm
+# buildings' one galvanised steel, the same in every variant and on
+# viljakuivuri_tower and konehalli_open_bays: sRGB (134, 137, 137), dulled by
+# its zinc patina, part metallic.
 SURFACE = {
     ID_WALL: (0.82, 0.0), ID_TRIM: (0.62, 0.0), ID_SASH: (0.52, 0.0),
     ID_GLASS: (glazing.ROUGHNESS, 0.0), ID_PLINTH: (0.90, 0.0),
     ID_METAL: (0.42, 0.30), ID_ROOF: (0.46, 0.25), ID_DOOR: (0.78, 0.0),
-    ID_BLANK: (0.95, 0.0), ID_IRON: (0.55, 0.45),
+    ID_BLANK: (0.95, 0.0), ID_IRON: (0.55, 0.45), ID_GUTTER: (0.48, 0.60),
 }
 
 # ---------------------------------------------------------------- palettes
 # Muted farm paints. Red ochre (punamulta) and yellow ochre with white trim,
 # and unpainted boards gone silver-grey with darker weathered trim. The doors
 # are boarded like the walls and painted with them, a shade darker; the roof
-# is dark steel and shifts a little with the body colour.
+# is dark steel and shifts a little with the body colour; the drip flashing
+# and drip caps follow it. The gutter, downpipes and snow guard do not: they
+# are galvanised in every variant (ID_GUTTER).
 VARIANTS = {
     "red_ochre": {"wall": (120, 52, 42), "trim": (220, 216, 204),
                   "roof": (54, 56, 58), "door": (108, 47, 39)},
@@ -151,15 +157,15 @@ VARIANTS = {
 DEFAULT_VARIANT = "red_ochre"
 FIXED = {
     ID_GLASS: glazing.BASE, ID_PLINTH: (146, 144, 138),
-    ID_BLANK: (52, 52, 52), ID_IRON: (60, 58, 56),
+    ID_BLANK: (52, 52, 52), ID_IRON: (60, 58, 56), ID_GUTTER: (134, 137, 137),
 }
 
 # Which ids each tiling band may contain.
 BAND_IDS = {
     "S1": ((0, 256), {ID_PLINTH, ID_METAL, ID_WALL}),
     "S2": ((258, 448), {ID_TRIM, ID_WALL}),
-    "ROOF": ((452, 772), {ID_ROOF, ID_METAL}),
-    "FASCIA": ((774, 798), {ID_METAL, ID_TRIM}),
+    "ROOF": ((452, 772), {ID_ROOF, ID_GUTTER}),
+    "FASCIA": ((774, 798), {ID_METAL, ID_TRIM, ID_GUTTER}),
 }
 
 # ---------------------------------------------------------------- relief
@@ -256,7 +262,8 @@ def paint_roof(c):
 
     The snow guard is two round tubes across the whole band, on brackets
     through every second rib's crest (0.5 m apart, a period that divides the
-    atlas), in the gutter's steel (ID_METAL) as a matched system."""
+    atlas), in the gutter's galvanised steel (ID_GUTTER) as a matched
+    system."""
     y0, h = ROOF_Y0, ROOF_H
     c.paint(0, ATLAS, y0 - 2, y0 + h + 2, ID_ROOF, 1.0, height=0.0)
     sy, sx, Y, X = c.field(0, ATLAS, y0 - 2, y0 + h + 2)
@@ -294,7 +301,7 @@ def paint_roof(c):
     shade = np.where(ridge, 0.97, shade)
     shade = np.where((v >= h - 12) & (v < h - 11), shade * 0.85, shade)
     c.height[sy, sx], c.shade[sy, sx], c.ao[sy, sx] = height, shade, ao
-    c.mid[sy, sx] = np.where(guard, ID_METAL, ID_ROOF)
+    c.mid[sy, sx] = np.where(guard, ID_GUTTER, ID_ROOF)
 
 
 def paint_fascia(c):
@@ -304,7 +311,9 @@ def paint_fascia(c):
 
     The band's top row is the roof's edge, where the water leaves the roof,
     so the gutter sits right under it and the board shows below. The gutter
-    is ID_METAL, which follows the roof colour: a matched rainwater system.
+    is ID_GUTTER, galvanised in every variant, and so are the downpipes that
+    sample its rows and the snow guard: a matched rainwater system. The drip
+    edge above it is the roof's flashing (ID_METAL).
     """
     y0 = FASC_Y0
     top = y0 + FASC_H                       # the roof's edge
@@ -314,11 +323,11 @@ def paint_fascia(c):
     # is height; only the belly's underside is darker.
     gh = GUTTER_PX
     g0 = top - 1 - gh
-    c.paint(0, ATLAS, g0, top - 1, ID_METAL, 1.0)
+    c.paint(0, ATLAS, g0, top - 1, ID_GUTTER, 1.0)
     sy, sx, Y, _ = c.field(0, ATLAS, g0, top - 1)
     u = 2.0 * (Y - g0) / gh - 1.0
     c.height[sy, sx] = GUTTER_R * np.sqrt(np.clip(1.0 - u * u, 0.0, 1.0))
-    c.paint(0, ATLAS, g0, g0 + 1, ID_METAL, 0.80)
+    c.paint(0, ATLAS, g0, g0 + 1, ID_GUTTER, 0.80)
     c.paint(0, ATLAS, top - 1, top + 2, ID_METAL, 0.80, height=0.0)  # roof sheet's drip edge
     c.ao[c.sl(0, ATLAS, g0 - 3, top + 2)] = 0.9
     for k, f in enumerate((0.92, 0.86, 0.80)):            # occluded under the gutter
@@ -448,7 +457,8 @@ def weather(c):
     S1's and S2's V is height above the ground and the roof band's is slope,
     so splash, the sheltered eave and the dirtier eave land the same on every
     wall and both roof faces."""
-    w = weathering.Weather(c, clean=(ID_GLASS,), steel=(ID_ROOF, ID_METAL, ID_IRON))
+    w = weathering.Weather(c, clean=(ID_GLASS,),
+                           steel=(ID_ROOF, ID_METAL, ID_IRON, ID_GUTTER))
     w.grime()
     w.fade((ID_WALL, ID_TRIM, ID_SASH, ID_DOOR))
     w.wash((ID_WALL,))
@@ -462,8 +472,9 @@ def weather(c):
     w.add("D", 0, ATLAS, ROOF_Y0 - 2, ROOF_Y0 + ROOF_H + 2, lambda Y, X, nz: 0.10 * (
         ((X % RIB_PITCH) >= 5.0) & ((X % RIB_PITCH) < 7.0)), roof)
     w.add("R", 0, ATLAS, ROOF_Y0 - 2, ROOF_Y0 + 3, lambda Y, X, nz: 0.12 * nz("speck"), roof)
-    # the snow guard: debris held above it, rust at its brackets and in short
-    # runs on the sheet under them
+    # the snow guard: light dust on it (with grime(), 0.06 + 0.08 blotch, as on
+    # the farm's other two), rust at its brackets, debris held above it and
+    # short rust runs on the sheet under the brackets
     g = ROOF_Y0 + round(SNOW_GUARD * ROOF_H / ROOF_SLOPE_LEN)
 
     def bk(X):
@@ -471,14 +482,22 @@ def weather(c):
 
     w.add("D", 0, ATLAS, g + 4.5, g + 16.0, lambda Y, X, nz: 0.25 * nz("blotch")
           * (1.0 - (Y - g - 4.5) / 11.5), roof)
-    w.add("R", 0, ATLAS, g - 3, g + 4.5, lambda Y, X, nz: 0.18 * bk(X), (ID_METAL,))
+    w.add("D", 0, ATLAS, g - 3, g + 4.5, lambda Y, X, nz: 0.06 + 0.045 * nz("blotch"),
+          (ID_GUTTER,))
+    w.add("R", 0, ATLAS, g - 3, g + 4.5, lambda Y, X, nz: 0.15 * (
+        ((X % (2.0 * RIB_PITCH)) >= 1.5) & ((X % (2.0 * RIB_PITCH)) < 3.5)), (ID_GUTTER,))
     w.add("R", 0, ATLAS, g - 14, g - 3, lambda Y, X, nz: 0.15 * bk(X)
           * (1.0 - (g - 3 - Y) / 11.0) * atlas.smoothstep(-0.5, 0.8, nz("runs")), roof)
-    # the fascia: runs down the board from the gutter, a dirty belly
-    g0 = FASC_Y0 + FASC_H - 1 - GUTTER_PX
+    # the fascia: runs down the board from the gutter; the gutter's dirty
+    # belly and light runs down its face from the lip, the same treatment as
+    # the farm's other two gutters
+    top = FASC_Y0 + FASC_H
+    g0 = top - 1 - GUTTER_PX
     w.add("D", 0, ATLAS, FASC_Y0 - 2, g0, 0.06, (ID_TRIM,))
     w.runs(0, ATLAS, FASC_Y0 - 2, g0, (ID_TRIM,), 0.22, fall=6.0, lo=0.4, hi=1.6)
-    w.add("D", 0, ATLAS, g0, g0 + 4, lambda Y, X, nz: 0.10 + 0.12 * nz("blotch"), (ID_METAL,))
+    w.add("D", 0, ATLAS, g0, g0 + 4, lambda Y, X, nz: 0.10 + 0.12 * nz("blotch"),
+          (ID_GUTTER,))
+    w.runs(0, ATLAS, g0, top - 1, (ID_GUTTER,), 0.08, fall=4.0, lo=0.4, hi=1.6)
     for kind, (wd, h, cs, cb, ct) in OPENINGS.items():
         if kind == "vent":
             continue

@@ -8,9 +8,10 @@ rintamamiestalo houses. It is a long, low byre under a 30° gable roof, and
 the roof space is the hay loft. The walls are red-ochre vertical
 board-and-batten on a low cast-concrete plinth, with white corner boards,
 white casings round every opening, white fascias and barge boards, and a
-dark trapezoidal profiled steel roof. A half-round steel gutter runs along
-each eave, with one downpipe from each, and a tubular snow guard (*lumieste*)
-runs along each slope just above the eave, both in steel matched to the roof.
+dark trapezoidal profiled steel roof. A half-round galvanised gutter runs
+along each eave, with one downpipe from each, and a tubular snow guard
+(*lumieste*) runs along each slope just above the eave, all three in the same
+galvanised steel as the gutters of the farm's grain dryer and machine shed.
 
 The long front faces the yard. It carries a pair of big braced board doors on
 a concrete ramp, a row of four small byre windows, and a plank pedestrian door
@@ -259,7 +260,9 @@ at 70 and 120 m (oblique), under noon and reverse sun.
 
 - The gutter reads as a round steel trough along each eave: a lit roll, a
   dark belly and a shadow line on the white board under it, with the hangers
-  visible at 20 m. At 70 m it is a dark line between the roof and the fascia.
+  visible at 20 m. At 70 m it is a light grey line between the roof and
+  the fascia (re-rendered at `LOD2`, 70 m, oblique and rear, noon, after
+  the galvanised steel pass, `review/farm_gutter_colour_2026_11_20/far/`).
 - Both downpipes read at 20 m with the swan-neck and shoe, standing off the
   boards with their own shadow. At 40 m each is a 3 px dark line beside the
   white corner board, the swan-neck no longer separable. At 70 and 120 m the
@@ -268,6 +271,10 @@ at 70 and 120 m (oblique), under noon and reverse sun.
   slope at 20 m, and as a faint line at 40 m; past 70 m it is gone into the
   roof, as intended.
 - Nothing else changed: walls, openings, roof and ramps match the before set.
+- Since the 2026-11-20 galvanised steel pass the gutter, the downpipes and
+  the snow guard are light galvanised grey in every variant, no longer the
+  roof's dark steel; at 20 m they read the same as the dryer's and the
+  machine shed's, and still read against the white fascia and each roof.
 
 These renders are authoring evidence only. Runtime switching, filtering and
 performance are pending in the consumer.
@@ -347,8 +354,8 @@ and one emission mask.
   tones and roof ribs (0.25 m) all repeat at periods that divide 1024.
   The gutter's hangers (1 m) and the snow guard's brackets (0.5 m, on every
   second rib) also divide 1024. `check_bands()` fails the bake on a stray id
-  in a band; the roof band admits the guard's steel (`ID_METAL`) beside the
-  sheet. `atlas.pad()` fills every gutter last, in every channel.
+  in a band; the roof band admits the guard's steel (`ID_GUTTER`) beside the
+  sheet, and the fascia band the gutter's beside the board and the drip edge. `atlas.pad()` fills every gutter last, in every channel.
 - **Relief heights**, used by `atlas.normal_map()`:
   - battens 20 mm, with arrises rounded over a pixel;
   - casings and the corner board 20 mm, sills 35 mm, sashes 12 mm;
@@ -373,16 +380,21 @@ and one emission mask.
   | Glass | 0.08 | 0 |
   | Concrete | 0.90 | 0 |
   | Roof steel | 0.46 | 0.25 |
-  | Flashing, drip caps, gutter, downpipes, snow guard | 0.42 | 0.30 |
+  | Flashing, drip caps | 0.42 | 0.30 |
+  | Gutter, downpipes, snow guard (galvanised) | 0.48 | 0.60 |
   | Hinge iron | 0.55 | 0.45 |
 - **Albedo carries no directional light.** Shade holds only tone, wear and the
   occlusion that holds whatever the sun does: beside battens, under rails and
   drips, under the soffit, under the gutter and the snow guard's tubes.
-- **Gutter and snow-guard colour.** Both are `ID_METAL`, the flashing's steel,
-  which follows each variant's roof colour (1.18 × roof + 6): dark grey on
-  `red_ochre` and `grey_weathered`, dark red-brown on `yellow_ochre`, a
-  matched rainwater and snow-guard system. The downpipes take it through
-  `PIPE_STRIP`.
+- **Gutter and snow-guard colour.** Both are `ID_GUTTER`, galvanised steel at
+  sRGB 134/137/137, roughness 0.48, metallic 0.60, the same in every variant
+  and the same id, colour and surface as on `viljakuivuri_tower` and
+  `konehalli_open_bays`, so the farm's rainwater goods match. The downpipes
+  take it through `PIPE_STRIP`. Measured over `PIPE_STRIP` after weathering:
+  mean sRGB 130/133/132 in all three albedos, roughness 0.50, metallic 0.55
+  (ORM). The drip flashing, the drip caps and the roof's drip edge over the
+  gutter stay `ID_METAL`, which follows each variant's roof colour (1.18 ×
+  roof + 6).
 
 ### Weathering
 
@@ -397,10 +409,11 @@ at the catalog's moderate level:
 - dust under the soffit from 3.3 m;
 - on the roof, long runs, more dirt toward the eave, chalking toward the
   ridge, silt beside the ribs and specks of rust on the drip edge;
-- debris held on the sheet above the snow guard, rust at its brackets and
-  short rust runs on the sheet under them;
-- a dirty belly on the gutter, and dirt and runs down the fascia board under
-  it;
+- light dust on the snow guard and rust at its brackets, debris held on the
+  sheet above it and short rust runs on the sheet under the brackets;
+- a dirty belly on the gutter and light runs down its face from the lip, the
+  same treatment as the farm's other two gutters, and dirt and runs down the
+  fascia board under it;
 - dirt on the sills and head casings;
 - hand grime and kicked-up dirt on the doors;
 - splash at the corner boards' foot;
@@ -446,9 +459,10 @@ ORM, normal map and emission mask:
 | `grey_weathered` | unpainted boards gone silver-grey, 106/102/95 | darker weathered grey-brown, 74/69/62 | silvered | dark grey steel |
 | `yellow_ochre` | yellow ochre, 178/142/84 | off-white | yellow ochre, a shade darker | dark red-brown steel |
 
-This is the low-rise case: a farm building that differs in paint. The roof
-shifts a little with the body colour. Glass, concrete and hinge iron never
-change. Every `.glb` references the default (`red_ochre`) albedo. The other
+This is the low-rise case: a farm building that differs in paint. The roof,
+with the flashing and drip caps, shifts a little with the body colour. Glass,
+concrete, hinge iron and the galvanised gutters, downpipes and snow guard
+never change. Every `.glb` references the default (`red_ochre`) albedo. The other
 variants are the same mesh with that one file swapped, since geometry and UVs
 are identical by construction.
 
@@ -554,6 +568,13 @@ Checked here, in Blender:
   renders at 20–120 m (LOD review), `preview.png` and `variants.png` looked
   at. Bounds and pivot are unchanged on every tier (16.70 × 12.60 × 6.71 m,
   pivot 0.40 m in front of the walls' centre).
+- The shared galvanised steel pass of 2026-11-20: a texture-only change.
+  Triangle counts (756 / 536 / 266 / 262) and bounds match the sidecar; the
+  normal map and emission mask are byte-identical. `PIPE_STRIP` measured as
+  above (Texture set), within two sRGB levels of the other two farm
+  buildings. Before/after renders at 20 m (`LOD0`, oblique and rear, noon) in
+  `review/farm_gutter_colour_2026_11_20/` (local, git-ignored), compared side
+  by side with the other two, and `variants.png` looked at.
 - The six pre-export views at `LOD0` and `LOD2`.
 - The tier comparisons at the three switches, the 12 m close range, the day
   cycle and the mip4 stress renders, all recorded under LOD review. Battens,
@@ -580,6 +601,14 @@ These are recorded as known-good markers, not requirements.
 
 ## Revision log
 
+- **2026-11-20.** The gutter, downpipes and snow guard moved off the
+  roof-matched flashing steel (`ID_METAL`) onto a new `ID_GUTTER`: galvanised
+  steel at sRGB 134/137/137, roughness 0.48, metallic 0.60, the same in every
+  variant and on the farm's other two buildings. Gutter weathering is now the
+  shared treatment (dirty belly, light runs on its face) and the snow guard
+  gets light dust and rust at its brackets. Texture-only: geometry, UVs,
+  relief heights, layout, the normal map and the emission mask are
+  unchanged.
 - **2026-11-20.** Added rainwater gutters, downpipes and a snow guard. A
   half-round steel gutter is painted across the top of both eave fascias,
   with `PIPE_STRIP` defined on its middle rows; two downpipes from

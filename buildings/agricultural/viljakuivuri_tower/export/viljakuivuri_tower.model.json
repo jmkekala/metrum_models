@@ -3,7 +3,7 @@
   "version": 1,
   "name": "viljakuivuri_tower",
   "path": "buildings/agricultural/viljakuivuri_tower",
-  "source": {"commit": "70337aa30aea25f719ec46c64f3a8374ccbcb593", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "140154fa60d16dcac796d7d655f3213cbc1a0d4e", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-4.85, 0.0, -4.4], "max": [4.85, 12.1934, 4.4]},
   "footprint": [
@@ -31,16 +31,16 @@
     {"file": "viljakuivuri_tower_lod3.glb", "triangles": 478, "sha256": "69bb52388c388906f3072793c2f10368a1794ebda110a408b83dd3ed40c15091"}
   ],
   "textures": {
-    "orm": {"file": "viljakuivuri_tower_orm.png", "sha256": "4691ff87a33ed323f5571883596cf7ee9b650969641d3c46a79850df5834ae46"},
+    "orm": {"file": "viljakuivuri_tower_orm.png", "sha256": "d5e49951fb0735bd6abef3ab9323a9c211dea8b23ca2cb9aaa14e164986f3fa5"},
     "normal": {"file": "viljakuivuri_tower_normal.png", "sha256": "e34fa124535444fa1a23f3ad7557431547095a9d706eb8b6087807ecb38a01d2"},
     "emission": {"file": "viljakuivuri_tower_emission.png", "sha256": "61311d98c460bd19c438f0404c9f3ed574da8e222b2c35084e18a5afc6af6ab5"}
   },
   "variants": [
-    {"id": "red_ochre", "albedo": "viljakuivuri_tower_albedo_red_ochre.png", "sha256": "e4d77bce18f2f72dc7411c830c314eeb4424222d9d203d49e2cba4a8cdedc9a1"},
-    {"id": "grey_weathered", "albedo": "viljakuivuri_tower_albedo_grey_weathered.png", "sha256": "1432ccf1c3eda2ee1930e523fee1d487d31d8f2fd707c974a42156c28e7d0e19"},
-    {"id": "yellow_ochre", "albedo": "viljakuivuri_tower_albedo_yellow_ochre.png", "sha256": "628dda3aeebacf38686773797932d1a6bced6d5d555c61aee2ef537f12e68a81"}
+    {"id": "red_ochre", "albedo": "viljakuivuri_tower_albedo_red_ochre.png", "sha256": "ebda724b7aca8e4fa2d247bcb6903d64f6778f44d53aa43734b63df2b59d846c"},
+    {"id": "grey_weathered", "albedo": "viljakuivuri_tower_albedo_grey_weathered.png", "sha256": "bc9f20dd72618a1dba4512d91fcb12e9bc44251dcd8673210228f684311ba0d1"},
+    {"id": "yellow_ochre", "albedo": "viljakuivuri_tower_albedo_yellow_ochre.png", "sha256": "fffefea578af4d9c57e57e1b890008b4157ce1e5ede618406e090c1ecd54ddb3"}
   ],
   "default_variant": "red_ochre",
-  "preview": {"file": "../preview.png", "sha256": "54312a879186d4c189218e1e0a9bc7310c7f337ea36103df0ab5b10b11b96e5d"},
+  "preview": {"file": "../preview.png", "sha256": "71a7209d122cafb156933b1e928ab5e240187f0523847302a44924af11894c10"},
   "hero": false
 }

@@ -3,7 +3,7 @@
   "version": 1,
   "name": "navetta_board_gable",
   "path": "buildings/agricultural/navetta_board_gable",
-  "source": {"commit": "70337aa30aea25f719ec46c64f3a8374ccbcb593", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "140154fa60d16dcac796d7d655f3213cbc1a0d4e", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-8.35, 0.0, -6.3], "max": [8.35, 6.7106, 6.3]},
   "footprint": [
@@ -29,16 +29,16 @@
     {"file": "navetta_board_gable_lod3.glb", "triangles": 262, "sha256": "acfa0d215d1052b9e33bcacc062d6415b1372bea91bec0367c6f507f1e4d17f6"}
   ],
   "textures": {
-    "orm": {"file": "navetta_board_gable_orm.png", "sha256": "b7a0b798af7001dc55c47956fd15d8ed9fe3184e10476c164b8a7060d59ab1ff"},
+    "orm": {"file": "navetta_board_gable_orm.png", "sha256": "1bdd9ae7f83b54884f55fbde7a67dd9c9d166b151f8e344c79c783ffd35a7206"},
     "normal": {"file": "navetta_board_gable_normal.png", "sha256": "aa8323c8ea3c5bb6aab55ab6f744096f790843c1f9d87478553f8de30d9ed662"},
     "emission": {"file": "navetta_board_gable_emission.png", "sha256": "26fc177e791636bc25d9cc2fd47ed88cec59d110b6acc11dee4e80b9efb343b5"}
   },
   "variants": [
-    {"id": "red_ochre", "albedo": "navetta_board_gable_albedo_red_ochre.png", "sha256": "4fe6e6cfeeff43cfbbe471db8146a3056030f76af676b3bafa3b3ad8f4aec76f"},
-    {"id": "grey_weathered", "albedo": "navetta_board_gable_albedo_grey_weathered.png", "sha256": "967137c138a84481c70c59ed12e9587c09935a9a0f0cf6e0b41d9e1b1e2f80fb"},
-    {"id": "yellow_ochre", "albedo": "navetta_board_gable_albedo_yellow_ochre.png", "sha256": "2eb000f0b10fc3142063dfa95dbaadc58dbe687b28d4dd0ffbdd7beb6e6d7222"}
+    {"id": "red_ochre", "albedo": "navetta_board_gable_albedo_red_ochre.png", "sha256": "7b5ce333a1ca21c4258e006e3a2f188f1b10909a5aae9fb19672f54bc3fce47d"},
+    {"id": "grey_weathered", "albedo": "navetta_board_gable_albedo_grey_weathered.png", "sha256": "135754226a39bbbd9c2b0ee61819db88c666a56da1de08014e7be690267a9179"},
+    {"id": "yellow_ochre", "albedo": "navetta_board_gable_albedo_yellow_ochre.png", "sha256": "a79dad91e638893bc7c8fc3942e01c3527e28f2c323c54902db67f48fe17a4b4"}
   ],
   "default_variant": "red_ochre",
-  "preview": {"file": "../preview.png", "sha256": "6fddf21e2dcf8b14a5235d3a1722c06dee887925d53a43cd80a570ae873c7ff4"},
+  "preview": {"file": "../preview.png", "sha256": "35b8380f56297bf406c88c60d7e03967924617cfe4294ffd0f7a5693929e5c8d"},
   "hero": false
 }

@@ -24,7 +24,7 @@ A trim sheet, not one picture per elevation:
     y  652 ..  672   FASCIA  white fascia board under the roof's edge, a
                              half-round galvanised gutter across its top
     y  674 ..  774   ROOF    profiled steel sheet, V stretched up the slope,
-                             a snow guard 0.5 m up from the eave
+                             a galvanised snow guard 0.5 m up from the eave
     y  778 .. 1024   unique  doors, windows, the louvre, the bin roof,
                              the corner-board strip, flat patches
 
@@ -123,16 +123,18 @@ def item_size_px(kind):
 # ----------------------------------------------------------- material ids
 ID_WALL, ID_TRIM, ID_SASH, ID_GLASS, ID_PLINTH, ID_METAL = 0, 1, 2, 3, 4, 5
 ID_ROOF, ID_DOOR, ID_GALV, ID_FLUE, ID_BLANK, ID_HANDLE = 6, 7, 8, 9, 11, 12
-ID_GUTTER = 13
+ID_GUTTER = 13       # gutter, downpipes and snow guard: galvanised steel
 # (roughness, metallic). Galvanised steel is metal, dulled by its zinc
-# oxide; the gutters and downpipes are older zinc than the bin's, a little
-# darker and duller; the furnace flue is black-painted steel.
+# oxide. The gutter, downpipes and snow guard are the farm buildings' one
+# rainwater steel, the same in every variant and on navetta_board_gable and
+# konehalli_open_bays: sRGB (134, 137, 137), older zinc than the bin's, darker
+# and duller. The furnace flue is black-painted steel.
 SURFACE = {
     ID_WALL: (0.78, 0.0), ID_TRIM: (0.60, 0.0), ID_SASH: (0.50, 0.0),
     ID_GLASS: (glazing.ROUGHNESS, 0.0), ID_PLINTH: (0.90, 0.0),
     ID_METAL: (0.42, 0.30), ID_ROOF: (0.46, 0.25), ID_DOOR: (0.70, 0.0),
     ID_GALV: (0.40, 0.85), ID_FLUE: (0.62, 0.30), ID_BLANK: (0.95, 0.0),
-    ID_HANDLE: (0.40, 0.70), ID_GUTTER: (0.48, 0.70),
+    ID_HANDLE: (0.40, 0.70), ID_GUTTER: (0.48, 0.60),
 }
 
 # ---------------------------------------------------------------- palettes
@@ -156,7 +158,7 @@ GLASS_BASE = tuple(int(round(v * 1.25)) for v in glazing.BASE)
 FIXED = {
     ID_GLASS: glazing.BASE, ID_PLINTH: (148, 146, 140), ID_GALV: (164, 167, 168),
     ID_FLUE: (46, 46, 46), ID_BLANK: (52, 52, 52), ID_HANDLE: (150, 146, 138),
-    ID_GUTTER: (146, 149, 150),
+    ID_GUTTER: (134, 137, 137),
 }
 
 BAND_IDS = {
@@ -164,7 +166,7 @@ BAND_IDS = {
     "W2": ((S1_TOP, W2_Y0 + W2_H + 4), {ID_WALL}),
     "BIN": ((BIN_Y0 - 4, BIN_Y0 + BIN_H + 4), {ID_GALV}),
     "FASCIA": ((FASC_Y0 - 2, FASC_Y0 + FASC_H + 2), {ID_METAL, ID_TRIM, ID_GUTTER}),
-    "ROOF": ((ROOF_Y0 - 2, ROOF_Y0 + ROOF_H + 2), {ID_ROOF, ID_METAL}),
+    "ROOF": ((ROOF_Y0 - 2, ROOF_Y0 + ROOF_H + 2), {ID_ROOF, ID_METAL, ID_GUTTER}),
 }
 TILE_W2 = int(ATLAS // W2_H)          # 4: noise over W2 repeats every 256 rows
 TILE_BIN = int(ATLAS // BIN_H)        # 16: noise over BIN repeats every 64 rows
@@ -349,25 +351,30 @@ def paint_roof(c):
     ao = np.where((xm >= 4.0) & (xm < 5.0), 0.86, 1.0)
     shade = np.where(v < 2, shade * 0.85, shade)                 # eave drip edge
     # snow guard: two round tubes on brackets, standard on Finnish metal
-    # roofs, in the sheet's own steel; the brackets sit on every second rib
+    # roofs, in the gutter's galvanised steel (ID_GUTTER) as a matched
+    # system; the brackets sit on every second rib
     g = round(SNOW_GUARD_M * h / ROOF_SLOPE_LEN)
+    guard = np.zeros(v.shape, bool)
     for t0, t1 in ((g, g + 2.0), (g + 3.0, g + 4.5)):
         inside = (v >= t0) & (v < t1)
         tube = SNOW_TUBE_H * k * np.sqrt(np.clip(
             1.0 - (2.0 * (v - t0) / (t1 - t0) - 1.0) ** 2, 0.0, 1.0))
         height = np.where(inside, np.maximum(height, tube), height)
+        shade = np.where(inside, 1.0, shade)
+        guard |= inside
     shade = np.where((v >= g - 3) & (v < g - 1), shade * 0.80, shade)   # under the tubes
     ao = np.where((v >= g - 3) & (v < g + 4.5), np.minimum(ao, 0.85), ao)
     xb = np.mod(X, 32.0)
     bracket = (xb >= 1.0) & (xb < 3.0) & (v >= g - 3) & (v < g + 4.5)
     height = np.where(bracket, np.maximum(height, SNOW_BRACKET_H * k), height)
-    shade = np.where(bracket, shade * 0.75, shade)
+    shade = np.where(bracket, 0.75, shade)
+    guard |= bracket
     top = v >= h - 8
     height = np.where(top, 0.010 * k, height)
     shade = np.where(top, 0.97, shade)
     shade = np.where((v >= h - 8) & (v < h - 7), shade * 0.82, shade)
     ao = np.where((v >= h - 10) & (v < h - 8), np.minimum(ao, 0.85), ao)
-    c.mid[sy, sx] = np.where(top, ID_METAL, ID_ROOF)
+    c.mid[sy, sx] = np.where(top, ID_METAL, np.where(guard, ID_GUTTER, ID_ROOF))
     c.height[sy, sx], c.shade[sy, sx], c.ao[sy, sx] = height, shade, ao
 
 
@@ -560,9 +567,15 @@ def weather(c):
         (np.mod(X, 16.0) >= 4.0) & (np.mod(X, 16.0) < 6.0)), (ID_ROOF,))
     w.add("R", 0, ATLAS, ROOF_Y0 - 2, ROOF_Y0 + 3, lambda Y, X, nz: 0.12 * nz("speck"),
           (ID_ROOF,))
-    # debris held above the snow guard, rust at its brackets and in short
-    # runs under them
+    # the snow guard: light dust on it (with the grime above, 0.06 + 0.08
+    # blotch, as on the farm's other two), rust at its brackets, debris held
+    # above it, rust on the sheet round the brackets and in short runs under
+    # them
     g = ROOF_Y0 + round(SNOW_GUARD_M * ROOF_H / ROOF_SLOPE_LEN)
+    w.add("D", 0, ATLAS, g - 3, g + 4.5, lambda Y, X, nz: 0.06 + 0.045 * nz("blotch"),
+          (ID_GUTTER,))
+    w.add("R", 0, ATLAS, g - 3, g + 4.5, lambda Y, X, nz: 0.15 * (
+        (np.mod(X, 32.0) >= 1.0) & (np.mod(X, 32.0) < 3.0)), (ID_GUTTER,))
     w.add("D", 0, ATLAS, g + 4.5, g + 14.0, lambda Y, X, nz: 0.22 * nz("blotch")
           * (1.0 - (Y - g - 4.5) / 9.5), (ID_ROOF,))
     w.add("R", 0, ATLAS, g - 3, g + 4.5, lambda Y, X, nz: 0.16 * (
@@ -570,12 +583,16 @@ def weather(c):
     w.add("R", 0, ATLAS, g - 10, g - 3, lambda Y, X, nz: 0.12 * (
         (np.mod(X, 32.0) >= 1.2) & (np.mod(X, 32.0) < 2.8)) * (1.0 - (g - 3 - Y) / 7.0)
         * atlas.smoothstep(-0.5, 0.8, nz("runs")), (ID_ROOF,))
-    # the fascia: dirt and runs down the board from the gutter, a dirty belly
-    g0 = FASC_Y0 + FASC_H - 1 - GUTTER_PX
+    # the fascia: dirt and runs down the board from the gutter; the gutter's
+    # dirty belly and light runs down its face from the lip, the same
+    # treatment as the farm's other two gutters
+    top = FASC_Y0 + FASC_H
+    g0 = top - 1 - GUTTER_PX
     w.add("D", 0, ATLAS, FASC_Y0 - 2, g0, 0.05, (ID_TRIM,))
     w.runs(0, ATLAS, FASC_Y0 - 2, g0, (ID_TRIM,), 0.18, fall=5.0, lo=0.4, hi=1.6)
-    w.add("D", 0, ATLAS, g0, g0 + 3, lambda Y, X, nz: 0.08 + 0.10 * nz("blotch"),
+    w.add("D", 0, ATLAS, g0, g0 + 4, lambda Y, X, nz: 0.10 + 0.12 * nz("blotch"),
           (ID_GUTTER,))
+    w.runs(0, ATLAS, g0, top - 1, (ID_GUTTER,), 0.08, fall=4.0, lo=0.4, hi=1.6)
     # openings: sills and heads; door handles and feet
     for kind, (wd, h, cs, cb, ct) in OPENINGS.items():
         x0, yb = ITEM_ORIGIN[kind]

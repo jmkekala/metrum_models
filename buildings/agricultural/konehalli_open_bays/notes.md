@@ -21,8 +21,9 @@ occlusion is painted.
 It is meant as yard filler on farmsteads. Colour variety comes from the
 variants. The roof sheds to the rear, so the rear (low) eave carries a
 galvanised half-round gutter, with a downpipe at each end of the rear wall
-and a snow guard (*lumieste*) on the roof just above the eave. It has no
-chimney, roof plant, fences, ground or slab.
+and a snow guard (*lumieste*) on the roof just above the eave, all three in
+the same galvanised steel as the gutters of the farm's barn and grain dryer.
+It has no chimney, roof plant, fences, ground or slab.
 
 ## Category and secondary use
 
@@ -375,10 +376,14 @@ their rows meet at row 1006, so the band runs on across the fold.
   the slab's split without a seam. The tubes, the shadow under them and the
   brackets go on top. Their heights are scaled by 40/64, as in the porch
   house, so the slope the normal map derives from stays physical.
-- **Steel:** one galvanised id for the gutter, the downpipes and the guard,
-  the same in every variant: sRGB (120, 122, 121), roughness 0.50,
-  metallic 0.40, a dull zinc patina between the dark roof and the white
-  trim, so it suits all three roofs.
+- **Steel:** one galvanised id (`ID_GUTTER`) for the gutter, the downpipes
+  and the guard, the same in every variant and the same id colour and
+  surface as on `navetta_board_gable` and `viljakuivuri_tower`, so the
+  farm's rainwater goods match: sRGB (134, 137, 137), roughness 0.48,
+  metallic 0.60, a zinc patina between the dark roof and the white trim, so
+  it suits all three roofs. Measured over `PIPE_STRIP` after weathering:
+  mean sRGB 130/133/133 in all three albedos, roughness 0.50, metallic 0.56
+  (ORM).
 
 ### Relief and the normal map
 
@@ -417,8 +422,10 @@ is bare.
 - the footing as a plinth, splash on the boards' foot, posts, corner boards
   and door feet;
 - the roof's dirtier low edge and chalked high edge, runs down the fascia;
-- runs down the rear fascia from the gutter, a dirty belly; light dust on
-  the snow guard, rust at its brackets, debris held on the sheet above it;
+- runs down the rear fascia from the gutter; a dirty belly on the gutter
+  and light runs down its face from the lip, the same treatment as the
+  farm's other two gutters; light dust on the snow guard, rust at its
+  brackets, debris held on the sheet above it;
 - settled dust inside the bays, thickest at the floor.
 
 ### Filtering
@@ -550,6 +557,13 @@ Checked here, in Blender:
   Five 1024² RGB PNGs; the facts sidecar is consistent.
 - `check_layout()`, including the downpipes' and the eave strip's checks.
 - The six working views at `LOD0` and `LOD3`.
+- The shared galvanised steel pass of 2026-11-20: a texture-only change.
+  Triangle counts (336 / 272 / 196 / 166) and bounds match the sidecar; the
+  normal map is byte-identical. `PIPE_STRIP` measured as above (Texture
+  set), within two sRGB levels of the other two farm buildings. Before/after
+  renders at 20 m (`LOD0`, oblique and rear, noon) in
+  `review/farm_gutter_colour_2026_11_20/` (local, git-ignored), compared
+  side by side with the other two; `preview.png` regenerated.
 - The rainwater goods and snow guard, before/after with identical settings:
   `LOD0`/`LOD1` at 20 and 40 m, `LOD2`/`LOD3` at 70 and 120 m, rear and
   oblique, noon and reverse sun; the front views are unchanged pixel for
@@ -579,6 +593,12 @@ with numpy, scipy and Pillow.
 
 ## Revision log
 
+- **2026-11-20:** the gutter, downpipes and snow guard share one galvanised
+  steel with the farm's other two buildings: `ID_GUTTER` goes from sRGB
+  120/122/121, roughness 0.50, metallic 0.40 to 134/137/137, 0.48, 0.60, and
+  the gutter gains light runs down its face beside its dirty belly.
+  Texture-only: geometry, UVs, relief heights, layout and the normal map are
+  unchanged.
 - **2026-11-20:** added the rainwater goods and the snow guard. A
   half-round galvanised gutter is painted on the rear fascia, and the roof's
   lowest 0.40 m maps onto a new rear eave band at 40 px/m that carries a

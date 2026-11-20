@@ -28,8 +28,10 @@ high on the tower.
   casings and fascias, on a low concrete plinth. Drip boards cover the board
   joints at 4.8 m and 8.8 m. Half-round galvanised gutters run along the
   three eaves, with a downpipe from the tower's west eave and one from the
-  lean-to's, and every roof slope carries a snow guard near its eave. There
-  is no ground or slab.
+  lean-to's, and every roof slope carries a snow guard near its eave. The
+  gutters, downpipes and snow guards are one galvanised steel, the same as
+  on the farm's barn and machine shed and darker than the bin's newer zinc.
+  There is no ground or slab.
 
 ## Category and secondary use
 
@@ -264,8 +266,9 @@ on the lean-to's roof either. A pipe for that gutter needs a module change
 
 Every roof slope carries a painted snow guard, as a Finnish metal roof does:
 two round tubes 0.5 m up the slope from the eave, on brackets on every
-second rib (0.5 m apart), in the roof sheet's own steel. It lives in the
-ROOF band. Every slope's V runs up from its own eave (`slab()`'s
+second rib (0.5 m apart), in the gutter's galvanised steel (`ID_GUTTER`) as
+a matched system. It lives in the ROOF band, which admits `ID_GUTTER` beside
+the sheet and the top flashing. Every slope's V runs up from its own eave (`slab()`'s
 `slope_v`), so the one painted rail lands 0.5 m above the eave on the
 tower's two slopes and on the lean-to's. The lean-to's matters most: it is
 the low roof beside the vehicle door, where the tractor and trailer stand.
@@ -463,7 +466,7 @@ and one emission mask shared by every tier and colour.
 | 312–576 | W2 | boards repeating every 256 rows, drip at each repeat's foot, gutters carrying the opposite ends |
 | 578–650 | BIN | one 1.00 m ring of corrugated wall, repeating every 64 rows, likewise |
 | 652–672 | FASCIA | white fascia board, a half-round galvanised gutter across its top 8 rows (661–669), hangers every 64 px; `PIPE_STRIP` = its middle five rows, 662.5–667.5 |
-| 674–774 | ROOF | profiled sheet, the snow guard 11 rows (0.5 m) up from the eave |
+| 674–774 | ROOF | profiled sheet, the galvanised snow guard 11 rows (0.5 m) up from the eave |
 | 780 up | unique | the four opening regions, the bin roof disc, the corner strip, nine flat patches |
 
 `check_bands()` fails the bake on a stray id in any band. `atlas.pad()` fills
@@ -524,19 +527,28 @@ Glass keeps a flat normal.
 | Concrete | 0.90 | 0 |
 | Roof | 0.46 | 0.25 |
 | Galvanised steel | 0.40 | 0.85 |
-| Gutters and downpipes (older zinc, sRGB 146/149/150) | 0.48 | 0.70 |
+| Gutters, downpipes and snow guards (`ID_GUTTER`, older zinc, sRGB 134/137/137) | 0.48 | 0.60 |
 | Flue | 0.62 | 0.30 |
 
 Dirt dulls all of them.
+
+**Gutter steel.** `ID_GUTTER` is the farm buildings' one galvanised
+rainwater steel, the same id colour and surface on `navetta_board_gable` and
+`konehalli_open_bays`, fixed in every variant. Measured over `PIPE_STRIP`
+after weathering: mean sRGB 128/131/131 in all three albedos, roughness 0.53,
+metallic 0.52 (ORM). The bin's `ID_GALV` (164/167/168, 0.40/0.85) and the
+flue are separate ids and unchanged.
 
 **Weathering** is `scripts/weathering.py` at its moderate level:
 
 - on S1: soil and algae at the plinth, splash on the boards' foot;
 - dirt on the drip boards and short runs under them;
 - the roof band's runs and chalking, and dirt between the ribs;
-- runs down the fascia board under the gutter, and a dirty gutter belly;
-- debris held above the snow guard, rust at its brackets and short runs
-  under them;
+- runs down the fascia board under the gutter; a dirty gutter belly and
+  light runs down its face from the lip, the same treatment as the farm's
+  other two gutters;
+- light dust on the snow guard and rust at its brackets; debris held above
+  it, rust on the sheet round the brackets and short runs under them;
 - sills, door feet and handles; dust blown out over the louvre;
 - on the bin: dust and white bloom on the zinc, runs under each ring's lap;
 - dust toward the bin roof's eave, and rust specks;
@@ -574,7 +586,8 @@ ORM, normal map and emission mask:
 | `grey_weathered` | unpainted boards gone silver | a lighter silvered grey | dark grey steel | as the walls |
 | `yellow_ochre` | yellow ochre | off-white | dark red-brown steel | as the walls |
 
-The bin, spout, collar, flue, plinth and glass never change. This is
+The bin, spout, collar, flue, plinth, glass and the galvanised gutters,
+downpipes and snow guards never change. This is
 CLAUDE.md's low-rise case, paint on shared geometry. The grey variant was
 darkened after the first sheet, where it read as pale painted grey rather
 than weathered timber. Every `.glb` references the default albedo; another
@@ -669,6 +682,13 @@ Checked here, in Blender 5.3.0, headless:
 - The day/night sheet across all three colours.
 - Gutters, downpipes and snow guards: before/after sheets at 20–120 m
   (LOD review); `preview.png` and `variants.png` regenerated and checked.
+- The shared galvanised steel pass of 2026-11-20: a texture-only change.
+  Triangle counts (1,110 / 874 / 526 / 478) and bounds match the sidecar;
+  the normal map and emission mask are byte-identical. `PIPE_STRIP`
+  measured as above (Texture set), within two sRGB levels of the other two
+  farm buildings. Before/after renders at 20 m (`LOD0`, oblique and rear,
+  noon) in `review/farm_gutter_colour_2026_11_20/` (local, git-ignored),
+  compared side by side with the other two, and `variants.png` looked at.
 
 - The mip4 stress renders re-run at 120 m (`LOD2`/`LOD3`, oblique and
   grazing, `review/farm_gutters_2026_11_20/viljakuivuri_tower/mip4/`): the
@@ -696,6 +716,15 @@ Recorded as known-good markers, not requirements.
 
 ## Revision log
 
+- **2026-11-20:** the gutters, downpipes and snow guards share one
+  galvanised steel with the farm's other two buildings: `ID_GUTTER` goes
+  from sRGB 146/149/150, 0.48/0.70 to 134/137/137, roughness 0.48, metallic
+  0.60, and the snow guard moves from the roof sheet's id onto it. Gutter
+  weathering is the shared treatment (dirty belly over four rows, light runs
+  on its face) and the snow guard gets light dust and rust at its brackets.
+  Texture-only: geometry, UVs, relief heights, layout, the normal map and
+  the emission mask are unchanged; the bin's galvanised id and the flue are
+  untouched.
 - **2026-11-20:** gutters, downpipes and snow guards. A painted half-round
   galvanised gutter on the three eave fascias (`PIPE_STRIP` named in
   `facade_atlas.py`, new `ID_GUTTER`); two modelled downpipes
