@@ -31,6 +31,12 @@ underside there is the bays' ceiling. The bays have no floor face: the ground
 is their floor, so the shell's bottom is the wall ring's own floor cap and
 the post's foot, nothing in between.
 
+The roof sheds its water to the rear, so the rear eave carries the gutter,
+painted on its fascia, and a downpipe stands at each end of the rear wall
+(scripts/downpipes.py), unioned like the rest. The snow guard above that
+eave is painted on the roof's lowest strip, which maps onto its own rows of
+the atlas (facade_atlas.py).
+
 The shed has no glazing and so no emission map (CLAUDE.md, Output Contract);
 UnlitAsset below is asset_build.Asset without the window wiring.
 """
@@ -55,6 +61,7 @@ ASSET = L.ASSET
 EXPORT_DIR = os.path.join(HERE, "export")
 sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "scripts"))
 import asset_build  # noqa: E402
+import downpipes as DP  # noqa: E402
 import model_facts  # noqa: E402
 from asset_build import bounds as _bounds, pivot_offset, to_object, union  # noqa: E402,F401
 from glb_images import strip_embedded_images  # noqa: E402
@@ -179,6 +186,54 @@ WALLS = [
     dict(name="rear", kind="outer", p0=(HX, HY), p1=(-HX, HY), items=[], u_off=7.7),
     dict(name="west", kind="outer", p0=(-HX, HY), p1=(-HX, -HY), items=[], u_off=2.9),
 ]
+
+
+# ----------------------------------------------------------------- downpipes
+# One at each end of the rear wall, DP.CORNER in from the corners: the gutter
+# runs the slab's full 11.3 m, the rear wall is blank, and a pipe at each end
+# halves the run each one drains and shows from both end walls' oblique views.
+#
+# The rear eave projects 0.20 m, so the module's swan-neck would leave the
+# soffit at DP.outlet(0.20) = 0.11 m and come back to the pipe's axis at
+# DP.OUT = 0.08 m: a 0.03 m jog, under two pixels at 20 m, for 32 more
+# triangles a pipe. These run straight up into the soffit instead, the
+# module's own course under a shallow overhang (outlet None).
+#
+# The module's shoe kicks its mouth 0.15 m out, which would reach 0.27 m off
+# the wall, past the 0.20 m eave: LOD0 and LOD1 would then be deeper than the
+# unbent LOD2 and LOD3, and asset_build refuses tiers whose extents differ.
+# ShedPipe kicks it SHOE_KICK instead, keeping the whole pipe under the eave.
+SHOE_KICK = 0.075
+DOWNPIPE_S = (DP.CORNER, 2 * HX - DP.CORNER)
+
+
+class ShedPipe(DP.Pipe):
+    """DP.Pipe with a shorter shoe, so the pipe stays under the 0.20 m eave."""
+
+    def path(self, bent=True):
+        p = super().path(bent)
+        if bent:
+            z0 = DP.SHOE[0]
+            p[-1] = (DP.OUT + SHOE_KICK, z0 - SHOE_KICK)
+        return p
+
+
+def shoe_reach():
+    """How far the shoe's mouth reaches off the wall: its axis, plus the
+    ring's half-width A along the mouth's normal, which is 45 degrees off
+    horizontal."""
+    return DP.OUT + SHOE_KICK + DP.A * math.sqrt(0.5)
+
+
+_REAR = next(w for w in WALLS if w["name"] == "rear")
+DOWNPIPES = [ShedPipe(_REAR["p0"], _REAR["p1"], s,
+                      lambda out: L.Z_EAVE_R - out * TAN) for s in DOWNPIPE_S]
+
+
+def pipe_mode(level):
+    """DP.MODES on every tier: the pipes cost little and LOD3 keeps them, as
+    the module does by default."""
+    return DP.MODES[level]
 
 
 def item_mode(kind, level):
@@ -335,6 +390,18 @@ def uv_ceiling(co):
 def uv_fascia_x(co):
     """Front and rear edges: U along x, V up from the slab's underside."""
     return ((co.x + 16.0) * PPM, L.FASC_Y0 + (co.z - z_under(co.y)) * PPM)
+
+
+def uv_fascia_rear(co):
+    """The rear (low) edge, where the gutter is: its own rows, U along x."""
+    return ((co.x + 16.0) * PPM, L.FASC_R_Y0 + (co.z - z_under(co.y)) * PPM)
+
+
+def uv_eave(co):
+    """The roof's lowest strip, carrying the snow guard: V up the slope from
+    the low edge at EAVE_RPM, continuing the rear fascia's rows past its top."""
+    return ((co.x + 16.0) * PPM,
+            L.EAVE_ROOF_Y0 + (L.Y_REAR - co.y) * L.SLOPE_F * L.EAVE_RPM)
 
 
 def uv_fascia_y(co):
@@ -524,6 +591,10 @@ def roof_slab():
     Once unioned, the part of the underside over the closed bay and the walls
     is inside the wall ring and disappears.
 
+    The top is two strips across y: the roof's lowest EAVE_STRIP_LEN up the
+    slope, with the snow guard, maps onto the rear eave band, the rest onto
+    the ROOF band. The rake edges carry that breakpoint.
+
     The breakpoints sit SOFFIT_IN inside the end walls' outer faces, not on
     them: an underside edge lying in a wall's plane left the exact boolean a
     sliver triangle of wall inside the slab at each end.
@@ -542,16 +613,19 @@ def roof_slab():
         a, b = xs[i], xs[i + 1]
         fn = uv_ceiling if i == 1 else uv_patch("soffit")
         B.face([(a, y0, zu(y0)), (a, y1, zu(y1)), (b, y1, zu(y1)), (b, y0, zu(y0))], fn)
-    B.face([(-xr, y0, zu(y0) + t), (xr, y0, zu(y0) + t), (xr, y1, zu(y1) + t),
-            (-xr, y1, zu(y1) + t)], uv_roof)
+    ys = y1 - L.EAVE_STRIP_LEN / L.SLOPE_F
+    B.face([(-xr, y0, zu(y0) + t), (xr, y0, zu(y0) + t), (xr, ys, zu(ys) + t),
+            (-xr, ys, zu(ys) + t)], uv_roof)
+    B.face([(-xr, ys, zu(ys) + t), (xr, ys, zu(ys) + t), (xr, y1, zu(y1) + t),
+            (-xr, y1, zu(y1) + t)], uv_eave)
     # front edge, walked +x along the bottom, back along the top
     B.face([(x, y0, zu(y0)) for x in xs] + [(xr, y0, zu(y0) + t), (-xr, y0, zu(y0) + t)],
            uv_fascia_x)
     B.face([(x, y1, zu(y1)) for x in reversed(xs)]
-           + [(-xr, y1, zu(y1) + t), (xr, y1, zu(y1) + t)], uv_fascia_x)
+           + [(-xr, y1, zu(y1) + t), (xr, y1, zu(y1) + t)], uv_fascia_rear)
     for x, ya, yb in ((-xr, y1, y0), (xr, y0, y1)):
         B.face([(x, ya, zu(ya)), (x, yb, zu(yb)), (x, yb, zu(yb) + t),
-                (x, ya, zu(ya) + t)], uv_fascia_y)
+                (x, ys, zu(ys) + t), (x, ya, zu(ya) + t)], uv_fascia_y)
     return B
 
 
@@ -593,6 +667,8 @@ def build_lod(level):
         parts.append(to_object(post(), "tmp_post"))
     if keeps_header(level):
         parts.append(to_object(header(), "tmp_header"))
+    parts += [to_object(B, name) for B, name in
+              DP.solids(DOWNPIPES, *pipe_mode(level), L.PIPE_STRIP, L.ATLAS)]
     obj = union(base, parts)
     obj.name = "{}_LOD{}".format(ASSET, level)
     obj.data.name = obj.name + "_mesh"
@@ -674,6 +750,24 @@ def check_layout():
         problems.append("the post is off the open span's centre")
     if abs(L.POST_W - T_WALL) > 1e-6:
         problems.append("the end wall's face and the post strip differ in width")
+    # downpipes: clear of the rear wall's corners (it has no openings), their
+    # tops inside the slab, their shoes under the eave so no tier's extents
+    # move; the snow guard inside its strip, and the strip on the roof and
+    # on the atlas
+    for pipe in DOWNPIPES:
+        name = "the rear downpipe at s %.2f" % pipe.s
+        problems += DP.problems(pipe, name, [])
+        if not pipe.top(DP.OUT) < pipe.under(DP.OUT + DP.A) + L.ROOF_T - 0.03:
+            problems.append("%s's top is not inside the roof slab" % name)
+    if shoe_reach() > L.REAR_OV - 0.002:
+        problems.append("the downpipes' shoes reach %.3f m off the wall, past the "
+                        "%.2f m rear eave" % (shoe_reach(), L.REAR_OV))
+    if not 0.0 < L.SNOW_S < L.EAVE_STRIP_LEN - 5.0 / L.EAVE_RPM:
+        problems.append("the snow guard is not inside the eave strip")
+    if L.Y_REAR - L.EAVE_STRIP_LEN / L.SLOPE_F <= L.Y_FRONT:
+        problems.append("the eave strip is longer than the roof")
+    if L.EAVE_ROOF_Y0 + L.EAVE_STRIP_LEN * L.EAVE_RPM > L.ATLAS:
+        problems.append("the eave strip runs off the atlas")
     return problems
 
 

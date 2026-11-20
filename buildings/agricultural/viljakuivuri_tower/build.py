@@ -21,7 +21,9 @@ fed by a sloping spout from high on the tower's back.
 
 Construction is a set of closed solids unioned with Blender's exact boolean:
 the tower body, the lean-to body, the two roof slabs, the bin's wall, its
-cone, its fill collar, the spout and the flue. The lean-to stands against the
+cone, its fill collar, the spout, the flue and the two downpipes
+(scripts/downpipes.py), which hang from the gutter painted on the eave
+fascias. The lean-to stands against the
 tower with its inner wall on the tower's east wall plane, and the union
 removes the two coincident walls. The result is the boundary of one empty
 volume, so no interior geometry can occur.
@@ -52,6 +54,7 @@ importlib.reload(L)
 ASSET = L.ASSET
 sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "scripts"))
 import asset_build  # noqa: E402
+import downpipes as DP  # noqa: E402
 import model_facts  # noqa: E402
 from asset_build import bounds as _bounds, to_object, union  # noqa: E402
 
@@ -152,6 +155,22 @@ LT_WALLS = {
 # continue the tower's boards across the joint between them.
 U_OFF = {"front": 0.0, "east": 5.3, "rear": 10.6, "west": 2.9,
          "lt_front": 5.0, "lt_east": 7.7, "lt_rear": 13.1, "lt_west": 0.0}
+
+# Downpipes (scripts/downpipes.py), from the gutters painted on the eave
+# fascias, both at the front end of their eave so the front and the catalog's
+# oblique see them. The tower's runs down its west wall: the lean-to and its
+# rakes cover the east wall all but 0.40 m at each end, too little for a pipe
+# CORNER from the tower's corner and clear of a 0.25 m rake, and the module
+# cannot land a pipe on the lean-to's roof, so the east eave's gutter has no
+# pipe of its own. The lean-to's runs down its outer, east wall.
+DOWNPIPE_SPOTS = [("west", 2 * TY - DP.CORNER), ("lt_east", DP.CORNER)]
+_ALL_WALLS = {**TOWER_WALLS, **LT_WALLS}
+DOWNPIPES = [
+    DP.eave_pipe(*TOWER_WALLS["west"][:2], DOWNPIPE_SPOTS[0][1], Z_T_EAVE, T_TAN,
+                 T_EAVE_OV),
+    DP.eave_pipe(*LT_WALLS["lt_east"][:2], DOWNPIPE_SPOTS[1][1], Z_LT_EAVE, LT_TAN,
+                 LT_EAVE_OV),
+]
 
 
 def top_fn(profile, length):
@@ -707,6 +726,8 @@ def build_lod(level):
                        uv_patch("galv")), "tmp_spout"),
         to_object(flue(SIDES["flue"][level]), "tmp_flue"),
     ]
+    parts += [to_object(B, name) for B, name in
+              DP.solids(DOWNPIPES, *DP.MODES[level], L.PIPE_STRIP, L.ATLAS)]
     obj = union(base, parts)
     obj.name = "{}_LOD{}".format(ASSET, level)
     obj.data.name = obj.name + "_mesh"
@@ -801,6 +822,13 @@ def check_layout():
         problems.append("the flue's sooted floor is down in the lean-to's roof")
     if FLUE_Z[0] > under - 0.1:
         problems.append("the flue's foot is not inside the lean-to")
+    # downpipes clear of their walls' corners and openings, and of the bin
+    for (w, _s), pipe in zip(DOWNPIPE_SPOTS, DOWNPIPES):
+        avoid = [(k,) + item_rects(k, s, z)[0][:2] for k, s, z in _ALL_WALLS[w][3]]
+        problems += DP.problems(pipe, "the %s downpipe" % w, avoid)
+        foot = pipe.point(0.0, DP.OUT, 0.0)
+        if math.hypot(foot.x - BX, foot.y - BY) < BIN_EAVE_R + DP.A + 0.3:
+            problems.append("the %s downpipe is within 0.3 m of the bin" % w)
     return problems
 
 

@@ -26,7 +26,10 @@ high on the tower.
   shallow ribbed cone roof. The spout runs into a fill collar at its apex.
 - **Finish:** red-ochre vertical board-and-batten with white corner boards,
   casings and fascias, on a low concrete plinth. Drip boards cover the board
-  joints at 4.8 m and 8.8 m. There are no gutters and no ground or slab.
+  joints at 4.8 m and 8.8 m. Half-round galvanised gutters run along the
+  three eaves, with a downpipe from the tower's west eave and one from the
+  lean-to's, and every roof slope carries a snow guard near its eave. There
+  is no ground or slab.
 
 ## Category and secondary use
 
@@ -130,10 +133,14 @@ at 0.25 m. These are kept short so they end 0.15 m behind the tower's face
 planes (see Construction). Soffits slope with the rafters. Every tier keeps
 every overhang.
 
+The three eave fascias (tower east and west, lean-to east) carry a painted
+0.125 m half-round gutter across their top, inside the projection above; the
+rakes and the bin's eave have none.
+
 ## Construction
 
-`build.py` builds nine closed solids and unions them with Blender's exact
-boolean (`asset_build.union`):
+`build.py` builds up to eleven closed solids and unions them with Blender's
+exact boolean (`asset_build.union`):
 
 - the tower body;
 - the lean-to body;
@@ -143,7 +150,8 @@ boolean (`asset_build.union`):
 - the bin's cone;
 - the fill collar;
 - the spout;
-- the flue.
+- the flue;
+- two downpipes (`scripts/downpipes.py`).
 
 Wall rings rise 0.10 m into their slabs. The union trims them at the soffits,
 removes the lean-to's buried west wall and the tower's east wall behind it,
@@ -175,6 +183,7 @@ Parameters the tiers derive from:
 | Bin ring | 1.00 m |
 | Spout | from (1.60, 2.20, 9.60) to the collar |
 | Flue | (3.20, −1.00), 7.00 m top |
+| Downpipes | `DOWNPIPE_SPOTS`: west wall s 4.75 m, lean-to east wall s 0.25 m |
 | Sides per round part | `SIDES` |
 
 ### The lean-to stands into the tower, not against it
@@ -221,9 +230,49 @@ where they meet the tower, stay in S1 entirely.
   a thin rim round a mouth lined and floored with soot 0.50 m down, its floor
   well above the slab, on every tier.
 
+### Gutters and downpipes
+
+The gutter is painted, not modelled: a 0.125 m half-round galvanised gutter
+across the top of the FASCIA band, which only the eave fascias sample (the
+rakes take the barge patch). So it runs along the tower's two eaves and the
+lean-to's low eave, and nowhere else; the bin has none.
+
+The downpipes are modelled with `scripts/downpipes.py` (`DP.eave_pipe`), each
+hung from its eave's gutter on a swan-neck into the soffit, standing 0.03 m
+off the wall on its clips, with a shoe at the foot. Their sides sample the
+gutter's middle rows, `PIPE_STRIP` in `facade_atlas.py`, so they take its
+galvanised colour and its hangers read as the pipe's clips.
+
+| Pipe | Wall | Where | Height |
+| --- | --- | --- | --- |
+| Tower | west eave wall | 0.25 m from the front corner (s 4.75 m) | soffit 10.32 m at the outlet to the shoe |
+| Lean-to | its outer, east wall | 0.25 m from the front corner (s 0.25 m) | soffit 3.52 m at the outlet to the shoe |
+
+Both stand at the front end of their eave, so the front view and the
+catalog's oblique see them. The module has no limit on a pipe's length, so
+the 10 m tower pipe is the same sweep as the lean-to's.
+
+**The tower's east eave gutter has no downpipe.** The lean-to and its rakes
+cover the tower's east wall all but 0.40 m at each end. A pipe there must
+stand `DP.CORNER` (0.25 m) from the tower's corner, which puts its far face
+at 0.20 m from the lean-to's wall plane, inside the lean-to's 0.25 m rake.
+`scripts/downpipes.py` only runs a pipe to the ground, so it cannot end one
+on the lean-to's roof either. A pipe for that gutter needs a module change
+(a foot on a lower roof), recorded here as pending.
+
+### Snow guards
+
+Every roof slope carries a painted snow guard, as a Finnish metal roof does:
+two round tubes 0.5 m up the slope from the eave, on brackets on every
+second rib (0.5 m apart), in the roof sheet's own steel. It lives in the
+ROOF band. Every slope's V runs up from its own eave (`slab()`'s
+`slope_v`), so the one painted rail lands 0.5 m above the eave on the
+tower's two slopes and on the lean-to's. The lean-to's matters most: it is
+the low roof beside the vehicle door, where the tractor and trailer stand.
+No geometry: `rintamamiestalo_porch` paints its snow guard the same way.
+
 ### What the catalog's shared kits do not apply to
 
-- **No downpipes**, because the building has no gutters.
 - **No handrails**, because both doors have their threshold one 0.10 m step
   above the ground.
 - **No roof safety kit.** The tower's 30° roof carries nothing serviced. The
@@ -248,28 +297,35 @@ where they meet the tower, stay in S1 entirely.
 - the spout falling at under 35°, or leaving the back wall near a corner,
   the louvre or a joint;
 - the flue within 0.4 m of the tower, its foot outside the lean-to, or its
-  soot floor down in the slab.
+  soot floor down in the slab;
+- a downpipe within `DP.CORNER` of its wall's ends or within `DP.CLEAR` of an
+  opening on its wall (`DP.problems`), or within 0.3 m of the bin's eave.
 
 ## Per-tier triangle counts
 
 | Tier | Triangles | Ceiling | What changes |
 | --- | --- | --- | --- |
-| `LOD0` | 944 | 12,000 | casing rings, reveals and closures on all eight openings; bin 16-sided, spout and flue 8-sided, collar 8 |
-| `LOD1` | 786 | 4,000 | each opening one recess the size of its casing; bin 12, spout and flue 6 |
-| `LOD2` | 486 | 1,500 | openings flush; coplanar boolean splits dissolved; bin 8, spout and flue 4, collar 6 |
-| `LOD3` | 444 | 500 | as `LOD2`, bin a 6-sided prism, collar 4 |
+| `LOD0` | 1,110 | 12,000 | casing rings, reveals and closures on all eight openings; bin 16-sided, spout and flue 8-sided, collar 8; downpipes 8-sided with swan-neck and shoe |
+| `LOD1` | 874 | 4,000 | each opening one recess the size of its casing; bin 12, spout and flue 6; downpipes 4-sided, bent |
+| `LOD2` | 526 | 1,500 | openings flush; coplanar boolean splits dissolved; bin 8, spout and flue 4, collar 6; downpipes 4-sided, straight |
+| `LOD3` | 478 | 500 | as `LOD2`, bin a 6-sided prism, collar 4; downpipes 3-sided, straight |
 
 What the bin and the spout cost together (bin wall, cone, collar and spout),
-and what the flue costs:
+the flue, and the two downpipes (each pipe's faces and its hole in the
+soffit, `DP.MODES`):
 
-| Tier | Bin, cone, collar, spout | Flue |
-| --- | --- | --- |
-| `LOD0` | 376 | 66 |
-| `LOD1` | 304 | 52 |
-| `LOD2` | 204 | 34 |
-| `LOD3` | 162 | 36 |
+| Tier | Bin, cone, collar, spout | Flue | Downpipes |
+| --- | --- | --- | --- |
+| `LOD0` | 376 | 66 | 166 |
+| `LOD1` | 304 | 52 | 88 |
+| `LOD2` | 204 | 34 | 40 |
+| `LOD3` | 162 | 36 | 34 |
 
-The building itself is about 500 triangles at `LOD0` and about 250 at `LOD3`.
+No tier drops the downpipes: every tier keeps both at the module's default
+`DP.MODES`, and `LOD3` stays under its ceiling with them (478 of 500).
+
+The building itself is about 500 triangles at `LOD0` and about 250 at `LOD3`,
+before the downpipes.
 
 **These counts are far under the ceilings, and that is correct, not something
 to pad.** The building is two boxes with two roofs and eight openings. The
@@ -307,6 +363,20 @@ Renders are in `review/farm_2026_11_20/viljakuivuri_tower/lod/`.
   facets differ from `LOD2`'s only when the two are blinked side by side.
 - **Corner boards** survive every tier as UV columns, and the drip joints'
   lines stay at the same heights.
+- **Gutters, downpipes and snow guards.** Reviewed before and after with
+  identical `review_asset.py` runs (`LOD0`/`LOD1` at 20 and 40 m, oblique,
+  front, rear and left (west); `LOD2`/`LOD3` at 70 and 120 m, oblique; noon
+  and reverse suns), compared with `review_compare.py` in
+  `review/farm_gutters_2026_11_20/viljakuivuri_tower/compare/`. At 20 m the
+  gutter reads as a raised grey roll along the top of each eave fascia, with
+  its shadow on the board below and its hangers; the tower's west pipe reads
+  down the whole wall with its swan-neck and shoe, and the lean-to's beside
+  its front corner board. At 40 m both pipes are still a clear line. The
+  snow guard reads as a double rail near each eave, strongest under the
+  reverse sun. Nothing else changed: bounds (9.70 × 8.80 × 12.19 m) and pivot
+  are as before on every tier. Every tier keeps both pipes (`DP.MODES`:
+  8-sided bent, 4-sided bent, 4-sided straight, 3-sided straight); past
+  70 m the swan-neck and shoe go, which is under two pixels.
 
 The six working views at `LOD0` and `LOD3` (orthographic front, rear, sides,
 top, and the raised three-quarter aerial) are in `views/`. Close views at 10 m
@@ -329,10 +399,10 @@ Measured with `scripts/validate_asset.py` on the exports:
 
 | Tier | Hidden triangles | Share | Vertical area |
 | --- | --- | --- | --- |
-| `LOD0` | 7 of 944 | 0.7 % | 0.0 m² |
-| `LOD1` | 7 of 786 | 0.9 % | 0.0 m² |
-| `LOD2` | 2 of 486 | 0.4 % | 0.0 m² |
-| `LOD3` | 3 of 444 | 0.7 % | 0.0 m² |
+| `LOD0` | 7 of 1,110 | 0.6 % | 0.0 m² |
+| `LOD1` | 5 of 874 | 0.6 % | 0.0 m² |
+| `LOD2` | 4 of 526 | 0.8 % | 0.0 m² |
+| `LOD3` | 2 of 478 | 0.4 % | 0.0 m² |
 
 The candidates are exterior surface the 40 sampled rays rarely escape:
 
@@ -361,7 +431,13 @@ on every tier.
 - **The tower's ridge has no ridge cap.** The roof band's top rows carry the
   flashing where the lean-to meets the tower wall; the tower's slopes sample
   only the band's lower rows.
-- **No snow guards.** Neither eave is over a door.
+- **The gutters are texture**: a painted half-round with its roll in the
+  height channel on the eave fascias, with no modelled outlet or end caps.
+  The downpipes are modelled (Construction).
+- **The tower's east eave gutter has no downpipe**; the module cannot place
+  one there (Construction, Gutters and downpipes).
+- **The snow guards are texture**: tubes and brackets painted in the roof
+  band, with relief in the height channel.
 - **Thresholds are a 0.10 m step**, with no ramp up to the tipping-pit door.
 - **Reveals are 0.15 m deep** (0.12 m at the louvre), a timber wall's, as in
   the rintamamiestalo houses.
@@ -386,8 +462,8 @@ and one emission mask shared by every tier and colour.
 | 0–312 | S1 | plinth, flashing, boards, the 4.80 m drip |
 | 312–576 | W2 | boards repeating every 256 rows, drip at each repeat's foot, gutters carrying the opposite ends |
 | 578–650 | BIN | one 1.00 m ring of corrugated wall, repeating every 64 rows, likewise |
-| 652–672 | FASCIA | white fascia board |
-| 674–774 | ROOF | profiled sheet |
+| 652–672 | FASCIA | white fascia board, a half-round galvanised gutter across its top 8 rows (661–669), hangers every 64 px; `PIPE_STRIP` = its middle five rows, 662.5–667.5 |
+| 674–774 | ROOF | profiled sheet, the snow guard 11 rows (0.5 m) up from the eave |
 | 780 up | unique | the four opening regions, the bin roof disc, the corner strip, nine flat patches |
 
 `check_bands()` fails the bake on a stray id in any band. `atlas.pad()` fills
@@ -424,6 +500,13 @@ derives the normal map:
 | Bin sheet laps | 3 mm |
 | Bin bolts | 6 mm |
 | Bin roof ribs | 16 mm |
+| Gutter, half-round | 62.5 mm (its radius) |
+| Gutter hangers | +4 mm |
+| Snow guard tubes | 35 mm |
+| Snow guard brackets | 30 mm |
+
+The roof band's heights that vary in V (snow guard, flashing) are scaled by
+its px/m over 64, so their slopes stay physical.
 
 The battens read raised in a 10 m render under the low morning sun: a lit
 edge toward the sun, a shadow away from it.
@@ -441,6 +524,7 @@ Glass keeps a flat normal.
 | Concrete | 0.90 | 0 |
 | Roof | 0.46 | 0.25 |
 | Galvanised steel | 0.40 | 0.85 |
+| Gutters and downpipes (older zinc, sRGB 146/149/150) | 0.48 | 0.70 |
 | Flue | 0.62 | 0.30 |
 
 Dirt dulls all of them.
@@ -450,7 +534,9 @@ Dirt dulls all of them.
 - on S1: soil and algae at the plinth, splash on the boards' foot;
 - dirt on the drip boards and short runs under them;
 - the roof band's runs and chalking, and dirt between the ribs;
-- runs down the fascia;
+- runs down the fascia board under the gutter, and a dirty gutter belly;
+- debris held above the snow guard, rust at its brackets and short runs
+  under them;
 - sills, door feet and handles; dust blown out over the louvre;
 - on the bin: dust and white bloom on the zinc, runs under each ring's lap;
 - dust toward the bin roof's eave, and rust specks;
@@ -581,6 +667,14 @@ Checked here, in Blender 5.3.0, headless:
   raised.
 - The glass measured against the band and its casing.
 - The day/night sheet across all three colours.
+- Gutters, downpipes and snow guards: before/after sheets at 20–120 m
+  (LOD review); `preview.png` and `variants.png` regenerated and checked.
+
+- The mip4 stress renders re-run at 120 m (`LOD2`/`LOD3`, oblique and
+  grazing, `review/farm_gutters_2026_11_20/viljakuivuri_tower/mip4/`): the
+  eave fascias average to a light grey line, gutter and board together, the
+  roof edge stays dark, and no colour leaks between the fascia and roof
+  bands.
 
 Pending, in the consumer:
 
@@ -599,3 +693,14 @@ Pending, in the consumer:
   texture export.
 
 Recorded as known-good markers, not requirements.
+
+## Revision log
+
+- **2026-11-20:** gutters, downpipes and snow guards. A painted half-round
+  galvanised gutter on the three eave fascias (`PIPE_STRIP` named in
+  `facade_atlas.py`, new `ID_GUTTER`); two modelled downpipes
+  (`scripts/downpipes.py`), down the tower's west wall and the lean-to's east
+  wall, both at the front end of their eave; the tower's east gutter has no
+  pipe, which the module cannot place there. A painted snow guard 0.5 m up
+  every roof slope. Triangles 944 / 786 / 486 / 444 → 1,110 / 874 / 526 /
+  478; bounds and pivot unchanged.

@@ -19,7 +19,10 @@ rafters, purlins and bare sheet. Those surfaces are darker, and their
 occlusion is painted.
 
 It is meant as yard filler on farmsteads. Colour variety comes from the
-variants. It has no gutters, chimney, roof plant, fences, ground or slab.
+variants. The roof sheds to the rear, so the rear (low) eave carries a
+galvanised half-round gutter, with a downpipe at each end of the rear wall
+and a snow guard (*lumieste*) on the roof just above the eave. It has no
+chimney, roof plant, fences, ground or slab.
 
 ## Category and secondary use
 
@@ -47,6 +50,9 @@ and the open end wall are each one board wall, 0.20 m thick.
 Heights: the roof's underside meets the front wall line at 4.00 m and the
 rear wall at 3.00 m. The front fascia's bottom edge is 4.07 m and its top
 4.32 m, the highest point. The header's underside is at 3.70 m.
+
+The downpipes stand inside the rear eave's 0.20 m (Construction), so they
+change neither figure.
 
 The pivot is at ground level, centred on the plan's bounding box (overhangs
 included). That puts it 0.10 m in front of the walls' centre. It is taken from
@@ -85,15 +91,18 @@ least 0.15 m under the roof.
 **0.40 m at the front eave and both rakes, 0.20 m at the rear eave**, which is
 the low edge. The rear is short because the roof falls toward it and a
 lean-to shed's back is often close to a field edge or another building. The
-slab is 0.25 m thick vertically. Its edge is a white fascia under a steel
-flashing in the roof colour. The underside is bare sheet over rafters and
-purlins (Texture set), not a boxed soffit.
+slab is 0.25 m thick vertically. At the front and rakes its edge is a white
+fascia under a steel flashing in the roof colour. At the rear, where the
+water leaves the roof, a half-round galvanised gutter hangs across the
+fascia's top under the sheet's drip edge, painted with its relief (Texture
+set). The underside is bare sheet over rafters and purlins (Texture set),
+not a boxed soffit.
 
 ## Construction
 
-`build.py` builds up to four closed solids and unions them with Blender's
-Exact boolean (`asset_build.union`): the wall ring, the roof slab, the post
-and the header.
+`build.py` builds up to six closed solids and unions them with Blender's
+Exact boolean (`asset_build.union`): the wall ring, the roof slab, the post,
+the header and the two downpipes.
 
 ### Open bays as a notch in the wall ring
 
@@ -127,6 +136,39 @@ put them in the wall planes, and the exact boolean then left a sliver
 triangle of wall inside the slab at each end. The front and rear edges carry
 the breakpoints, so the slab is closed with no T-junctions.
 
+The slab's top is two strips across y. The lowest 0.40 m up the slope from
+the rear edge maps onto the rear eave band, where the snow guard is painted;
+the rest maps onto the ROOF band (Texture set). The rake edges carry that
+breakpoint as well. The split costs 4 triangles on every tier and is kept
+through `LOD2`/`LOD3`'s coplanar dissolve, which delimits on UV seams.
+
+### Rainwater goods and snow guard
+
+- **Gutter:** painted, on the rear fascia only (Texture set). The front eave
+  and the rakes have none: a mono-pitch roof sheds its water off the low
+  edge.
+- **Downpipes:** modelled with `scripts/downpipes.py`, one at each end of the
+  rear wall, 0.25 m (`DP.CORNER`) in from its corners at s 0.25 and 10.25 m.
+  The rear wall is blank and the gutter runs the slab's full 11.30 m, so a
+  pipe at each end halves the run each drains, keeps the rear symmetrical,
+  and puts a pipe at the rear corner of both end walls' oblique views. They
+  stand `DP.GAP` 0.03 m off the boards on their axis 0.08 m out, sample the
+  gutter's middle rows (`PIPE_STRIP`), and run up 0.10 m into the slab.
+- **No swan-neck.** The module's swan-neck would leave the soffit at
+  `DP.outlet(0.20)` = 0.11 m and come back to the pipe's axis at 0.08 m: a
+  0.03 m jog, under two pixels at 20 m, for 32 more triangles a pipe at
+  `LOD0`. The pipes run straight up into the soffit instead, the module's
+  own course under a shallow overhang (`outlet` None).
+- **Shortened shoe.** The module's shoe kicks out 0.15 m, which would put
+  its mouth 0.27 m off the wall, past the 0.20 m eave. `LOD0`/`LOD1` (bent)
+  would then be deeper than `LOD2`/`LOD3` (straight), which
+  `asset_build.build_all()` refuses, and the pivot would move. `build.py`'s
+  `ShedPipe` subclass kicks it 0.075 m instead, so the mouth reaches 0.19 m:
+  every tier keeps the 11.30 × 6.60 × 4.32 m bounds and the pivot.
+- **Snow guard:** painted on the roof, two round tubes on brackets every
+  1.0 m, their foot 0.20 m up the slope from the edge, over the rear wall's
+  line. No geometry, as in `rintamamiestalo_porch`, which paints its own.
+
 ### Post and header
 
 The post is 0.20 m square, from the ground up into the slab, centred in the
@@ -150,24 +192,31 @@ breakpoints (`X_PART`, `T_WALL`, post and header boxes).
 - the roof slope matches the atlas;
 - the lid, post and header end inside the slab, and the header's ends are
   buried;
-- the post is centred, and the end wall's face matches the post strip.
+- the post is centred, and the end wall's face matches the post strip;
+- the downpipes clear the rear wall's corners (`downpipes.problems()`), their
+  tops end inside the slab and their shoes stay under the rear eave;
+- the snow guard lies inside the eave strip, and the strip fits the roof and
+  the atlas.
 
 ## Per-tier triangle counts
 
 | Tier | Triangles | Ceiling | What changes |
 | --- | --- | --- | --- |
-| `LOD0` | 234 | 12,000 | full-depth open bays, post, header; both doors with a casing ring and a 0.15/0.12 m recess |
-| `LOD1` | 218 | 4,000 | each door one recess the size of its casing |
-| `LOD2` | 158 | 1,500 | doors flush painted rectangles; coplanar boolean subdivisions dissolved (UV and material seams kept) |
-| `LOD3` | 134 | 500 | header dropped; bays, post and corner-board paint kept |
+| `LOD0` | 336 | 12,000 | full-depth open bays, post, header; both doors with a casing ring and a 0.15/0.12 m recess; two eight-sided downpipes with shoes |
+| `LOD1` | 272 | 4,000 | each door one recess the size of its casing; downpipes four-sided, shoes kept |
+| `LOD2` | 196 | 1,500 | doors flush painted rectangles; coplanar boolean subdivisions dissolved (UV and material seams kept); downpipes straight and four-sided |
+| `LOD3` | 166 | 500 | header dropped; bays, post and corner-board paint kept; downpipes three-sided |
 
 **`LOD0` is under the brief's 400–1200 estimate, and it is not padded.** The
 shed is three boxes' worth of plane, one roof slab and two doors. The walls
 are polygons, not grids, and everything shallow (battens, frames, braces,
 hinges, girts, rafters, ribs) is texture. The open bays cost about 40
 triangles at `LOD0`: three inner walls cut by the slab, and the ceiling
-face. The post and header cost about 30. Modelled trim (slab overhangs,
-post, header) is a few dozen triangles, far under the quarter-budget cap.
+face. The post and header cost about 30. The two downpipes cost about 98
+triangles at `LOD0`, 50 at `LOD1`, 34 at `LOD2` and 28 at `LOD3`, with the
+holes they leave in the rear soffit, and the roof's eave-strip split 4 on
+every tier. Modelled trim (slab overhangs, post, header, downpipes) is about
+150 triangles at `LOD0`, far under the quarter-budget cap.
 
 ## LOD review
 
@@ -183,7 +232,13 @@ denoising, AgX, exposure 0. Pairs compared:
 - `LOD2`/`LOD3` at 115/125 m, front and oblique, noon and reverse.
 
 Every working render is in the local, untracked
-`review/farm_2026_11_20/konehalli_open_bays/`.
+`review/farm_2026_11_20/konehalli_open_bays/`. The rainwater goods and snow
+guard were reviewed as a before/after pair with identical settings
+(`review_asset.py`, `review_compare.py`) in
+`review/farm_gutters_2026_11_20/konehalli_open_bays/`: `LOD0`/`LOD1` at 20
+and 40 m from the oblique, front and rear views, and `LOD2`/`LOD3` at 70 and
+120 m from the oblique and rear, under noon and reverse sun, with 9 m close
+renders of the rear.
 
 - **The open bays keep their full depth on every tier.** The brief allowed
   shallower bays at `LOD2` and painted rectangles at `LOD3`. Neither was
@@ -200,6 +255,18 @@ Every working render is in the local, untracked
   It does not show at a glance.
 - **The post stays on every tier.** It is the high-contrast feature that
   says "two bays", and it costs about 12 triangles.
+- **The downpipes stay on every tier**, in `downpipes.MODES`: eight sides
+  with the shoe at `LOD0`, four with the shoe at `LOD1`, four and straight
+  at `LOD2`, three and straight at `LOD3`. No tier drops them. They read as
+  two stood-off pipes at the rear corners at 20 and 40 m from the rear,
+  with their shadow on the boards under a rear sun. At 70 and 120 m they
+  are a one- or two-pixel line beside the corner boards.
+- **The gutter and the snow guard are texture**, on every tier alike.
+  The gutter reads as a raised, rounded grey band with a shadow line on the
+  white board under it, and the guard as two light tubes on brackets, from
+  9 to 40 m under a rear sun. Under the noon sun the rear is in shade and
+  the gutter reads as a darker band under the roof's edge. At 70 m and
+  beyond the eave reads as one grey line.
 
 Corner boards, posts and door casings keep their white on every tier, since
 they are flush UV strips or regions, not geometry.
@@ -238,7 +305,8 @@ The triangle counts did not change. The open bays' walls, ceiling and back wall 
 surface, reachable from the front, and the test agrees. The closed bay is
 solid: no interior is modelled, and its lid and the slab's underside over it
 are removed by the union. The only closure faces kept are the floor caps on
-the ground under the walls and the post.
+the ground under the walls and the post. The downpipes' tops are buried in
+the slab and removed by the union like the walls' lid.
 
 ## Known simplifications
 
@@ -249,8 +317,17 @@ the ground under the walls and the post.
   trapezoid ribs are normal-map relief on a flat slab.
 - The closed bay's floor is the ground, at the door thresholds. The footing
   strip is painted on the walls' foot, and the doorways cut it.
-- The rear eave has no gutter and no downpipes (brief). No roof safety kit:
-  nothing on the roof is serviced, so CLAUDE.md asks for none.
+- The gutter is painted on the rear fascia, with its relief in the normal
+  map; its ends are not modelled and stop at the slab's corners. Its
+  outlets are not modelled: the downpipes run up into the soffit 0.07 m
+  behind the fascia it is painted on.
+- The downpipes have no swan-neck, and their shoes kick out 0.075 m rather
+  than the module's 0.15 m, so they stay under the 0.20 m rear eave
+  (Construction).
+- The snow guard is painted on the roof's eave strip, tubes and brackets
+  alike, with no geometry.
+- No roof safety kit: nothing on the roof is serviced, so CLAUDE.md asks for
+  none.
 - The rake soffits use one flat patch. The front and rear soffits sample the
   ceiling band, so rafter ends show under the front eave.
 
@@ -267,11 +344,41 @@ from the bottom:
 | 376–396 | FASCIA | U along the edge, V = height over the underside, 64 px/m |
 | 398–498 | CEIL, the underside | U = x at 64 px/m; V = plan depth from the front edge, 96 rows over 6.60 m (14.5 px/m) |
 | 500–712 | INT, the bays' back wall | U along the wall, V = height, 64 px/m |
-| 716–985 | unique | bay side walls (5.80 × 4.20 m, one region for both, U = depth); door pair; pedestrian door; post strip; corner strip; flat patches (header, soffit, reveal, blank) |
+| 716–987 | unique | bay side walls (5.80 × 4.20 m, one region for both, U = depth); door pair; pedestrian door; post strip; corner strip; flat patches (header, soffit, reveal, blank) |
+| 988–1024 | EAVE_R, the rear eave | rear fascia (rows 990–1006, V = height over the underside, 64 px/m) with the gutter; then, from the roof's edge on, the roof's lowest 0.40 m up the slope at 40 px/m (rows 1006–1022) with the snow guard; U = x at 64 px/m |
 
 The ROOF and CEIL bands are stretched in V. Only the ribs, rafters and
 purlins vary there, and they are low-contrast. This is a recorded deviation
-from 64 px/m. Everything else is at 64 px/m.
+from 64 px/m. The eave strip is stretched less, at 40 px/m up the slope.
+Everything else is at 64 px/m.
+
+### Rear eave band
+
+The gutter and the snow guard are only on the rear eave, so the rear fascia
+and the roof's lowest strip have their own full-width band, in the rows that
+were free at the atlas's top. The two faces meet along the roof's edge, and
+their rows meet at row 1006, so the band runs on across the fold.
+
+- **Gutter:** half-round, 9 rows (0.14 m) under the fascia's top row, which
+  is the sheet's drip edge, as in `rintamamiestalo_porch`. Its roll is
+  height, a 70 mm radius, with a darker belly and three rows of shadow on
+  the board below. Hangers every 1.0 m. The downpipes' sides sample its
+  middle five rows, `PIPE_STRIP` (rows 998–1003).
+- **Snow guard:** the ROOF band runs at 14.3 px/m up the slope, where the
+  porch house's two tubes (about 5 and 4 cm, 2.5 cm apart) would be well
+  under a pixel each and smear into one shaded band. The roof's lowest
+  0.40 m therefore maps onto the eave band at 40 px/m, close to the porch
+  house's 41, where the tubes are 2 and 1.5 rows with a row between them.
+  The strip's rows are the ROOF band's own rows, resampled with every
+  channel and weathering field after the noise and the weather are in, so
+  the sheet, its ribs, the low edge's drip line and its dirt run on across
+  the slab's split without a seam. The tubes, the shadow under them and the
+  brackets go on top. Their heights are scaled by 40/64, as in the porch
+  house, so the slope the normal map derives from stays physical.
+- **Steel:** one galvanised id for the gutter, the downpipes and the guard,
+  the same in every variant: sRGB (120, 122, 121), roughness 0.50,
+  metallic 0.40, a dull zinc patina between the dark roof and the white
+  trim, so it suits all three roofs.
 
 ### Relief and the normal map
 
@@ -282,7 +389,10 @@ Relief heights for the normal map:
 - casings, corner boards and post arrises 20 mm;
 - door frames and braces 20 mm, hinges 26 mm, the drop bar 32 mm;
 - trapezoid sheet ribs 30 mm;
-- girts and rafters 40 mm.
+- girts and rafters 40 mm;
+- the gutter's roll 70 mm, its hangers 4 mm over it;
+- the snow guard's tubes 35 mm and brackets 30 mm, scaled by 40/64 in the
+  stretched strip.
 
 The girts and rafters are kept shallower than their real 50–150 mm. They
 are shaded surfaces seen in shade, and full depth only steepened their
@@ -307,6 +417,8 @@ is bare.
 - the footing as a plinth, splash on the boards' foot, posts, corner boards
   and door feet;
 - the roof's dirtier low edge and chalked high edge, runs down the fascia;
+- runs down the rear fascia from the gutter, a dirty belly; light dust on
+  the snow guard, rust at its brackets, debris held on the sheet above it;
 - settled dust inside the bays, thickest at the floor.
 
 ### Filtering
@@ -314,7 +426,10 @@ is bare.
 Whole-atlas mip4 stress renders (`scripts/review_atlas_mips.py`) of `LOD2`
 and `LOD3` were checked at 125 m: front, 75° grazing and rear, under noon.
 They showed no roof/trim colour leaks and no dark seams. The posts and
-corner boards stay white, and the bays stay black.
+corner boards stay white, and the bays stay black. The rear eave band was
+checked the same way (mip4, `LOD2`/`LOD3`, 120 m, rear and grazing, noon and
+reverse sun): the gutter, board and strip merge into one grey eave line,
+with no colour leak from the rows below it or from the atlas's bottom rows.
 
 Unique textures: five 1024² RGB PNGs, about 20 MB uncompressed, 4 MiB each
 in memory without mips. They are three albedos, one ORM and one normal map;
@@ -336,7 +451,8 @@ there is no emission mask to select glass with.
 
 The three variants are a low-rise farm building's ordinary colour range (3 of
 the 3–6 band). Geometry, UVs, ORM and normal are shared. The bays' bare
-interior, the footing and the hardware are the same in every variant.
+interior, the footing, the hardware and the galvanised gutter, downpipes
+and snow guard are the same in every variant.
 
 ## Night lighting
 
@@ -432,8 +548,13 @@ Checked here, in Blender:
   - 0 hidden triangles.
 
   Five 1024² RGB PNGs; the facts sidecar is consistent.
-- `check_layout()`.
+- `check_layout()`, including the downpipes' and the eave strip's checks.
 - The six working views at `LOD0` and `LOD3`.
+- The rainwater goods and snow guard, before/after with identical settings:
+  `LOD0`/`LOD1` at 20 and 40 m, `LOD2`/`LOD3` at 70 and 120 m, rear and
+  oblique, noon and reverse sun; the front views are unchanged pixel for
+  pixel, and `preview.png` (a front view) differs by at most 2/255. 9 m
+  close renders of the rear, and mip4 stress renders of the rear eave.
 - LOD pairs around 35, 70 and 120 m from front, oblique and rear, under two
   sun directions.
 - A four-state day cycle (morning, noon, dusk, night).
@@ -446,7 +567,8 @@ Pending in the consumer:
 
 - import, orientation and pivot on reimport in the engine;
 - LOD switching and shadows inside the bays;
-- mip and anisotropic filtering of the stretched ROOF and CEIL bands;
+- mip and anisotropic filtering of the stretched ROOF and CEIL bands and the
+  rear eave band;
 - performance.
 
 ## Tooling versions
@@ -454,3 +576,13 @@ Pending in the consumer:
 Blender 5.3.0 (built 2026-11-11), run headless (`--background`) throughout.
 The MCP addon was not used. Texture generation used the system Python 3
 with numpy, scipy and Pillow.
+
+## Revision log
+
+- **2026-11-20:** added the rainwater goods and the snow guard. A
+  half-round galvanised gutter is painted on the rear fascia, and the roof's
+  lowest 0.40 m maps onto a new rear eave band at 40 px/m that carries a
+  painted snow guard. Two downpipes (`scripts/downpipes.py`), straight into
+  the soffit with shortened shoes, stand at the rear wall's ends on every
+  tier. Triangles went from 234/218/158/134 to 336/272/196/166. Bounds and
+  pivot are unchanged.

@@ -20,8 +20,9 @@ glazing.
                              drip flashing, vertical board-and-batten
     y  258 ..  448   S2      gable triangles, z 3.80 .. 6.70: belt board,
                              board-and-batten
-    y  452 ..  772   ROOF    trapezoidal profiled steel, V stretched up the slope
-    y  774 ..  798   FASCIA  fascia board under the sheet's drip edge
+    y  452 ..  772   ROOF    trapezoidal profiled steel, V stretched up the slope,
+                             with the snow guard a short way up from the eave
+    y  774 ..  798   FASCIA  fascia board with its half-round gutter
     y  802 .. 1010   unique  the big door pair, the plank door, the loft hatch,
                              the byre window, the gable vent, the corner-board
                              strip, flat patches
@@ -89,6 +90,14 @@ ROOF_Y0, ROOF_H = 454.0, 316.0
 ROOF_SLOPE_LEN = 5.716
 FASC_Y0 = 776.0      # v of the fascia's bottom edge
 FASC_H = 20.0        # = the roof slab's 0.3125 m vertical thickness
+GUTTER_PX = 9.0      # the gutter's rows, hung across the fascia's top
+# The downpipes' sides span the middle five of them (scripts/downpipes.py)
+PIPE_STRIP = (FASC_Y0 + FASC_H - 1 - GUTTER_PX / 2.0 - 2.5,
+              FASC_Y0 + FASC_H - 1 - GUTTER_PX / 2.0 + 2.5)
+# The snow guard's lower tube, in metres up the slope from the eave's edge:
+# just inside the wall line (the 0.45 m eave is 0.52 m of slope), where its
+# brackets bear on the rafters over the wall.
+SNOW_GUARD = 0.60
 UNI_Y0 = 804.0
 
 # Region origins: the bottom-left of each opening's casing, in pixels.
@@ -149,7 +158,7 @@ FIXED = {
 BAND_IDS = {
     "S1": ((0, 256), {ID_PLINTH, ID_METAL, ID_WALL}),
     "S2": ((258, 448), {ID_TRIM, ID_WALL}),
-    "ROOF": ((452, 772), {ID_ROOF}),
+    "ROOF": ((452, 772), {ID_ROOF, ID_METAL}),
     "FASCIA": ((774, 798), {ID_METAL, ID_TRIM}),
 }
 
@@ -162,6 +171,9 @@ SASH_H = 0.012       # sash frame, proud of the glass
 FRAME_H = 0.022      # the door leaves' frame and brace boards
 HINGE_H = 0.028      # strap hinges on the frame
 RIB_H = 0.022        # the roof sheet's trapezoidal ribs
+GUTTER_R = 0.070     # half-round gutter's radius
+TUBE_H = 0.045       # snow-guard tubes, over the sheet's pans
+GUARD_BRACKET_H = 0.040  # snow-guard brackets, on the rib crests
 
 
 # ============================================================ painting
@@ -240,7 +252,11 @@ def paint_roof(c):
     """Trapezoidal profiled steel, ribs every RIB_PITCH px running down the
     slope, V stretched (ROOF_H rows over ROOF_SLOPE_LEN metres). Ribs vary in
     U only; relief that varies in V is scaled by the band's px/m over PPM so
-    the slope the normal map derives from stays physical."""
+    the slope the normal map derives from stays physical.
+
+    The snow guard is two round tubes across the whole band, on brackets
+    through every second rib's crest (0.5 m apart, a period that divides the
+    atlas), in the gutter's steel (ID_METAL) as a matched system."""
     y0, h = ROOF_Y0, ROOF_H
     c.paint(0, ATLAS, y0 - 2, y0 + h + 2, ID_ROOF, 1.0, height=0.0)
     sy, sx, Y, X = c.field(0, ATLAS, y0 - 2, y0 + h + 2)
@@ -256,23 +272,62 @@ def paint_roof(c):
     k = (ROOF_H / ROOF_SLOPE_LEN) / PPM
     v = Y - y0
     shade = np.where(v < 3, shade * 0.85, shade)                    # eave drip edge
+    # snow guard
+    g = round(SNOW_GUARD * ROOF_H / ROOF_SLOPE_LEN)
+    guard = np.zeros(v.shape, bool)
+    for t0, t1 in ((g, g + 2.0), (g + 3.0, g + 4.5)):
+        inside = (v >= t0) & (v < t1)
+        tube = TUBE_H * k * np.sqrt(np.clip(
+            1.0 - (2.0 * (v - t0) / (t1 - t0) - 1.0) ** 2, 0.0, 1.0))
+        height = np.where(inside, np.maximum(height, tube), height)
+        shade = np.where(inside, 1.0, shade)
+        guard |= inside
+    shade = np.where((v >= g - 3) & (v < g - 1), shade * 0.80, shade)   # under the tubes
+    ao = np.where((v >= g - 3) & (v < g + 4.5), np.minimum(ao, 0.85), ao)
+    xb = X % (2.0 * RIB_PITCH)
+    bracket = (xb >= 1.5) & (xb < 3.5) & (v >= g - 3) & (v < g + 4.5)
+    height = np.where(bracket, GUARD_BRACKET_H * k, height)
+    shade = np.where(bracket, 0.75, shade)
+    guard |= bracket
     ridge = v >= h - 12
     height = np.where(ridge, 0.010 * k + 0.4 * height, height)      # ridge flashing
     shade = np.where(ridge, 0.97, shade)
     shade = np.where((v >= h - 12) & (v < h - 11), shade * 0.85, shade)
     c.height[sy, sx], c.shade[sy, sx], c.ao[sy, sx] = height, shade, ao
+    c.mid[sy, sx] = np.where(guard, ID_METAL, ID_ROOF)
 
 
 def paint_fascia(c):
-    """The eave's vertical edge: a fascia board in the trim colour, the roof
-    sheet's folded drip edge over its top row. No gutter: the brief has none."""
+    """The eave's vertical edge: a fascia board in the trim colour, with a
+    half-round steel gutter hung across its top, under the roof sheet's drip
+    edge, as on rintamamiestalo_porch.
+
+    The band's top row is the roof's edge, where the water leaves the roof,
+    so the gutter sits right under it and the board shows below. The gutter
+    is ID_METAL, which follows the roof colour: a matched rainwater system.
+    """
     y0 = FASC_Y0
-    top = y0 + FASC_H
+    top = y0 + FASC_H                       # the roof's edge
     c.paint(0, ATLAS, y0 - 2, top + 2, ID_TRIM, 1.0, height=0.0)
-    c.bevel(0, ATLAS, y0, top - 2, 0.012, 1.0, axes="y")
-    c.paint(0, ATLAS, y0 - 2, y0 + 1, ID_TRIM, 0.88)
-    c.paint(0, ATLAS, top - 2, top + 2, ID_METAL, 0.85, height=0.015)
-    c.mul(0, ATLAS, top - 4, top - 2, 0.86, ao=0.82)                # under the drip
+    c.paint(0, ATLAS, y0 - 2, y0 + 1, ID_TRIM, 0.88)      # board's lower edge
+    # half-round gutter: belly at the bottom, rolled lip at the top. Its roll
+    # is height; only the belly's underside is darker.
+    gh = GUTTER_PX
+    g0 = top - 1 - gh
+    c.paint(0, ATLAS, g0, top - 1, ID_METAL, 1.0)
+    sy, sx, Y, _ = c.field(0, ATLAS, g0, top - 1)
+    u = 2.0 * (Y - g0) / gh - 1.0
+    c.height[sy, sx] = GUTTER_R * np.sqrt(np.clip(1.0 - u * u, 0.0, 1.0))
+    c.paint(0, ATLAS, g0, g0 + 1, ID_METAL, 0.80)
+    c.paint(0, ATLAS, top - 1, top + 2, ID_METAL, 0.80, height=0.0)  # roof sheet's drip edge
+    c.ao[c.sl(0, ATLAS, g0 - 3, top + 2)] = 0.9
+    for k, f in enumerate((0.92, 0.86, 0.80)):            # occluded under the gutter
+        c.mul(0, ATLAS, g0 - 3 + k, g0 - 2 + k, f)
+    # hangers every 1.0 m, a spacing that divides the atlas width
+    sy, sx, _, X = c.field(0, ATLAS, g0 + 2, top - 1)
+    hang = (X % 64.0) < 2.0
+    c.shade[sy, sx] = np.where(hang, c.shade[sy, sx] * 0.80, c.shade[sy, sx])
+    c.height[sy, sx] = np.where(hang, c.height[sy, sx] + 0.004, c.height[sy, sx])
 
 
 def paint_leaves(c, x0, x1, y0, y1, n):
@@ -407,9 +462,23 @@ def weather(c):
     w.add("D", 0, ATLAS, ROOF_Y0 - 2, ROOF_Y0 + ROOF_H + 2, lambda Y, X, nz: 0.10 * (
         ((X % RIB_PITCH) >= 5.0) & ((X % RIB_PITCH) < 7.0)), roof)
     w.add("R", 0, ATLAS, ROOF_Y0 - 2, ROOF_Y0 + 3, lambda Y, X, nz: 0.12 * nz("speck"), roof)
-    # the fascia: water off the sheet's edge runs down it
-    w.runs(0, ATLAS, FASC_Y0 - 2, FASC_Y0 + FASC_H - 2, (ID_TRIM,), 0.20, fall=6.0,
-           lo=0.4, hi=1.6)
+    # the snow guard: debris held above it, rust at its brackets and in short
+    # runs on the sheet under them
+    g = ROOF_Y0 + round(SNOW_GUARD * ROOF_H / ROOF_SLOPE_LEN)
+
+    def bk(X):
+        return ((X % (2.0 * RIB_PITCH)) >= 1.0) & ((X % (2.0 * RIB_PITCH)) < 4.0)
+
+    w.add("D", 0, ATLAS, g + 4.5, g + 16.0, lambda Y, X, nz: 0.25 * nz("blotch")
+          * (1.0 - (Y - g - 4.5) / 11.5), roof)
+    w.add("R", 0, ATLAS, g - 3, g + 4.5, lambda Y, X, nz: 0.18 * bk(X), (ID_METAL,))
+    w.add("R", 0, ATLAS, g - 14, g - 3, lambda Y, X, nz: 0.15 * bk(X)
+          * (1.0 - (g - 3 - Y) / 11.0) * atlas.smoothstep(-0.5, 0.8, nz("runs")), roof)
+    # the fascia: runs down the board from the gutter, a dirty belly
+    g0 = FASC_Y0 + FASC_H - 1 - GUTTER_PX
+    w.add("D", 0, ATLAS, FASC_Y0 - 2, g0, 0.06, (ID_TRIM,))
+    w.runs(0, ATLAS, FASC_Y0 - 2, g0, (ID_TRIM,), 0.22, fall=6.0, lo=0.4, hi=1.6)
+    w.add("D", 0, ATLAS, g0, g0 + 4, lambda Y, X, nz: 0.10 + 0.12 * nz("blotch"), (ID_METAL,))
     for kind, (wd, h, cs, cb, ct) in OPENINGS.items():
         if kind == "vent":
             continue

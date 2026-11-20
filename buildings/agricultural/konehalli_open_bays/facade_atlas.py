@@ -22,12 +22,22 @@ The atlas is a trim sheet. The full-width bands tile in U:
     y  376 ..  396   FASCIA   the roof slab's edge: white board, sheet flashing
     y  398 ..  498   CEIL     the roof's underside over the open bays, V = depth
     y  500 ..  712   INT      the bays' back wall: footing, bare boards, girts
-    y  716 .. 1000   unique   bay side walls, both doors, post and corner
+    y  716 ..  987   unique   bay side walls, both doors, post and corner
                               strips, flat patches
+    y  988 .. 1024   EAVE_R   the rear (low) eave: its fascia with the gutter,
+                              then the roof's lowest 0.40 m with the snow guard
 
 The open bays are outside surface of the closed shell, seen in shade, so their
 boards are unpainted and their occlusion is painted: the back wall evenly
 dark, the side walls and the ceiling darkening with depth from the front.
+
+The roof sheds its water to the rear, so only the rear eave has a gutter, and
+the snow guard runs along the roof above it. The ROOF band's 14 px a metre up
+the slope would smear a rail two tubes thick, so the roof's lowest strip maps
+onto EAVE_R instead, at 40 px a metre, directly above the rear fascia: the two
+faces meet along the roof's edge and so do their rows. The strip is the ROOF
+band's own rows resampled (paint, weather and all) with the rail on top, so
+the seam where the slab's top face changes band does not show.
 """
 
 import os
@@ -105,6 +115,20 @@ CORNER = (704.0, UNI_Y0, CW * PPM, Z_WALL_MAX * PPM)
 PATCHES = {name: (722.0 + 14.0 * i, UNI_Y0, 8.0, 8.0) for i, name in enumerate(
     ("header", "soffit", "reveal", "blank"))}
 
+# The rear eave band: the rear fascia (V = height over the slab's underside, as
+# FASCIA) with the gutter across its top, and from its top row on, the roof's
+# lowest EAVE_STRIP_LEN up the slope from the edge at EAVE_RPM rows a metre.
+FASC_R_Y0 = 990.0            # v of the rear fascia's bottom edge
+EAVE_ROOF_Y0 = FASC_R_Y0 + FASC_H                 # v of the roof's low edge
+EAVE_STRIP_LEN = 0.40        # metres of slope the strip covers
+EAVE_RPM = 40.0              # rows per metre up the slope (16 rows)
+GUTTER_PX = 9.0              # the gutter's rows, under the fascia's top row
+# The downpipes' sides span the gutter's middle five rows (scripts/downpipes.py)
+PIPE_STRIP = (EAVE_ROOF_Y0 - 1 - GUTTER_PX / 2.0 - 2.5,
+              EAVE_ROOF_Y0 - 1 - GUTTER_PX / 2.0 + 2.5)
+SNOW_S = 0.20                # the snow guard's lower tube, up the slope from the
+                             # edge: over the rear wall's line
+
 # Board-and-batten: battens over the board joints every 0.2 m. 12.8 px divides
 # the atlas width 80 times, so the bands still wrap.
 BATTEN_PITCH = 0.20 * PPM
@@ -119,14 +143,18 @@ def item_size_px(kind):
 # ----------------------------------------------------------- material ids
 ID_WALL, ID_TRIM, ID_FOOT, ID_ROOF, ID_DOOR, ID_INNER, ID_SHEET, ID_BLANK, ID_HW = (
     0, 1, 2, 3, 4, 5, 6, 7, 8)
+ID_GUTTER = 9                # gutter, downpipes and snow guard: galvanised steel
 # (roughness, metallic). Red ochre (punamulta) is a very matte paint; the
 # sheet's underside is bare galvanised steel gone dull under dust and
 # condensation, kept nearly dielectric: a brighter metallic underside reflected
-# the sky into the open bays and lit their ceiling like a skylight.
+# the sky into the open bays and lit their ceiling like a skylight. The
+# rainwater goods and the snow guard are galvanised steel gone dull: a light
+# grey, part metallic, rough with its zinc patina, the same in every variant.
 SURFACE = {
     ID_WALL: (0.84, 0.0), ID_TRIM: (0.62, 0.0), ID_FOOT: (0.90, 0.0),
     ID_ROOF: (0.50, 0.10), ID_DOOR: (0.80, 0.0), ID_INNER: (0.88, 0.0),
     ID_SHEET: (0.72, 0.15), ID_BLANK: (0.95, 0.0), ID_HW: (0.55, 0.60),
+    ID_GUTTER: (0.50, 0.40),
 }
 
 # ---------------------------------------------------------------- palettes
@@ -143,7 +171,7 @@ VARIANTS = {
 DEFAULT_VARIANT = "red_ochre"
 FIXED = {
     ID_FOOT: (146, 144, 138), ID_INNER: (104, 90, 72), ID_SHEET: (88, 90, 90),
-    ID_BLANK: (52, 52, 52), ID_HW: (44, 44, 44),
+    ID_BLANK: (52, 52, 52), ID_HW: (44, 44, 44), ID_GUTTER: (120, 122, 121),
 }
 
 # Which ids each tiling band may contain.
@@ -153,6 +181,7 @@ BAND_IDS = {
     "FASCIA": ((376, 396), {ID_TRIM, ID_ROOF}),
     "CEIL": ((398, 498), {ID_SHEET, ID_INNER}),
     "INT": ((500, 712), {ID_FOOT, ID_INNER}),
+    "EAVE_R": ((988, 1024), {ID_TRIM, ID_ROOF, ID_GUTTER}),
 }
 
 # ---------------------------------------------------------------- relief
@@ -164,6 +193,9 @@ FRAME_H = 0.020      # a door's frame and brace boards over its planks
 RIB_H = 0.030        # profiled sheet's trapezoid ribs
 GIRT_H = 0.040       # girts across the inside of the walls (kept shallow)
 RAFTER_H = 0.040     # rafters under the sheet (kept shallow; see notes.md)
+GUTTER_R = 0.070     # half-round gutter's radius, proud of the rear fascia
+SNOW_TUBE_H = 0.035  # the snow guard's tubes over the sheet
+SNOW_BRACKET_H = 0.030
 
 # Occlusion in the open bays: what the deepest surfaces keep of the shade and
 # AO a surface in the open would have.
@@ -249,8 +281,9 @@ def paint_roof(c):
 
 
 def paint_fascia(c):
-    """The slab's edge all round: a white board under the sheet's folded
-    flashing, which takes the roof's colour. No gutter: the shed has none."""
+    """The slab's front and rake edges: a white board under the sheet's
+    folded flashing, which takes the roof's colour. The rear edge, where the
+    water leaves the roof, is paint_rear_fascia()'s."""
     y0 = FASC_Y0
     top = y0 + FASC_H
     c.paint(0, ATLAS, y0 - 2, top + 2, ID_TRIM, 1.0, 1.0, height=0.0)
@@ -258,6 +291,106 @@ def paint_fascia(c):
     c.mul(0, ATLAS, y0 - 2, y0 + 1, 0.86)                       # board's lower edge
     c.paint(0, ATLAS, top - 4.0, top + 2, ID_ROOF, 1.0, 1.0, height=0.012)
     c.mul(0, ATLAS, top - 5.0, top - 4.0, 0.78, ao=0.80)        # under the flashing
+
+
+def paint_rear_fascia(c):
+    """The rear (low) edge: the white fascia board with a half-round steel
+    gutter hung across its top, under the sheet's drip edge, as in
+    rintamamiestalo_porch. The band's top row is the roof's edge, where the
+    water leaves it, and the rows above it are the roof (paint_eave_roof)."""
+    y0 = FASC_R_Y0
+    top = EAVE_ROOF_Y0
+    c.paint(0, ATLAS, y0 - 2, top, ID_TRIM, 1.0, 1.0, height=0.0)
+    c.bevel(0, ATLAS, y0, top - 1.0, CASING_H, 1.0, axes="y")
+    c.mul(0, ATLAS, y0 - 2, y0 + 1, 0.86)                       # board's lower edge
+    # half-round gutter: belly at the bottom, rolled lip at the top. Its roll
+    # is height; only the belly's underside is darker.
+    gh = GUTTER_PX
+    g0 = top - 1 - gh
+    c.paint(0, ATLAS, g0, top - 1, ID_GUTTER, 1.0, 1.0)
+    sy, sx, Y, _ = c.field(0, ATLAS, g0, top - 1)
+    u = 2.0 * (Y - g0) / gh - 1.0
+    c.height[sy, sx] = GUTTER_R * np.sqrt(np.clip(1.0 - u * u, 0.0, 1.0))
+    c.paint(0, ATLAS, g0, g0 + 1, ID_GUTTER, 0.80)
+    c.paint(0, ATLAS, top - 1, top, ID_ROOF, 0.80, height=0.0)  # the sheet's drip edge
+    sy, sx = c.sl(0, ATLAS, g0 - 3, top)
+    c.ao[sy, sx] = np.minimum(c.ao[sy, sx], 0.9)
+    for k, f in enumerate((0.92, 0.86, 0.80)):            # occluded under the gutter
+        c.mul(0, ATLAS, g0 - 3 + k, g0 - 2 + k, f)
+    # hangers every 1.0 m, a spacing that divides the atlas width
+    sy, sx, _, X = c.field(0, ATLAS, g0 + 2, top - 1)
+    hang = (X % 64.0) < 2.0
+    c.shade[sy, sx] = np.where(hang, c.shade[sy, sx] * 0.80, c.shade[sy, sx])
+    c.height[sy, sx] = np.where(hang, c.height[sy, sx] + 0.004, c.height[sy, sx])
+
+
+def paint_eave_roof(c):
+    """The roof's lowest EAVE_STRIP_LEN, from the edge up, at EAVE_RPM rows a
+    metre, and the snow guard on it.
+
+    Every channel and weathering field is resampled from the ROOF band's rows
+    at the same slope distance, after the noise and the weather are in, so
+    the strip is the same sheet at a finer V and the slab's top face changes
+    band without a seam. Then the guard goes on top: two round tubes on
+    brackets every metre, as rintamamiestalo_porch paints its own at its
+    roof band's 41 px a metre. The band varies in V here, so the heights are
+    scaled by EAVE_RPM / PPM to keep the slope the normal map derives from
+    physical. Runs to the atlas's top row: nothing lies above it.
+    """
+    ss = c.ss
+    r0 = c._idx(EAVE_ROOF_Y0)
+    rows = np.arange(r0, ATLAS * ss)
+    Y = (rows + 0.5) / ss
+    s = (Y - EAVE_ROOF_Y0) / EAVE_RPM                      # metres up the slope
+    src = (ROOF_Y0 + s * (ROOF_H / ROOF_SLOPE_LEN)) * ss - 0.5
+    i0 = np.floor(src).astype(np.int64)
+    f = (src - i0).astype(np.float32)[:, None]
+    i1 = i0 + 1
+    near = np.where(f[:, 0] < 0.5, i0, i1)
+    c.mid[r0:] = c.mid[near]
+    for a in (c.shade, c.ao, c.height):
+        a[r0:] = a[i0] * (1.0 - f) + a[i1] * f
+    w = c.weather
+    for k in w.f:
+        w.f[k][r0:] = w.f[k][i0] * (1.0 - f) + w.f[k][i1] * f
+
+    rpm = EAVE_RPM
+    k = rpm / PPM
+    y0 = EAVE_ROOF_Y0
+    g = round(SNOW_S * rpm)
+    sy, sx, Y, X = c.field(0, ATLAS, y0, ATLAS)
+    v = Y - y0
+    mid, height = c.mid[sy, sx], c.height[sy, sx]
+    shade, ao = c.shade[sy, sx], c.ao[sy, sx]
+    rail = np.zeros(Y.shape, bool)
+    for t0, t1 in ((g, g + 2.0), (g + 3.0, g + 4.5)):
+        inside = (v >= t0) & (v < t1)
+        tube = SNOW_TUBE_H * k * np.sqrt(np.clip(
+            1.0 - (2.0 * (v - t0) / (t1 - t0) - 1.0) ** 2, 0, 1))
+        height = np.where(inside, tube, height)
+        shade = np.where(inside, 1.0, shade)
+        rail |= inside
+    shade = np.where((v >= g - 3) & (v < g - 1), shade * 0.80, shade)   # under the tubes
+    shade = np.where((v >= g + 2.0) & (v < g + 3.0), shade * 0.85, shade)  # between them
+    ao = np.where((v >= g - 3) & (v < g + 4.5), np.minimum(ao, 0.85), ao)
+    # brackets every metre, over the rafters (paint_ceiling)
+    xm = X % PPM
+    bracket = (xm >= 0.6) & (xm < 2.6) & (v >= g - 3) & (v < g + 4.5)
+    height = np.where(bracket, SNOW_BRACKET_H * k, height)
+    shade = np.where(bracket, 0.75, shade)
+    rail |= bracket
+    c.mid[sy, sx] = np.where(rail, ID_GUTTER, mid)
+    c.height[sy, sx], c.shade[sy, sx], c.ao[sy, sx] = height, shade, ao
+    # the rail's own weather replaces the sheet's: light dust, rust at the
+    # brackets; debris held on the sheet just above it
+    for key in w.f:
+        w.f[key][sy, sx] = np.where(rail, 0.0, w.f[key][sy, sx])
+    w.add("D", 0, ATLAS, y0 + g - 3, y0 + g + 4.5,
+          lambda Y, X, nz: 0.06 + 0.08 * nz("blotch"), (ID_GUTTER,))
+    w.add("R", 0, ATLAS, y0 + g - 3, y0 + g + 4.5, lambda Y, X, nz: 0.15 * (
+        ((X % PPM) >= 0.6) & ((X % PPM) < 2.6)), (ID_GUTTER,))
+    w.add("D", 0, ATLAS, y0 + g + 4.5, y0 + g + 10.0, lambda Y, X, nz: 0.22
+          * nz("blotch") * (1.0 - (Y - y0 - g - 4.5) / 5.5), (ID_ROOF,))
 
 
 def paint_ceiling(c):
@@ -439,7 +572,7 @@ def weather(c):
     The outer wall band's V is height from the ground, the roof band's is
     slope from the low edge, so splash and the dirtier eave land the same on
     every face. Inside the bays nothing washes the dust off."""
-    w = weathering.Weather(c, steel=(ID_ROOF, ID_SHEET, ID_HW))
+    w = weathering.Weather(c, steel=(ID_ROOF, ID_SHEET, ID_HW, ID_GUTTER))
     w.grime()
     w.fade((ID_WALL, ID_TRIM, ID_DOOR))
     w.wash((ID_WALL,))
@@ -453,6 +586,12 @@ def weather(c):
     # fascia: runs down the board from the flashing
     w.runs(0, ATLAS, FASC_Y0 - 2, FASC_Y0 + FASC_H - 4, (ID_TRIM,), 0.18, fall=6.0,
            lo=0.4, hi=1.6)
+    # rear fascia: runs down the board from the gutter, a dirty belly
+    g0 = EAVE_ROOF_Y0 - 1 - GUTTER_PX
+    w.add("D", 0, ATLAS, FASC_R_Y0 - 2, g0, 0.06, (ID_TRIM,))
+    w.runs(0, ATLAS, FASC_R_Y0 - 2, g0, (ID_TRIM,), 0.22, fall=6.0, lo=0.4, hi=1.6)
+    w.add("D", 0, ATLAS, g0, g0 + 4, lambda Y, X, nz: 0.10 + 0.12 * nz("blotch"),
+          (ID_GUTTER,))
     # inside the bays: dust settled on everything, thicker toward the floor
     for x0, x1, yg, yt in ((0, ATLAS, INT_Y0, INT_Y0 + m(INT_TOP) + 2),
                            (SIDE[0] - 2, SIDE[0] + SIDE[2] + 2, SIDE[1],
@@ -482,6 +621,7 @@ def paint(ss=atlas.SS):
     paint_s1(c)
     paint_roof(c)
     paint_fascia(c)
+    paint_rear_fascia(c)
     paint_ceiling(c)
     paint_int(c)
     paint_side(c)
@@ -490,7 +630,6 @@ def paint(ss=atlas.SS):
     paint_post(c)
     paint_corner(c)
     paint_patches(c)
-    c.check_bands(BAND_IDS)
 
     wear = 0.025 * atlas.noise(c, 3, 40.0) + 0.015 * atlas.noise(c, 4, 8.0)
     c.shade *= 1.0 + wear
@@ -506,6 +645,8 @@ def paint(ss=atlas.SS):
     c.shade[concrete] *= 1.0 + 0.03 * pores[concrete]
     c.height[concrete] += 0.0006 * pores[concrete]
     weather(c)
+    paint_eave_roof(c)              # resamples the finished ROOF band
+    c.check_bands(BAND_IDS)
     c.pad()
     return c
 

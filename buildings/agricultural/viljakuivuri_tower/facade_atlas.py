@@ -21,8 +21,10 @@ A trim sheet, not one picture per elevation:
                              the foot of each repeat
     y  578 ..  650   BIN     the bin's corrugated wall, one 1.00 m ring
                              (rows 582 .. 646), repeating in V
-    y  652 ..  672   FASCIA  white fascia board under the roof's edge
-    y  674 ..  774   ROOF    profiled steel sheet, V stretched up the slope
+    y  652 ..  672   FASCIA  white fascia board under the roof's edge, a
+                             half-round galvanised gutter across its top
+    y  674 ..  774   ROOF    profiled steel sheet, V stretched up the slope,
+                             a snow guard 0.5 m up from the eave
     y  778 .. 1024   unique  doors, windows, the louvre, the bin roof,
                              the corner-board strip, flat patches
 
@@ -84,6 +86,10 @@ W2_Y0, W2_H = 316.0, 256.0   # v of a joint; the band repeats every W2_H
 BIN_Y0, BIN_H = 582.0, 64.0  # v of a ring's foot; repeats every BIN_H
 BIN_RING = BIN_H / PPM       # 1.00 m rings
 FASC_Y0, FASC_H = 654.0, 16.0   # = the roof slabs' 0.25 m vertical thickness
+GUTTER_PX = 8.0      # the gutter's rows, 0.125 m, hung across the fascia's top
+# The downpipes' sides span the middle five of them (scripts/downpipes.py)
+PIPE_STRIP = (FASC_Y0 + FASC_H - 1 - GUTTER_PX / 2.0 - 2.5,
+              FASC_Y0 + FASC_H - 1 - GUTTER_PX / 2.0 + 2.5)
 ROOF_Y0, ROOF_H = 676.0, 96.0
 # The lean-to's slope, fascia top to the tower wall, in metres: the roof band
 # stretches it over ROOF_H rows, and the tower's shorter slopes sample its
@@ -117,14 +123,16 @@ def item_size_px(kind):
 # ----------------------------------------------------------- material ids
 ID_WALL, ID_TRIM, ID_SASH, ID_GLASS, ID_PLINTH, ID_METAL = 0, 1, 2, 3, 4, 5
 ID_ROOF, ID_DOOR, ID_GALV, ID_FLUE, ID_BLANK, ID_HANDLE = 6, 7, 8, 9, 11, 12
+ID_GUTTER = 13
 # (roughness, metallic). Galvanised steel is metal, dulled by its zinc
-# oxide; the furnace flue is black-painted steel.
+# oxide; the gutters and downpipes are older zinc than the bin's, a little
+# darker and duller; the furnace flue is black-painted steel.
 SURFACE = {
     ID_WALL: (0.78, 0.0), ID_TRIM: (0.60, 0.0), ID_SASH: (0.50, 0.0),
     ID_GLASS: (glazing.ROUGHNESS, 0.0), ID_PLINTH: (0.90, 0.0),
     ID_METAL: (0.42, 0.30), ID_ROOF: (0.46, 0.25), ID_DOOR: (0.70, 0.0),
     ID_GALV: (0.40, 0.85), ID_FLUE: (0.62, 0.30), ID_BLANK: (0.95, 0.0),
-    ID_HANDLE: (0.40, 0.70),
+    ID_HANDLE: (0.40, 0.70), ID_GUTTER: (0.48, 0.70),
 }
 
 # ---------------------------------------------------------------- palettes
@@ -148,13 +156,14 @@ GLASS_BASE = tuple(int(round(v * 1.25)) for v in glazing.BASE)
 FIXED = {
     ID_GLASS: glazing.BASE, ID_PLINTH: (148, 146, 140), ID_GALV: (164, 167, 168),
     ID_FLUE: (46, 46, 46), ID_BLANK: (52, 52, 52), ID_HANDLE: (150, 146, 138),
+    ID_GUTTER: (146, 149, 150),
 }
 
 BAND_IDS = {
     "S1": ((0, S1_TOP), {ID_PLINTH, ID_METAL, ID_WALL}),
     "W2": ((S1_TOP, W2_Y0 + W2_H + 4), {ID_WALL}),
     "BIN": ((BIN_Y0 - 4, BIN_Y0 + BIN_H + 4), {ID_GALV}),
-    "FASCIA": ((FASC_Y0 - 2, FASC_Y0 + FASC_H + 2), {ID_METAL, ID_TRIM}),
+    "FASCIA": ((FASC_Y0 - 2, FASC_Y0 + FASC_H + 2), {ID_METAL, ID_TRIM, ID_GUTTER}),
     "ROOF": ((ROOF_Y0 - 2, ROOF_Y0 + ROOF_H + 2), {ID_ROOF, ID_METAL}),
 }
 TILE_W2 = int(ATLAS // W2_H)          # 4: noise over W2 repeats every 256 rows
@@ -169,6 +178,10 @@ SASH_H = 0.012
 RIB_H = 0.020        # the roof sheet's trapezoidal ribs
 CORR_H = 0.013       # the bin's corrugation, crest to valley
 LAP_H = 0.003        # a bin sheet's lapped edge
+GUTTER_R = 0.0625    # the half-round gutter's radius, 125 mm across
+SNOW_TUBE_H = 0.035  # the snow guard's tubes, proud of the sheet
+SNOW_BRACKET_H = 0.030
+SNOW_GUARD_M = 0.50  # the snow guard's lower tube, up the slope from the eave
 
 
 def m(v):
@@ -286,19 +299,44 @@ def paint_bin(c):
 
 
 def paint_fascia(c):
-    y0, top = FASC_Y0, FASC_Y0 + FASC_H
+    """The eave's vertical edge: a white fascia board, with a half-round
+    galvanised gutter hung across its top, right under the roof's edge where
+    the water leaves the sheet; the board shows below it. Only eave fascias
+    sample this band (rakes take the barge patch), so the gutter runs along
+    the tower's two eaves and the lean-to's low eave and nowhere else."""
+    y0, top = FASC_Y0, FASC_Y0 + FASC_H                 # top: the roof's edge
+    gh = GUTTER_PX
+    g0 = top - 1 - gh
     c.paint(0, ATLAS, y0 - 2, top + 2, ID_TRIM, 1.0, height=0.0)
-    c.bevel(0, ATLAS, y0, top - 2, 0.012, 1.0, axes="y")
+    c.bevel(0, ATLAS, y0, g0, 0.012, 1.0, axes="y")
     c.paint(0, ATLAS, y0 - 2, y0 + 1, ID_TRIM, 0.86)              # lower edge
-    c.paint(0, ATLAS, top - 2, top + 2, ID_METAL, 0.85, 0.8, height=0.006)  # sheet's drip edge
-    c.mul(0, ATLAS, top - 3, top - 2, 0.85, ao=0.8)
+    # half-round gutter: belly at the bottom, rolled lip at the top. Its roll
+    # is height; only the belly's underside is darker.
+    c.paint(0, ATLAS, g0, top - 1, ID_GUTTER, 1.0)
+    sy, sx, Y, _ = c.field(0, ATLAS, g0, top - 1)
+    u = 2.0 * (Y - g0) / gh - 1.0
+    c.height[sy, sx] = GUTTER_R * np.sqrt(np.clip(1.0 - u * u, 0.0, 1.0))
+    c.paint(0, ATLAS, g0, g0 + 1, ID_GUTTER, 0.80)
+    c.paint(0, ATLAS, top - 1, top + 2, ID_METAL, 0.80, height=0.0)  # sheet's drip edge
+    c.ao[c.sl(0, ATLAS, g0 - 3, top + 2)] = 0.9
+    for k, f in enumerate((0.92, 0.86, 0.80)):            # occluded under the gutter
+        c.mul(0, ATLAS, g0 - 3 + k, g0 - 2 + k, f)
+    # hangers every 1.0 m, a spacing that divides the atlas width; on the
+    # downpipes, which sample the gutter's middle rows, they read as clips
+    sy, sx, _, X = c.field(0, ATLAS, g0 + 2, top - 1)
+    hang = (X % 64.0) < 2.0
+    c.shade[sy, sx] = np.where(hang, c.shade[sy, sx] * 0.80, c.shade[sy, sx])
+    c.height[sy, sx] = np.where(hang, c.height[sy, sx] + 0.004, c.height[sy, sx])
 
 
 def paint_roof(c):
     """Profiled steel sheet, V stretched up the slope (ROOF_H rows over
-    ROOF_SLOPE_LEN metres). Ribs vary in U only; the flashing at the top,
-    where the lean-to meets the tower wall, varies in V, so its height is
-    scaled by the band's px/m over PPM to keep its slope physical."""
+    ROOF_SLOPE_LEN metres). Ribs vary in U only; the snow guard and the
+    flashing at the top, where the lean-to meets the tower wall, vary in V,
+    so their heights are scaled by the band's px/m over PPM to keep their
+    slopes physical. Every slope's V starts at its eave (build.py's slab()),
+    so the snow guard lands SNOW_GUARD_M up from the eave on the tower's two
+    slopes and the lean-to's alike."""
     y0, h = ROOF_Y0, ROOF_H
     c.paint(0, ATLAS, y0 - 2, y0 + h + 2, ID_ROOF, 1.0, height=0.0)
     sy, sx, Y, X = c.field(0, ATLAS, y0 - 2, y0 + h + 2)
@@ -310,6 +348,20 @@ def paint_roof(c):
     shade = np.where((xm >= 4.0) & (xm < 5.0), 0.92, 1.0)
     ao = np.where((xm >= 4.0) & (xm < 5.0), 0.86, 1.0)
     shade = np.where(v < 2, shade * 0.85, shade)                 # eave drip edge
+    # snow guard: two round tubes on brackets, standard on Finnish metal
+    # roofs, in the sheet's own steel; the brackets sit on every second rib
+    g = round(SNOW_GUARD_M * h / ROOF_SLOPE_LEN)
+    for t0, t1 in ((g, g + 2.0), (g + 3.0, g + 4.5)):
+        inside = (v >= t0) & (v < t1)
+        tube = SNOW_TUBE_H * k * np.sqrt(np.clip(
+            1.0 - (2.0 * (v - t0) / (t1 - t0) - 1.0) ** 2, 0.0, 1.0))
+        height = np.where(inside, np.maximum(height, tube), height)
+    shade = np.where((v >= g - 3) & (v < g - 1), shade * 0.80, shade)   # under the tubes
+    ao = np.where((v >= g - 3) & (v < g + 4.5), np.minimum(ao, 0.85), ao)
+    xb = np.mod(X, 32.0)
+    bracket = (xb >= 1.0) & (xb < 3.0) & (v >= g - 3) & (v < g + 4.5)
+    height = np.where(bracket, np.maximum(height, SNOW_BRACKET_H * k), height)
+    shade = np.where(bracket, shade * 0.75, shade)
     top = v >= h - 8
     height = np.where(top, 0.010 * k, height)
     shade = np.where(top, 0.97, shade)
@@ -484,7 +536,7 @@ def weather(c):
     ground; W2 and the bin's band repeat in V, so they get only noise on
     their own period, written here on the bin's from its own noise."""
     w = weathering.Weather(c, clean=(ID_GLASS,),
-                           steel=(ID_ROOF, ID_METAL, ID_GALV, ID_FLUE),
+                           steel=(ID_ROOF, ID_METAL, ID_GALV, ID_FLUE, ID_GUTTER),
                            tile_y=TILE_W2)
     b0, b1 = BIN_Y0 - 4, BIN_Y0 + BIN_H + 4
     for y0, y1 in ((0, b0), (b1, ATLAS)):                    # grime, bin excepted
@@ -508,10 +560,22 @@ def weather(c):
         (np.mod(X, 16.0) >= 4.0) & (np.mod(X, 16.0) < 6.0)), (ID_ROOF,))
     w.add("R", 0, ATLAS, ROOF_Y0 - 2, ROOF_Y0 + 3, lambda Y, X, nz: 0.12 * nz("speck"),
           (ID_ROOF,))
-    # the fascia: a little dirt and runs from the drip edge
-    w.add("D", 0, ATLAS, FASC_Y0 - 2, FASC_Y0 + FASC_H - 2, 0.05, (ID_TRIM,))
-    w.runs(0, ATLAS, FASC_Y0 - 2, FASC_Y0 + FASC_H - 2, (ID_TRIM,), 0.18, fall=5.0,
-           lo=0.4, hi=1.6)
+    # debris held above the snow guard, rust at its brackets and in short
+    # runs under them
+    g = ROOF_Y0 + round(SNOW_GUARD_M * ROOF_H / ROOF_SLOPE_LEN)
+    w.add("D", 0, ATLAS, g + 4.5, g + 14.0, lambda Y, X, nz: 0.22 * nz("blotch")
+          * (1.0 - (Y - g - 4.5) / 9.5), (ID_ROOF,))
+    w.add("R", 0, ATLAS, g - 3, g + 4.5, lambda Y, X, nz: 0.16 * (
+        np.mod(X, 32.0) < 4.0), (ID_ROOF,))
+    w.add("R", 0, ATLAS, g - 10, g - 3, lambda Y, X, nz: 0.12 * (
+        (np.mod(X, 32.0) >= 1.2) & (np.mod(X, 32.0) < 2.8)) * (1.0 - (g - 3 - Y) / 7.0)
+        * atlas.smoothstep(-0.5, 0.8, nz("runs")), (ID_ROOF,))
+    # the fascia: dirt and runs down the board from the gutter, a dirty belly
+    g0 = FASC_Y0 + FASC_H - 1 - GUTTER_PX
+    w.add("D", 0, ATLAS, FASC_Y0 - 2, g0, 0.05, (ID_TRIM,))
+    w.runs(0, ATLAS, FASC_Y0 - 2, g0, (ID_TRIM,), 0.18, fall=5.0, lo=0.4, hi=1.6)
+    w.add("D", 0, ATLAS, g0, g0 + 3, lambda Y, X, nz: 0.08 + 0.10 * nz("blotch"),
+          (ID_GUTTER,))
     # openings: sills and heads; door handles and feet
     for kind, (wd, h, cs, cb, ct) in OPENINGS.items():
         x0, yb = ITEM_ORIGIN[kind]

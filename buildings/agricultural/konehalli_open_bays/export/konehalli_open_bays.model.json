@@ -3,7 +3,7 @@
   "version": 1,
   "name": "konehalli_open_bays",
   "path": "buildings/agricultural/konehalli_open_bays",
-  "source": {"commit": "f30caba330346c43806b9271f21d3579d6d87485", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "99f50524044797bab36ecd1e2212397b8d228148", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-5.65, 0.0, -3.3], "max": [5.65, 4.3167, 3.3]},
   "footprint": [
@@ -21,21 +21,21 @@
     {"id": "machine", "kind": "vehicle", "position": [3.4, 0.0, 2.9], "facing": [0.0, 0.0, 1.0], "width_m": 3.0, "height_m": 3.2, "main": false}
   ],
   "lods": [
-    {"file": "konehalli_open_bays_lod0.glb", "triangles": 234, "sha256": "c8a91426585210e652fde8ee8aa397807ab9026ce67fecb4483b3111ac0d0803"},
-    {"file": "konehalli_open_bays_lod1.glb", "triangles": 218, "sha256": "71ab39107340afe4cbac314fdc7957dfeae6581df8d4aca75ac5b288890d2f39"},
-    {"file": "konehalli_open_bays_lod2.glb", "triangles": 158, "sha256": "8fda240d6b32421765c50daac53753a4e922140d42874f5b9140ed4971e9012f"},
-    {"file": "konehalli_open_bays_lod3.glb", "triangles": 134, "sha256": "ba3a88addb4273c7c73314addea51f82c1268248ba8713f5a345d000b9f1d6d6"}
+    {"file": "konehalli_open_bays_lod0.glb", "triangles": 336, "sha256": "51b6e80ec6d4487cbff4a05d951ca0eb5b84a9bac9e9bc6b78a0845f255693c1"},
+    {"file": "konehalli_open_bays_lod1.glb", "triangles": 272, "sha256": "247787c47c135e0dea59795dcc0ce0140d69fe4c4936ac0a09d073d50717387f"},
+    {"file": "konehalli_open_bays_lod2.glb", "triangles": 196, "sha256": "745d59632c816b649c2bd34c531460edd9e2855eb008555048735d6dcc1c889d"},
+    {"file": "konehalli_open_bays_lod3.glb", "triangles": 166, "sha256": "e89613b724254777db70dc1603f36d4204628e8fd1722cf2ff1e473e2e9781c0"}
   ],
   "textures": {
-    "orm": {"file": "konehalli_open_bays_orm.png", "sha256": "e40011f4b1f1d909fe1a31b58348a445c20361b5e3fc293c5793e84c57074204"},
-    "normal": {"file": "konehalli_open_bays_normal.png", "sha256": "ed4968752c7d280673d487512edafaddce153f06883feb5fe18c0e6658d001c6"}
+    "orm": {"file": "konehalli_open_bays_orm.png", "sha256": "4c18e2d03277d92a9ba8973dd53298042e21798ea90fc4bc2bfb5d5a9a7d4d48"},
+    "normal": {"file": "konehalli_open_bays_normal.png", "sha256": "45b15a76a4b5d19bf77a66ec6dfe34213045cdf1e04114fd03df8e28f4bf4c09"}
   },
   "variants": [
-    {"id": "red_ochre", "albedo": "konehalli_open_bays_albedo_red_ochre.png", "sha256": "127f12d5f77b0e914993e21360a4ec779060bb4a6abc1136235b2b907779f197"},
-    {"id": "grey_weathered", "albedo": "konehalli_open_bays_albedo_grey_weathered.png", "sha256": "49556cfd11d076163aa7f0bb06cd8dabbdd59d14b0798ef8517ca585ecf218fe"},
-    {"id": "yellow_ochre", "albedo": "konehalli_open_bays_albedo_yellow_ochre.png", "sha256": "a540564bc75270ea4d3d42df63406703c3a66c1e8d9f98fc143b4e5913e68683"}
+    {"id": "red_ochre", "albedo": "konehalli_open_bays_albedo_red_ochre.png", "sha256": "808525c28fd1d195efddd41e77d6f3ce94815e99c83dbce5c7c356d186738a56"},
+    {"id": "grey_weathered", "albedo": "konehalli_open_bays_albedo_grey_weathered.png", "sha256": "7b4ad28072287f971b18c7cd9b826f91b5ea6bfce26a041e715015ccd7a33049"},
+    {"id": "yellow_ochre", "albedo": "konehalli_open_bays_albedo_yellow_ochre.png", "sha256": "2e358b400143890df3e4e3bf8d7d74cc1090312ccd22359448a9e53964a1c379"}
   ],
   "default_variant": "red_ochre",
-  "preview": {"file": "../preview.png", "sha256": "b64b65a4449591f7cf2890ceca8f64262bf3fa8b2eb059547c8db280b9bced42"},
+  "preview": {"file": "../preview.png", "sha256": "80a2167f251ac52e79097fbcaa32b7daaeb3ec2000fc488c260fd0ba190c8ec4"},
   "hero": false
 }

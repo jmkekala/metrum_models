@@ -21,8 +21,8 @@ on a concrete ramp, a row of small byre windows and a plank door at the east
 end; the east gable carries the loft hatch high up.
 
 Construction is a set of closed solids unioned with Blender's exact boolean:
-the body (a wall ring capped under the roof), the roof slab and three
-concrete ramps. The union trims the walls where the soffits meet them and
+the body (a wall ring capped under the roof), the roof slab, three concrete
+ramps and two downpipes from the gutters painted on the eave fascias. The union trims the walls where the soffits meet them and
 removes everything that ends up inside, so the result is the boundary of one
 empty volume and interior geometry cannot occur.
 
@@ -52,6 +52,7 @@ ASSET = L.ASSET
 EXPORT_DIR = os.path.join(HERE, "export")
 sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "scripts"))
 import asset_build  # noqa: E402
+import downpipes as DP  # noqa: E402
 import model_facts  # noqa: E402
 from asset_build import bounds as _bounds, to_object, union  # noqa: E402
 
@@ -112,6 +113,13 @@ MAIN_WALLS = {
 }
 # Offsets into the tiling board band, so the board tones differ wall to wall.
 U_OFF = {"front": 0.0, "east": 3.3, "rear": 6.1, "west": 9.4}
+
+# Downpipes (scripts/downpipes.py): one from each eave's gutter, at
+# diagonally opposite corners, so each gable end shows one: the front's at its
+# east end, past the plank door's ramp, the rear's at its west end.
+DOWNPIPE_SPOTS = [("front", 2 * HX - DP.CORNER), ("rear", 2 * HX - DP.CORNER)]
+DOWNPIPES = [DP.eave_pipe(*MAIN_WALLS[w][:2], s, L.Z_EAVE, TAN, EAVE_OV)
+             for w, s in DOWNPIPE_SPOTS]
 
 
 def item_mode(kind, level):
@@ -503,6 +511,8 @@ def build_lod(level):
     parts = [to_object(gable_slab(HY, L.Z_EAVE, EAVE_OV, -HX - RAKE_OV, HX + RAKE_OV),
                        "tmp_roof")]
     parts += [to_object(ramp(*r), "tmp_ramp%d" % i) for i, r in enumerate(RAMPS)]
+    parts += [to_object(B, name) for B, name in
+              DP.solids(DOWNPIPES, *DP.MODES[level], L.PIPE_STRIP, L.ATLAS)]
     obj = union(base, parts)
     obj.name = "{}_LOD{}".format(ASSET, level)
     obj.data.name = obj.name + "_mesh"
@@ -526,7 +536,7 @@ def check_layout():
     openings colliding, running into a corner board or under the roof, or
     straddling the plinth or the gable band change; the gable outgrowing its
     atlas band; the roof slope disagreeing with the atlas; a ramp that does
-    not cover its door."""
+    not cover its door; a downpipe crowding a corner, an opening or a ramp."""
     problems = []
     if Z_APEX > L.S2_TOP:
         problems.append("gable apex %.2f is above the S2 band's %.2f" % (Z_APEX, L.S2_TOP))
@@ -563,6 +573,15 @@ def check_layout():
         xs = sorted(fr.P(v, 0.0)[0] for v in (l, r))
         if not (x0 < xs[0] - 0.1 and xs[1] + 0.1 < x1):
             problems.append("the ramp at x %.2f..%.2f does not cover the %s" % (x0, x1, kind))
+    # downpipes clear of the corners, the openings' casings and the ramps
+    for (w, _s), pipe in zip(DOWNPIPE_SPOTS, DOWNPIPES):
+        fr = Frame(*MAIN_WALLS[w][:2])
+        avoid = [(k,) + item_rects(k, c, z)[0][:2] for k, c, z in MAIN_WALLS[w][3]]
+        for i, (x0, x1, wall, _o, _r) in enumerate(RAMPS):
+            if abs(fr.P(0.0, 0.0)[1] - wall) < EPS:
+                ss = sorted(fr.s_of(Vector((x, wall, 0.0))) for x in (x0, x1))
+                avoid.append(("ramp %d" % i, ss[0], ss[1]))
+        problems += DP.problems(pipe, "the %s downpipe" % w, avoid)
     return problems
 
 

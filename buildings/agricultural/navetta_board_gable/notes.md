@@ -8,7 +8,9 @@ rintamamiestalo houses. It is a long, low byre under a 30° gable roof, and
 the roof space is the hay loft. The walls are red-ochre vertical
 board-and-batten on a low cast-concrete plinth, with white corner boards,
 white casings round every opening, white fascias and barge boards, and a
-dark trapezoidal profiled steel roof.
+dark trapezoidal profiled steel roof. A half-round steel gutter runs along
+each eave, with one downpipe from each, and a tubular snow guard (*lumieste*)
+runs along each slope just above the eave, both in steel matched to the roof.
 
 The long front faces the yard. It carries a pair of big braced board doors on
 a concrete ramp, a row of four small byre windows, and a plank pedestrian door
@@ -18,8 +20,7 @@ and a louvred loft vent. The rear wall has four byre windows and a service
 door, centred, on a third ramp. The doors are boarded leaves painted in the
 wall colour, with white frames, diagonal braces and black strap hinges.
 
-The barn has no chimney, no roof plant, no gutters and no fences, ground or
-base slab. It is meant as farmyard filler, placed beside the catalog's
+The barn has no chimney, no roof plant and no fences, ground or base slab. It is meant as farmyard filler, placed beside the catalog's
 post-war houses, with three colours for variety.
 
 ## Category and secondary use
@@ -90,18 +91,23 @@ loft vent (0.60 × 0.40 m, louvred, sill at 5.25 m) is not a window.
 Both are within 0.3–0.6 m. The soffits slope with the rafters, as the
 underside of the roof slab. The overhangs are kept at every tier.
 
+The eave fascias carry a painted half-round gutter across their top 0.14 m,
+under the sheet's drip edge, so the white board shows below it. The rakes
+have no gutter.
+
 ## Construction
 
-`build.py` builds five closed solids and unions them with Blender's exact
-boolean (`asset_build.union`):
+`build.py` builds up to seven closed solids and unions them with Blender's
+exact boolean (`asset_build.union`):
 
 - the body: a wall ring capped by a buried floor and a roof-shaped lid;
 - the roof slab;
-- three ramps.
+- three ramps;
+- two downpipes (`scripts/downpipes.py`).
 
 The wall ring rises 0.1 m into the roof slab. The union trims the walls exactly
-where the soffits meet them and removes the buried parts of the slab and the
-ramps, so the result is the boundary of one empty volume.
+where the soffits meet them and removes the buried parts of the slab, the
+ramps and the pipes' tops, so the result is the boundary of one empty volume.
 
 The construction is the template's (`rintamamiestalo_porch`), cut down to
 this building. Walls are triangulated as polygons with holes
@@ -140,39 +146,72 @@ floor.
 - nothing in a gable meets the belt board;
 - the apex fits the S2 band;
 - the roof slope matches the atlas;
-- every ramp is wider than the casing of the door it serves.
+- every ramp is wider than the casing of the door it serves;
+- each downpipe is clear of the corners, of every opening's casing on its
+  wall and of the ramps there (`downpipes.problems()`).
 
-### No gutters, downpipes, chimney or roof safety kit
+### Gutters and downpipes
 
-The brief has no gutters, so there are no downpipes (CLAUDE.md: a building
-without a gutter has none). There is no chimney, vent stack or roof plant, so
-nothing on the 30° roof is serviced from it. CLAUDE.md asks for the wall ladder,
-roof ladder and walkway only where a roof steeper than 1:8 carries such an item,
-so this barn has no roof safety kit.
+The gutters are painted on the eave fascias (Texture set); the downpipes are
+modelled with `scripts/downpipes.py`, one from each eave at diagonally
+opposite corners, so each gable end shows one:
+
+| Pipe | Wall | Along the wall | Nearest neighbour |
+| --- | --- | --- | --- |
+| front | front (−Y) | s 15.75 m, x = 7.75 m (east end) | the plank door's ramp, 0.35 m away; its casing 0.55 m |
+| rear | rear (+Y) | s 15.75 m, x = −7.75 m (west end) | the west byre window's casing, 1.53 m away |
+
+Each is `DP.eave_pipe()` on the 0.45 m eave at the 30° pitch: a 0.1 m
+pipe 0.03 m off the boards, leaving the soffit on a swan-neck just inside the
+fascia and ending in a shoe 0.2 m above the ground. Its sides sample the
+gutter's middle rows (`PIPE_STRIP`), so it takes the gutter's colour in every
+variant, and the gutter's hangers read as its clips. The pipes stay inside the
+rakes, the eaves and the ramps, so they do not change the extents or the pivot.
+
+### Snow guard
+
+A two-tube snow guard runs the full length of both slopes, 0.60 m up the
+slope from the eave's edge, just inside the wall line. It is painted in the
+roof band (Texture set), not modelled: tubes about 30 mm across a few
+centimetres over the sheet are relief, far under the 0.25 m threshold, and
+the roof band is a full-width tiling band that both slopes sample, so one
+painted guard lands on both.
+
+### No chimney or roof safety kit
+
+There is no chimney, vent stack or roof plant, so nothing on the 30° roof is
+serviced from it. CLAUDE.md asks for the wall ladder, roof ladder and walkway
+only where a roof steeper than 1:8 carries such an item, so this barn has no
+roof safety kit. The snow guard is not a serviced item.
 
 ## Per-tier triangle counts
 
 | Tier | Triangles | Ceiling | What changes |
 | --- | --- | --- | --- |
-| `LOD0` | 592 | 12,000 | casing ring, reveals and closing plane on all 15 openings (vent flush); corner-board columns; roof slab; three ramps |
-| `LOD1` | 452 | 4,000 | each opening becomes one recess the size of its casing, the casing painted on the recessed plane |
-| `LOD2` | 232 | 1,500 | openings flush, the casing rect a quad in the wall; the loft vent dropped; coplanar boolean subdivisions dissolved (UV seams kept) |
-| `LOD3` | 232 | 500 | the same mesh as `LOD2` |
+| `LOD0` | 756 | 12,000 | casing ring, reveals and closing plane on all 15 openings (vent flush); corner-board columns; roof slab; three ramps; two eight-sided downpipes with swan-neck and shoe (164 together) |
+| `LOD1` | 536 | 4,000 | each opening becomes one recess the size of its casing, the casing painted on the recessed plane; the pipes four-sided, still bent (84) |
+| `LOD2` | 266 | 1,500 | openings flush, the casing rect a quad in the wall; the loft vent dropped; coplanar boolean subdivisions dissolved (UV seams kept); the pipes straight and four-sided (34) |
+| `LOD3` | 262 | 500 | `LOD2`'s body; the pipes straight and three-sided (30) |
+
+The downpipes follow `downpipes.MODES` on every tier; no tier drops them.
+The gutters and the snow guard are texture and cost nothing.
 
 The counts sit far under the ceilings, and well under the 800–2000 the brief
 expected. This is correct, not something to pad. The barn is one box under one
-gable roof, with no porch, chimney, downpipes or roof kit. The walls are
+gable roof, with no porch, chimney or roof kit, and two downpipes. The walls are
 polygons with holes rather than grids. All the shallow detail is texture: the
 battens, the braces, the hinges, the sashes and the profiled sheet. A
 rintamamiestalo without its downpipes, roof kit and handrails comes to about
 900 at `LOD0`. This barn has fewer kinds of solid than that, and a longer, emptier wall.
 
-**`LOD3` equals `LOD2`.** At `LOD2` every opening is already one flush quad.
-The only further cuts would be the windows, the doors or the ramps. The
+**`LOD3` is `LOD2` but for the pipes.** At `LOD2` every opening is already
+one flush quad. The only further cuts would be the windows, the doors or the
+ramps. The
 windows and doors carry the window rhythm and the white casings, which
 Appearance Across LODs asks every tier to keep: a byre window is about
 12 × 9 px at 120 m. The ramps set the bounds and the pivot. So the fourth tier
-ships the third's mesh rather than inventing a reduction.
+ships the third's body rather than inventing a reduction, with the pipes one
+side thinner, as `downpipes.MODES` has it.
 
 ## LOD review
 
@@ -210,6 +249,26 @@ front or rear wall. Renders are in `review/farm_2026_11_20/navetta_board_gable/`
   and a shadow line on the other. The glass is darker than its casing. The
   2.10 m pedestrian door scales the 3.00 m pair beside it.
 
+### Gutters, downpipes and snow guard (2026-11-20)
+
+Rendered on reimported GLBs with `scripts/review_asset.py` before and after
+the change, with identical settings, and paired with `scripts/review_compare.py`
+(`review/farm_gutters_2026_11_20/navetta_board_gable/`, local, git-ignored):
+`LOD0` and `LOD1` at 20 and 40 m (front, oblique, rear), `LOD2` and `LOD3`
+at 70 and 120 m (oblique), under noon and reverse sun.
+
+- The gutter reads as a round steel trough along each eave: a lit roll, a
+  dark belly and a shadow line on the white board under it, with the hangers
+  visible at 20 m. At 70 m it is a dark line between the roof and the fascia.
+- Both downpipes read at 20 m with the swan-neck and shoe, standing off the
+  boards with their own shadow. At 40 m each is a 3 px dark line beside the
+  white corner board, the swan-neck no longer separable. At 70 and 120 m the
+  straight pipes are a one-pixel line at the corner, or lost in its shadow.
+- The snow guard reads as a light rail with brackets a short way up each
+  slope at 20 m, and as a faint line at 40 m; past 70 m it is gone into the
+  roof, as intended.
+- Nothing else changed: walls, openings, roof and ramps match the before set.
+
 These renders are authoring evidence only. Runtime switching, filtering and
 performance are pending in the consumer.
 
@@ -219,14 +278,15 @@ Measured with `scripts/validate_asset.py` on the exports:
 
 | Tier | Hidden triangles | Share |
 | --- | --- | --- |
-| `LOD0` | 3 of 592 | 0.5 % |
-| `LOD1` | 4 of 452 | 0.9 % |
-| `LOD2` | 1 of 232 | 0.4 % |
-| `LOD3` | 1 of 232 | 0.4 % |
+| `LOD0` | 3 of 756 | 0.4 % |
+| `LOD1` | 4 of 536 | 0.7 % |
+| `LOD2` | 1 of 266 | 0.4 % |
+| `LOD3` | 2 of 262 | 0.8 % |
 
 No hidden face is vertical on any tier (0.0 m²). The candidates are slivers
 where the wall tops meet the eave and rake soffits, plus a sliver of the rear
-ramp's cheek at the wall. Both are closure faces left by the union. Nothing
+ramp's cheek at the wall. The downpipes add none: they stand clear of the
+walls and only their tops, buried in the soffit, are removed by the union. Both are closure faces left by the union. Nothing
 stands inside the barn, by construction. The floor and the roof-shaped lid of
 the body are removed by the union, and the shell is the boundary of one
 volume.
@@ -247,7 +307,13 @@ volume.
   the wall.
 - **One window type, painted on two regions**, so the windows alternate between
   two rooms behind the glass, not one per window.
-- **No snow guard** on the roof. Nothing in the brief needed one.
+- **The gutters are painted**, on the eave fascias: a half-round trough with
+  its roll in the height channel, its hangers every metre, and flat-cut ends
+  at the rakes with no end caps or outlets modelled. The downpipes are
+  modelled and run up into the soffit just inside the fascia.
+- **The snow guard is painted** in the roof band: two tubes and their
+  brackets as relief, with no geometry, so it has no silhouette over the
+  eave and does not stand off the sheet in a grazing view.
 
 ## Texture set
 
@@ -273,14 +339,16 @@ and one emission mask.
   | --- | --- | --- |
   | S1 | 0–256 | The lower walls by height from the ground: concrete plinth with a formwork line, drip flashing, board-and-batten. |
   | S2 | 258–448 | The gables from the eave: white belt board, board-and-batten. |
-  | ROOF | 452–772 | Trapezoidal profiled steel. |
-  | FASCIA | 774–798 | White fascia board under the sheet's drip edge. |
+  | ROOF | 452–772 | Trapezoidal profiled steel, with the snow guard 0.60 m up from the eave. |
+  | FASCIA | 774–798 | White fascia board with the half-round gutter across its top 9 rows, under the sheet's drip edge. `PIPE_STRIP` is the gutter's middle five rows, which the downpipes sample. |
   | Unique | 802–1010 | The braced vehicle doors, the plank door, the loft hatch, two byre-window regions, the vent, the corner strip and flat patches. |
 
   Every band spans the full width and tiles in U. The battens (0.25 m), board
   tones and roof ribs (0.25 m) all repeat at periods that divide 1024.
-  `check_bands()` fails the bake on a stray id in a band. `atlas.pad()` fills
-  every gutter last, in every channel.
+  The gutter's hangers (1 m) and the snow guard's brackets (0.5 m, on every
+  second rib) also divide 1024. `check_bands()` fails the bake on a stray id
+  in a band; the roof band admits the guard's steel (`ID_METAL`) beside the
+  sheet. `atlas.pad()` fills every gutter last, in every channel.
 - **Relief heights**, used by `atlas.normal_map()`:
   - battens 20 mm, with arrises rounded over a pixel;
   - casings and the corner board 20 mm, sills 35 mm, sashes 12 mm;
@@ -288,10 +356,12 @@ and one emission mask.
     3 mm deep;
   - roof ribs 22 mm on a trapezoid, with a 2 mm flute mid-pan and the ridge
     flashing;
+  - the snow guard's tubes 45 mm, on a round profile, and its brackets 40 mm;
+  - the gutter: a half-round roll of 70 mm radius, its hangers 4 mm proud;
   - the flashing and drip caps.
 
-  Glass stays flat. The ridge flashing, which varies along the stretched V, is
-  scaled by the band's px/m over 64.
+  Glass stays flat. The ridge flashing and the snow guard, which vary along
+  the stretched V, are scaled by the band's px/m over 64.
 - **Roughness / metallic:**
 
   | Surface | Roughness | Metallic |
@@ -303,11 +373,16 @@ and one emission mask.
   | Glass | 0.08 | 0 |
   | Concrete | 0.90 | 0 |
   | Roof steel | 0.46 | 0.25 |
-  | Flashing and drip caps | 0.42 | 0.30 |
+  | Flashing, drip caps, gutter, downpipes, snow guard | 0.42 | 0.30 |
   | Hinge iron | 0.55 | 0.45 |
 - **Albedo carries no directional light.** Shade holds only tone, wear and the
   occlusion that holds whatever the sun does: beside battens, under rails and
-  drips, under the soffit.
+  drips, under the soffit, under the gutter and the snow guard's tubes.
+- **Gutter and snow-guard colour.** Both are `ID_METAL`, the flashing's steel,
+  which follows each variant's roof colour (1.18 × roof + 6): dark grey on
+  `red_ochre` and `grey_weathered`, dark red-brown on `yellow_ochre`, a
+  matched rainwater and snow-guard system. The downpipes take it through
+  `PIPE_STRIP`.
 
 ### Weathering
 
@@ -322,7 +397,10 @@ at the catalog's moderate level:
 - dust under the soffit from 3.3 m;
 - on the roof, long runs, more dirt toward the eave, chalking toward the
   ridge, silt beside the ribs and specks of rust on the drip edge;
-- runs down the fascia from the sheet's edge;
+- debris held on the sheet above the snow guard, rust at its brackets and
+  short rust runs on the sheet under them;
+- a dirty belly on the gutter, and dirt and runs down the fascia board under
+  it;
 - dirt on the sills and head casings;
 - hand grime and kicked-up dirt on the doors;
 - splash at the corner boards' foot;
@@ -471,7 +549,11 @@ Checked here, in Blender:
   - The facts sidecar is consistent.
   - The one warning is `source.dirty` in the sidecar, expected until the asset
     is committed and the sidecar regenerated with `build.py -- facts`.
-- `check_layout()` passes.
+- `check_layout()` passes, downpipe placement included.
+- The gutter, downpipe and snow-guard pass of 2026-11-20: before/after
+  renders at 20–120 m (LOD review), `preview.png` and `variants.png` looked
+  at. Bounds and pivot are unchanged on every tier (16.70 × 12.60 × 6.71 m,
+  pivot 0.40 m in front of the walls' centre).
 - The six pre-export views at `LOD0` and `LOD2`.
 - The tier comparisons at the three switches, the 12 m close range, the day
   cycle and the mip4 stress renders, all recorded under LOD review. Battens,
@@ -495,3 +577,16 @@ Pending, and outside this repository:
   the texture export.
 
 These are recorded as known-good markers, not requirements.
+
+## Revision log
+
+- **2026-11-20.** Added rainwater gutters, downpipes and a snow guard. A
+  half-round steel gutter is painted across the top of both eave fascias,
+  with `PIPE_STRIP` defined on its middle rows; two downpipes from
+  `scripts/downpipes.py` are unioned at diagonally opposite corners (front
+  east, rear west), per `downpipes.MODES` on every tier; a two-tube snow
+  guard on brackets is painted 0.60 m up both slopes in the roof band. All
+  three take the roof-matched flashing steel. Weathering added for the
+  gutter's belly, the fascia under it and the snow guard. Triangles went
+  from 592 / 452 / 232 / 232 to 756 / 536 / 266 / 262; bounds and pivot
+  unchanged.
