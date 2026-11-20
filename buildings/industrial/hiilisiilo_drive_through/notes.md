@@ -17,12 +17,15 @@ chutes.
   girder. On it stands the screen house: a concrete frame with profiled
   sheet infill under a low 1:10 mono-pitch sheet roof that falls to the
   rear. It has one row of small steel-framed windows at the screen floor.
-- **Conveyor:** behind the house, a 2.0 × 2.0 m enclosed conveyor gallery
-  rises at 30° from a low concrete intake hopper house into the screen
-  house's rear wall. It is the second half of the silhouette.
+- **Conveyor:** on the east side, the side the catalog view sees, a 2.0 ×
+  2.0 m enclosed conveyor gallery rises at 30° from a low concrete intake
+  hopper house into the screen house's east wall. It is the second half of
+  the silhouette, and what makes the bunker read as a coal loading plant
+  rather than a box on legs.
 
-Materials are muted and coal-dusty: board-formed concrete with a darker,
-dust-stained foot; grey (or red-oxide) painted profiled sheet; a dark grey
+Materials are muted and coal-dusty, as a working plant's are: board-formed
+concrete blackened at its foot by the coal the trucks throw up, a dusty lane
+and dust-caked hoppers, moderately dirty cladding above; grey (or red-oxide) painted profiled sheet; a dark grey
 roof; dark steel hoppers and doors; and the catalog's galvanised rainwater
 steel for the rear gutter, the downpipes and the snow guard. The model shows
 no recognisable real structure.
@@ -41,8 +44,8 @@ stair room, the operators' access, which is part of the same plant.
 | | Width (X) × depth (Y) × height |
 | --- | --- |
 | Bunker house walls (lane inside) | 12.00 × 8.00 m |
-| Intake house walls | 3.00 × 2.80 m, 4.20 m to its slab top |
-| Overall bounds (roof overhangs, gallery, intake) | 12.60 × 16.25 × 13.08 m |
+| Intake house walls | 3.20 × 3.00 m, 4.20 m to its slab top |
+| Overall bounds (roof overhangs, gallery, intake) | 20.65 × 8.70 × 13.08 m |
 
 In the build frame the house spans x −6.0…6.0 and y −4.0…4.0. The other
 parts sit as follows:
@@ -51,14 +54,17 @@ parts sit as follows:
   0.60.
 - **The west leg** is x −6.00 to −4.40. The control and stair room is x 0.60
   to 6.00.
-- **The gallery** is x 3.40 to 5.40. It leaves the rear wall at y 4.0 and
-  ends inside the intake.
-- **The intake house** is x 2.90 to 5.90 and y 9.00 to 11.80, with its slab
+- **The gallery** is y 0.80 to 2.80, in the east wall's rear half. Its axis
+  runs along X: it leaves the east wall at x 6.0 and ends inside the intake.
+- **The intake house** is x 11.00 to 14.20 and y 0.30 to 3.30, with its slab
   overhanging 0.15 m.
+- Everything east of the house stands 10 m or more from the lane's east
+  wall, so the lane and both of its approaches are a clear, straight
+  corridor x −4.40…0.60 for any y.
 
 The roof slab overhangs 0.30 m at the front and rakes and 0.40 m at the
 rear. The pivot is at ground level, centred on the bounding box: build point
-(0, 3.825, 0). It is taken from `LOD0` and applied to every tier, and every
+(4.025, 0.05, 0). It is taken from `LOD0` and applied to every tier, and every
 tier has the same extents.
 
 The facts sidecar's footprint is a single simple polygon. It is the house
@@ -93,8 +99,10 @@ apply.
   transom. Its steel frame adds 0.08 m above it. The threshold is at ground
   level, on the front wall at x 1.90.
 - **Intake door (vehicle): 2.40 × 2.60 m** steel sliding door, under a 0.12
-  m track hood, on the intake's rear face. It is a vehicle door, so the leaf
-  band does not apply; the 2.10 m door carries the human scale.
+  m track hood, centred on the intake's front face, so the tipping vehicles
+  reach it from the front yard, 10 m east of the lane's approach. It is a
+  vehicle door, so the leaf band does not apply; the 2.10 m door carries the
+  human scale.
 - The lane's two mouths have no door leaf and are not doors.
 
 ## Window sills
@@ -105,7 +113,8 @@ apply.
 - **Screen house:** five windows of the same size, sill 8.70 m and head 9.60
   m. That is 1.30 m above the 7.40 m screen floor, a working sill for the
   operators on that floor. There are two on the front, one at the rear over
-  the lane, and one in each end wall. All of them sit in the 8.40–10.40 m
+  the lane, and one in each end wall. The east one is at y −1.0, over the
+  control room's east window and clear of the gallery's mouth. All of them sit in the 8.40–10.40 m
   cladding strip, clear of its joints and the frame's columns
   (`check_layout()`).
 
@@ -178,14 +187,21 @@ body under them, centred on the middle hopper.
 
 ### Gallery and intake
 
-The gallery is one box whose axis falls at 30°.
+The gallery is one closed box whose axis runs along X and falls at 30°,
+east of the house on the side the catalog camera sees.
 
-- **Upper end:** inside the screen house. Its floor is at 7.40 m and its top
-  at 9.71 m where it passes the rear wall.
+- **Upper end:** buried 0.50 m inside the screen house, through the east
+  wall's rear half (y 0.80–2.80). Its floor is at 7.40 m and its top at 9.71
+  m where it passes the east wall: in the cladding, 1.0 m clear of the
+  ring beam's top and 2.4 m under the roof. The union cuts the wall round it
+  and removes the buried end, so the join is one closed shell with no
+  partition inside.
 - **Lower end:** inside the intake house. Its floor crosses the intake's
-  slab top (4.20 m) at y 9.54, 0.69 m inside the slab's edge.
+  slab top (4.20 m) at x 11.54, 0.69 m inside the slab's edge.
 - **Visible end:** the lower end's top 1.18 m stands out of the intake roof
   as the conveyor's tail housing.
+- **Span:** 5.0 m clear between the house's east wall and the intake's west
+  wall, unsupported.
 
 The intake's walls run 0.12 m up into their slab. Nothing in the union is
 coplanar.
@@ -199,7 +215,7 @@ is at 12.80 m at the front wall line and 12.00 m at the rear. The walls run
 - **Gutter:** painted on the rear fascia (Texture set).
 - **Downpipes:** modelled with `scripts/downpipes.py` on the rear wall, at
   s 0.25 and 11.75 (x 5.75 and −5.75). The first is on the control room's
-  back wall, 0.35 m clear of the gallery. The second is on the west leg's.
+  back wall, the second on the west leg's.
   Both use the module's default swan-neck into the 0.40 m soffit and its
   shoe. The lane's mouth fills the middle of the rear wall.
 - **Snow guard:** painted on the roof's lowest 0.40 m, which maps onto the
@@ -214,8 +230,8 @@ is at 12.80 m at the front wall line and 12.00 m at the rear. The walls run
 - the plan (`HX`, `HY`) and the lane (`XL0`, `XL1`, `Z_DECK`);
 - `Z_CLAD`, `JOINTS` and `COL_W`;
 - the eave heights and overhangs;
-- the hoppers, the gallery (`GAL_X`, `GAL_Y`, `Z_SCREEN`, 30°) and the
-  intake;
+- the hoppers, the gallery (`GAL_Y` across, `GAL_X` along, `Z_SCREEN`,
+  30°) and the intake (`INT_X`, `INT_Y`), derived from the gallery;
 - the openings.
 
 `build.py` adds the wall specs. `check_layout()` asserts the following:
@@ -223,11 +239,12 @@ is at 12.80 m at the front wall line and 12.00 m at the rear. The walls run
 - openings clear joints, columns, the roof and the lane's mouths;
 - the lane is at least 4.5 m wide and at least 4.5 m clear under the
   hoppers;
-- the gallery is buried at both ends and crosses the intake roof inside the
-  slab;
-- the intake house stands 1.5 m or more clear of the lane's line;
-- the downpipes clear the lane's mouth and the gallery
-  (`downpipes.problems()`);
+- the gallery is buried at both ends, crosses the intake roof inside the
+  slab, and its mouth in the east wall clears the corner columns and the
+  east windows by 0.3 m;
+- the gallery and the intake stand east of the house, 1.5 m or more clear of
+  the lane's line, so neither reaches the lane or its approaches;
+- the downpipes clear the lane's mouth (`downpipes.problems()`);
 - the cladding's U stays inside its band;
 - the roof is no steeper than 1:8.
 
@@ -235,10 +252,10 @@ is at 12.80 m at the front wall line and 12.00 m at the rear. The walls run
 
 | Tier | Triangles | Ceiling | What changes |
 | --- | --- | --- | --- |
-| `LOD0` | 778 | 12,000 | openings with a frame ring and a 0.12/0.15 m recess; three hoppers; eight-sided downpipes with swan-necks and shoes |
-| `LOD1` | 626 | 4,000 | each opening one recess the size of its frame; downpipes four-sided, bent |
-| `LOD2` | 444 | 1,500 | openings flush; coplanar boolean subdivisions dissolved (UV seams kept); downpipes straight, four-sided |
-| `LOD3` | 436 | 500 | downpipes three-sided; the lane, hoppers, gallery and intake kept |
+| `LOD0` | 782 | 12,000 | openings with a frame ring and a 0.12/0.15 m recess; three hoppers; eight-sided downpipes with swan-necks and shoes |
+| `LOD1` | 630 | 4,000 | each opening one recess the size of its frame; downpipes four-sided, bent |
+| `LOD2` | 446 | 1,500 | openings flush; coplanar boolean subdivisions dissolved (UV seams kept); downpipes straight, four-sided |
+| `LOD3` | 438 | 500 | downpipes three-sided; the lane, hoppers, gallery and intake kept |
 
 The counts are not padded. The massing is three boxes, a tunnel and a
 gallery. The walls are polygons with holes, and everything shallow is
@@ -251,8 +268,10 @@ Where the triangles go at `LOD0`:
 - the three hoppers, with their holes in the ceiling: 52;
 - the downpipes and the gallery's cuts make up most of the rest.
 
-`LOD3` keeps the hoppers (LOD review), so it sits near `LOD2`. It stays 64
-under the ceiling.
+`LOD3` keeps the hoppers (LOD review), so it sits near `LOD2`. It stays 62
+under the ceiling. The gallery's mouth shares the east wall's cladding strips
+with the screen house window, so the wall's triangulation round both is a
+little denser than a bare wall's.
 
 ## LOD review
 
@@ -268,9 +287,10 @@ denoising, AgX, exposure 0. Pairs compared:
 - `LOD1`/`LOD2` at 65/75 m, front, oblique and rear, noon and reverse sun;
 - `LOD2`/`LOD3` at 115/125 m, front and oblique, noon and reverse sun.
 
-Close renders at 22 m (front, oblique, rear and grazing, noon and morning)
-and the six views are in the local, untracked
-`review/mine_2026_11_20/hiilisiilo_drive_through/`.
+Close renders at 25 m (front, oblique, rear and grazing, noon and morning),
+the six views and `oblique` tier sets at 70 and 120 m for every tier are in
+the local, untracked `review/mine_fixes_2026_11_20/hiilisiilo_drive_through/`,
+beside the earlier passes in `review/mine_2026_11_20/`.
 
 - **The lane is a real opening on every tier.** It costs about 40
   triangles. From the front it reads as a dark tunnel with the lit ground at
@@ -281,9 +301,13 @@ and the six views are in the local, untracked
 - **Opening recesses** go from a ring (`LOD0`) to one recess (`LOD1`) to
   flush (`LOD2`). The window rhythm and the door are unchanged at each
   switch.
-- **The gallery and the intake keep their shape on every tier.** The
-  frame's columns and the ring beam are UV regions, so they keep their
-  contrast at every tier.
+- **The gallery and the intake keep their shape on every tier.** On the
+  east side they show in the catalog view and every front or oblique view,
+  rising from the right into the screen house; at 120 m all four tiers show
+  the same diagonal. The frame's columns and the ring beam are UV regions,
+  so they keep their contrast at every tier.
+- **The coal dust** is texture only, so it is the same on every tier; at 70
+  and 120 m the dark feet and the dark lane hold.
 - **Downpipes:** `downpipes.MODES` on every tier; no tier drops them.
 
 Pending in the consumer: real LOD switching, shadows and ambient occlusion
@@ -320,8 +344,13 @@ thresholds.
   board marks, tie holes, the wheel guard, the downstand beams and hopper
   flanges on the lane's ceiling are all painted. So are the sheet's ribs and
   laps.
-- **Gallery:** no supporting trestle (it spans 5.5 m between the house and
+- **Gallery:** no supporting trestle (it spans 5.0 m between the house and
   the intake) and no windows. Its tail housing's top is a plain clad end.
+  It has no belt, chute or skirt where it meets the screen house; the clad
+  box simply runs into the wall.
+- **Ground:** the asset has no ground, so the coal spilt under the gallery
+  and in the lane is carried by the surfaces that exist: the gallery's
+  floor, the intake's roof, the lane's walls and the legs' feet.
 - **Rainwater goods:** the gutter is painted, with its relief in the normal
   map. The downpipes run up into the soffit behind it. The intake house's
   flat roof has no gutter.
@@ -381,18 +410,37 @@ painted steel, wash, plinth and splash on S1, roof dirt toward the low edge,
 runs under the flashings and the gutter.
 
 - **Coal dust instead of soil.** Dirt resolves to the module's neutral dust
-  colour on every id (the `steel` list). A local `coal()` also darkens the
-  shade and adds dirt, so dusty surfaces go matte.
-- **Where the coal dust goes:**
-  - the concrete's foot, strongest within about a metre of the ground;
-  - long streaks on the concrete and the cladding;
-  - the lane's walls, heaviest at their foot;
-  - the lane's ceiling round each hopper;
-  - the hoppers' sides toward the mouth, and the door feet.
-- **Measured albedo** (grey_sheet), sRGB:
-  - concrete legs ~118, foot ~106 (both variants);
-  - cladding ~104 (grey_sheet), 92/58/50 (red_sheet);
+  colour on every id (the `steel` list). That dust is a mid-grey, lighter
+  than the dark steel it settles on, so coal has its own field: the local
+  `Weather` subclass in `facade_atlas.py` adds a coal field `K`, carried by
+  `pad()` with the module's fields, which lerps the weathered colour toward
+  `COAL_DUST` (sRGB 46/45/44, clipped at 0.9), adds 0.22 roughness and
+  strips the metallic. `coal()` writes it, and deepens the shade by 0.30
+  of it where it lies thick.
+- **Where the coal dust goes, and how much (`K`):**
+  - the legs' and walls' feet: `FOOT_COAL` 1.0 at the ground, falling by
+    1/e every 1.50 m (`FOOT_FALL`), blotched. S1's V is height from the
+    ground on every wall, so this height-following term is exact there;
+  - the rest of S1: 0.06–0.28 in broad patches and long streaks;
+  - the cladding band and the columns: 0.05–0.31, as periodic patches and
+    streaks on the band's own period, nothing that follows height, since
+    the band repeats up the wall;
+  - the lane's walls: `LANE_COAL` 0.35 plus blotches everywhere, and 0.6
+    more at the foot, falling by 1/e every 1.0 m;
+  - the lane's ceiling: 0.35 plus 0.55 round each hopper's throat;
+  - the hoppers' sides: 0.35 at the flange to 0.8 at the mouth;
+  - the gallery's floor 0.55 and the intake's roof 0.60, where the spill
+    falls; the slab soffits and reveals 0.25–0.30; the door feet 0.45.
+- **Measured albedo** (grey_sheet, sRGB, band means):
+  - concrete plinth (0–0.3 m) ~61, foot (0.3–1.0 m) ~80, 1–2 m ~97,
+    2–4 m ~113, ring beam ~122 (both variants);
+  - cladding ~105 (grey_sheet), 93/57/49 (red_sheet); columns ~122;
+  - lane walls ~42 at the foot and ~82 at 1.5–4 m; lane ceiling ~61;
+  - hopper sides ~51; gallery floor and intake roof ~44;
   - roof ~73 (grey_sheet), ~64 (red_sheet).
+- **Working, not abandoned:** the dust darkens and mattes; it adds no rust,
+  stains, peeling or growth, and the cladding and roof above stay only
+  moderately dirty.
 
 ### Lane occlusion
 
@@ -496,15 +544,17 @@ culling is on, and the material is single-sided and opaque. The preview is
 `export/hiilisiilo_drive_through.model.json`, in the glTF frame:
 
 - **footprint:** the house rectangle, the gallery strip and the intake
-  rectangle as one polygon (Footprint).
-- **storeys:** one storey at the ground, 41.27 m². That is the control room
+  rectangle as one polygon (Footprint). The strip's four corners lie under
+  the gallery, not on a wall.
+- **storeys:** one storey at the ground, 42.27 m². That is the control room
   inside 0.30 m walls (4.80 × 7.40 m) plus the intake house inside 0.25 m
-  walls (2.50 × 2.30 m). The lane, the bunker and the screen house are not
+  walls (2.70 × 2.50 m). The lane, the bunker and the screen house are not
   storeys, and the west leg is a solid pier.
 - **dwellings:** none.
 - **doors:**
   - `control`: `entrance`, main, front wall;
-  - `intake`: `vehicle`, on the intake's rear face.
+  - `intake`: `vehicle`, on the intake's front face, facing −Y (+Z in
+    the sidecar).
 
   The lane's mouths are not doors.
 
@@ -524,11 +574,18 @@ Checked here, in Blender:
 - **Layout:** `check_layout()`, including the lane's clearances, the
   gallery's burial and the downpipes.
 - **Six views:** `LOD0` (`review_asset.py --six-views`). The lane shows the
-  ground through it in the front view, and the gallery's joins into the rear
-  wall and the intake roof are clean.
-- **Close renders:** 22 m, front, oblique, rear and grazing, under noon and
+  ground through it in the front view, clear of everything east of the
+  house, and the gallery's joins into the east wall and the intake roof are
+  clean.
+- **Close renders:** 25 m, front, oblique, rear and grazing, under noon and
   morning sun. They checked the lane's read, the door's scale against the
-  2.10 m leaf, and the gallery's join.
+  2.10 m leaf, the gallery's join, and the coal dust: black at the legs'
+  feet and the intake's, in the lane and on the hoppers, light on the
+  cladding.
+- **Sidecar against `LOD0`:** the bounds match the mesh's; every footprint
+  corner on a wall is a ground vertex (the strip's four corners under the
+  gallery are not, by design); both doors sit on their walls' outer planes,
+  facing out.
 - **LOD pairs:** around 35, 70 and 120 m, under two sun directions.
 - **Filtering:** mip4 stress renders at 120 m.
 - **Variants:** day and night for both (`variants.png`).

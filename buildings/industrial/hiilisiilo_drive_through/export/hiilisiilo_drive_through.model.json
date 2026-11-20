@@ -3,47 +3,47 @@
   "version": 1,
   "name": "hiilisiilo_drive_through",
   "path": "buildings/industrial/hiilisiilo_drive_through",
-  "source": {"commit": "98c6e27dff52a9be56ca7dcfdaff0aa13ac673b9", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "841f3ff8518f6691fec7cc420e7e014335c6bd6f", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
-  "bounds": {"min": [-6.3, 0.0, -8.125], "max": [6.3, 13.08, 8.125]},
+  "bounds": {"min": [-10.325, 0.0, -4.35], "max": [10.325, 13.08, 4.35]},
   "footprint": [
-    [-6.0, -0.175],
-    [3.4, -0.175],
-    [3.4, -5.175],
-    [2.9, -5.175],
-    [2.9, -7.975],
-    [5.9, -7.975],
-    [5.9, -5.175],
-    [5.4, -5.175],
-    [5.4, -0.175],
-    [6.0, -0.175],
-    [6.0, 7.825],
-    [-6.0, 7.825]
+    [-10.025, -3.95],
+    [1.975, -3.95],
+    [1.975, -2.75],
+    [6.975, -2.75],
+    [6.975, -3.25],
+    [10.175, -3.25],
+    [10.175, -0.25],
+    [6.975, -0.25],
+    [6.975, -0.75],
+    [1.975, -0.75],
+    [1.975, 4.05],
+    [-10.025, 4.05]
   ],
   "storeys": [
-    {"floor_y_m": 0.0, "area_m2": 41.27}
+    {"floor_y_m": 0.0, "area_m2": 42.27}
   ],
   "dwellings": 0,
   "doors": [
-    {"id": "control", "kind": "entrance", "position": [1.9, 0.0, 7.825], "facing": [0.0, 0.0, 1.0], "width_m": 0.95, "height_m": 2.1, "main": true},
-    {"id": "intake", "kind": "vehicle", "position": [4.4, 0.0, -7.975], "facing": [0.0, 0.0, -1.0], "width_m": 2.4, "height_m": 2.6, "main": false}
+    {"id": "control", "kind": "entrance", "position": [-2.125, 0.0, 4.05], "facing": [0.0, 0.0, 1.0], "width_m": 0.95, "height_m": 2.1, "main": true},
+    {"id": "intake", "kind": "vehicle", "position": [8.575, 0.0, -0.25], "facing": [0.0, 0.0, 1.0], "width_m": 2.4, "height_m": 2.6, "main": false}
   ],
   "lods": [
-    {"file": "hiilisiilo_drive_through_lod0.glb", "triangles": 778, "sha256": "dab7e327616ea5ce25ae0216850adb00f1a53134bb502b908e6b977f41332c11"},
-    {"file": "hiilisiilo_drive_through_lod1.glb", "triangles": 626, "sha256": "3d583591f8ddcb477cf92ff82777486dc69f8cf32df0e2ffc68709dcd219167b"},
-    {"file": "hiilisiilo_drive_through_lod2.glb", "triangles": 444, "sha256": "8d45f9c8e6ceb0e9f373ebbb9b08e42fd97c93451d5721c08f08eefc779df3b3"},
-    {"file": "hiilisiilo_drive_through_lod3.glb", "triangles": 436, "sha256": "3ac66dd962b7adc0d688004c358a94eb4e0dab89b02c8b97be41259b5b015e74"}
+    {"file": "hiilisiilo_drive_through_lod0.glb", "triangles": 782, "sha256": "590cd19fe7c99e939516206d4a012d8f0cfb58df3c19b86b05541363e0bafd7f"},
+    {"file": "hiilisiilo_drive_through_lod1.glb", "triangles": 630, "sha256": "d3359611ee0adc7ca947b6d02385f0ddc9649c6820284e448463c63474480fed"},
+    {"file": "hiilisiilo_drive_through_lod2.glb", "triangles": 446, "sha256": "db5c1be2a7ff2ee7163b98a9f36bb99cc81adf0c626cd72532ef907b2e841b8b"},
+    {"file": "hiilisiilo_drive_through_lod3.glb", "triangles": 438, "sha256": "d1b2f2cfaf0db66453286c0e74f4d0fda19151de765de2367ff99eb157145d4e"}
   ],
   "textures": {
-    "orm": {"file": "hiilisiilo_drive_through_orm.png", "sha256": "d05794c093b7046af47b56ae0f0cf4edf22cc290d70c0c7d9693c2002a2f3c25"},
+    "orm": {"file": "hiilisiilo_drive_through_orm.png", "sha256": "759421e5ed8b87700e44a2d2b1d4a39c26e957ac15df7c37e1a3e7b47cd30a9e"},
     "normal": {"file": "hiilisiilo_drive_through_normal.png", "sha256": "06b03a466b5a3bfb20a5710b8b5b42b06f68cfe3b93750838bac9ae7144a37e1"},
     "emission": {"file": "hiilisiilo_drive_through_emission.png", "sha256": "0e28a4ed7d5389388ba8e392a065a41673b56474b57ebae853367f45da0866ca"}
   },
   "variants": [
-    {"id": "grey_sheet", "albedo": "hiilisiilo_drive_through_albedo_grey_sheet.png", "sha256": "6fed3c05bac4068cfcd309c4c405512bb228ae7dad309c63584461173a4b1a30"},
-    {"id": "red_sheet", "albedo": "hiilisiilo_drive_through_albedo_red_sheet.png", "sha256": "31c12a18bd51290af64da013f25ec353beabb1515fa078f05141ce4c01fd4440"}
+    {"id": "grey_sheet", "albedo": "hiilisiilo_drive_through_albedo_grey_sheet.png", "sha256": "b686c682a46479f53702e0dc30ab82274da7599b4df9b8e52452fbf99ef12743"},
+    {"id": "red_sheet", "albedo": "hiilisiilo_drive_through_albedo_red_sheet.png", "sha256": "03a0bee74be9de6b6a367f4c0ee9d2220069adac1b6731eb4056798cf9dc20af"}
   ],
   "default_variant": "grey_sheet",
-  "preview": {"file": "../preview.png", "sha256": "385798a622ced6499c07b2081c58707e0257f6948033416271a38ec80fcab3b7"},
+  "preview": {"file": "../preview.png", "sha256": "26d758003342c5417bdbcd9c869169416f2211bb8f431163f7abd2e136bfb3d5"},
   "hero": false
 }

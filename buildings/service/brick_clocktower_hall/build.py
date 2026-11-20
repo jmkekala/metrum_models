@@ -1053,7 +1053,8 @@ def check_massing(min_seg=1.0):
     between them is shorter than they are.
 
     It also keeps each chimney's open flue inside its stack and clear of the
-    roof deck below.
+    roof deck below, and every door's threshold on the floor it opens onto:
+    the sidecar once stated a ground floor 0.80 m above the entrance.
     """
     problems = []
     poly = union_outline(WALLS)
@@ -1084,6 +1085,13 @@ def check_massing(min_seg=1.0):
         if min(cx1 - cx0, cy1 - cy0) < 2 * FLUE_WALL + 0.30:
             problems.append("the stack at (%.2f, %.2f) is too slim for its flue"
                             % ((cx0 + cx1) / 2, (cy0 + cy1) / 2))
+    # Every door opens onto a floor: its threshold on a storey's floor or at
+    # most a sill's 0.10 m above it, never a flight of steps away from it.
+    for _s, _hw, z0, _z1, tag in ENTRANCE_OPENINGS:
+        if tag in DOOR_TAGS and not any(0.0 <= z0 - f <= 0.10 + 1e-6
+                                        for f in (Z_GROUND_FLOOR, Z_UPPER_FLOOR)):
+            problems.append("the %s door's threshold at %.2f m meets no floor"
+                            % (tag, z0))
     return problems
 
 
@@ -1093,13 +1101,18 @@ def build_all():
 
 
 # =================================================================== facts
-# The two storeys' floors: the ground floor on the plinth's top and the upper
-# floor at the string course's foot, 4.15 m above it (facade_atlas.py's
-# Z_PLINTH_TOP and Z_STRING_BOT). The entrance's pair of leaves ends at the
-# transom, where facade_atlas.paint_entrance() draws it; the fanlight above
-# is not part of the leaf.
-Z_GROUND_FLOOR, Z_UPPER_FLOOR = 0.95, 5.10
+# The two storeys' floors are where the doors open onto them. The ground
+# floor is the entrance's threshold, 0.15 m up: the door is cut down to it
+# through the plinth, over a painted threshold step, and the ground-floor
+# sills stand 1.10 m above it. The 0.95 m plinth is the stone base course of
+# the wall, not a floor level. The upper floor is the balcony's deck, on the
+# string course's top (facade_atlas.py's Z_STRING_TOP): the balcony door's
+# threshold stands 0.05 m above it and the upper sills 0.80 m. The entrance's
+# pair of leaves ends at the transom, where facade_atlas.paint_entrance()
+# draws it; the fanlight above is not part of the leaf.
+Z_GROUND_FLOOR, Z_UPPER_FLOOR = 0.15, 5.55
 DOOR_TRANSOM = 2.50
+DOOR_TAGS = ("door", "bal")      # the ENTRANCE_OPENINGS that are doors
 
 
 def facts():
@@ -1108,8 +1121,9 @@ def facts():
     the quoin blocks that stand 0.08 m proud of it. Both storeys fill that
     outline: the upper one ends under the cornice, below the roof. The tower
     and the clock attic are not floors. The one door at ground level is the
-    arched entrance in the centre bay; the balcony door above it is in the
-    same outer wall, a storey up."""
+    arched entrance in the centre bay, its threshold on the ground floor; the
+    balcony door above it is in the same outer wall, onto the upper floor.
+    The hall has no other outer door."""
     outline = union_outline(WALLS)
     n = len(outline)
     area = sum(outline[i][0] * outline[(i + 1) % n][1]

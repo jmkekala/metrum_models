@@ -24,7 +24,9 @@ A trim sheet, not one picture per elevation:
     y  554 ..  670   ROOF    profiled steel sheet, V stretched up the slope,
                              a galvanised snow guard 0.5 m up from the eave
     y  674 ..  710   LEDGE   the base's sloped top, trowelled concrete
-    y  716 .. 1024   unique  the doors, the window, the louvre, flat patches
+    y  716 .. 1024   unique  the doors, the window, the louvre, the rope
+                             opening, flat patches, the sheave card (32 px/m)
+                             and the sheave bay's picture for the flat tier
 
 Every band spans the full width and tiles in U. The tower is 21 m to its
 eave, which no band at 64 px/m holds in a 1024 atlas, so W2 tiles in V:
@@ -38,6 +40,7 @@ unbroken through every joint. Every noise over the bands repeats on W2's
 algae) goes only on S1, whose V is height from the ground.
 """
 
+import math
 import os
 import sys
 
@@ -73,8 +76,47 @@ OPENINGS = {
     "door": (0.95, 2.10, 0.10, 0.0, 0.12),
     "win": (0.80, 1.00, 0.10, 0.15, 0.10),
     "louvre": (1.20, 1.00, 0.10, 0.12, 0.10),
+    "rope": (1.10, 1.70, 0.10, 0.12, 0.10),     # where the hoist ropes leave
 }
-REVEAL_DEPTH = {"win": 0.20, "louvre": 0.15, "door": 0.15, "door_vehicle": 0.20}
+REVEAL_DEPTH = {"win": 0.20, "louvre": 0.15, "door": 0.15, "door_vehicle": 0.20,
+                "rope": 0.25}
+
+# ------------------------------------------------------------ sheave bay
+# The head room's front is open over the sheave deck: a bay BAY_W x BAY_H,
+# its sill on the deck, showing two spoked rope sheaves edge-on to the
+# hoist, so face-on to the front. Bay-local metres: u along the wall from
+# the bay's west jamb, z up from its sill. build.py models the bay and the
+# sheaves from these numbers; flat tiers map the bay onto the region below,
+# where paint_bay() draws the same sheaves where the geometry has them.
+BAY_W, BAY_H = 5.80, 3.25
+SHEAVE_R = 1.60              # rim's outside: a 3.2 m sheave
+SHEAVE_RI = 1.42             # rim's inside
+HUB_R = 0.22
+SPOKES = 8
+SPOKE_W = 0.10               # in the sheave's plane
+SHEAVES = ((1.80, 1.50), (4.05, 1.50))   # (u, z) centres, the front sheave first
+ROPE_SET = 0.05              # the rope's axis, inside the rim's outside (the groove)
+ROPE_D = 0.05
+ROPE_ANGLE = 20.0            # the ropes fall this far below level toward the hoist
+
+
+def rope_lines(reach=BAY_W):
+    """Each sheave's two ropes, bay-local ((u, z), (u, z)) segments: the
+    one down into the shaft off the sheave's west side, to just under the
+    deck, and the one leaving its top on the hoist's side, falling
+    ROPE_ANGLE, to u = *reach*. Each starts a little inside the rim, where
+    the rope lies in its groove."""
+    a = math.radians(ROPE_ANGLE)
+    du, dz = math.cos(a), -math.sin(a)
+    r = SHEAVE_R - ROPE_SET
+    out = []
+    for u, z in SHEAVES:
+        drop = ((u - r, z + 0.15), (u - r, -0.10))
+        tu, tz = u + r * math.sin(a), z + r * math.cos(a)        # the tangent point
+        t = (reach - tu) / du
+        lead = ((tu - 0.15 * du, tz - 0.15 * dz), (tu + t * du, tz + t * dz))
+        out.append((drop, lead))
+    return out
 
 # ------------------------------------------------------------ atlas bands
 S1_Y0 = 2.0                  # v of z = 0
@@ -100,9 +142,16 @@ ITEM_ORIGIN = {
     "door": (232.0, UNI_Y0),
     "win": (316.0, UNI_Y0),
     "louvre": (390.0, UNI_Y0),
+    "rope": (316.0, 804.0),
 }
 PATCHES = {name: (494.0 + 14.0 * i, UNI_Y0, 8.0, 8.0) for i, name in enumerate(
-    ("soffit", "csoffit", "reveal", "blank", "barge", "steel"))}
+    ("soffit", "csoffit", "reveal", "blank", "barge", "steel", "interior", "rope"))}
+BAY_ORIGIN = (608.0, UNI_Y0)     # the bay's sill at its west jamb
+# One sheave face-on on dark, at half density, for the tier that builds each
+# sheave as a plain disc (build.py): its faces sample this, centred.
+CARD_PPM = 32.0
+CARD_ORIGIN = (496.0, 740.0)     # lower left; the card is 2 SHEAVE_R square
+
 
 
 def item_size_px(kind):
@@ -339,6 +388,8 @@ def paint_opening(c, kind):
         paint_door(c, ox0, ox1, oy0, oy1)
     elif kind == "louvre":
         paint_louvre(c, ox0, ox1, oy0, oy1)
+    elif kind == "rope":
+        paint_rope_opening(c, ox0, ox1, oy0, oy1)
     else:
         paint_window(c, ox0, ox1, oy0, oy1)
 
@@ -439,10 +490,80 @@ def paint_louvre(c, x0, x1, y0, y1):
     c.mul(x0 + F, x1 - F, y1 - F - 2, y1 - F, 0.78, ao=0.72)
 
 
+def paint_rope_opening(c, x0, x1, y0, y1):
+    """The opening the hoist ropes leave the head room by: open to the dark
+    machinery space, in a steel angle frame, with a rope guide roller
+    across its foot."""
+    F = m(0.05)
+    c.paint(x0, x1, y0, y1, ID_DARK, 1.0, 0.45, height=-0.010)
+    c.paint(x0 + F, x1 - F, y0 + F, y0 + F + m(0.08), ID_FRAME, 0.80, 0.7)   # roller
+    c.bevel(x0 + F, x1 - F, y0 + F, y0 + F + m(0.08), 0.02, 1.0, axes="y")
+    _frame(c, x0, x1, y0, y1, F)
+    c.mul(x0 + F, x1 - F, y1 - F - 2, y1 - F, 0.78, ao=0.72)
+
+
+def paint_sheave(c, cx, cy, ppm, shade, ao, rect):
+    """One sheave face-on, centred at pixel (cx, cy), *ppm* pixels a metre,
+    within *rect* (x0, x1, y0, y1): rim, SPOKES spokes and hub in the
+    painted steel, a darker groove round the rim, the hub's boss."""
+    x0, x1, y0, y1 = rect
+    k = ppm
+
+    def inside(X, Y):
+        d = np.hypot(X - cx, Y - cy)
+        ang = np.arctan2(Y - cy, X - cx)
+        step = 2.0 * np.pi / SPOKES
+        off = (np.mod(ang + step / 2.0, step) - step / 2.0) * d   # off the nearest spoke
+        rim = (d <= k * SHEAVE_R) & (d >= k * SHEAVE_RI)
+        spoke = (np.abs(off) <= k * SPOKE_W / 2.0) & (d < k * SHEAVE_RI)
+        return rim | spoke | (d <= k * HUB_R)
+    c.shape(x0, x1, y0, y1, inside, ID_DOOR, shade, ao, height=0.02)
+    c.shape(x0, x1, y0, y1, lambda X, Y: np.abs(
+        np.hypot(X - cx, Y - cy) - k * (SHEAVE_R - ROPE_SET)) < max(1.2, k * 0.02),
+        shade=shade * 0.75)
+    c.disc(cx, cy, k * 0.08, shade=shade * 0.7, height=0.04)
+
+
+def paint_card(c):
+    """The sheave card: one sheave on the dark of the machinery space."""
+    x0, y0 = CARD_ORIGIN
+    sz = 2.0 * SHEAVE_R * CARD_PPM
+    c.paint(x0 - 2, x0 + sz + 2, y0 - 2, y0 + sz + 2, ID_DARK, 1.0, 0.45, height=0.0)
+    paint_sheave(c, x0 + sz / 2.0, y0 + sz / 2.0, CARD_PPM, 0.95, 0.75,
+                 (x0, x0 + sz, y0, y0 + sz))
+
+
+def paint_bay(c):
+    """The sheave bay for the tiers that build it flat: the dark machinery
+    space, the two sheaves face-on where build.py puts them (the rear one
+    first, half hidden by the front one, both occluded as in the bay), and
+    their ropes. Only light that holds whatever the sun does is here: the
+    rear sheave's AO, never a sunlit rim."""
+    x0, y0 = BAY_ORIGIN
+    w, h = m(BAY_W), m(BAY_H)
+    c.paint(x0 - 2, x0 + w + 2, y0 - 2, y0 + h + 2, ID_DARK, 1.0, 0.45, height=0.0)
+    c.mul(x0, x0 + w, y0, y0 + m(0.06), 0.85, ao=0.40)            # the deck's edge
+    lines = rope_lines()
+    for k in reversed(range(len(SHEAVES))):
+        u, z = SHEAVES[k]
+        cx, cy = x0 + m(u), y0 + m(z)
+        # flat on the facade, they would read lighter than the modelled
+        # sheaves deep under the bay's head: darkened as the occlusion
+        # there, which holds whatever the sun does
+        shade, ao = (0.82, 0.72) if k == 0 else (0.68, 0.55)
+        paint_sheave(c, cx, cy, PPM, shade, ao, (x0, x0 + w, y0, y0 + h))
+        for (pa, pb) in lines[k]:
+            c.stroke((x0 + m(pa[0]), y0 + m(max(pa[1], 0.0))),
+                     (x0 + min(m(pb[0]), w), y0 + m(max(pb[1], 0.0))),
+                     m(ROPE_D), ID_GUTTER, 0.72 * shade, ao, height=0.025,
+                     clip=(x0, y0, w, h))
+
+
 def paint_patches(c):
     spec = {"soffit": (ID_METAL, 0.86, 0.82), "csoffit": (ID_SURR, 0.94, 0.86),
             "reveal": (ID_SURR, 0.92, 0.75), "blank": (ID_BLANK, 1.0, 0.5),
-            "barge": (ID_METAL, 1.0, 1.0), "steel": (ID_DOOR, 1.0, 1.0)}
+            "barge": (ID_METAL, 1.0, 1.0), "steel": (ID_DOOR, 1.0, 1.0),
+            "interior": (ID_DARK, 1.0, 0.45), "rope": (ID_GUTTER, 0.72, 0.9)}
     for name, (x0, y0, w, h) in PATCHES.items():
         mid, sh, ao = spec[name]
         c.paint(x0 - 2, x0 + w + 2, y0 - 2, y0 + h + 2, mid, sh, ao, height=0.0)
@@ -452,6 +573,8 @@ def check_regions():
     """Fail on unique regions that overlap or leave the atlas."""
     rects = [(k,) + ITEM_ORIGIN[k] + item_size_px(k) for k in OPENINGS]
     rects += [(k,) + r for k, r in PATCHES.items()]
+    rects.append(("bay",) + BAY_ORIGIN + (m(BAY_W), m(BAY_H)))
+    rects.append(("card",) + CARD_ORIGIN + (2 * SHEAVE_R * CARD_PPM,) * 2)
     for i, (n, x, y, w, h) in enumerate(rects):
         if x < 2 or y < UNI_Y0 or x + w > ATLAS - 2 or y + h > ATLAS - 2:
             raise ValueError("region %s leaves the atlas" % n)
@@ -546,6 +669,8 @@ def paint(ss=atlas.SS):
     for kind in OPENINGS:
         paint_opening(c, kind)
     paint_patches(c)
+    paint_bay(c)
+    paint_card(c)
     c.check_bands(BAND_IDS)
 
     wear = 0.025 * noise(c, 3, 40.0) + 0.015 * noise(c, 4, 8.0)

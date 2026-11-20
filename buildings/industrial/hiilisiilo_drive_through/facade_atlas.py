@@ -91,17 +91,20 @@ HOP_BURY = 0.12
 Z_HOP = 4.60                 # the mouths: the lowest point over the lane
 
 # The conveyor gallery: 2.0 x 2.0 m, rising at 30 degrees from the intake
-# house behind the bunker into the screen house's rear wall.
-GAL_X = (3.40, 5.40)
+# house east of the bunker into the screen house's east wall, the side the
+# catalog camera sees, its axis along X. It enters the east wall's rear half,
+# clear of the lane (west of the control room) and both of its approaches.
+GAL_Y = (0.80, 2.80)         # across the axis
 GAL_DEG = 30.0
 GAL_TAN = math.tan(math.radians(GAL_DEG))
 GAL_COS = math.cos(math.radians(GAL_DEG))
 GAL_H = 2.00                 # section height, square to the axis
-GAL_Y = (HY - 0.50, 11.50)   # upper end inside the house, lower inside the intake
+GAL_X = (HX - 0.50, HX + 7.50)   # upper end inside the house, lower inside the intake
 
-# The intake hopper house: concrete, flat concrete roof slab.
-INT_X = (2.90, 5.90)
-INT_Y = (9.00, 11.80)
+# The intake hopper house: concrete, flat concrete roof slab, its vehicle
+# door on its front (-Y) face.
+INT_X = (HX + 5.00, HX + 8.20)
+INT_Y = (GAL_Y[0] - 0.50, GAL_Y[1] + 0.50)
 INT_SLAB = (3.95, 4.20)
 INT_OV = 0.15
 INT_TOP = 4.07               # its walls' lid, inside the slab
@@ -112,15 +115,15 @@ def z_under(y):
     return Z_EAVE_F - (y + HY) * TAN
 
 
-def gal_bottom(y):
-    """The gallery's floor (its bottom face) over plan y."""
-    return Z_SCREEN - (y - HY) * GAL_TAN
+def gal_bottom(x):
+    """The gallery's floor (its bottom face) over plan x."""
+    return Z_SCREEN - (x - HX) * GAL_TAN
 
 
 SLOPE_F = (1.0 + TAN * TAN) ** 0.5
 Y_FRONT, Y_REAR = -HY - FRONT_OV, HY + REAR_OV    # the slab's edges in plan
 ROOF_SLOPE_LEN = (Y_REAR - Y_FRONT) * SLOPE_F
-GAL_LEN = (GAL_Y[1] - GAL_Y[0]) / GAL_COS          # along its axis
+GAL_LEN = (GAL_X[1] - GAL_X[0]) / GAL_COS          # along its axis
 
 # ------------------------------------------------------------- openings
 # kind -> (width, height, casing side, casing bottom, casing top), metres.
@@ -263,9 +266,43 @@ def noise(c, seed, sx, sy=None):
     return n
 
 
+COAL_DUST = (46, 45, 44)     # sRGB: settled coal fines, a matte blue-black grey
+FOOT_COAL = 1.00             # coal dust at the concrete's foot (S1, z = 0) ...
+FOOT_FALL = 1.50             # ... falling by 1/e every this many metres up
+LANE_COAL = 0.35             # everywhere in the lane, before its foot and the hoppers
+
+
 class Weather(weathering.Weather):
     """weathering.Weather whose named noise is noise() above: periodic over
-    the cladding band's rows, free everywhere else."""
+    the cladding band's rows, free everywhere else; and with one more field,
+    K, coal dust. weathering.py's dirt resolves to a mid-grey road dust,
+    which on dark steel reads lighter than the steel; coal dust is darker
+    than anything it settles on. K lerps the weathered colour toward
+    COAL_DUST, roughens it and strips the metallic, as dirt does. pad()
+    carries it with the other fields."""
+
+    def __init__(self, c, **kw):
+        super().__init__(c, **kw)
+        n = c.size * c.ss
+        self.k = np.zeros((n, n), np.float32)
+
+    def carry(self, iy, ix):
+        super().carry(iy, ix)
+        self.k[...] = self.k[iy, ix]
+
+    def albedo(self, base, shade):
+        shade = super().albedo(base, shade)
+        k = np.clip(self.k, 0.0, 0.9)
+        k[np.isin(self.c.mid, self.clean)] = 0.0
+        coal = atlas.srgb_to_linear(COAL_DUST).astype(np.float32)
+        base += (coal - base) * k[..., None]
+        return shade
+
+    def orm(self, rough, metal):
+        rough, metal = super().orm(rough, metal)
+        k = np.clip(self.k, 0.0, 1.0)
+        k[np.isin(self.c.mid, self.clean)] = 0.0
+        return rough + 0.22 * k, metal * (1.0 - k)
 
     def noise(self, name):
         if name not in self._noise:
@@ -279,10 +316,11 @@ class Weather(weathering.Weather):
         return self._noise[name]
 
 
-def coal(c, x0, x1, y0, y1, value, ids=None, dark=0.55):
-    """Coal dust: the shade darkened toward black by *value* (0..1, a number
-    or value(Y, X)), and as much again of the weathering's dirt, which turns
-    the surface matte. Called after the Weather exists, before pad()."""
+def coal(c, x0, x1, y0, y1, value, ids=None, dark=0.30):
+    """Coal dust of *value* (0..1, a number or value(Y, X)) over a rect: the
+    Weather's coal field K, which lerps the colour toward COAL_DUST and
+    turns the surface matte, and the shade a little deeper where it lies
+    thick. Called after the Weather exists, before pad()."""
     sy, sx, Y, X = c.field(x0, x1, y0, y1)
     if Y.size == 0:
         return
@@ -291,7 +329,7 @@ def coal(c, x0, x1, y0, y1, value, ids=None, dark=0.55):
     if ids is not None:
         v = np.where(np.isin(c.mid[sy, sx], ids), v, 0.0)
     c.shade[sy, sx] *= 1.0 - dark * v
-    c.weather.f["D"][sy, sx] += 0.35 * v
+    c.weather.k[sy, sx] += v
 
 
 # ============================================================ painting
@@ -476,6 +514,7 @@ def paint_eave_roof(c):
     w = c.weather
     for k in w.f:
         w.f[k][r0:] = w.f[k][i0] * (1.0 - f) + w.f[k][i1] * f
+    w.k[r0:] = w.k[i0] * (1.0 - f) + w.k[i1] * f
 
     rpm = EAVE_RPM
     k = rpm / PPM
@@ -711,9 +750,10 @@ def weather(c):
     """Where the weather goes; scripts/weathering.py says what it looks like.
 
     Dirt resolves to the neutral dust weathering.py keeps for steel on every
-    id, not to soil: at a coal plant the dust is coal. coal() darkens it
-    further where the dust is coal itself: the lane's foot, the chutes, the
-    concrete the trucks spray."""
+    id, not to soil. coal() lays the coal itself (Weather's K field): heavy
+    on the legs' feet, in the lane, round and on the hoppers, on the
+    gallery's floor and the intake's roof under it; light on the cladding
+    above, a working plant's dust, not neglect."""
     w = Weather(c, clean=(ID_GLASS,),
                 steel=tuple(i for i in SURFACE if i != ID_GLASS))
     w.grime(0.045)
@@ -723,11 +763,13 @@ def weather(c):
     # ring beam from the flashing above it
     w.plinth(0, ATLAS, S1_Y0, S1_Y0 + m(Z_PLINTH), (ID_CONC,))
     w.splash(0, ATLAS, S1_Y0 + m(Z_PLINTH), S1_TOP, (ID_CONC,))
+    # S1's V is height from the ground on every wall, so the coal the wheels
+    # throw up can follow it: heavy at the legs' feet, fading by 2 m
     s1 = c.sl(0, ATLAS, 0, S1_TOP)
-    coal(c, 0, ATLAS, 0, S1_TOP, lambda Y, X: (0.55 * np.exp(
-        -np.clip(Y - S1_Y0, 0, None) / m(0.9)) * (0.6 + 0.4 * w.noise("blotch")[s1])
-        + 0.12 + 0.14 * w.noise("big")[s1]
-        + 0.22 * atlas.smoothstep(0.3, 1.8, w.noise("long")[s1])), (ID_CONC,))
+    coal(c, 0, ATLAS, 0, S1_TOP, lambda Y, X: (FOOT_COAL * np.exp(
+        -np.clip(Y - S1_Y0, 0, None) / m(FOOT_FALL)) * (0.65 + 0.35 * w.noise("blotch")[s1])
+        + 0.06 + 0.08 * w.noise("big")[s1]
+        + 0.14 * atlas.smoothstep(0.3, 1.8, w.noise("long")[s1])), (ID_CONC,))
     f0 = S1_TOP - m(0.15)
     w.runs(0, ATLAS, S1_Y0 + m(Z_DECK) + 2, f0 - 1, (ID_CONC,), 0.20, fall=18.0)
     w.runs(0, ATLAS, S1_Y0 + m(1.0), S1_Y0 + m(Z_DECK) - 1, (ID_CONC,), 0.06,
@@ -738,9 +780,9 @@ def weather(c):
     w.add("D", 0, ATLAS, rows[0], rows[1], lambda Y, X, nz: 0.08 * nz("big")
           + 0.10 * atlas.smoothstep(0.4, 1.8, nz("long")), (ID_CLAD, ID_CONC))
     cr = c.sl(0, ATLAS, rows[0], rows[1])
-    coal(c, 0, ATLAS, rows[0], rows[1], lambda Y, X: 0.10 + 0.12 * w.noise("big")[cr]
-         + 0.22 * atlas.smoothstep(0.2, 1.8, w.noise("long")[cr])
-         + 0.10 * atlas.smoothstep(0.5, 1.6, w.noise("runs")[cr]), (ID_CLAD, ID_CONC))
+    coal(c, 0, ATLAS, rows[0], rows[1], lambda Y, X: 0.05 + 0.07 * w.noise("big")[cr]
+         + 0.14 * atlas.smoothstep(0.2, 1.8, w.noise("long")[cr])
+         + 0.05 * atlas.smoothstep(0.5, 1.6, w.noise("runs")[cr]), (ID_CLAD, ID_CONC))
     # roof, fascia, rear fascia and gutter
     w.roof(0, ATLAS, ROOF_Y0, ROOF_H, ROOF_LEN, (ID_ROOF,))
     w.add("D", 0, ATLAS, ROOF_Y0 - 2, ROOF_Y0 + ROOF_H + 2,
@@ -759,8 +801,10 @@ def weather(c):
     x0, y0, lw, lh = LANE_SIDE
     w.add("D", x0 - 2, x0 + lw + 2, y0 - 2, y0 + lh + 2, lambda Y, X, nz: 0.10
           + 0.08 * nz("blotch"))
-    coal(c, x0 - 2, x0 + lw + 2, y0 - 2, y0 + lh + 2, lambda Y, X: 0.15 + 0.55 * np.exp(
-        -np.clip(Y - y0, 0, None) / (0.5 * LPM)))
+    ls = c.sl(x0 - 2, x0 + lw + 2, y0 - 2, y0 + lh + 2)
+    coal(c, x0 - 2, x0 + lw + 2, y0 - 2, y0 + lh + 2, lambda Y, X: LANE_COAL
+         + 0.10 * w.noise("blotch")[ls] + 0.60 * np.exp(
+             -np.clip(Y - y0, 0, None) / (1.0 * LPM)))
     x0, y0, cw, ch = LANE_CEIL
     hx, hy = hop_at_deck()
 
@@ -770,18 +814,23 @@ def weather(c):
         d = np.min([np.hypot(np.clip(np.abs(u) - hx / 2, 0, None),
                              np.clip(np.abs(yy - yc) - hy / 2, 0, None)) for yc in HOP_Y],
                    axis=0)
-        return 0.18 + 0.45 * np.exp(-d / 0.5)
+        lc = c.sl(x0 - 2, x0 + cw + 2, y0 - 2, y0 + ch + 2)
+        return LANE_COAL + 0.08 * w.noise("blotch")[lc] + 0.55 * np.exp(-d / 0.7)
     w.add("D", x0 - 2, x0 + cw + 2, y0 - 2, y0 + ch + 2, lambda Y, X, nz: 0.10
           + 0.10 * nz("blotch"))
     coal(c, x0 - 2, x0 + cw + 2, y0 - 2, y0 + ch + 2, round_hoppers)
+    # the hoppers: dusted all over, caked toward the mouth
     x0, y0, hw_, hh = CHUTE
     coal(c, x0 - 2, x0 + hw_ + 2, y0 - 2, y0 + hh + 2,
-         lambda Y, X: 0.25 + 0.55 * np.clip(1.0 - (Y - y0) / hh, 0, 1))
+         lambda Y, X: 0.35 + 0.45 * np.clip(1.0 - (Y - y0) / hh, 0, 1))
     w.add("R", x0 - 2, x0 + hw_ + 2, y0 - 2, y0 + hh + 2,
-          lambda Y, X, nz: 0.18 * nz("speck") + 0.10 * nz("blotch"))
-    for name in ("gal_under", "slab_under", "felt", "steel", "reveal"):
+          lambda Y, X, nz: 0.12 * nz("speck") + 0.06 * nz("blotch"))
+    # flat patches: the gallery's floor and the intake's roof under it take
+    # the spill; the reveals and the slab's soffit less
+    for name, k in (("gal_under", 0.55), ("felt", 0.60), ("slab_under", 0.30),
+                    ("steel", 0.30), ("reveal", 0.25)):
         px, py, pw, ph = PATCHES[name]
-        coal(c, px - 2, px + pw + 2, py - 2, py + ph + 2, 0.25)
+        coal(c, px - 2, px + pw + 2, py - 2, py + ph + 2, k)
     # the column strip and the openings
     for kind, (wd, h, cs, cb, ct) in OPENINGS.items():
         ix, iy = ITEM_ORIGIN[kind]
@@ -793,8 +842,8 @@ def weather(c):
         else:
             hx_ = ox1 - m(0.09) if kind == "door" else (ox0 + ox1) / 2.0
             w.door(ox0, ox1, oy0, oy1, (ID_DOOR, ID_STEEL), handle=(hx_, oy0 + m(1.02)))
-            coal(c, ix - 2, ix + rw + 2, iy - 2, iy + m(0.6),
-                 lambda Y, X, iy=iy: 0.30 * np.exp(-np.clip(Y - iy, 0, None) / m(0.25)))
+            coal(c, ix - 2, ix + rw + 2, iy - 2, iy + m(0.8),
+                 lambda Y, X, iy=iy: 0.45 * np.exp(-np.clip(Y - iy, 0, None) / m(0.35)))
     return w
 
 

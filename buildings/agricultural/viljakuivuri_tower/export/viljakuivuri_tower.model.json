@@ -3,7 +3,7 @@
   "version": 1,
   "name": "viljakuivuri_tower",
   "path": "buildings/agricultural/viljakuivuri_tower",
-  "source": {"commit": "a63afeef87011843d913649d80d9f2f9c8b2a6c5", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "841f3ff8518f6691fec7cc420e7e014335c6bd6f", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-4.85, 0.0, -4.4], "max": [4.85, 12.1934, 4.4]},
   "footprint": [
@@ -25,10 +25,10 @@
     {"id": "intake", "kind": "vehicle", "position": [2.6, 0.1, 3.6], "facing": [0.0, 0.0, 1.0], "width_m": 3.0, "height_m": 3.2, "main": false}
   ],
   "lods": [
-    {"file": "viljakuivuri_tower_lod0.glb", "triangles": 1110, "sha256": "dcf18ef302499ae7de61071f0d381ca1a6035306a61942fd5804dd211491b5a1"},
-    {"file": "viljakuivuri_tower_lod1.glb", "triangles": 874, "sha256": "0249fb891d4587713a05cc80782e34ca808adcafd610a54e51cf0ecdc5a461e2"},
-    {"file": "viljakuivuri_tower_lod2.glb", "triangles": 526, "sha256": "6e1004d67af0667ef08dcf3eb5fa8fec48fd8bd9c622535295f2aca64323dd7a"},
-    {"file": "viljakuivuri_tower_lod3.glb", "triangles": 478, "sha256": "69bb52388c388906f3072793c2f10368a1794ebda110a408b83dd3ed40c15091"}
+    {"file": "viljakuivuri_tower_lod0.glb", "triangles": 1192, "sha256": "0433f3a3c766ce48ec5c312ce235fee6c30605de9fec03947121ce6b28d141a4"},
+    {"file": "viljakuivuri_tower_lod1.glb", "triangles": 916, "sha256": "c5dd2230fab8d8494a59acf62875d21157e2607c1220fd59714e71e76ee231c2"},
+    {"file": "viljakuivuri_tower_lod2.glb", "triangles": 544, "sha256": "faa06624d1cc4fbba45baca166e80ef69f3ea2eb2e9713d14705f8aa175e4c65"},
+    {"file": "viljakuivuri_tower_lod3.glb", "triangles": 490, "sha256": "5a1c3961deb835623095dd8e9dccc10eb27c00dac5a4109d53c80f044aaf962e"}
   ],
   "textures": {
     "orm": {"file": "viljakuivuri_tower_orm.png", "sha256": "d5e49951fb0735bd6abef3ab9323a9c211dea8b23ca2cb9aaa14e164986f3fa5"},
@@ -41,6 +41,6 @@
     {"id": "yellow_ochre", "albedo": "viljakuivuri_tower_albedo_yellow_ochre.png", "sha256": "fffefea578af4d9c57e57e1b890008b4157ce1e5ede618406e090c1ecd54ddb3"}
   ],
   "default_variant": "red_ochre",
-  "preview": {"file": "../preview.png", "sha256": "71a7209d122cafb156933b1e928ab5e240187f0523847302a44924af11894c10"},
+  "preview": {"file": "../preview.png", "sha256": "1a40965ac43a17b1ee81ca6fb6a17242365cecc2348b666bda374fdbadbff18f"},
   "hero": false
 }

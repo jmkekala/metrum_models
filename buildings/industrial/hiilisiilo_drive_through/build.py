@@ -23,9 +23,10 @@ is a 1.60 m concrete leg; east of it, under the bunker, the control and
 stair room with the operators' steel door. Over the lane, a concrete ring
 beam carries the screen house: a concrete frame clad in profiled sheet to a
 1:10 mono-pitch roof falling to the rear, 13.1 m at its front fascia, a row
-of small steel windows at the screen floor. Behind it, a 2.0 x 2.0 m conveyor
-gallery rises at 30 degrees from a low concrete intake hopper house into the
-screen house's rear wall.
+of small steel windows at the screen floor. East of it, on the side the
+catalog camera sees, a 2.0 x 2.0 m conveyor gallery rises at 30 degrees from
+a low concrete intake hopper house into the screen house's east wall, clear
+of the lane and both of its approaches.
 
 Construction is a set of closed solids unioned with Blender's exact boolean
 (asset_build.union): the bunker house, the roof slab, the gallery, the intake
@@ -102,7 +103,7 @@ WALLS = [
          u_off=0.0),
     dict(name="east", p0=(HX, -HY), p1=(HX, HY), lane=None,
          cols=[(0.0, CW), (2 * HY - CW, 2 * HY)],
-         items=[("win", 3.00, L.Z_WIN_LOW), ("win", 4.00, L.Z_WIN)], u_off=3.1),
+         items=[("win", 3.00, L.Z_WIN_LOW), ("win", 3.00, L.Z_WIN)], u_off=3.1),
     dict(name="rear", p0=(HX, HY), p1=(-HX, HY), lane=(HX - XL1, HX - XL0),
          cols=[(0.0, CW), (HX - XL1 - CW, HX - XL1), (HX - XL0, HX - XL0 + CW),
                (2 * HX - CW, 2 * HX)],
@@ -114,11 +115,11 @@ WALLS = [
 (IX0, IX1), (IY0, IY1) = L.INT_X, L.INT_Y
 INTAKE_WALLS = [
     dict(name="int_front", p0=(IX0, IY0), p1=(IX1, IY0), lane=None, cols=[],
-         items=[], u_off=4.0),
+         items=[("door_v", (IX1 - IX0) / 2.0, 0.0)], u_off=4.0),
     dict(name="int_east", p0=(IX1, IY0), p1=(IX1, IY1), lane=None, cols=[],
          items=[], u_off=7.0),
     dict(name="int_rear", p0=(IX1, IY1), p1=(IX0, IY1), lane=None, cols=[],
-         items=[("door_v", (IX1 - IX0) / 2.0, 0.0)], u_off=9.8),
+         items=[], u_off=9.8),
     dict(name="int_west", p0=(IX0, IY1), p1=(IX0, IY0), lane=None, cols=[],
          items=[], u_off=12.8),
 ]
@@ -146,9 +147,8 @@ def keeps_hoppers(level):
 # ----------------------------------------------------------------- downpipes
 # The roof falls to the rear, so the rear eave carries the gutter, and a
 # downpipe stands at each end of the rear wall, DP.CORNER in from the
-# corners: on the control room's back wall beside the gallery, and on the
-# west leg's. The rear wall's middle is the lane's mouth, so nothing hangs
-# there.
+# corners: on the control room's back wall and on the west leg's. The rear
+# wall's middle is the lane's mouth, so nothing hangs there.
 _REAR = WALLS[2]
 DOWNPIPE_S = (DP.CORNER, 2 * HX - DP.CORNER)
 DOWNPIPES = [DP.eave_pipe(_REAR["p0"], _REAR["p1"], s, L.Z_EAVE_R, L.TAN, L.REAR_OV)
@@ -581,38 +581,39 @@ def intake_slab():
 
 # ============================================================== the gallery
 def gallery():
-    """The conveyor gallery: a 2.0 x 2.0 m box whose axis falls at GAL_DEG
-    from inside the screen house's rear wall to inside the intake house.
-    Its sides take the cladding band with U along the axis and V square to
-    it, so the sheets' ribs stand square to the gallery as they are fixed;
-    its top takes the roof band up the slope from its lower end; its floor
-    a dark steel patch. Both ends are buried except the lower end's top,
-    which stands up out of the intake's roof and takes the cladding."""
+    """The conveyor gallery: a 2.0 x 2.0 m box whose axis runs along X and
+    falls at GAL_DEG from inside the screen house's east wall to inside the
+    intake house. Its sides take the cladding band with U along the axis and
+    V square to it, so the sheets' ribs stand square to the gallery as they
+    are fixed; its top takes the roof band up the slope from its lower end;
+    its floor a dark steel patch. Both ends are buried except the lower
+    end's top, which stands up out of the intake's roof and takes the
+    cladding."""
     B = Builder()
     (x0, x1), (y0, y1) = L.GAL_X, L.GAL_Y
     hv = L.GAL_H / L.GAL_COS
-    b0, b1 = L.gal_bottom(y0), L.gal_bottom(y1)
+    b0, b1 = L.gal_bottom(x0), L.gal_bottom(x1)
 
     def t_of(co):
-        return (co.y - y0) / L.GAL_COS
+        return (co.x - x0) / L.GAL_COS
 
     def side(co):
-        d = (co.z - L.gal_bottom(co.y)) * L.GAL_COS
+        d = (co.z - L.gal_bottom(co.x)) * L.GAL_COS
         return (8.0 + (t_of(co) + 1.0) * PPM, L.C_Y0 + d * PPM)
 
     def top(co):
-        return ((co.x + 16.0) * PPM, L.ROOF_Y0 + (L.GAL_LEN - t_of(co)) * L.ROOF_RPM)
+        return ((co.y + 16.0) * PPM, L.ROOF_Y0 + (L.GAL_LEN - t_of(co)) * L.ROOF_RPM)
 
     def end(co):
-        return (8.0 + (co.x - x0) * PPM, L.C_Y0 + (co.z - b1) / hv * L.C_H)
+        return (8.0 + (co.y - y0) * PPM, L.C_Y0 + (co.z - b1) / hv * L.C_H)
 
-    B.face([(x0, y0, b0), (x0, y1, b1), (x0, y1, b1 + hv), (x0, y0, b0 + hv)], side)
-    B.face([(x1, y1, b1), (x1, y0, b0), (x1, y0, b0 + hv), (x1, y1, b1 + hv)], side)
-    B.face([(x0, y0, b0 + hv), (x0, y1, b1 + hv), (x1, y1, b1 + hv), (x1, y0, b0 + hv)], top)
-    B.face([(x0, y0, b0), (x1, y0, b0), (x1, y1, b1), (x0, y1, b1)], uv_patch("gal_under"))
-    B.face([(x0, y0, b0), (x0, y0, b0 + hv), (x1, y0, b0 + hv), (x1, y0, b0)],
+    B.face([(x0, y0, b0), (x1, y0, b1), (x1, y0, b1 + hv), (x0, y0, b0 + hv)], side)
+    B.face([(x1, y1, b1), (x0, y1, b0), (x0, y1, b0 + hv), (x1, y1, b1 + hv)], side)
+    B.face([(x0, y0, b0 + hv), (x1, y0, b1 + hv), (x1, y1, b1 + hv), (x0, y1, b0 + hv)], top)
+    B.face([(x0, y0, b0), (x0, y1, b0), (x1, y1, b1), (x1, y0, b1)], uv_patch("gal_under"))
+    B.face([(x0, y0, b0), (x0, y0, b0 + hv), (x0, y1, b0 + hv), (x0, y1, b0)],
            uv_patch("blank"))
-    B.face([(x1, y1, b1), (x1, y1, b1 + hv), (x0, y1, b1 + hv), (x0, y1, b1)], end)
+    B.face([(x1, y1, b1), (x1, y1, b1 + hv), (x1, y0, b1 + hv), (x1, y0, b1)], end)
     return B
 
 
@@ -740,28 +741,40 @@ def check_layout():
         problems.append("the wall ring's lid is above the roof slab")
     if L.TAN > 1.0 / 8.0:
         problems.append("the roof is steeper than 1:8: roof safety kit rules apply")
-    # the gallery: its upper end buried in the house above the ring beam and
-    # below the eave, its floor crossing the intake's roof inside the slab's
-    # plan, its lower end inside the intake under the slab
+    # the gallery: its upper end buried in the house's east wall above the
+    # ring beam and below the roof, its floor crossing the intake's roof
+    # inside the slab's plan, its lower end inside the intake under the slab
     (gx0, gx1), (gy0, gy1) = L.GAL_X, L.GAL_Y
     hv = L.GAL_H / L.GAL_COS
-    if not (gy0 < HY - 0.2 and L.gal_bottom(HY) > Z_CLAD + 0.5
-            and L.gal_bottom(gy0) + hv < L.Z_EAVE_R - 1.0):
+    roof_low = min(L.z_under(gy0), L.z_under(gy1))
+    if not (gx0 < HX - 0.2 and L.gal_bottom(HX) > Z_CLAD + 0.5
+            and L.gal_bottom(gx0) + hv < roof_low - 1.0):
         problems.append("the gallery's upper end is not buried in the screen house")
-    yc = HY + (L.Z_SCREEN - L.INT_SLAB[1]) / L.GAL_TAN
-    if not IY0 - L.INT_OV + 0.3 < yc < IY1 - 0.5:
-        problems.append("the gallery's floor meets the intake's roof at y %.2f" % yc)
-    if not (IY0 + 0.5 < gy1 < IY1 - 0.1 and 0.3 < L.gal_bottom(gy1) < L.INT_SLAB[0] - 0.3):
+    xc = HX + (L.Z_SCREEN - L.INT_SLAB[1]) / L.GAL_TAN
+    if not IX0 - L.INT_OV + 0.3 < xc < IX1 - 0.5:
+        problems.append("the gallery's floor meets the intake's roof at x %.2f" % xc)
+    if not (IX0 + 0.5 < gx1 < IX1 - 0.1 and 0.3 < L.gal_bottom(gx1) < L.INT_SLAB[0] - 0.3):
         problems.append("the gallery's lower end is not inside the intake house")
-    if not (IX0 + 0.3 < gx0 and gx1 < IX1 - 0.3):
-        problems.append("the gallery is not inside the intake's walls in x")
-    if not (XL1 + 1.0 < gx0 and gx1 < HX - CW - 0.1):
-        problems.append("the gallery's mouth crowds the lane or the corner column")
-    if IX0 < XL1 + 1.5:
-        problems.append("the intake house stands within 1.5 m of the lane's line")
-    # downpipes: clear of the lane's mouth and the gallery, which pass
-    # through the rear wall
-    avoid = [("lane", HX - XL1, HX - XL0), ("gallery", HX - gx1, HX - gx0)]
+    if not (IY0 + 0.3 < gy0 and gy1 < IY1 - 0.3):
+        problems.append("the gallery is not inside the intake's walls in y")
+    if not (-HY + CW + 0.1 < gy0 and gy1 < HY - CW - 0.1):
+        problems.append("the gallery's mouth crowds a corner column")
+    # its mouth in the east wall clear of that wall's windows
+    east = WALLS[1]
+    ga, gb = gy0 + HY, gy1 + HY
+    gz0, gz1 = L.gal_bottom(HX), L.gal_bottom(HX) + hv
+    for kind, s, z in east["items"]:
+        (l, r, b, t), _ = item_rects(kind, s, z)
+        if l < gb + 0.3 and ga - 0.3 < r and b < gz1 + 0.3 and gz0 - 0.3 < t:
+            problems.append("east: %s crowds the gallery's mouth" % kind)
+    # the lane and its approaches: a straight corridor x XL0 .. XL1 for every
+    # y; the gallery, the intake and its slab stand east of the house
+    if min(gx0, IX0 - L.INT_OV) < XL1 + 1.5:
+        problems.append("the gallery or the intake reaches within 1.5 m of the lane's line")
+    if gx0 < HX - 0.6 or IX0 - L.INT_OV < HX + 1.0:
+        problems.append("the gallery or the intake is not east of the house")
+    # downpipes: clear of the lane's mouth, which passes through the rear wall
+    avoid = [("lane", HX - XL1, HX - XL0)]
     for pipe in DOWNPIPES:
         problems += DP.problems(pipe, "the rear downpipe at s %.2f" % pipe.s, avoid)
     # atlas: the cladding's U stays inside C, the snow guard inside its strip
@@ -789,14 +802,14 @@ def facts():
     in the build frame.
 
     The footprint is the ground outline of the bunker house's legs and walls
-    with the lane inside it (the 12.0 x 8.0 m rectangle), the intake house,
-    and between them the strip under the gallery, the gallery's own width,
-    which joins the two into one simple polygon. The one storey is the two
-    ground-level rooms, the control and stair room east of the lane and the
-    intake house, inside walls 0.30 and 0.25 m thick. The lane is open and
-    the bunker and screen house above it are plant, so neither counts; the
-    west leg is a solid concrete pier. The lane's mouths have no door leaf
-    and are not doors."""
+    with the lane inside it (the 12.0 x 8.0 m rectangle), the intake house
+    east of it, and between them the strip under the gallery, the gallery's
+    own width, which joins the two into one simple polygon. The one storey
+    is the two ground-level rooms, the control and stair room east of the
+    lane and the intake house, inside walls 0.30 and 0.25 m thick. The lane
+    is open and the bunker and screen house above it are plant, so neither
+    counts; the west leg is a solid concrete pier. The lane's mouths have no
+    door leaf and are not doors."""
     walls = {spec["name"]: spec for spec in WALLS + INTAKE_WALLS}
 
     def door(door_id, kind, wall, main=False):
@@ -806,18 +819,18 @@ def facts():
         return model_facts.wall_door(door_id, kind, spec["p0"], spec["p1"], s, z,
                                      w, h, main)
 
-    (gx0, gx1) = L.GAL_X
+    (gy0, gy1) = L.GAL_Y
     control = (HX - XL1 - 2 * 0.30) * (2 * HY - 2 * 0.30)
     intake = (IX1 - IX0 - 2 * 0.25) * (IY1 - IY0 - 2 * 0.25)
     return {
         "hero": False,
         "dwellings": 0,
-        "footprint": [(-HX, -HY), (HX, -HY), (HX, HY), (gx1, HY), (gx1, IY0),
-                      (IX1, IY0), (IX1, IY1), (IX0, IY1), (IX0, IY0), (gx0, IY0),
-                      (gx0, HY), (-HX, HY)],
+        "footprint": [(-HX, -HY), (HX, -HY), (HX, gy0), (IX0, gy0), (IX0, IY0),
+                      (IX1, IY0), (IX1, IY1), (IX0, IY1), (IX0, gy1), (HX, gy1),
+                      (HX, HY), (-HX, HY)],
         "storeys": [(0.0, control + intake)],
         "doors": [door("control", "entrance", "front", main=True),
-                  door("intake", "vehicle", "int_rear")],
+                  door("intake", "vehicle", "int_front")],
     }
 
 

@@ -27,8 +27,8 @@ high on the tower.
 - **Finish:** red-ochre vertical board-and-batten with white corner boards,
   casings and fascias, on a low concrete plinth. Drip boards cover the board
   joints at 4.8 m and 8.8 m. Half-round galvanised gutters run along the
-  three eaves, with a downpipe from the tower's west eave and one from the
-  lean-to's, and every roof slope carries a snow guard near its eave. The
+  three eaves, each with a downpipe: the tower's west one and the lean-to's
+  to the ground, the tower's east one onto the lean-to's roof. Every roof slope carries a snow guard near its eave. The
   gutters, downpipes and snow guards are one galvanised steel, the same as
   on the farm's barn and machine shed and darker than the bin's newer zinc.
   There is no ground or slab.
@@ -141,7 +141,7 @@ rakes and the bin's eave have none.
 
 ## Construction
 
-`build.py` builds up to eleven closed solids and unions them with Blender's
+`build.py` builds up to twelve closed solids and unions them with Blender's
 exact boolean (`asset_build.union`):
 
 - the tower body;
@@ -153,7 +153,7 @@ exact boolean (`asset_build.union`):
 - the fill collar;
 - the spout;
 - the flue;
-- two downpipes (`scripts/downpipes.py`).
+- three downpipes (`scripts/downpipes.py`).
 
 Wall rings rise 0.10 m into their slabs. The union trims them at the soffits,
 removes the lean-to's buried west wall and the tower's east wall behind it,
@@ -185,7 +185,7 @@ Parameters the tiers derive from:
 | Bin ring | 1.00 m |
 | Spout | from (1.60, 2.20, 9.60) to the collar |
 | Flue | (3.20, −1.00), 7.00 m top |
-| Downpipes | `DOWNPIPE_SPOTS`: west wall s 4.75 m, lean-to east wall s 0.25 m |
+| Downpipes | `DOWNPIPE_SPOTS`: west wall s 4.75 m, lean-to east wall s 0.25 m, tower east wall s 0.75 m |
 | Sides per round part | `SIDES` |
 
 ### The lean-to stands into the tower, not against it
@@ -249,18 +249,33 @@ galvanised colour and its hangers read as the pipe's clips.
 | --- | --- | --- | --- |
 | Tower | west eave wall | 0.25 m from the front corner (s 4.75 m) | soffit 10.32 m at the outlet to the shoe |
 | Lean-to | its outer, east wall | 0.25 m from the front corner (s 0.25 m) | soffit 3.52 m at the outlet to the shoe |
+| Tower, east | east eave wall, above the lean-to | 0.75 m from the front corner (s 0.75 m) | soffit 10.32 m at the outlet to the shoe's mouth at 4.99 m, over the lean-to's slope |
 
-Both stand at the front end of their eave, so the front view and the
+All three stand near the front end of their eave, so the front view and the
 catalog's oblique see them. The module has no limit on a pipe's length, so
-the 10 m tower pipe is the same sweep as the lean-to's.
+the 10 m tower pipes are the same sweep as the lean-to's.
 
-**The tower's east eave gutter has no downpipe.** The lean-to and its rakes
-cover the tower's east wall all but 0.40 m at each end. A pipe there must
-stand `DP.CORNER` (0.25 m) from the tower's corner, which puts its far face
-at 0.20 m from the lean-to's wall plane, inside the lean-to's 0.25 m rake.
-`scripts/downpipes.py` only runs a pipe to the ground, so it cannot end one
-on the lean-to's roof either. A pipe for that gutter needs a module change
-(a foot on a lower roof), recorded here as pending.
+#### The east pipe spills onto the lean-to's roof
+
+The lean-to's roof covers the tower's east wall all but 0.40 m at each end,
+too little for a pipe `DP.CORNER` (0.25 m) from the corner and clear of the
+lean-to's 0.25 m rake, so no pipe from the east gutter can reach the ground.
+It comes down the tower's wall above the lean-to instead and discharges onto
+the lean-to's slope, which carries the water to the lean-to's own gutter and
+pipe, as a pipe from an upper roof does on a lower one.
+
+`scripts/downpipes.py` runs a pipe to the ground only, so `build.py`'s
+`RoofPipe` subclasses its `Pipe` and lifts the foot: the part of the path
+below the swan-neck's offset (the shoe at `LOD0`/`LOD1`, the straight pipe's
+open end at `LOD2`/`LOD3`) rises by 4.79 m, so the straight end stops
+`ON_ROOF` = 0.10 m over the slope at the pipe's wall-side face (4.99 m), and
+the shoe starts at 5.14 m and kicks 0.15 m out, down the slope, its mouth
+about 0.11 m clear of the sheet. Everything else (the swan-neck, the
+section, the UVs on `PIPE_STRIP`, `DP.MODES` per tier, `DP.problems()`) is
+the module's. The pipe stands 0.75 m from the front corner, 0.35 m inside
+the lean-to's front wall plane (`ON_ROOF_IN` asks 0.30 m), so the shoe lands
+on the roof and not on the rake. The foot is not joined to the roof: like
+every pipe it hangs from the soffit only.
 
 ### Snow guards
 
@@ -302,30 +317,36 @@ No geometry: `rintamamiestalo_porch` paints its snow guard the same way.
 - the flue within 0.4 m of the tower, its foot outside the lean-to, or its
   soot floor down in the slab;
 - a downpipe within `DP.CORNER` of its wall's ends or within `DP.CLEAR` of an
-  opening on its wall (`DP.problems`), or within 0.3 m of the bin's eave.
+  opening on its wall (`DP.problems`), or within 0.3 m of the bin's eave;
+- the east downpipe less than `ON_ROOF_IN` inside the lean-to's front and
+  rear wall planes, or either of its feet (the shoe's mouth, the straight
+  end) not 0.03–0.25 m above the lean-to's slope.
 
 ## Per-tier triangle counts
 
 | Tier | Triangles | Ceiling | What changes |
 | --- | --- | --- | --- |
-| `LOD0` | 1,110 | 12,000 | casing rings, reveals and closures on all eight openings; bin 16-sided, spout and flue 8-sided, collar 8; downpipes 8-sided with swan-neck and shoe |
-| `LOD1` | 874 | 4,000 | each opening one recess the size of its casing; bin 12, spout and flue 6; downpipes 4-sided, bent |
-| `LOD2` | 526 | 1,500 | openings flush; coplanar boolean splits dissolved; bin 8, spout and flue 4, collar 6; downpipes 4-sided, straight |
-| `LOD3` | 478 | 500 | as `LOD2`, bin a 6-sided prism, collar 4; downpipes 3-sided, straight |
+| `LOD0` | 1,192 | 12,000 | casing rings, reveals and closures on all eight openings; bin 16-sided, spout and flue 8-sided, collar 8; downpipes 8-sided with swan-neck and shoe |
+| `LOD1` | 916 | 4,000 | each opening one recess the size of its casing; bin 12, spout and flue 6; downpipes 4-sided, bent |
+| `LOD2` | 544 | 1,500 | openings flush; coplanar boolean splits dissolved; bin 8, spout and flue 4, collar 6; downpipes 4-sided, straight |
+| `LOD3` | 490 | 500 | as `LOD2`, bin a 6-sided prism, collar 4; downpipes 3-sided, straight |
 
 What the bin and the spout cost together (bin wall, cone, collar and spout),
-the flue, and the two downpipes (each pipe's faces and its hole in the
+the flue, and the three downpipes (each pipe's faces and its hole in the
 soffit, `DP.MODES`):
 
 | Tier | Bin, cone, collar, spout | Flue | Downpipes |
 | --- | --- | --- | --- |
-| `LOD0` | 376 | 66 | 166 |
-| `LOD1` | 304 | 52 | 88 |
-| `LOD2` | 204 | 34 | 40 |
-| `LOD3` | 162 | 36 | 34 |
+| `LOD0` | 376 | 66 | 248 |
+| `LOD1` | 304 | 52 | 130 |
+| `LOD2` | 204 | 34 | 58 |
+| `LOD3` | 162 | 36 | 46 |
 
-No tier drops the downpipes: every tier keeps both at the module's default
-`DP.MODES`, and `LOD3` stays under its ceiling with them (478 of 500).
+The east pipe is 82 / 42 / 18 / 12 of those. No tier drops the downpipes:
+every tier keeps all three at the module's default `DP.MODES`, and `LOD3`
+stays under its ceiling with them (490 of 500). That leaves `LOD3` 10
+triangles of headroom; anything added later goes past it, and the first
+saving would be the east pipe at `LOD3`, where it is a one-pixel line.
 
 The building itself is about 500 triangles at `LOD0` and about 250 at `LOD3`,
 before the downpipes.
@@ -377,9 +398,18 @@ Renders are in `review/farm_2026_11_20/viljakuivuri_tower/lod/`.
   its front corner board. At 40 m both pipes are still a clear line. The
   snow guard reads as a double rail near each eave, strongest under the
   reverse sun. Nothing else changed: bounds (9.70 × 8.80 × 12.19 m) and pivot
-  are as before on every tier. Every tier keeps both pipes (`DP.MODES`:
+  are as before on every tier. Every tier keeps every pipe (`DP.MODES`:
   8-sided bent, 4-sided bent, 4-sided straight, 3-sided straight); past
   70 m the swan-neck and shoe go, which is under two pixels.
+- **The tower's east downpipe.** Reviewed before and after with identical
+  `review_asset.py` runs (`LOD0`/`LOD1` at 20 and 40 m, oblique, right (east)
+  and front; `LOD2`/`LOD3` at 70 and 120 m, oblique and right; noon), in
+  `review/mine_fixes_2026_11_20/viljakuivuri_tower/compare/`. At 20 m the
+  pipe reads down the tower's east wall from its swan-neck under the eave to
+  the lean-to's roof, where the shoe kicks out down the slope in the tower's
+  shadow; from the east it is a thin grey line beside the flue, ending on the
+  sheet. At 70 m (`LOD3`) it is still a one-pixel line in the oblique. Nothing
+  else in the frames changed; bounds and pivot are as before.
 
 The six working views at `LOD0` and `LOD3` (orthographic front, rear, sides,
 top, and the raised three-quarter aerial) are in `views/`. Close views at 10 m
@@ -402,16 +432,21 @@ Measured with `scripts/validate_asset.py` on the exports:
 
 | Tier | Hidden triangles | Share | Vertical area |
 | --- | --- | --- | --- |
-| `LOD0` | 7 of 1,110 | 0.6 % | 0.0 m² |
-| `LOD1` | 5 of 874 | 0.6 % | 0.0 m² |
-| `LOD2` | 4 of 526 | 0.8 % | 0.0 m² |
-| `LOD3` | 2 of 478 | 0.4 % | 0.0 m² |
+| `LOD0` | 10 of 1,192 | 0.8 % | 0.2 m² |
+| `LOD1` | 8 of 916 | 0.9 % | 0.5 m² |
+| `LOD2` | 6 of 544 | 1.1 % | 0.6 m² |
+| `LOD3` | 4 of 490 | 0.8 % | 0.9 m² |
 
 The candidates are exterior surface the 40 sampled rays rarely escape:
 
 - the flue's soot lining and floor, which see the sky up a 0.24 m mouth;
 - slivers where the tower's eave-wall tops meet the soffits;
-- the lean-to's rear-east wall top under its rake soffit.
+- the lean-to's rear-east wall top under its rake soffit;
+- the tower's east downpipe's flat that faces the wall across its 0.03 m
+  gap, all of the vertical area: the soffit above it and the lean-to's roof
+  below it close off the rays that escape the west pipe's gap downward. It
+  is exterior surface, seen edge-on from the side, and its area is one flat
+  of the pipe (wider at three sides on `LOD3`).
 
 No wall stands inside the building, by construction. The coincident double
 wall of the first build (Construction) is gone; the welded export is manifold
@@ -437,8 +472,10 @@ on every tier.
 - **The gutters are texture**: a painted half-round with its roll in the
   height channel on the eave fascias, with no modelled outlet or end caps.
   The downpipes are modelled (Construction).
-- **The tower's east eave gutter has no downpipe**; the module cannot place
-  one there (Construction, Gutters and downpipes).
+- **The tower's east downpipe ends on the lean-to's roof**, with its shoe
+  (or open end) just above the sheet; there is no spreader or roof-mounted
+  outlet, and the water's way down the slope to the lean-to's gutter is not
+  shown (Construction, Gutters and downpipes).
 - **The snow guards are texture**: tubes and brackets painted in the roof
   band, with relief in the height channel.
 - **Thresholds are a 0.10 m step**, with no ramp up to the tipping-pit door.
@@ -690,6 +727,11 @@ Checked here, in Blender 5.3.0, headless:
   noon) in `review/farm_gutter_colour_2026_11_20/` (local, git-ignored),
   compared side by side with the other two, and `variants.png` looked at.
 
+- The tower's east downpipe: `check_layout()` passes with it; the validator
+  reports no failures on the rebuilt tiers (1,192 / 916 / 544 / 490, bounds
+  9.70 × 8.80 × 12.19 m and pivot unchanged, sidecar doors unchanged);
+  before/after sheets at 20–120 m and an enlarged crop of its foot looked at
+  (LOD review); `preview.png` and `variants.png` regenerated and checked.
 - The mip4 stress renders re-run at 120 m (`LOD2`/`LOD3`, oblique and
   grazing, `review/farm_gutters_2026_11_20/viljakuivuri_tower/mip4/`): the
   eave fascias average to a light grey line, gutter and board together, the
@@ -716,6 +758,11 @@ Recorded as known-good markers, not requirements.
 
 ## Revision log
 
+- **2026-11-20:** a downpipe for the tower's east eave gutter, down the
+  tower's wall above the lean-to and spilling onto the lean-to's roof
+  (`RoofPipe` in `build.py`, lifting `scripts/downpipes.py`'s foot onto the
+  slope). Triangles 1,110 / 874 / 526 / 478 → 1,192 / 916 / 544 / 490;
+  bounds, pivot, textures and the sidecar's doors unchanged.
 - **2026-11-20:** the gutters, downpipes and snow guards share one
   galvanised steel with the farm's other two buildings: `ID_GUTTER` goes
   from sRGB 146/149/150, 0.48/0.70 to 134/137/137, roughness 0.48, metallic

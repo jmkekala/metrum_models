@@ -21,9 +21,10 @@ fed by a sloping spout from high on the tower's back.
 
 Construction is a set of closed solids unioned with Blender's exact boolean:
 the tower body, the lean-to body, the two roof slabs, the bin's wall, its
-cone, its fill collar, the spout, the flue and the two downpipes
+cone, its fill collar, the spout, the flue and the three downpipes
 (scripts/downpipes.py), which hang from the gutter painted on the eave
-fascias. The lean-to stands against the
+fascias; the tower's east one spills onto the lean-to's roof. The lean-to
+stands against the
 tower with its inner wall on the tower's east wall plane, and the union
 removes the two coincident walls. The result is the boundary of one empty
 volume, so no interior geometry can occur.
@@ -157,19 +158,53 @@ U_OFF = {"front": 0.0, "east": 5.3, "rear": 10.6, "west": 2.9,
          "lt_front": 5.0, "lt_east": 7.7, "lt_rear": 13.1, "lt_west": 0.0}
 
 # Downpipes (scripts/downpipes.py), from the gutters painted on the eave
-# fascias, both at the front end of their eave so the front and the catalog's
-# oblique see them. The tower's runs down its west wall: the lean-to and its
-# rakes cover the east wall all but 0.40 m at each end, too little for a pipe
-# CORNER from the tower's corner and clear of a 0.25 m rake, and the module
-# cannot land a pipe on the lean-to's roof, so the east eave's gutter has no
-# pipe of its own. The lean-to's runs down its outer, east wall.
-DOWNPIPE_SPOTS = [("west", 2 * TY - DP.CORNER), ("lt_east", DP.CORNER)]
+# fascias, each near the front end of its eave so the front and the catalog's
+# oblique see it. The tower's west pipe and the lean-to's run to the ground.
+# The tower's east eave stands over the lean-to, whose roof covers that wall
+# all but 0.40 m at each end, too little for a pipe CORNER from the corner and
+# clear of the 0.25 m rake. So the east pipe comes down the tower's wall above
+# the lean-to and spills onto its slope, which carries the water to the
+# lean-to's own gutter and pipe: RoofPipe below lifts its foot, the shoe or
+# the straight pipe's open end, to ON_ROOF over the slope at the wall. It
+# stands EAST_PIPE_S from the front corner, ON_ROOF_IN inside the lean-to's
+# front wall plane, so the shoe lands on the roof and not on the rake.
+EAST_PIPE_S = 0.75
+ON_ROOF = 0.10                   # the straight foot's height over the slope
+ON_ROOF_IN = 0.30
+
+
+def lt_roof_top(x):
+    """The lean-to's slope surface at x."""
+    return Z_LT_EAVE + (LX1 - x) * LT_TAN + ROOF_T
+
+
+class RoofPipe(DP.Pipe):
+    """A downpipe that ends on a lower roof instead of the ground: DP.Pipe's
+    path, with the part below the swan-neck's offset (the shoe, or a
+    straight pipe's foot) raised by *lift*."""
+
+    def __init__(self, pipe, lift):
+        super().__init__(pipe.p0, pipe.p0 + pipe.t * pipe.length, pipe.s,
+                         pipe.under, pipe.outlet)
+        self.lift = lift
+
+    def path(self, bent=True):
+        pts = super().path(bent)
+        k = 2 if bent else 1                     # DP.Pipe.path's foot points
+        return pts[:-k] + [(out, z + self.lift) for out, z in pts[-k:]]
+
+
+DOWNPIPE_SPOTS = [("west", 2 * TY - DP.CORNER), ("lt_east", DP.CORNER),
+                  ("east", EAST_PIPE_S)]
 _ALL_WALLS = {**TOWER_WALLS, **LT_WALLS}
 DOWNPIPES = [
     DP.eave_pipe(*TOWER_WALLS["west"][:2], DOWNPIPE_SPOTS[0][1], Z_T_EAVE, T_TAN,
                  T_EAVE_OV),
     DP.eave_pipe(*LT_WALLS["lt_east"][:2], DOWNPIPE_SPOTS[1][1], Z_LT_EAVE, LT_TAN,
                  LT_EAVE_OV),
+    RoofPipe(DP.eave_pipe(*TOWER_WALLS["east"][:2], DOWNPIPE_SPOTS[2][1], Z_T_EAVE,
+                          T_TAN, T_EAVE_OV),
+             lt_roof_top(TX + DP.GAP) + ON_ROOF - DP.FOOT),
 ]
 
 
@@ -829,6 +864,20 @@ def check_layout():
         foot = pipe.point(0.0, DP.OUT, 0.0)
         if math.hypot(foot.x - BX, foot.y - BY) < BIN_EAVE_R + DP.A + 0.3:
             problems.append("the %s downpipe is within 0.3 m of the bin" % w)
+    # the east pipe spills onto the lean-to's slope: over the roof, clear of
+    # its rakes, and its foot just above the sheet at every tier's path
+    east = DOWNPIPES[2]
+    y = -TY + east.s
+    if not -LY + ON_ROOF_IN - EPS <= y <= LY - ON_ROOF_IN + EPS:
+        problems.append("the east downpipe is not %.2f m inside the lean-to's "
+                        "walls" % ON_ROOF_IN)
+    for bent in (True, False):
+        out, z = east.path(bent)[-1]
+        r = DP.A / math.cos(math.pi / 8)
+        gap = z - r - lt_roof_top(TX + out + r)
+        if not 0.03 < gap < 0.25:
+            problems.append("the east downpipe's %s foot is %.2f m over the lean-to's "
+                            "roof" % ("bent" if bent else "straight", gap))
     return problems
 
 

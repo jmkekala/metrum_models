@@ -8,15 +8,23 @@ as a mine from a city-builder camera 35–150 m away, so the silhouette leads: a
 tall, plain concrete shaft tower carrying a wider head room at the top for
 the winding gear, with a low annex at its foot. It is the cast-concrete type
 of the 1920s–50s, not an open steel lattice: the catalog is fully opaque.
+What says *mine* rather than silo or water tower is the winding gear on
+show: the head room's front stands open on two big spoked rope sheaves.
 
 - **Shaft tower:** 6 × 6 m, board-marked cast concrete with horizontal board
   imprints, a lift line every 2 m, plugged form-tie holes and rain streaks.
   It stands on a base 0.25 m wider each side, 3.70 m tall, with a 45°
   weathered top.
 - **Head room:** cantilevered 0.80 m east and west, flush front and back,
-  from 17.0 m to its 20.8 m eave. A strip of small steel-framed windows on
-  the front (four) and back (three), two louvred steel vents in each
-  cantilevered gable. A shallow 15° profiled-steel gable roof, ridge along X.
+  from 17.0 m to its 20.8 m eave. A shallow 15° profiled-steel gable roof,
+  ridge along X. Its back has a strip of three small steel-framed windows,
+  its west gable two louvred steel vents.
+- **Sheave bay:** the head room's front is a 5.80 × 3.25 m opening onto the
+  sheave deck, dark inside, showing two 3.2 m spoked rope sheaves face-on,
+  one behind the other and offset, their ropes running down into the shaft
+  and off toward the hoist. The hoist house is taken to stand east, beyond
+  the annex: the ropes leave by a rope opening in the east gable, beside
+  one louvred vent.
 - **Shaft windows:** small steel-framed stair-landing windows: three stacked
   over the door on the front, staggered on the other faces.
 - **Shaft-collar annex:** a single-storey concrete annex on the east side
@@ -27,9 +35,9 @@ of the 1920s–50s, not an open steel lattice: the catalog is fully opaque.
 - **Rainwater and access:** painted half-round galvanised gutters on the
   three eaves, modelled downpipes from each, painted snow guards on every
   slope, and a galvanised wall ladder up the back from the ground to a metre
-  above the roof's edge.
-- **Finish:** grey concrete with grey-green steelwork by default; an ochre
-  lime-wash variant with oxide-red doors.
+  above the roof's edge, caged from 2.5 m up.
+- **Finish:** grey concrete with grey-green steelwork (doors and sheaves) by
+  default; an ochre lime-wash variant with oxide-red doors and sheaves.
 
 ## Category and secondary use
 
@@ -49,7 +57,7 @@ by role: its counts sit well inside the ordinary ceilings.
 | Head room (0.80 m cantilevers east and west) | 7.60 × 6.00 m |
 | Annex, beyond the base's face | 4.15 × 5.20 m |
 | Base and annex walls together | 10.65 × 6.50 m |
-| Overall, with overhangs, downpipe shoes and ladder | 11.90 × 7.10 m |
+| Overall, with overhangs, downpipe shoes, ladder and cage | 11.90 × 7.70 m |
 
 Heights:
 
@@ -59,19 +67,24 @@ Heights:
 | Cantilevers' soffit (head room underside) | 17.00 m |
 | Head room eave (underside at the wall) | 20.80 m |
 | Head room ridge top | 21.85 m |
+| Sheave bay sill (the sheave deck) / head | 17.30 / 20.55 m |
+| Sheaves' axles / tops | 18.80 / 20.40 m |
 | Wall ladder top | 21.94 m |
+| Ladder cage, lowest / top hoop | 2.50 / 21.80 m |
 | Annex eave (outer wall) / underside at the shaft | 4.30 / 5.08 m |
 
 The pivot is centred on the plan's bounding box at ground level: 1.85 m east
-of the shaft's centre and 0.03 m behind it. It is taken from `LOD0` and
+of the shaft's centre and 0.33 m behind it. The ladder's cage sets the back
+of that box, so it sits 0.30 m further back than before the cage. It is taken from `LOD0` and
 applied to every tier.
 
 The facts sidecar's footprint is the base and annex wall outline, eight
 corners. **Outside it but inside the bounds:** the head room's two
 cantilevers and the roofs' overhangs (overhead), the tower downpipes' lower
 runs and shoes on the base's front and back faces, the annex downpipe on its
-east wall, and the wall ladder, which stands on the ground 0.27–0.33 m behind
-the base's back face.
+east wall, the wall ladder, which stands on the ground 0.27–0.33 m behind
+the base's back face, and its cage, from 2.5 m up, whose back strap is the
+building's +Y extent, 0.93 m behind the base's back face.
 
 ## Story height
 
@@ -105,12 +118,15 @@ across, three up), on a 0.15 m precast sill.
 | Shaft west | 6.60, 14.60 m | 7.60, 15.60 m |
 | Shaft east | 9.20 m | 10.20 m |
 | Shaft back | 10.60 m | 11.60 m |
-| Head room front (4) and back (3) | 18.10 m | 19.10 m |
+| Head room back (3) | 18.10 m | 19.10 m |
 
 The ground-floor sills are 1.40 m above the floor, at the chest-high limit,
-which suits a plant room. The head-room sills are 1.1 m over the head room's
-underside. Louvres (1.20 × 1.00 m): head room gables sill 18.10 m; annex back
-sill 2.00 m. No opening crosses a 4 m joint (`check_layout()`).
+which suits a plant room. The head-room sills are 0.8 m over the sheave
+deck (17.30 m). Louvres (1.20 × 1.00 m): head room gables (two west, one
+east) sill 18.10 m; annex back sill 2.00 m. The rope opening (1.10 × 1.70 m)
+in the east gable: sill 18.10 m, head 19.80 m. No opening crosses a 4 m
+joint (`check_layout()`) except the sheave bay, 17.30–20.55 m, which is
+built across the joint at 20 m on purpose (Construction).
 
 ## Eave overhang
 
@@ -130,13 +146,18 @@ concrete soffits. Every tier keeps every overhang.
 `build.py` builds closed solids and unions them with Blender's exact boolean
 (`asset_build.union`):
 
-- the tower: shaft and head room as **one ring of walls**;
+- the tower: shaft and head room as **one ring of walls**, the sheave bay
+  recessed into its front;
 - the base;
 - the annex;
 - the head room's roof slab, a chevron along X;
 - the annex's mono-pitch slab;
 - three downpipes (`scripts/downpipes.py`);
-- the wall ladder (`scripts/roof_safety.py`), on `LOD0`–`LOD2`.
+- the two sheaves, each a rim, a hub, eight spokes and an axle, and on
+  `LOD0` their four ropes; on `LOD2` each sheave is one disc; on `LOD3` they
+  are painted (The sheave bay);
+- the wall ladder (`scripts/roof_safety.py`) and its cage (`build.py`), on
+  `LOD0`–`LOD2`.
 
 Parameters the tiers derive from:
 
@@ -150,7 +171,12 @@ Parameters the tiers derive from:
 | Annex `AX0`..`AX1`, half-depth `AY` | 2.85..7.40 m, 2.60 m |
 | Annex pitch, eave | 10°, 4.30 m |
 | Downpipes | `PIPE_SPOTS`: front s 6.45, back s 1.15 (both x 2.65), annex east s 0.30 |
+| Sheave bay | front wall s 0.35–6.15 (x −3.45…2.35), z 17.30–20.55, 2.00 m deep |
+| Sheaves | Ø 3.20 m, rim 0.18 × 0.22 m, 8 spokes; axles at x −1.65 and 0.60, z 18.80, 0.55 and 1.25 m behind the face |
+| Ropes | Ø 0.05 m, falling 20° east toward the hoist |
+| Rope opening | east gable, s 0.95 (y −2.05), sill 18.10 m |
 | Wall ladder | back eave wall, s 6.00 (x −2.20) |
+| Ladder cage | hoops 2.50–21.80 m, 13 at 1.61 m; radius 0.36 m about an axis 0.80 m off the wall; three straps |
 
 ### The tower as one ring
 
@@ -204,11 +230,81 @@ The brief asks for a ladder for the read, and one serves the roof, the
 gutters and the head room from outside. It is `RS.WallLadder` on the back
 eave wall, west of the windows, from the ground to 1 m above the roof's edge,
 passing 0.12 m outside the fascia. Its brackets below 3.95 m run into the
-base. **No cage**: the module has none, and see-through hoops would be thin
-opaque bars costing hundreds of triangles; a real 22 m ladder would carry a
-cage or a fall-arrest rail. There is no roof ladder or walkway. The ladder
-sets the +Y extent and the top, so `LOD3` keeps its bare rails
+base. A ladder this tall needs a cage; the module builds none, so
+`build.py` does (The ladder cage). There is no roof ladder or walkway. The
+ladder sets the top, so `LOD3` keeps its bare rails
 (`RS.solids(extents=True)`, appended after the weld).
+
+### The ladder cage
+
+Closed solids in `build.py`, following the asset's `StepPipe` precedent
+rather than changing `scripts/roof_safety.py`, unioned with the ladder and
+taking its `PIPE_STRIP` mapping (`RS.Mesh`, `RS.Paint`), so it is the
+ladder's galvanised steel in every variant:
+
+- **Hoops:** flat bars 50 × 16 mm, 13 of them from 2.50 to 21.80 m (at most
+  1.65 m apart, here 1.61 m). Each leaves the outside of one rail, buried
+  2 cm in it, flares out to the arc, rounds the climber's back on a radius
+  of 0.36 m about an axis 0.80 m off the wall (four mitred chords), and runs
+  back into the other rail. The top hoop is 0.14 m under the rails' top;
+  the hoops pass well clear of the fascia (the ladder already stands 0.12 m
+  outside it).
+- **Straps:** three vertical flat bars, 50 × 20 mm, at 45°, 90° (the back)
+  and 135° round the arc, from 4 cm under the lowest hoop to 4 cm over the
+  top one. They sit on the hoops' **outsides**, not the usual insides, so
+  that the back strap, not a hoop, is the building's +Y extent: a plain
+  prism every tier can keep cheaply.
+- **Tiers:** `LOD0` every hoop; `LOD1` every other one (7); `LOD2` the
+  lowest, middle and top (3), so the straps stay held; all with the three
+  straps. `LOD3` keeps only the back strap, a three-sided prism with its
+  outer edge on the strap's outer face (8 triangles), appended after the
+  weld like the bare rails: it holds the +Y extent and the pivot, and at
+  that range the rest of the cage is under half a pixel.
+- **Cost:** about 1,390 triangles at `LOD0` (Per-tier triangle counts),
+  most of it the hoops' own faces and the exact boolean's cuts where they
+  meet the rails and straps.
+
+### The sheave bay
+
+The head room's front is open over the sheave deck, so the winding gear
+says *mine* from the catalog's front three-quarter view. The hoist house is
+taken to stand east, beyond the annex (the facts doors give no side; east
+keeps the ropes off the entrance front and puts the sheaves' faces, which
+are parallel to the ropes, on the front the catalog camera sees nearly
+square). The ropes leave by the rope opening in the east gable. All the
+shared numbers are `facade_atlas.py`'s, in bay-local metres
+(`BAY_W`, `BAY_H`, `SHEAVES`, `rope_lines()`), so geometry and paint agree.
+
+- **The opening** is 5.80 × 3.25 m, from the deck at 17.30 m to 0.25 m under
+  the eave, between a 0.35 m pier at the west corner and the front
+  downpipe, which `check_layout()` keeps `DP.CLEAR` from its east jamb. It
+  crosses the joint at 20 m, so `notch()` cuts it into the top edge of the
+  16–20 m strip and the bottom edge of the 20 m strip, and the jambs carry
+  the joint's vertices; nothing else in the catalog's wall code had to
+  change.
+- **The recess** is a concrete reveal the wall's thickness deep (0.25 m),
+  then dark sides, deck, head and back 2.00 m behind the face
+  (`interior` patch). It is part of the closed tower solid; nothing behind
+  it is open.
+- **The sheaves**, Ø 3.20 m, are face-on: the front one 0.55 m behind the
+  face, west; the rear one 1.25 m behind, east, overlapping it by 0.95 m
+  seen square, less from the catalog's view. Each is a rim (annulus
+  1.42–1.60 m, 0.22 m wide), a 0.30 m hub, eight 0.10 × 0.06 m spokes and
+  a Ø 0.16 m axle running back into the bay's back, unioned; the rims' feet
+  run 0.10 m below the deck, as a sheave's do. They take the `steel` patch:
+  the doors' colour, grey-green or oxide red.
+- **The ropes** (`LOD0` only), 0.05 m square strands in a darkened
+  galvanised grey: one from each sheave's west side down through the deck,
+  one off each top falling 20° east into the east jamb. Continued, they meet
+  the east gable inside the rope opening (`check_layout()` asserts it).
+  Outside the building there are none: they would end in mid-air without a
+  hoist house.
+- **Tiers.** `LOD0`: 32-sided rims, 12-sided hubs and axles, ropes.
+  `LOD1`: 20 and 8 sides, no ropes. `LOD2`: each sheave one closed 12-sided
+  disc, its faces mapped onto the painted sheave card, so the spokes and
+  the dark between them are texture. `LOD3`: the bay is one flush face
+  mapped onto the bay picture, in which `paint_bay()` draws both sheaves
+  and the ropes where the geometry has them.
 
 ### No handrails
 
@@ -219,7 +315,8 @@ Both thresholds are a single 0.10 m step.
 Asserts, before building:
 
 - openings leaving their wall's visible outline (corners, the cantilever's
-  step, the soffit), taking in a corner, crossing a joint, or overlapping;
+  step, the soffit), taking in a corner, crossing a joint (the sheave bay
+  excepted), or overlapping;
 - the annex outgrowing the first W2 strip, its rakes reaching the shaft's
   faces, or its roof reaching the head room;
 - the head room's apex outgrowing the last strip; the soffit on a joint;
@@ -230,30 +327,40 @@ Asserts, before building:
   ladder;
 - the ladder within `RS.CORNER` of the shaft's corners or crowding any
   opening at any height on the back, the base's included, or the pipe
-  (`RS.problems`).
+  (`RS.problems`), and its cage doing the same at the cage's width, its
+  hoops reaching the eave, or its top hoop standing above the ladder;
+- the sheave bay leaving the front wall, taking in a corner, overlapping
+  an opening, or its deck within 0.25 m of the soffit; the front downpipe
+  crowding the bay;
+- a sheave leaving the bay's width, height or depth, not standing in the
+  deck, or colliding with the other; a rope meeting the east gable outside
+  the rope opening.
 
 ## Per-tier triangle counts
 
 | Tier | Triangles | Ceiling | What changes |
 | --- | --- | --- | --- |
-| `LOD0` | 3,246 | 12,000 | surround rings, reveals and closures on all 24 openings; downpipes 8-sided with swan-necks; ladder with all 77 rungs and its brackets |
-| `LOD1` | 2,142 | 4,000 | each opening one recess the size of its surround; pipes 4-sided bent; every other rung |
-| `LOD2` | 882 | 1,500 | openings flush; coplanar splits dissolved; pipes 4-sided straight (tower pipes keep jog and shoe); every fourth rung, no brackets |
-| `LOD3` | 472 | 500 | as `LOD2`; annex pipe 3-sided; ladder reduced to bare rails |
+| `LOD0` | 5,748 | 12,000 | surround rings, reveals and closures on all 20 openings; sheave bay recessed; sheaves 32-sided with spokes, hubs, axles and ropes; downpipes 8-sided with swan-necks; ladder with all 77 rungs and its brackets; cage with 13 hoops and 3 straps |
+| `LOD1` | 3,700 | 4,000 | each opening one recess the size of its surround; sheaves 20-sided, no ropes; pipes 4-sided bent; every other rung; 7 hoops |
+| `LOD2` | 1,320 | 1,500 | openings flush, the sheave bay still recessed; each sheave one painted disc; coplanar splits dissolved; pipes 4-sided straight (tower pipes keep jog and shoe); every fourth rung, no brackets; 3 hoops |
+| `LOD3` | 458 | 500 | as `LOD2`, but the sheave bay flush and painted; annex pipe 3-sided; ladder reduced to bare rails, the cage to its back strap |
 
 Where the triangles go, measured by building without each part:
 
-| Tier | Ladder | Three downpipes | The rest |
-| --- | --- | --- | --- |
-| `LOD0` | 2,140 | 308 | ~800 |
-| `LOD1` | 1,380 | 156 | ~600 |
-| `LOD2` | 424 | 102 | ~356 |
-| `LOD3` | 16 | 100 | ~356 |
+| Tier | Ladder | Cage | Sheaves (and ropes) | Three downpipes | The rest |
+| --- | --- | --- | --- | --- | --- |
+| `LOD0` | 2,140 | 1,388 | 1,178 | 308 | 734 |
+| `LOD1` | 1,380 | 764 | 826 | 156 | 574 |
+| `LOD2` | 422 | 348 | 96 | 100 | 354 |
+| `LOD3` | 16 | 8 | — | 100 | 334 |
 
-The building itself is four boxes, two slabs and 24 openings, polygons with
-holes rather than grids; board marks, lift lines, ties, frames, louvres and
-door bracing are texture. The ladder is two-thirds of `LOD0`: 77 rungs on a
-22 m ladder. `LOD3` sits 28 under its ceiling, mostly the 24 flush openings'
+The building itself is four boxes, two slabs, 20 openings and the sheave
+bay, polygons with holes rather than grids; board marks, lift lines, ties,
+frames, louvres and door bracing are texture. The ladder and its cage are
+three-fifths of `LOD0`: 77 rungs and 13 hoops on a 22 m ladder. Each spoke
+is its own solid, so a spoked sheave costs about 500 triangles with the
+boolean's cuts at both ends of its spokes; that is why `LOD2` builds discs.
+`LOD2` sits 180 under its ceiling, `LOD3` 42, mostly the flush openings'
 holes and the strip cuts the tiling band needs.
 
 ## LOD review
@@ -262,12 +369,32 @@ holes and the strip cuts the tiling band needs.
 Reviewed with `scripts/review_asset.py` on the exported tiers: perspective,
 1920×1080, 50° vertical FOV, Cycles, AgX, exposure 0, noon sun; oblique (40°
 azimuth, 30° elevation) and rear (150°, 30°); all four tiers at 35, 70 and
-120 m side by side. Renders are in `review/mine_2026_11_20/kaivostorni_concrete/lod/`.
+120 m side by side; for the sheaves and cage also front at 70 and 120 m,
+morning light, and rear at 25 and 50 m with the sun behind (`reverse`).
+Renders of the current state are in
+`review/mine_fixes_2026_11_20/kaivostorni_concrete/` (`after/`, `after2/`,
+`compare/` against the asset before the sheaves and cage).
 
 - **Silhouette.** At 70 and 120 m every tier reads as a tall plain tower with
   a wider gabled head room, its cantilever soffits dark, and a low annex with
-  a big green door: a headframe, not a house or a silo. Unchanged across
-  tiers.
+  a big green door. Unchanged across tiers.
+- **Sheave bay.** The dark bay with two spoked wheels in it is what makes it
+  a mine headframe rather than a silo or water tower; it reads in
+  `preview.png` and on every tier to 120 m and beyond. `LOD0`→`LOD1` (35 m):
+  thinner rims, no ropes; the ropes are 1–2 px at 35 m. `LOD1`→`LOD2`
+  (70 m): the spokes become texture on opaque discs; seen square nothing
+  changes, obliquely the rear sheave no longer shows through the front one's
+  spokes, a few pixels at 70 m. `LOD2`→`LOD3` (120 m): the bay goes flat.
+  The painted sheaves are darkened to the modelled ones' brightness under
+  the bay's head; what changes is parallax, the rear sheave showing its
+  face-on position (offset from the front one by 2.25 m rather than by
+  2.25 m plus its 0.70 m extra depth seen obliquely) and none of it hidden
+  by the east jamb. At 120 m the bay is about 50 × 30 px and the change is
+  within a sheave's rim width.
+- **Ladder cage.** Reads as hoops and straps round the ladder at 25 and
+  50 m from behind; past 70 m it is a pale band either side of the rails.
+  `LOD1` (every other hoop) and `LOD2` (three hoops) keep the straps, so the
+  band holds; at `LOD3` only the back strap remains, under half a pixel.
 - **Openings.** Recessed to flush at 70 m changes only the shadow inside
   the reveals; every window, door and louvre keeps its place, size and dark
   glass.
@@ -278,7 +405,8 @@ azimuth, 30° elevation) and rear (150°, 30°); all four tiers at 35, 70 and
   70 m a thin line.
 
 Six working views at `LOD0` (orthographic front, back, sides, top; raised
-aerial) are in `views/`; close views at 25 m, morning and noon, in `close/`.
+aerial) are in `after/views/`; close views at 25 m, morning and noon, in
+`after/close/`.
 
 **Filtering.** `scripts/review_atlas_mips.py` wrote whole-atlas mip4 maps
 (16 × 16 texel averages, albedo in linear light); `LOD2` and `LOD3` were
@@ -286,8 +414,11 @@ rendered at 120 m, oblique and grazing (75°), base against mip4
 (`mip_base/`, `mip_mip4/`). At mip4 the lift lines and board marks average
 out to a flat concrete grey, as they should at that footprint; the windows
 and louvres stay dark, the doors stay grey-green, the roof stays dark, and no
-colour leaks between the fascia, roof, ledge and wall bands. This is a stress
-test, not the consumer's sampler.
+colour leaks between the fascia, roof, ledge and wall bands. The sheave
+card, at 32 px/m, averages at mip4 to a plain grey disc on `LOD2`'s sheaves
+(its spokes are 0.2 px there), and the bay picture to a dark field with
+faint wheels; neither leaks into its neighbours. This is a stress test, not
+the consumer's sampler.
 
 ## Interior geometry
 
@@ -295,23 +426,45 @@ Measured with `scripts/validate_asset.py` on the exports:
 
 | Tier | Hidden triangles | Share | Vertical area |
 | --- | --- | --- | --- |
-| `LOD0` | 7 of 3,246 | 0.2 % | 0.1 m² |
-| `LOD1` | 5 of 2,142 | 0.2 % | 0.4 m² |
-| `LOD2` | 2 of 882 | 0.2 % | 0.4 m² |
-| `LOD3` | 10 of 472 | 2.1 % | 4.3 m² |
+| `LOD0` | 301 of 5,748 | 5.2 % | 6.0 m² |
+| `LOD1` | 198 of 3,700 | 5.4 % | 5.9 m² |
+| `LOD2` | 43 of 1,320 | 3.3 % | 35.1 m² |
+| `LOD3` | 18 of 458 | 3.9 % | 6.5 m² |
 
-The candidates are exterior surface the 40 sampled rays rarely escape: base
-wall slivers behind the back downpipe's lower run, a sliver where the east
-gable's top meets the rake soffit, and at `LOD3` the wall-facing sides of
-the ladder's bare rails, 0.27–0.58 m off the wall. No wall stands inside the
-building, by construction; the welded export is manifold on every tier.
+The candidates are exterior surface the 40 sampled rays rarely escape:
+
+- **The sheaves' backs.** Every face of a sheave that looks at the bay's
+  back (the rims' and hubs' rear annuli and caps, the spokes' and ropes'
+  rear sides, the axles) faces +Y inside a recess open only to −Y, so no
+  outside view sees it. These are the closure faces that keep each sheave a
+  closed solid, and most of `LOD0`'s and `LOD1`'s count; kept on purpose.
+- **`LOD2`'s large area** is the bay's back quad (18.9 m²), whose centre,
+  the one point the test samples, lies behind both discs, though most of it
+  is visible round them, and the discs' rear faces (about 15 m²), closure
+  faces as above.
+- As before the sheaves: base wall slivers behind the back downpipe's lower
+  run, a sliver where the east gable's top meets the rake soffit, and at
+  `LOD3` the wall-facing sides of the ladder's bare rails and of the cage's
+  back strap.
+
+No wall stands inside the building, by construction; the bay's recess is
+part of the tower's closed shell, and the welded export is manifold on
+every tier.
 
 ## Known simplifications
 
-- **No sheave wheels, hoist ropes or rope openings.** The winding gear is
-  inside the head room; nothing ties the tower to a hoist house, whose
-  placement belongs to the consumer.
-- **No ladder cage** (Construction, Roof safety); no roof ladder or walkway.
+- **The hoist ropes stop at the building.** Inside the sheave bay they run
+  into the deck and the east jamb, and the rope opening is a dark recess
+  with nothing leaving it: the hoist house, and the ropes' run to it, belong
+  to whoever places one. On `LOD1`–`LOD3` there are no rope solids at all
+  (`LOD3` paints them).
+- **The sheave deck is plain:** no sheave beams, bearing pedestals, guide
+  rollers or brake gear; each sheave stands in the deck on its rim, held by
+  an axle from the bay's back.
+- **Sheave grooves, rim flanges and hub bolts** are texture (the card and
+  bay picture) or absent; spokes are square bars.
+- **The cage's straps sit on the hoops' outsides** (The ladder cage), and
+  there is no landing gate or rest platform; no roof ladder or walkway.
 - **Board marks, lift lines, tie holes, window frames and glazing bars,
   louvre blades, door ribs, braces, hinges and rivets** are texture; none
   clears the 0.25 m relief threshold.
@@ -343,7 +496,7 @@ emission mask shared by every tier and colour.
 | 530–550 | FASCIA | steel fascia, half-round galvanised gutter across its top 8 rows; `PIPE_STRIP` = its middle five rows, 540.5–545.5 |
 | 554–670 | ROOF | profiled sheet, snow guard 0.5 m up, flashing at the annex's top |
 | 674–710 | LEDGE | the base's sloped top, trowelled concrete |
-| 716 up | unique | vehicle door, door, window, louvre, six flat patches |
+| 716 up | unique | vehicle door, door, window, louvre, rope opening; eight flat patches (`steel` for the sheaves, `interior` for the bay's dark, `rope`); the sheave card at x 496, y 740 (102 px square); the bay picture at x 608, y 716 (371 × 208 px) |
 
 `check_bands()` fails the bake on a stray id in a band; `check_regions()` on
 overlapping unique regions; `atlas.pad()` fills the rest.
@@ -354,8 +507,22 @@ on unbroken through z = 4 m. Every noise uses `tile_y=4`, the Weather object
 too. Height-following weather (soil, algae, splash) goes on S1 only.
 
 **Texel density** is 64 px/m, except the roof band (23 px/m up the slope,
-its ribs along U), the ledge (stretched √2 up its slope) and the flat
-patches.
+its ribs along U), the ledge (stretched √2 up its slope), the flat patches,
+and the sheave card at 32 px/m: only `LOD2`'s discs sample it, from 70 m
+out, where a 3.2 m sheave spans 35–50 px on screen, and at 64 px/m it would
+not fit beside the bay picture.
+
+**The bay picture and the card** (`paint_bay()`, `paint_card()`) draw the
+sheaves face-on from the same numbers as the geometry (`paint_sheave()`):
+rim, eight spokes and hub in the door paint, a darker groove ring, a hub
+boss; the rear sheave painted first at 0.90 shade and AO 0.62, the front
+one over it; the ropes as 0.05 m strokes in darkened galvanised grey; all
+on the machinery space's dark (`ID_DARK`, AO 0.45). No sunlit rims or cast
+shadows are painted: the sheaves' darkening is occlusion, which holds
+whatever the sun does. In the bay picture the front sheave is at 0.82 shade
+and AO 0.72, the rear one at 0.68 and 0.55, so the flat `LOD3` bay matches
+the modelled sheaves under the bay's head at the switch; the card's sheave
+is at 0.95, since `LOD2`'s discs stand in the real recess.
 
 **Relief heights** for `atlas.normal_map()`:
 
@@ -373,6 +540,8 @@ patches.
 | Roof ribs | 20 mm |
 | Gutter (half-round radius) | 62.5 mm |
 | Snow guard tubes / brackets | 35 / 30 mm |
+| Painted sheaves / ropes / hub boss | 20 / 25 / 40 mm |
+| Rope opening's guide roller | 20 mm |
 
 The roof band's V-varying heights are scaled by its px/m over 64. Rasterised
 by `scripts/atlas.py` at 4 × 4 samples per pixel; glass keeps a flat normal.
@@ -380,7 +549,9 @@ by `scripts/atlas.py` at 4 × 4 samples per pixel; glass keeps a flat normal.
 **Roughness / metallic:** concrete 0.90/0, smooth surrounds 0.86/0, sills
 0.84/0, painted steel frames 0.50/0 and doors 0.55/0, glass 0.08/0, roof
 0.46/0.25, fascia 0.44/0.25, galvanised gutter, pipes, ladder and snow guard
-0.48/0.60 (sRGB 134/137/137). Dirt dulls all of them.
+0.48/0.60 (sRGB 134/137/137), ropes the same galvanised at 0.72 shade;
+sheaves take the doors' paint, 0.55/0; the bay's dark 0.95/0. Dirt dulls
+all of them.
 
 **Weathering** (`scripts/weathering.py`, moderate): grime; long rain streaks
 and runs under every lift line, with lime bloom along the lines; soil, algae
@@ -411,19 +582,22 @@ The atlas has one window region, so `rooms()` draws its room level once; at
 Two variants, a restrained landmark (CLAUDE.md's large-scale case: one
 coherent treatment per instance):
 
-| Variant | Walls | Window frames, louvres | Doors | Roof |
+| Variant | Walls | Window frames, louvres | Doors, sheaves | Roof |
 | --- | --- | --- | --- | --- |
 | `grey_concrete` (default) | bare grey board-marked concrete | grey-green | grey-green | dark grey steel |
 | `ochre_render` | ochre lime wash over the concrete; the board marks show through | dark warm grey | oxide red | red-brown steel |
 
-Glass, gutters, pipes, ladder and snow guards never change. Every `.glb`
+Glass, gutters, pipes, ladder, cage, ropes and snow guards never change. Every `.glb`
 references the default albedo; the other variant is that one file swapped.
 
 ## Night lighting
 
 `kaivostorni_concrete_emission.png` masks the glass of the one window region,
 painted as a lit room by `glazing.night_rooms()`. Doors, louvres, walls and
-roofs are black.
+roofs are black, and so are the sheave bay, the sheave card and the rope
+opening: the sheave deck is an unheated machinery space, not a lit room,
+so at night the head room shows its back windows only and the bay stays a
+dark opening. A lit sheave deck would be a brief-driven addition.
 
 **Bindings.** All four GLBs bind it through `emissiveTexture` on UV0 with
 `emissiveFactor` `[0, 0, 0]` by default (`scripts/window_emission.py`); the
@@ -468,11 +642,11 @@ every tier.
 | --- | --- |
 | hero | false |
 | dwellings | 0 |
-| bounds | [−5.95, 0, −3.548] to [5.95, 21.943, 3.548] |
+| bounds | [−5.95, 0, −3.848] to [5.95, 21.943, 3.848] |
 | footprint | the eight-corner base and annex outline |
 | storeys | one: floor 0.10 m, 63.83 m² |
-| `tower` door | entrance, main; at [−3.35, 0.10, 3.282], facing +Z, 0.95 × 2.10 m |
-| `collar` door | vehicle; at [3.50, 0.10, 2.632], facing +Z, 3.20 × 3.40 m |
+| `tower` door | entrance, main; at [−3.35, 0.10, 3.582], facing +Z, 0.95 × 2.10 m |
+| `collar` door | vehicle; at [3.50, 0.10, 2.932], facing +Z, 3.20 × 3.40 m |
 
 ## Review status
 
@@ -484,14 +658,19 @@ Checked here, in Blender 5.3.0, headless:
   topology, one material, uri-only images, normal map at scale 1, emission
   bound and default off, pivot, counts against the ceilings, the PNGs, the
   glass in the band, and the sidecar.
-- `check_layout()` passes; every tier is manifold before export and shares
-  `LOD0`'s extents.
+- `check_layout()` passes, the sheave bay, sheave, rope and cage checks
+  included; every tier is manifold before export and shares `LOD0`'s
+  extents, the cage's back strap holding +Y on `LOD3`.
 - The six working views at `LOD0`.
-- Tier comparisons at 35, 70 and 120 m, oblique and rear.
+- Tier comparisons at 35, 70 and 120 m, oblique, front and rear, before and
+  after the sheaves and cage (`review_compare.py`); the cage from behind at
+  25 and 50 m.
+- `preview.png`: the sheaves read clearly at catalog distance.
 - Close renders at 25 m, morning and noon: board marks, lift lines and tie
   holes read as concrete, frames and sills raised, glass darker than its
   frames.
-- The day/night sheet for both colours.
+- The day/night sheet for both colours: oxide-red sheaves in the ochre
+  variant, the bay dark at night.
 - Mip4 stress renders at 120 m (LOD review).
 
 Pending, in the consumer:
@@ -508,3 +687,12 @@ Pending, in the consumer:
   texture export.
 
 Recorded as known-good markers, not requirements.
+
+## Revision log
+
+- **2026-11-20:** the head room's front window strip replaced by the sheave
+  bay, with two modelled sheaves (painted on `LOD3`), and an east-gable
+  louvre by the rope opening; a cage added to the wall ladder. The cage
+  moved the +Y extent from 3.58 to 4.18 m, so the bounds deepened from 7.10
+  to 7.70 m and the pivot moved 0.30 m back; triangles went from
+  3,246 / 2,142 / 882 / 472 to 5,748 / 3,700 / 1,320 / 458.

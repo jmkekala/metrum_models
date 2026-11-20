@@ -87,8 +87,33 @@ the overall one for culling bounds.
 
 ## Story height
 
-**Two storeys: ground 4.15 m, upper 4.4 m**, over a 0.95 m plinth, with the
-cornice zone bringing the eave to 11.4 m.
+**Two storeys, floors at 0.15 m and 5.55 m**, 5.40 m floor to floor, with
+the eave at 11.4 m. Each floor is where a door opens onto it:
+
+| Floor | Level | Set by |
+| --- | --- | --- |
+| Ground | 0.15 m | the entrance's threshold, one painted 0.15 m step above the ground |
+| Upper | 5.55 m | the balcony's deck and the string course's top; the balcony door's threshold is 0.05 m above it |
+
+On the facade the ground storey is the grey stone plinth (0–0.95 m, capped
+to 1.15 m) and the brick up to the string course (5.10–5.55 m); the upper
+storey is the brick from 5.55 m to the frieze at 9.95 m, under the 1.45 m
+frieze and cornice zone. **The plinth is the wall's stone base course, not
+a raised floor**: the floor runs 0.80 m below its top, and the entrance is
+cut down through it to the floor.
+
+The sidecar first stated the floors as 0.95 m (the plinth's top) and 5.10 m
+(the string course's foot), which left the entrance threshold 0.80 m under
+the ground floor and the balcony door 0.50 m over the upper one, with no step
+between them. Measured on `LOD0`, the building says otherwise. The entrance
+recess's floor is at 0.15 m, over a flush wall face from the ground and no
+modelled step. The ground-floor sills stand 1.10 m over a 0.15 m floor, against
+0.30 m over a 0.95 m one, and the upper sills 0.80 m over 5.55 m. The arched
+entrance's fanlight tops out at 3.60 m, level with the window heads at
+3.70 m, which is an entrance composed at grade. So the stated levels were
+wrong, not the building, and only the levels changed. `check_massing()`
+now fails the build if a door's threshold is not on a floor or at most
+0.10 m above one.
 
 This **deviates from the ~3.0–3.3 m standard**, deliberately. Ceremonial civic
 architecture of this period has genuinely tall floors — tall ground-floor
@@ -104,6 +129,20 @@ not be copied into residential work.
 grandeur of the entrance is in the fanlight and the surround, not in a taller
 leaf.
 
+| Door | Leaf (w × h) | Threshold | Notes |
+| --- | --- | --- | --- |
+| Entrance, centre bay (main) | 2.00 × 2.35 m (a pair of leaves) | 0.15 m, the ground floor | cut to the 2.60 m springing; transom bar at 2.42–2.50 m, arched fanlight to 3.60 m, flush |
+| Balcony door, over the entrance | 1.24 × 3.50 m | 5.60 m, 0.05 m over the upper floor and the balcony's deck | glazed, five glazing bars, no distinct transom |
+
+The entrance's threshold is the floor it opens onto, one 0.15 m step above
+the ground: the step is painted across the panel's foot (3.8 m wide), not
+modelled. There is no other outer door.
+
+The balcony door's 3.50 m is its whole glazed opening, which the sidecar
+gives as its leaf: its bars are evenly spaced, so no transom line marks a
+leaf height inside it. That is over the 2.6 m ceremonial limit and is open
+(Known simplifications).
+
 ## Window sills
 
 | | Sill / head | Height |
@@ -111,6 +150,11 @@ leaf.
 | Ground-floor windows | 1.25 – 3.70 m | 2.45 m |
 | Upper-floor windows | 6.35 – 8.95 m | 2.60 m |
 | Main doorway leaf | 0.15 – 2.50 m | **2.35 m**, with an arched fanlight to 3.60 m |
+
+Against the floors (Story height): the ground-floor sills are 1.10 m over
+the 0.15 m ground floor and the heads 3.55 m; the upper sills are 0.80 m over
+the 5.55 m upper floor and the heads 3.40 m. Both are under the ~1.4 m
+chest-high line, and the entrance's leaf starts on its floor.
 
 These were rescaled after a check against human scale. The first pass had a
 1.75 m sill — chest height — with 2.8 m windows, and a doorway opening 3.75 m
@@ -534,6 +578,16 @@ sits 0.28 m behind the wall plane, so that test calls every recessed window
   plausible for the period, so this reads as a design choice, but a future pass
   could start them above the plinth.
 - **No chajja or dormers**, neither of which belongs on this building type.
+- **The entrance is at grade**, one 0.15 m threshold step up, painted across
+  the panel's foot rather than modelled; there is no entrance flight, so no
+  handrail. The 0.95 m plinth is a base course the door is cut through, not
+  a raised floor (Story height).
+- **One outer door at ground level.** The hall has its arched entrance and
+  the balcony door above it, and no service or rear door.
+- **The balcony door has no transom.** Its glazed opening is 3.50 m tall with
+  five evenly spaced bars, so its leaf height does not read inside the 2.6 m
+  ceremonial limit. Painting one bar as a heavier transom at about 7.9 m
+  (a 2.3 m leaf) would; not done.
 - The painted balustrade was **removed from the entrance atlas region** when
   the balcony became geometry; leaving it would have shown a flat balustrade
   through the real one at oblique angles.
@@ -906,6 +960,20 @@ still open, and it is now a question for the whole catalog, since every later
 asset copied this setup. `preview.png` was re-rendered with the four tiers.
 `LOD0` is unchanged, and so is the image, to within one level in 255.
 
+**Facts sidecar.** `export/brick_clocktower_hall.model.json`, written by every
+full build (or `build.py -- facts`), in the glTF frame: metres, +Y up, +Z
+front, origin at the pivot, which is 2.775 m behind the build origin (LOD0's
+plan-bounds centre).
+
+| Fact | Value |
+| --- | --- |
+| hero | true |
+| dwellings | 0 |
+| footprint | the 20-corner wall outline, quoins, eaves and balcony left out |
+| storeys | two: floors 0.15 m and 5.55 m, 1,024 m² each |
+| `front` door | entrance, main; at [0, 0.15, 12.975], facing +Z, 2.00 × 2.35 m |
+| `balcony` door | balcony; at [0, 5.60, 12.975], facing +Z, 1.24 × 3.50 m |
+
 Settings: `export_yup=True` (Blender Z-up → glTF Y-up), `export_apply=True`,
 one tier per file by selection, and `export_keep_originals=True` so the two
 2048² PNGs are referenced rather than embedded. The material has backface
@@ -928,7 +996,7 @@ culling on, so it exports single-sided.
   differently.
 
 `check_toolchain()` runs when `build.py` loads and covers the two ways the
-toolchain can drift out from under it. Below the 5.2 floor an old Blender
+toolchain can drift out from under it. Below the 5.3 floor an old Blender
 otherwise fails as an unrelated `AttributeError` deep in the build; above it,
 the exposed surface is exactly those exporter keywords, so the check asserts
 each one still exists and names the missing ones rather than letting a rename
@@ -1009,6 +1077,18 @@ Checked here, in Blender:
   `scripts/validate_asset.py` still reports no failures or warnings. The
   rebuilt GLBs are byte-identical to the previous ones.
 
+- The floor levels in the facts sidecar, measured on `LOD0` (Story height)
+  and corrected to 0.15 m and 5.55 m; `check_massing()` passes with the new
+  door-on-floor check. The full rebuild in Blender 5.3.0 leaves every tier's
+  triangles, positions, UVs and materials identical to the previous export
+  (decoded and compared; the files differ only by the exporter's version),
+  bounds 49.70 × 28.35 × 24.60 m and pivot unchanged. Before/after renders
+  with `review_asset.py` (`LOD0`/`LOD1` front and oblique at 20 and 35 m,
+  `LOD2`/`LOD3` oblique at 70 and 120 m, noon), compared with
+  `review_compare.py`: 0.0/255 mean difference on every pair. The validator,
+  with the hero flag, reports no failures; its one warning is the sidecar's
+  `source.dirty` until it is rewritten from a committed tree.
+
 Pending, and outside this repository:
 
 - The provisional 140 m and 180 m switch recommendations, which need consumer
@@ -1022,7 +1102,9 @@ Pending, and outside this repository:
 
 ## Tooling versions
 
-- **Blender 5.2.1 LTS** (build date 2026-09-01).
+- **Blender 5.3.0** (build 2026-11-11), headless, for the last full rebuild,
+  which saved `source.blend`; earlier passes used **Blender 5.2.1 LTS**
+  (build date 2026-09-01).
 - **Blender Lab "MCP" extension v1.0.3** (`lab_blender_org/mcp`, requires
   Blender ≥ 5.1), with the MCP server from `projects.blender.org/lab/blender_mcp`.
 
@@ -1030,13 +1112,17 @@ The four-tier rebuild was run headless on the same Blender, driving
 `build.py` directly rather than through the MCP extension.
 
 Recorded as a known-good marker, not a requirement — anything at or above
-CLAUDE.md's 5.2 floor should build this asset. The floor is set by the
-catalog's `source.blend` files, which 5.2 saved, not by this asset.
+CLAUDE.md's 5.3 floor should build this asset.
 
 - **CPython 3.14.7 with numpy 2.5.3, scipy 1.18.1 and Pillow 12.3.0** for the
   texture export.
 
 ## Revision log
+
+- **2026-11-20 — floor levels.** The facts sidecar's floors go from 0.95 m and
+  5.10 m to 0.15 m and 5.55 m, where the entrance and the balcony door open
+  onto them (Story height); `check_massing()` checks every door against
+  them. No geometry, texture or bound changed.
 
 - **2026-09-25 — weathering.** `facade_atlas.py` gained `weather()`, which
   places the shared `scripts/weathering.py` fields: dirt, algae, rust, faded

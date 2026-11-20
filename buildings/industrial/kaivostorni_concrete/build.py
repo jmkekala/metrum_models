@@ -17,15 +17,19 @@ A composite mid-century Nordic mine headframe (kaivostorni): a 6 x 6 m
 board-marked concrete shaft tower on a slightly wider base, a head room
 cantilevered 0.8 m east and west at the top for the winding gear, under a
 shallow steel gable roof, and a low shaft-collar annex against the east side
-with the big steel door. A wall ladder runs up the back to the roof.
+with the big steel door. The head room's front stands open on two spoked
+rope sheaves, whose ropes leave east toward the hoist. A caged wall ladder
+runs up the back to the roof.
 
 Construction is a set of closed solids unioned with Blender's exact boolean:
 the tower (shaft and head room as one ring of walls, the cantilevers' soffits
-included), the base, the annex, the two roof slabs, three downpipes
-(scripts/downpipes.py) and the wall ladder (scripts/roof_safety.py). The
-base stands round the shaft's foot and the annex runs into the shaft, so
-the union removes every buried wall. The result is the boundary of one empty
-volume, so no interior geometry can occur.
+included, the sheave bay recessed into its front), the base, the annex,
+the two roof slabs, three downpipes (scripts/downpipes.py), the sheaves
+(rims, hubs, spokes, axles, ropes), the wall ladder
+(scripts/roof_safety.py) and its cage, which that module does not build.
+The base stands round the shaft's foot and the annex runs into the shaft,
+so the union removes every buried wall. The result is the boundary of one
+empty volume, so no interior geometry can occur.
 
 The walls are textured as a trim sheet (see facade_atlas.py). The tower is
 taller than any band, so every wall is cut at the 4 m joints and each strip
@@ -102,18 +106,17 @@ A_RAKE_OV = 0.25
 # right: (p0, p1, outline kind, openings). Openings are (kind, s, z): s is
 # the centre along the wall from p0, z the sill or threshold.
 # Stair landings light the shaft: three windows stacked over the door on the
-# front, the other faces staggered between them. The head room has a strip
-# of four windows on the front and three on the back, where the ladder takes
-# the west end, and two louvred vents in each cantilevered gable.
+# front, the other faces staggered between them. The head room's front is the
+# sheave bay (below); its back has a strip of three windows, the ladder taking
+# the west end. The west gable has two louvred vents; the east gable, toward
+# the hoist, the opening the ropes leave by and one vent.
 Z_SILL_HEAD = 18.10
 TOWER_WALLS = {
     "front": ((-HX, -TY), (HX, -TY), "t_eave", [
-        ("win", 2.30, 5.20), ("win", 2.30, 9.20), ("win", 2.30, 13.20),
-        ("win", 2.00, Z_SILL_HEAD), ("win", 3.20, Z_SILL_HEAD),
-        ("win", 4.40, Z_SILL_HEAD), ("win", 5.60, Z_SILL_HEAD)]),
+        ("win", 2.30, 5.20), ("win", 2.30, 9.20), ("win", 2.30, 13.20)]),
     "e_shaft": ((TX, -TY), (TX, TY), "shaft", [("win", 3.00, 9.20)]),
     "e_head": ((HX, -TY), (HX, TY), "t_gable", [
-        ("louvre", 1.60, Z_SILL_HEAD), ("louvre", 4.40, Z_SILL_HEAD)]),
+        ("rope", 0.95, Z_SILL_HEAD), ("louvre", 4.40, Z_SILL_HEAD)]),
     "back": ((HX, TY), (-HX, TY), "t_eave", [
         ("win", 2.80, 10.60),
         ("win", 2.00, Z_SILL_HEAD), ("win", 3.20, Z_SILL_HEAD),
@@ -144,6 +147,41 @@ U_OFF = {"front": 0.0, "e_shaft": 7.2, "e_head": 6.6, "back": 13.2,
          "b_back": 13.35, "b_west": 9.6, "a_front": 4.1, "a_east": 8.9,
          "a_back": 14.1, "a_west": 0.0}
 STRIP_SHIFT = 3.30
+
+# The sheave bay: the head room's front stands open over the sheave deck,
+# BAY_DEPTH deep to a dark back, and shows the two rope sheaves face-on. The
+# hoist house is to the east, beyond the annex: the ropes run off the
+# sheaves' tops toward the east gable and leave by its rope opening, so the
+# sheaves' planes are parallel to the front. The bay's size, the sheaves'
+# centres and the ropes are facade_atlas.py's (bay-local metres); here is
+# where it stands. It runs from its sill on the deck up past the joint at
+# 20 m to 0.25 m under the eave, so the two strips it crosses are notched
+# round it (notch()) rather than holed. East of it the front downpipe runs.
+BAY_S0 = 0.35                   # its west jamb, along the front wall (x -3.45)
+BAY_Z0 = 17.30                  # the sheave deck, 0.30 m over the soffit
+BAY_S1, BAY_Z1 = BAY_S0 + L.BAY_W, BAY_Z0 + L.BAY_H
+BAY_REVEAL = 0.25               # the wall's thickness: concrete; dark beyond
+BAY_DEPTH = 2.00                # to the dark back
+BAYS = {"front": (BAY_S0, BAY_S1, BAY_Z0, BAY_Z1)}
+SHEAVE_DEPTH = (0.55, 1.25)     # each sheave's mid-plane behind the wall face
+SHEAVE_W = 0.22                 # the rim's width along the axle
+SPOKE_T = 0.06                  # a spoke's thickness along the axle
+HUB_W = 0.30                    # the hub's length along the axle
+AXLE_R = 0.08                   # the axle runs back into the bay's back
+# Per tier: how each sheave is built, its rim's sides, its hub's and axle's
+# sides, and whether the ropes are. "spoked": rim, hub, spokes and axle;
+# "disc": one closed disc whose faces sample the painted sheave card
+# (facade_atlas.paint_card); None: the bay is flat and painted with the
+# sheaves (facade_atlas.paint_bay).
+SHEAVE_MODES = (("spoked", 32, 12, True), ("spoked", 20, 8, False),
+                ("disc", 12, 0, False), None)
+
+
+def bay_mode(level):
+    """recess - LOD0-LOD2: the bay open BAY_DEPTH deep, its sheaves modelled.
+    flush   - LOD3: one face in the wall, painted with the sheaves."""
+    return "flush" if SHEAVE_MODES[level] is None else "recess"
+
 
 # Downpipes (scripts/downpipes.py). The head room's front and back eave
 # walls are flush with the shaft, so a pipe from each gutter runs straight
@@ -197,6 +235,27 @@ LADDER_S = 6.00                 # along the back wall from its east end: x -2.20
 BACK_EAVE = RS.Eave(*TOWER_WALLS["back"][:2], Z_EAVE, EAVE_OV, Z_EDGE, H_TAN)
 LADDER = RS.WallLadder(BACK_EAVE, LADDER_S)
 PAINT = RS.Paint(L.ATLAS, strip=L.PIPE_STRIP)
+
+# The ladder's safety cage, which scripts/roof_safety.py does not build: flat
+# hoops round the climber's back from CAGE_FOOT to CAGE_TOP, fixed to the
+# rails' outsides, and three vertical straps on the hoops' outsides. Across
+# (a) and out (o) are the ladder's own: a along the wall from its axis, o
+# from the wall face. A hoop leaves each rail, flares out to CAGE_R either
+# side of the axis at CAGE_O, and rounds the back on CAGE_ARC chords.
+CAGE_FOOT, CAGE_TOP = 2.50, 21.80
+CAGE_PITCH = 1.65               # the most between two hoops
+CAGE_O = LADDER.standoff + 0.28     # the hoops' arc centre, out from the wall
+CAGE_R = 0.36
+CAGE_ARC = 4
+HOOP_T, HOOP_H = 0.016, 0.05    # flat bar: thickness, height
+STRAP_T, STRAP_W = 0.020, 0.05
+STRAP_ANGLES = (135.0, 90.0, 45.0)  # round the arc, 90 at the back
+STRAP_END = 0.04                # past the first and last hoops
+_n = int(math.ceil((CAGE_TOP - CAGE_FOOT) / CAGE_PITCH - 1e-9))
+CAGE_HOOPS = [CAGE_FOOT + (CAGE_TOP - CAGE_FOOT) * k / _n for k in range(_n + 1)]
+# per tier: which hoops (every n-th, the top one always), or None for the
+# back strap alone, which sets the +Y extent every tier keeps
+CAGE_MODES = (1, 2, 6, None)
 
 
 def outline(kind, length):
@@ -411,6 +470,60 @@ def clip_z(poly, zlo, zhi):
     return out
 
 
+def notch(region, rect, zlo, zhi):
+    """*region*, a strip zlo..zhi of a wall's outline (anticlockwise in s, z),
+    with an opening *rect* (l, r, b, t) that crosses the strip's top or its
+    bottom cut out of that edge: the strip's outline runs round it rather
+    than holing it, so the strips either side of the joint meet the
+    opening's jambs on the same vertices."""
+    l, r, b, t = rect
+    if t <= zlo + EPS or b >= zhi - EPS:
+        return region
+    top, bottom = t >= zhi - EPS, b <= zlo + EPS
+    if top == bottom:
+        raise ValueError("an opening inside or across a whole strip needs a hole")
+    zc = zhi if top else zlo
+    n = len(region)
+    for i in range(n):
+        p, q = region[i], region[(i + 1) % n]
+        if abs(p[1] - zc) > EPS or abs(q[1] - zc) > EPS:
+            continue
+        if top and p[0] > r and q[0] < l:
+            cut = [(r, zc), (r, b), (l, b), (l, zc)]
+        elif bottom and p[0] < l and q[0] > r:
+            cut = [(l, zc), (l, t), (r, t), (r, zc)]
+        else:
+            continue
+        return region[:i + 1] + cut + region[i + 1:]
+    raise ValueError("no strip edge at %.2f spans the opening" % zc)
+
+
+def uv_bay(fr):
+    x0, y0 = L.BAY_ORIGIN
+    return lambda co: (x0 + (fr.s_of(co) - BAY_S0) * PPM, y0 + (co.z - BAY_Z0) * PPM)
+
+
+def build_bay(B, fr, level):
+    """The sheave bay's faces, its jambs carrying the joint's vertices: flush,
+    one face painted with the sheaves; or open, a concrete reveal the wall's
+    thickness deep, then dark sides, deck, head and back."""
+    l, r, b, t = BAYS["front"]
+    mids = [z for z in L.JOINTS if b + EPS < z < t - EPS]
+    edges = [[(l, b), (r, b)], [(r, b)] + [(r, z) for z in mids] + [(r, t)],
+             [(r, t), (l, t)], [(l, t)] + [(l, z) for z in reversed(mids)] + [(l, b)]]
+    if bay_mode(level) == "flush":
+        B.face([fr.P(*p) for e in edges for p in e[:-1]], uv_bay(fr))
+        return
+    rev, dark = uv_patch("reveal"), uv_patch("interior")
+    for e in edges:
+        (s0, z0), (s1, z1) = e[0], e[-1]
+        B.face([fr.P(s, z) for s, z in e] +
+               [fr.P(s1, z1, BAY_REVEAL), fr.P(s0, z0, BAY_REVEAL)], rev)
+        B.face([fr.P(s0, z0, BAY_REVEAL), fr.P(s1, z1, BAY_REVEAL),
+                fr.P(s1, z1, BAY_DEPTH), fr.P(s0, z0, BAY_DEPTH)], dark)
+    B.face([fr.P(s, z, BAY_DEPTH) for s, z in ((l, b), (r, b), (r, t), (l, t))], dark)
+
+
 def recess(B, fr, rect, depth, fn, rev):
     l, r, b, t = rect
     c = [(l, b), (r, b), (r, t), (l, t)]
@@ -460,17 +573,22 @@ def build_wall(B, name, level):
     fr = Frame(p0, p1)
     poly, _ = outline(kind, fr.L)
     rects = {(k, s, z): item_rects(k, s, z)[0] for k, s, z in items}
+    bay = BAYS.get(name)
     placed = 0
     for zlo, zhi, fn in wall_bands(fr, U_OFF[name]):
         region = clip_z(poly, zlo, zhi)
         if len(region) < 3:
             continue
+        if bay:
+            region = notch(region, bay, zlo, zhi)
         its = [key for key, r in rects.items() if r[2] > zlo - EPS and r[3] < zhi + EPS]
         holes = [build_item(B, fr, k, s, z, level) for k, s, z in its]
         placed += len(its)
         fill_region(B, fr, region, holes, fn)
     if placed != len(rects):
         raise ValueError("an opening on %s straddles a joint" % name)
+    if bay:
+        build_bay(B, fr, level)
 
 
 def close_solid(B, apexes=()):
@@ -635,6 +753,169 @@ def annex_roof():
                 lambda x: (xo - x) * slope_f)
 
 
+# ================================================================ sheaves
+def bay_point(u, z, depth):
+    """A bay-local point (facade_atlas: u from the west jamb, z from the
+    sill) *depth* behind the front wall's face, in the build frame."""
+    return (-HX + BAY_S0 + u, -TY + depth, BAY_Z0 + z)
+
+
+def _prism(B, ring0, ring1, fn, caps=True):
+    """Quads between two matching rings of points, and the two rings as caps."""
+    n = len(ring0)
+    for k in range(n):
+        B.face([ring0[k], ring0[(k + 1) % n], ring1[(k + 1) % n], ring1[k]], fn)
+    if caps:
+        B.face(list(reversed(ring0)), fn)
+        B.face(list(ring1), fn)
+    return B
+
+
+def _disc_ring(c, r, y, n, phase=0.5):
+    return [(c[0] + r * math.cos(2.0 * math.pi * (k + phase) / n), y,
+             c[2] + r * math.sin(2.0 * math.pi * (k + phase) / n)) for k in range(n)]
+
+
+def sheave_disc(c, y0, y1, sides, side_uv):
+    """A sheave as one closed disc: its rim's outside in the steel, its two
+    faces mapped onto the painted sheave card, centred, so the spokes and
+    the dark between them are texture."""
+    x0, v0 = L.CARD_ORIGIN
+    half = L.SHEAVE_R * L.CARD_PPM
+
+    def card(co):
+        return (x0 + half + (co.x - c[0]) * L.CARD_PPM, v0 + half + (co.z - c[2]) * L.CARD_PPM)
+    B = Builder()
+    r0, r1 = _disc_ring(c, L.SHEAVE_R, y0, sides), _disc_ring(c, L.SHEAVE_R, y1, sides)
+    _prism(B, r0, r1, side_uv, caps=False)
+    B.face(list(reversed(r0)), card)
+    B.face(list(r1), card)
+    return B
+
+
+def sheave_solids(level):
+    """Each sheave as closed solids for the union: the rim (an annulus), the
+    hub, SPOKES spokes running into both, and the axle back into the bay's
+    back; the rims' feet run below the deck, as a sheave's do. On LOD0 the
+    ropes too: square strands from inside each rim's groove down into the
+    deck and across to the east jamb, toward the rope opening."""
+    kind, sides, hub_n, ropes = SHEAVE_MODES[level]
+    steel = uv_patch("steel")
+    out = []
+    for (u, z), depth in zip(L.SHEAVES, SHEAVE_DEPTH):
+        c = bay_point(u, z, depth)
+        y0, y1 = c[1] - SHEAVE_W / 2.0, c[1] + SHEAVE_W / 2.0
+        if kind == "disc":
+            out.append(sheave_disc(c, y0, y1, sides, steel))
+            continue
+        B = Builder()
+        o0, o1 = (_disc_ring(c, L.SHEAVE_R, y, sides) for y in (y0, y1))
+        i0, i1 = (_disc_ring(c, L.SHEAVE_RI, y, sides) for y in (y0, y1))
+        for k in range(sides):
+            j = (k + 1) % sides
+            B.face([o0[k], o0[j], o1[j], o1[k]], steel)
+            B.face([i0[k], i1[k], i1[j], i0[j]], steel)
+            B.face([i0[k], i0[j], o0[j], o0[k]], steel)
+            B.face([i1[k], o1[k], o1[j], i1[j]], steel)
+        out.append(B)
+        out.append(_prism(Builder(), _disc_ring(c, L.HUB_R, c[1] - HUB_W / 2.0, hub_n),
+                          _disc_ring(c, L.HUB_R, c[1] + HUB_W / 2.0, hub_n), steel))
+        out.append(_prism(Builder(), _disc_ring(c, AXLE_R, c[1], hub_n),
+                          _disc_ring(c, AXLE_R, -TY + BAY_DEPTH + 0.10, hub_n), steel))
+        r0, r1 = L.HUB_R * 0.6, (L.SHEAVE_RI + L.SHEAVE_R) / 2.0
+        for k in range(L.SPOKES):
+            a = 2.0 * math.pi * k / L.SPOKES
+            d = Vector((math.cos(a), 0.0, math.sin(a)))
+            p = Vector((-math.sin(a), 0.0, math.cos(a))) * (L.SPOKE_W / 2.0)
+            ty = Vector((0.0, SPOKE_T / 2.0, 0.0))
+            ring = [p + ty, -p + ty, -p - ty, p - ty]
+            out.append(_prism(Builder(), [tuple(Vector(c) + d * r0 + q) for q in ring],
+                              [tuple(Vector(c) + d * r1 + q) for q in ring], steel))
+    if ropes:
+        rope = uv_patch("rope")
+        h = L.ROPE_D / 2.0
+        for (seg_drop, seg_lead), depth in zip(L.rope_lines(L.BAY_W + 0.10), SHEAVE_DEPTH):
+            for (pa, pb) in (seg_drop, seg_lead):
+                a = Vector(bay_point(pa[0], pa[1], depth))
+                b = Vector(bay_point(pb[0], pb[1], depth))
+                d = (b - a).normalized()
+                s1 = Vector((0.0, h, 0.0))
+                s2 = d.cross(Vector((0.0, 1.0, 0.0))).normalized() * h
+                ring = [s1 + s2, -s1 + s2, -s1 - s2, s1 - s2]
+                out.append(_prism(Builder(), [tuple(a + q) for q in ring],
+                                  [tuple(b + q) for q in ring], rope))
+    return out
+
+
+# =================================================================== cage
+def cage_point(a, o, z):
+    return tuple(BACK_EAVE.point(LADDER_S + a, o, z))
+
+
+def hoop_path():
+    """A hoop's centre line in (a, o): from inside one rail, flaring out to
+    the arc, round the back, and into the other rail."""
+    rail_o = LADDER.standoff + RS.RAIL_D / 2.0
+    a_in = RS.LADDER_W / 2.0 + RS.RAIL_W / 2.0 - 0.02      # 2 cm inside the rail
+    arc = [(CAGE_R * math.cos(math.pi * (1.0 - k / CAGE_ARC)),
+            CAGE_O + CAGE_R * math.sin(math.pi * (1.0 - k / CAGE_ARC)))
+           for k in range(CAGE_ARC + 1)]
+    return [(-a_in, rail_o)] + arc + [(a_in, rail_o)]
+
+
+def hoop(z):
+    """One flat-bar hoop at height *z*, swept along hoop_path() with mitred
+    corners, its ends capped inside the rails."""
+    pts = [Vector(p) for p in hoop_path()]
+    segs = [(q - p).normalized() for p, q in zip(pts, pts[1:])]
+    left = [Vector((-d.y, d.x)) for d in segs]
+    offs = []
+    for i in range(len(pts)):
+        if i == 0 or i == len(pts) - 1:
+            offs.append(left[0] if i == 0 else left[-1])
+            continue
+        m = (left[i - 1] + left[i]).normalized()
+        offs.append(m / m.dot(left[i - 1]))
+    t, h = HOOP_T / 2.0, HOOP_H / 2.0
+    rings = [[cage_point(*(p + n * sa * t), z + sz * h)
+              for sa, sz in ((1, -1), (-1, -1), (-1, 1), (1, 1))]
+             for p, n in zip(pts, offs)]
+    M = RS.Mesh(PAINT)
+    for i, d in enumerate(segs):
+        along = Vector(cage_point(*pts[i + 1], 0.0)) - Vector(cage_point(*pts[i], 0.0))
+        for k in range(4):
+            M.face([rings[i][k], rings[i][(k + 1) % 4], rings[i + 1][(k + 1) % 4],
+                    rings[i + 1][k]], along)
+    M.face(list(reversed(rings[0])), (0, 0, 1))
+    M.face(list(rings[-1]), (0, 0, 1))
+    return M
+
+
+def strap(angle, tri=False):
+    """A vertical strap on the hoops' outsides at *angle* round the arc;
+    *tri*, a three-sided prism within it whose outer edge keeps its extent."""
+    a = math.radians(angle)
+    rad, tan = Vector((math.cos(a), math.sin(a))), Vector((-math.sin(a), math.cos(a)))
+    c = Vector((0.0, CAGE_O)) + rad * CAGE_R
+    w = STRAP_W / 2.0
+    sec = [c + tan * w, c - tan * w, c - tan * w + rad * STRAP_T, c + tan * w + rad * STRAP_T]
+    if tri:
+        sec = [c + tan * w, c - tan * w, c + rad * STRAP_T]
+    z0, z1 = CAGE_HOOPS[0] - STRAP_END, CAGE_HOOPS[-1] + STRAP_END
+    return _prism(RS.Mesh(PAINT), [cage_point(*p, z0) for p in sec],
+                  [cage_point(*p, z1) for p in sec], (0, 0, 1))
+
+
+def cage_solids(level):
+    """The cage's hoops and straps for the union, or (on a tier without
+    hoops) the back strap alone, three-sided, for append()."""
+    every = CAGE_MODES[level]
+    if every is None:
+        return [strap(90.0, tri=True)]
+    zs = [z for k, z in enumerate(CAGE_HOOPS) if k % every == 0 or k == len(CAGE_HOOPS) - 1]
+    return [hoop(z) for z in zs] + [strap(a) for a in STRAP_ANGLES]
+
+
 # ================================================================ assembly
 def build_lod(level):
     base = to_object(tower_body(level), "tmp_tower")
@@ -654,6 +935,9 @@ def build_lod(level):
         DP.solids(DOWNPIPES[2:], sides, bent, L.PIPE_STRIP, L.ATLAS))]
     if RS.MODES[level][0] is not None:
         parts += [to_object(M, name) for M, name in RS.solids([LADDER], level, PAINT)]
+        parts += [to_object(M, "tmp_cage%d" % i) for i, M in enumerate(cage_solids(level))]
+    if bay_mode(level) == "recess":
+        parts += [to_object(B, "tmp_sheave%d" % i) for i, B in enumerate(sheave_solids(level))]
     obj = union(base, parts)
     obj.name = "{}_LOD{}".format(ASSET, level)
     obj.data.name = obj.name + "_mesh"
@@ -670,8 +954,10 @@ def build_lod(level):
     bm.to_mesh(obj.data)
     bm.free()
     if RS.MODES[level][0] is None:
-        # the ladder sets the +Y extent and the top: its bare rails stay
-        RS.append(obj, RS.solids([LADDER], level, PAINT, extents=True))
+        # the ladder sets the top and the cage's back strap the +Y extent:
+        # the bare rails and that strap stay
+        RS.append(obj, RS.solids([LADDER], level, PAINT, extents=True)
+                  + [(M, "tmp_cage") for M in cage_solids(level)])
     return obj
 
 
@@ -699,7 +985,19 @@ def check_layout():
         vis = [(s, z - drop) if z > Z_HEAD + 0.5 or (kind.startswith("a_") and z > 0.0)
                else (s, z) for s, z in poly]
         rects = [(k, item_rects(k, s, z)[0]) for k, s, z in items]
+        if name in BAYS:
+            l, r, b, t = BAYS[name]
+            if not all(_inside(c, vis) for c in ((l - gap, b - gap), (r + gap, b - gap),
+                                                 (r + gap, t + gap), (l - gap, t + gap))):
+                problems.append("%s: the sheave bay leaves the wall" % name)
+            if any(l < s < r and b < z < t for s, z in vis):
+                problems.append("%s: the sheave bay takes in a corner of the wall" % name)
+            if b < Z_HEAD + 0.25:
+                problems.append("%s: the sheave deck is within 0.25 m of the soffit" % name)
+            rects.append(("sheave bay", BAYS[name]))
         for k, (l, r, b, t) in rects:
+            if k == "sheave bay":
+                continue
             corners = [(l - gap, b - gap), (r + gap, b - gap), (r + gap, t + gap),
                        (l - gap, t + gap)]
             if not all(_inside(c, vis) for c in corners):
@@ -737,6 +1035,8 @@ def check_layout():
     lad = LADDER.span()
     for (w, s), pipe in zip(PIPE_SPOTS, DOWNPIPES):
         avoid = [(k,) + item_rects(k, s_, z)[0][:2] for k, s_, z in ALL_WALLS[w][3]]
+        if w in BAYS:
+            avoid.append(("sheave bay",) + BAYS[w][:2])
         if w == "back":
             avoid.append(("ladder",) + lad)
         if w in ("front", "back"):
@@ -757,6 +1057,39 @@ def check_layout():
     s0, s1 = LADDER.span()
     if s0 < HX - TX + RS.CORNER or s1 > HX + TX - RS.CORNER:
         problems.append("the wall ladder is within %.2f m of the shaft's corner" % RS.CORNER)
+    # the cage: as wide as its hoops, clear of the same corners and openings
+    half = CAGE_R + HOOP_T
+    c0, c1 = LADDER_S - half, LADDER_S + half
+    if c0 < HX - TX + RS.CORNER or c1 > HX + TX - RS.CORNER:
+        problems.append("the ladder's cage is within %.2f m of the shaft's corner" % RS.CORNER)
+    for what, a0, a1 in avoid:
+        if a0 - RS.CLEAR < c1 and c0 < a1 + RS.CLEAR:
+            problems.append("the ladder's cage crowds the %s" % what)
+    if min(o for _a, o in hoop_path()) < BACK_EAVE.eave_out + 0.10:
+        problems.append("the cage's hoops reach the back eave")
+    if CAGE_HOOPS[-1] + HOOP_H > LADDER.foot + LADDER.length:
+        problems.append("the cage's top hoop is above the ladder")
+    # the sheaves: inside the bay with their feet below the deck, clear of
+    # each other, and their ropes leaving by the east gable's rope opening
+    R, gap = L.SHEAVE_R, 0.10
+    for (u, z), d in zip(L.SHEAVES, SHEAVE_DEPTH):
+        if u - R < gap or u + R > L.BAY_W - gap or z + R > L.BAY_H - gap:
+            problems.append("a sheave at u %.2f leaves the sheave bay" % u)
+        if not z - L.SHEAVE_RI > 0.0 > z - R:
+            problems.append("a sheave at u %.2f does not stand in the deck" % u)
+        if d - SHEAVE_W / 2.0 < BAY_REVEAL or d + HUB_W / 2.0 > BAY_DEPTH - gap:
+            problems.append("a sheave at u %.2f leaves the bay's depth" % u)
+    (ua, _za), (ub, _zb) = L.SHEAVES[:2]
+    if abs(SHEAVE_DEPTH[0] - SHEAVE_DEPTH[1]) < HUB_W + 0.10 and abs(ua - ub) < 2 * R + gap:
+        problems.append("the sheaves collide")
+    k, s_rope, z_rope = next(i for i in TOWER_WALLS["e_head"][3] if i[0] == "rope")
+    w, h = L.OPENINGS[k][:2]
+    for (_drop, (_pa, pb)), d in zip(L.rope_lines(2.0 * HX - BAY_S0), SHEAVE_DEPTH):
+        sr, zr = d, BAY_Z0 + pb[1]          # the gable's s runs from the front corner
+        if not (s_rope - w / 2.0 + L.ROPE_D < sr < s_rope + w / 2.0 - L.ROPE_D
+                and z_rope + L.ROPE_D < zr < z_rope + h - L.ROPE_D):
+            problems.append("a rope meets the east gable at s %.2f z %.2f, outside "
+                            "the rope opening" % (sr, zr))
     return problems
 
 
