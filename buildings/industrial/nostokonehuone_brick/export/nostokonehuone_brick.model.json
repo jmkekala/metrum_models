@@ -1,0 +1,42 @@
+{
+  "schema": "metrum-model-facts",
+  "version": 1,
+  "name": "nostokonehuone_brick",
+  "path": "buildings/industrial/nostokonehuone_brick",
+  "source": {"commit": "087adc625fd586a2ed4e993c8c8ed172659d23cd", "dirty": true, "blender": "5.3.0"},
+  "license": "CC-BY-4.0",
+  "bounds": {"min": [-4.9, 0.0, -6.05], "max": [4.9, 7.9, 6.05]},
+  "footprint": [
+    [-4.5, -5.75],
+    [4.5, -5.75],
+    [4.5, 5.75],
+    [-4.5, 5.75]
+  ],
+  "storeys": [
+    {"floor_y_m": 0.0, "area_m2": 103.5}
+  ],
+  "dwellings": 0,
+  "doors": [
+    {"id": "entrance", "kind": "entrance", "position": [4.5, 0.0, 4.125], "facing": [1.0, 0.0, 0.0], "width_m": 1.0, "height_m": 2.125, "main": true},
+    {"id": "machinery", "kind": "vehicle", "position": [0.0, 0.0, 5.75], "facing": [0.0, 0.0, 1.0], "width_m": 3.1875, "height_m": 3.6562, "main": false}
+  ],
+  "lods": [
+    {"file": "nostokonehuone_brick_lod0.glb", "triangles": 540, "sha256": "2726224c1b876e5892b076579a8af7d778a4fe18f9aa42cdcd2b487a79776497"},
+    {"file": "nostokonehuone_brick_lod1.glb", "triangles": 444, "sha256": "07500fdcd3902704cd0cb91781839d303ac8d6cd44bc1de1613df3aeee64b269"},
+    {"file": "nostokonehuone_brick_lod2.glb", "triangles": 216, "sha256": "2dd5ddac5c383858e5a20a58d6c2f3d2ff5a3843a911cee44cd690e6cc75305a"},
+    {"file": "nostokonehuone_brick_lod3.glb", "triangles": 208, "sha256": "32f38e6a37fca42f4da4c32756df8b1f452f7996af3d11da728b7efedd5d1504"}
+  ],
+  "textures": {
+    "orm": {"file": "nostokonehuone_brick_orm.png", "sha256": "e12c9d28031daf97a8314293d753779a9e150fea078bffaff9b110517c095827"},
+    "normal": {"file": "nostokonehuone_brick_normal.png", "sha256": "283caf26f34edfc2b15a79f314dd2dc6f9e56a1ceea5e67b06def7326cbf3f09"},
+    "emission": {"file": "nostokonehuone_brick_emission.png", "sha256": "3f29a29eaa911a9f0df60231e4c0701d81c9208e9023f79e666527bc266e14bb"}
+  },
+  "variants": [
+    {"id": "red_brick", "albedo": "nostokonehuone_brick_albedo_red_brick.png", "sha256": "acbec38c66a5ce138e0686e4acda9c329573697259863b8bbe786a2216726bf6"},
+    {"id": "yellow_brick", "albedo": "nostokonehuone_brick_albedo_yellow_brick.png", "sha256": "500bf6630c8ef88a725a7b52ad18086eff3a26438b9ec0f95a647d7cb2337959"},
+    {"id": "brown_brick", "albedo": "nostokonehuone_brick_albedo_brown_brick.png", "sha256": "10568e3af8a97dc34bd240b5fa197b471b1f72a4eae2f2d4b9438282ae55a36b"}
+  ],
+  "default_variant": "red_brick",
+  "preview": {"file": "../preview.png", "sha256": "9fe7a53c07ff0d1fff3b27b224fa6b89127d2282078df072afdba225de201591"},
+  "hero": false
+}

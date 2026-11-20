@@ -1,0 +1,42 @@
+{
+  "schema": "metrum-model-facts",
+  "version": 1,
+  "name": "kaivoskonttori_brick",
+  "path": "buildings/industrial/kaivoskonttori_brick",
+  "source": {"commit": "087adc625fd586a2ed4e993c8c8ed172659d23cd", "dirty": true, "blender": "5.3.0"},
+  "license": "CC-BY-4.0",
+  "bounds": {"min": [-8.3, 0.0, -5.25], "max": [8.3, 5.6937, 5.25]},
+  "footprint": [
+    [-8.0, -4.05],
+    [8.0, -4.05],
+    [8.0, 3.95],
+    [-8.0, 3.95]
+  ],
+  "storeys": [
+    {"floor_y_m": 0.3125, "area_m2": 128.0}
+  ],
+  "dwellings": 0,
+  "doors": [
+    {"id": "entrance", "kind": "entrance", "position": [0.9, 0.3125, 3.95], "facing": [0.0, 0.0, 1.0], "width_m": 1.0, "height_m": 2.125, "main": true},
+    {"id": "shift", "kind": "service", "position": [-1.5, 0.3125, -4.05], "facing": [0.0, 0.0, -1.0], "width_m": 1.0, "height_m": 2.125, "main": false}
+  ],
+  "lods": [
+    {"file": "kaivoskonttori_brick_lod0.glb", "triangles": 896, "sha256": "fb92008dd7165506fa10e4df837bb3ef79df25b9858f6ee3dd72b1039a65134e"},
+    {"file": "kaivoskonttori_brick_lod1.glb", "triangles": 712, "sha256": "7acac1e132107836f1897a80a9d10991f49f6f5e5dbc380b5ef988d40c6ed7c1"},
+    {"file": "kaivoskonttori_brick_lod2.glb", "triangles": 376, "sha256": "2b151e686afb9b416760ab0416d3560bfcfe3197902bb70c197babd834406a4e"},
+    {"file": "kaivoskonttori_brick_lod3.glb", "triangles": 324, "sha256": "a8b504bed397f5bcd64789d50f194ee5b18ce2f56f2a44b1de371923815cc780"}
+  ],
+  "textures": {
+    "orm": {"file": "kaivoskonttori_brick_orm.png", "sha256": "b2d9de9803961c81fc2206516e1505b2fc0bb7f3b9b176fadf5b0aa92e9d584f"},
+    "normal": {"file": "kaivoskonttori_brick_normal.png", "sha256": "e30d67f69a46ce4884b9a542666c654fa72502844d5d0410d00f7b37e1d3e3cf"},
+    "emission": {"file": "kaivoskonttori_brick_emission.png", "sha256": "d535343e7d554912573faed9f6a7f1981f5b8023beaf1b442a7070bc564ab535"}
+  },
+  "variants": [
+    {"id": "red_brick", "albedo": "kaivoskonttori_brick_albedo_red_brick.png", "sha256": "15b1b0f5454ab811535d5d829d39d6741843afe6abd6e4d0de94d30a58f8757a"},
+    {"id": "yellow_brick", "albedo": "kaivoskonttori_brick_albedo_yellow_brick.png", "sha256": "cf1c5daf3086deda09f71d1d51feee0f5a0029cc0be13648f4b286894d14d5cc"},
+    {"id": "brown_brick", "albedo": "kaivoskonttori_brick_albedo_brown_brick.png", "sha256": "d3f22a13875cefa1ceb0f10d7584d19bd8c4d29621cd70efda63511a138c82ad"}
+  ],
+  "default_variant": "red_brick",
+  "preview": {"file": "../preview.png", "sha256": "ae6d4a957dec43aff536ac37c69edffcc194a98f90f4fa2906cd6b362facdc91"},
+  "hero": false
+}

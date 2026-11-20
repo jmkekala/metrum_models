@@ -1,0 +1,49 @@
+{
+  "schema": "metrum-model-facts",
+  "version": 1,
+  "name": "hiilisiilo_drive_through",
+  "path": "buildings/industrial/hiilisiilo_drive_through",
+  "source": {"commit": "087adc625fd586a2ed4e993c8c8ed172659d23cd", "dirty": true, "blender": "5.3.0"},
+  "license": "CC-BY-4.0",
+  "bounds": {"min": [-6.3, 0.0, -8.125], "max": [6.3, 13.08, 8.125]},
+  "footprint": [
+    [-6.0, -0.175],
+    [3.4, -0.175],
+    [3.4, -5.175],
+    [2.9, -5.175],
+    [2.9, -7.975],
+    [5.9, -7.975],
+    [5.9, -5.175],
+    [5.4, -5.175],
+    [5.4, -0.175],
+    [6.0, -0.175],
+    [6.0, 7.825],
+    [-6.0, 7.825]
+  ],
+  "storeys": [
+    {"floor_y_m": 0.0, "area_m2": 41.27}
+  ],
+  "dwellings": 0,
+  "doors": [
+    {"id": "control", "kind": "entrance", "position": [1.9, 0.0, 7.825], "facing": [0.0, 0.0, 1.0], "width_m": 0.95, "height_m": 2.1, "main": true},
+    {"id": "intake", "kind": "vehicle", "position": [4.4, 0.0, -7.975], "facing": [0.0, 0.0, -1.0], "width_m": 2.4, "height_m": 2.6, "main": false}
+  ],
+  "lods": [
+    {"file": "hiilisiilo_drive_through_lod0.glb", "triangles": 778, "sha256": "dab7e327616ea5ce25ae0216850adb00f1a53134bb502b908e6b977f41332c11"},
+    {"file": "hiilisiilo_drive_through_lod1.glb", "triangles": 626, "sha256": "3d583591f8ddcb477cf92ff82777486dc69f8cf32df0e2ffc68709dcd219167b"},
+    {"file": "hiilisiilo_drive_through_lod2.glb", "triangles": 444, "sha256": "8d45f9c8e6ceb0e9f373ebbb9b08e42fd97c93451d5721c08f08eefc779df3b3"},
+    {"file": "hiilisiilo_drive_through_lod3.glb", "triangles": 436, "sha256": "3ac66dd962b7adc0d688004c358a94eb4e0dab89b02c8b97be41259b5b015e74"}
+  ],
+  "textures": {
+    "orm": {"file": "hiilisiilo_drive_through_orm.png", "sha256": "d05794c093b7046af47b56ae0f0cf4edf22cc290d70c0c7d9693c2002a2f3c25"},
+    "normal": {"file": "hiilisiilo_drive_through_normal.png", "sha256": "06b03a466b5a3bfb20a5710b8b5b42b06f68cfe3b93750838bac9ae7144a37e1"},
+    "emission": {"file": "hiilisiilo_drive_through_emission.png", "sha256": "0e28a4ed7d5389388ba8e392a065a41673b56474b57ebae853367f45da0866ca"}
+  },
+  "variants": [
+    {"id": "grey_sheet", "albedo": "hiilisiilo_drive_through_albedo_grey_sheet.png", "sha256": "6fed3c05bac4068cfcd309c4c405512bb228ae7dad309c63584461173a4b1a30"},
+    {"id": "red_sheet", "albedo": "hiilisiilo_drive_through_albedo_red_sheet.png", "sha256": "31c12a18bd51290af64da013f25ec353beabb1515fa078f05141ce4c01fd4440"}
+  ],
+  "default_variant": "grey_sheet",
+  "preview": {"file": "../preview.png", "sha256": "385798a622ced6499c07b2081c58707e0257f6948033416271a38ec80fcab3b7"},
+  "hero": false
+}

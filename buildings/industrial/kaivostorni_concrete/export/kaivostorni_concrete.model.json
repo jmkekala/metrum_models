@@ -1,0 +1,45 @@
+{
+  "schema": "metrum-model-facts",
+  "version": 1,
+  "name": "kaivostorni_concrete",
+  "path": "buildings/industrial/kaivostorni_concrete",
+  "source": {"commit": "087adc625fd586a2ed4e993c8c8ed172659d23cd", "dirty": true, "blender": "5.3.0"},
+  "license": "CC-BY-4.0",
+  "bounds": {"min": [-5.95, 0.0, -3.5477], "max": [5.95, 21.9428, 3.5477]},
+  "footprint": [
+    [-5.1, -3.2177],
+    [1.4, -3.2177],
+    [1.4, -2.5677],
+    [5.55, -2.5677],
+    [5.55, 2.6323],
+    [1.4, 2.6323],
+    [1.4, 3.2823],
+    [-5.1, 3.2823]
+  ],
+  "storeys": [
+    {"floor_y_m": 0.1, "area_m2": 63.83}
+  ],
+  "dwellings": 0,
+  "doors": [
+    {"id": "tower", "kind": "entrance", "position": [-3.35, 0.1, 3.2823], "facing": [0.0, 0.0, 1.0], "width_m": 0.95, "height_m": 2.1, "main": true},
+    {"id": "collar", "kind": "vehicle", "position": [3.5, 0.1, 2.6323], "facing": [0.0, 0.0, 1.0], "width_m": 3.2, "height_m": 3.4, "main": false}
+  ],
+  "lods": [
+    {"file": "kaivostorni_concrete_lod0.glb", "triangles": 3246, "sha256": "1619ca89ea7e1493b8efcd480c48bc36a90581071386c809d0c9d7aaca301fb7"},
+    {"file": "kaivostorni_concrete_lod1.glb", "triangles": 2142, "sha256": "19f499cba1357fa6b2755bfe6d008423f24fd49b571f543a754b3b945779742e"},
+    {"file": "kaivostorni_concrete_lod2.glb", "triangles": 882, "sha256": "a9e5394eb1a4466bf531b25635ba42e026bc8b80fd3836dcb3ef775c76e4a813"},
+    {"file": "kaivostorni_concrete_lod3.glb", "triangles": 472, "sha256": "a7d85887b89870585b2d87019acbbc0f28a8a05ebd82582506ad70f86e23feb2"}
+  ],
+  "textures": {
+    "orm": {"file": "kaivostorni_concrete_orm.png", "sha256": "236933b6d4404e9fef909a40423b68c6bb5480dbf1a82e6d3ac15486b824796f"},
+    "normal": {"file": "kaivostorni_concrete_normal.png", "sha256": "28c38969dd93808cd8f017fc258a4095d95ba2642f59a4d048c70d010a3131b2"},
+    "emission": {"file": "kaivostorni_concrete_emission.png", "sha256": "aeb3259fc48657a240e9076ead189049823667cd301d1804127dbb8e5af49d40"}
+  },
+  "variants": [
+    {"id": "grey_concrete", "albedo": "kaivostorni_concrete_albedo_grey_concrete.png", "sha256": "64d038cef18b60ba0d5e762af12109d0df7d46d40b9a6972826975dca6171365"},
+    {"id": "ochre_render", "albedo": "kaivostorni_concrete_albedo_ochre_render.png", "sha256": "c3d1a0da49583cd536c0f68baf97c4659fd550b5c146a82e073d128be04a78cc"}
+  ],
+  "default_variant": "grey_concrete",
+  "preview": {"file": "../preview.png", "sha256": "cbb4798c630a74ec260425422989317b0929eb6160bd9c434b6a146b450397d4"},
+  "hero": false
+}
