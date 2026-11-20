@@ -1,0 +1,44 @@
+{
+  "schema": "metrum-model-facts",
+  "version": 1,
+  "name": "navetta_board_gable",
+  "path": "buildings/agricultural/navetta_board_gable",
+  "source": {"commit": "b9758eda86a259011592b58d10a4ad3889d3482e", "dirty": true, "blender": "5.3.0"},
+  "license": "CC-BY-4.0",
+  "bounds": {"min": [-8.35, 0.0, -6.3], "max": [8.35, 6.7106, 6.3]},
+  "footprint": [
+    [-8.0, -4.9],
+    [8.0, -4.9],
+    [8.0, 4.1],
+    [-8.0, 4.1]
+  ],
+  "storeys": [
+    {"floor_y_m": 0.4, "area_m2": 144.0}
+  ],
+  "dwellings": 0,
+  "doors": [
+    {"id": "front", "kind": "entrance", "position": [6.6, 0.4, 4.1], "facing": [0.0, 0.0, 1.0], "width_m": 0.95, "height_m": 2.1, "main": true},
+    {"id": "big_doors", "kind": "vehicle", "position": [-4.6, 0.4, 4.1], "facing": [0.0, 0.0, 1.0], "width_m": 3.2, "height_m": 3.0, "main": false},
+    {"id": "rear", "kind": "service", "position": [0.0, 0.4, -4.9], "facing": [0.0, 0.0, -1.0], "width_m": 0.95, "height_m": 2.1, "main": false},
+    {"id": "loft_hatch", "kind": "balcony", "position": [8.0, 4.05, -0.4], "facing": [1.0, 0.0, 0.0], "width_m": 1.2, "height_m": 1.4, "main": false}
+  ],
+  "lods": [
+    {"file": "navetta_board_gable_lod0.glb", "triangles": 592, "sha256": "2951d9af64e6780108e6fc451375e95a3179d72ebe6f82f0c89c3ecf5c6db4ff"},
+    {"file": "navetta_board_gable_lod1.glb", "triangles": 452, "sha256": "1eb6e581b067efe4620e3baa9d2f0a69d4f5f79f02ffc82b9b0eea70aea2683c"},
+    {"file": "navetta_board_gable_lod2.glb", "triangles": 232, "sha256": "2274e76753c91d991c5df58490e2e678903d4c0dbe7ddc73d4da962a01b61f29"},
+    {"file": "navetta_board_gable_lod3.glb", "triangles": 232, "sha256": "295dc469f791619275f8cc415bfb7d84cda566282e9492f55a24fc28c246a960"}
+  ],
+  "textures": {
+    "orm": {"file": "navetta_board_gable_orm.png", "sha256": "249a17f0518e61a6793e2301b6415f65e8847767e0c1a195bd2cd37ec109e606"},
+    "normal": {"file": "navetta_board_gable_normal.png", "sha256": "c07c2251b84927b8fc3cc5ea0f01ff47bf0c4aaf5e794907c6728ace1aad23df"},
+    "emission": {"file": "navetta_board_gable_emission.png", "sha256": "26fc177e791636bc25d9cc2fd47ed88cec59d110b6acc11dee4e80b9efb343b5"}
+  },
+  "variants": [
+    {"id": "red_ochre", "albedo": "navetta_board_gable_albedo_red_ochre.png", "sha256": "e67477f78685768e451127d3f1edb2f3799bc989789834bec3f740dee4c5f279"},
+    {"id": "grey_weathered", "albedo": "navetta_board_gable_albedo_grey_weathered.png", "sha256": "cb29659cd8c5f7fc72545ebac4314d5695223a5f6629d1487c710073831e17b9"},
+    {"id": "yellow_ochre", "albedo": "navetta_board_gable_albedo_yellow_ochre.png", "sha256": "1cac8e16473e05b4e1e1c0c842288757469b2ebf4504ad37ea84701f46021421"}
+  ],
+  "default_variant": "red_ochre",
+  "preview": {"file": "../preview.png", "sha256": "12805ca721e282292af46622650264026b0ae358c84b6feeb977c51ac12b4888"},
+  "hero": false
+}

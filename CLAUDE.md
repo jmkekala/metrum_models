@@ -176,6 +176,8 @@ metrum_models/
       <asset_name>/           # same per-asset layout as residential/
     service/
       <asset_name>/           # same per-asset layout as residential/
+    agricultural/
+      <asset_name>/           # same per-asset layout as residential/
   props/
     street_furniture/
       <asset_name>/
@@ -200,8 +202,8 @@ metrum_models/
   CLAUDE.md
 ```
 
-**Categories:** `residential/`, `commercial/`, `industrial/`, `service/` under
-`buildings/`; `street_furniture/`, `lighting/` under `props/`. Add categories
+**Categories:** `residential/`, `commercial/`, `industrial/`, `service/`,
+`agricultural/` under `buildings/`; `street_furniture/`, `lighting/` under `props/`. Add categories
 when needed. A mixed-use building goes under its primary category, with the
 secondary use recorded in `notes.md`.
 

@@ -1,0 +1,497 @@
+# navetta_board_gable
+
+## Style brief
+
+A composite mid-century Finnish farm barn (*navetta*) of the kind found on a
+small post-war grain and dairy farm, in the same countryside as the
+rintamamiestalo houses. It is a long, low byre under a 30° gable roof, and
+the roof space is the hay loft. The walls are red-ochre vertical
+board-and-batten on a low cast-concrete plinth, with white corner boards,
+white casings round every opening, white fascias and barge boards, and a
+dark trapezoidal profiled steel roof.
+
+The long front faces the yard. It carries a pair of big braced board doors on
+a concrete ramp, a row of four small byre windows, and a plank pedestrian door
+at the east end on its own small ramp. The east gable carries the loft hatch
+high up, with one byre window below it. The west gable carries one byre window
+and a louvred loft vent. The rear wall has four byre windows and a service
+door, centred, on a third ramp. The doors are boarded leaves painted in the
+wall colour, with white frames, diagonal braces and black strap hinges.
+
+The barn has no chimney, no roof plant, no gutters and no fences, ground or
+base slab. It is meant as farmyard filler, placed beside the catalog's
+post-war houses, with three colours for variety.
+
+## Category and secondary use
+
+`buildings/agricultural/`. No secondary use: the byre is the ground floor and
+the loft is hay storage in the roof space.
+
+## Hero/landmark status
+
+**No.** Ordinary budgets and a 1024 atlas.
+
+## Footprint
+
+| | Width (X) × depth (Y) |
+| --- | --- |
+| Walls | 16.00 × 9.00 m |
+| Overall, with the 0.35 m rakes, the 0.45 m eaves and the ramps (2.20 m at the front, 1.40 m at the rear) | 16.70 × 12.60 m |
+
+Heights: the plinth top and byre floor are at 0.40 m. The wall meets the soffit
+at 3.80 m, the fascia bottom is at 3.54 m, and the ridge is at 6.71 m.
+
+The pivot is at ground level, centred on the bounding box of the plan,
+overhangs and ramps included. That puts it 0.40 m in front of the walls' centre.
+It is taken from `LOD0` and applied to every tier. Every tier keeps all three
+ramps and the full roof, so the extents never change.
+
+## Story height
+
+**One storey: 3.40 m**, from the 0.40 m byre floor on the plinth to the eave at
+3.80 m. The extra 0.1–0.4 m over the 3.0–3.3 m standard is the type's: a byre
+wall is tall enough to take the 3.0 m vehicle doors under the eave with their
+casing and drip cap. The loft above is roof space for hay, reached through the
+gable hatch. It is not an occupied storey, so the facts sidecar lists one
+storey of 144 m².
+
+## Door leaf height
+
+- **Pedestrian door (front, east end) and service door (rear): 0.95 × 2.10 m**,
+  plank leaves with no transom. The casing adds 0.19 m above the leaf.
+- **Vehicle doors: a pair, 3.20 × 3.00 m overall** (two 1.60 m leaves), with no
+  transom. They are vehicle doors, not leaves at human scale; the 2.10 m
+  pedestrian door beside them carries the scale.
+- **Loft hatch: a pair, 1.20 × 1.40 m**, threshold at 4.05 m in the east gable,
+  just above the gable belt board. Nobody reaches it from the ground; hay goes
+  in through it from a loader or a wagon.
+
+All ground-floor thresholds are at the 0.40 m floor. Each door is reached by a
+concrete ramp that meets the wall 2 cm under the threshold. There are no steps,
+so there are no handrails.
+
+## Window sills
+
+**Byre windows: sill 1.30 m above the ground, head 2.00 m**, 0.90 m above the
+byre floor. That is below the pedestrian door's 2.50 m head, as small high
+byre windows usually are. The sill is chest height from inside, out of reach
+of the animals. All eleven windows are the same 1.00 × 0.70 m opening, on the
+long walls and on both gables. Each gable has one window, centred on the
+ground storey, per Style Direction's rule for short walls. The west gable's
+loft vent (0.60 × 0.40 m, louvred, sill at 5.25 m) is not a window.
+
+## Eave overhang
+
+| Where | Projection |
+| --- | --- |
+| Eaves (long walls) | **0.45 m** |
+| Rakes (gable ends) | 0.35 m |
+
+Both are within 0.3–0.6 m. The soffits slope with the rafters, as the
+underside of the roof slab. The overhangs are kept at every tier.
+
+## Construction
+
+`build.py` builds five closed solids and unions them with Blender's exact
+boolean (`asset_build.union`):
+
+- the body: a wall ring capped by a buried floor and a roof-shaped lid;
+- the roof slab;
+- three ramps.
+
+The wall ring rises 0.1 m into the roof slab. The union trims the walls exactly
+where the soffits meet them and removes the buried parts of the slab and the
+ramps, so the result is the boundary of one empty volume.
+
+The construction is the template's (`rintamamiestalo_porch`), cut down to
+this building. Walls are triangulated as polygons with holes
+(`tessellate_polygon`, with `_flip_slivers()` repairing collinear-hole
+slivers). Every vertex on a shared edge is a corner of both faces.
+`close_solid()` walks the rim in edge-index order, so rebuilds are
+deterministic. The gables hand over from the S1 board band to the S2 band at
+the eave height, behind a white belt board.
+
+Authored parameters, which the tiers derive from:
+
+- walls 16.0 × 9.0 m, with the ridge along X;
+- a 30° pitch;
+- eave 3.80 m;
+- plinth 0.40 m;
+- eave overhang 0.45 m, rake overhang 0.35 m;
+- a slab 0.3125 m thick, the fascia height;
+- the opening table in `facade_atlas.py`;
+- the elevation lists (`MAIN_WALLS`) in `build.py`.
+
+Openings at `LOD0` are recessed 0.12 m with reveals, and closed by their leaf
+or glass plane (the vent 0.08 m). Detached farm buildings are seen from every
+side, so every opening on all four elevations is cut.
+
+**Ramps.** Each ramp is a concrete wedge from 0.38 m at the wall down to the
+ground: 4.00 × 2.20 m under the vehicle doors, 1.60 × 1.40 m under the
+pedestrian and service doors. Its back runs 5 cm into the wall. The top stops
+2 cm under the threshold, so it never lies in the plane of a door recess's
+floor.
+
+`check_layout()` asserts, before building:
+
+- no opening overlaps another or a corner board;
+- no opening runs under a soffit or a rake;
+- no window straddles the plinth top;
+- nothing in a gable meets the belt board;
+- the apex fits the S2 band;
+- the roof slope matches the atlas;
+- every ramp is wider than the casing of the door it serves.
+
+### No gutters, downpipes, chimney or roof safety kit
+
+The brief has no gutters, so there are no downpipes (CLAUDE.md: a building
+without a gutter has none). There is no chimney, vent stack or roof plant, so
+nothing on the 30° roof is serviced from it. CLAUDE.md asks for the wall ladder,
+roof ladder and walkway only where a roof steeper than 1:8 carries such an item,
+so this barn has no roof safety kit.
+
+## Per-tier triangle counts
+
+| Tier | Triangles | Ceiling | What changes |
+| --- | --- | --- | --- |
+| `LOD0` | 592 | 12,000 | casing ring, reveals and closing plane on all 15 openings (vent flush); corner-board columns; roof slab; three ramps |
+| `LOD1` | 452 | 4,000 | each opening becomes one recess the size of its casing, the casing painted on the recessed plane |
+| `LOD2` | 232 | 1,500 | openings flush, the casing rect a quad in the wall; the loft vent dropped; coplanar boolean subdivisions dissolved (UV seams kept) |
+| `LOD3` | 232 | 500 | the same mesh as `LOD2` |
+
+The counts sit far under the ceilings, and well under the 800–2000 the brief
+expected. This is correct, not something to pad. The barn is one box under one
+gable roof, with no porch, chimney, downpipes or roof kit. The walls are
+polygons with holes rather than grids. All the shallow detail is texture: the
+battens, the braces, the hinges, the sashes and the profiled sheet. A
+rintamamiestalo without its downpipes, roof kit and handrails comes to about
+900 at `LOD0`. This barn has fewer kinds of solid than that, and a longer, emptier wall.
+
+**`LOD3` equals `LOD2`.** At `LOD2` every opening is already one flush quad.
+The only further cuts would be the windows, the doors or the ramps. The
+windows and doors carry the window rhythm and the white casings, which
+Appearance Across LODs asks every tier to keep: a byre window is about
+12 × 9 px at 120 m. The ramps set the bounds and the pivot. So the fourth tier
+ships the third's mesh rather than inventing a reduction.
+
+## LOD review
+
+The switch distances are the catalog defaults: 35, 70 and 120 m. Reviewed on
+reimported GLBs with `scripts/review_asset.py`: perspective 1920×1080, 50°
+vertical FOV, Cycles 16–24 samples with denoising, AgX/None, exposure 0.
+Distances are measured along the view direction to the centre of the visible
+front or rear wall. Renders are in `review/farm_2026_11_20/navetta_board_gable/`
+(local, git-ignored).
+
+- **35 m switch** (`switch35/`): `LOD0` against `LOD1` at 30 and 40 m, front,
+  oblique and rear, under noon and reverse sun. The ring-and-reveal and the
+  single casing-sized recess cannot be told apart at 40 m. At 30 m, the
+  shadow under the casing's head becomes a slightly wider shadow at the top of the
+  recess.
+- **70 m switch** (`switch70/`): `LOD1` against `LOD2` at 65 and 75 m, front,
+  oblique and aerial, under noon and reverse sun. The flush openings lose the
+  recess's 1–2 px shadow line. Window rhythm, white casings, door braces and the
+  dark glass all hold. The loft vent, about 4 px, goes without being noticed.
+- **120 m switch** (`switch120/`): `LOD0`, `LOD2` and `LOD3` at 115 and 125 m,
+  front and oblique, under noon. All three are indistinguishable.
+- **Mip stress** (`mip0/`, `mip4/`): `LOD2` and `LOD3` at 75 and 125 m, front,
+  grazing (75° azimuth) and aerial, under noon, against whole-atlas mip4 from
+  `scripts/review_atlas_mips.py`. Mean absolute difference over the building
+  is 4–6 / 255. The doors' braces blur into the leaf colour, and the casings,
+  corner boards and fascias stay white with no colour leak from neighbouring
+  regions. The roof's weathering blotches become broad cloudy patches under
+  noon specular at mip4. The same patches are faintly visible on the base
+  atlas, so this is the weathering's own pattern minified, not a leak.
+- **Six views** (`views1/`): the orthographic front, rear, both gables and top,
+  plus the 45° aerial, at `LOD0` and `LOD2`. These are the pre-export views,
+  rendered by `build.py`'s `render_views()`.
+- A close range at 12 m (`close/`), front, oblique and the east gable under
+  noon and reverse sun. The battens read raised: a lit arris on the sun side
+  and a shadow line on the other. The glass is darker than its casing. The
+  2.10 m pedestrian door scales the 3.00 m pair beside it.
+
+These renders are authoring evidence only. Runtime switching, filtering and
+performance are pending in the consumer.
+
+## Interior geometry
+
+Measured with `scripts/validate_asset.py` on the exports:
+
+| Tier | Hidden triangles | Share |
+| --- | --- | --- |
+| `LOD0` | 3 of 592 | 0.5 % |
+| `LOD1` | 4 of 452 | 0.9 % |
+| `LOD2` | 1 of 232 | 0.4 % |
+| `LOD3` | 1 of 232 | 0.4 % |
+
+No hidden face is vertical on any tier (0.0 m²). The candidates are slivers
+where the wall tops meet the eave and rake soffits, plus a sliver of the rear
+ramp's cheek at the wall. Both are closure faces left by the union. Nothing
+stands inside the barn, by construction. The floor and the roof-shaped lid of
+the body are removed by the union, and the shell is the boundary of one
+volume.
+
+## Known simplifications
+
+- **No interior and no openings into it.** Every door and the hatch is closed,
+  painted on its recessed plane.
+- **Board-and-batten, casings, door frames, braces, strap hinges, the drip
+  flashing, drip caps, the belt board and the roof's ribs are texture.** All
+  are well under the 0.25 m relief threshold. The height channel carries them
+  at physical heights.
+- **Reveals are 0.12 m**, shallower than masonry reveals, because a boarded
+  timber wall sets its frames near the outside face.
+- **The ramps are plain wedges.** They have no grooves of their own: their
+  slope samples the plinth's concrete band by height, so the formwork line and
+  the plinth's splash and soil land across the ramp's lower part, parallel to
+  the wall.
+- **One window type, painted on two regions**, so the windows alternate between
+  two rooms behind the glass, not one per window.
+- **No snow guard** on the roof. Nothing in the brief needed one.
+
+## Texture set
+
+| File | Space | Notes |
+| --- | --- | --- |
+| `_albedo_<variant>.png` ×3 | sRGB | 1024², 8-bit RGB, no alpha |
+| `_orm.png` | Non-Color | 1024², R = AO, G = roughness, B = metallic; shared |
+| `_normal.png` | Non-Color | 1024², OpenGL tangent space (+Y green up); shared |
+| `_emission.png` | sRGB | 1024², neutral glazing mask; shared |
+
+That is six unique 1024² textures: three albedos, one ORM, one normal map
+and one emission mask.
+
+- **Texel density is 64 px/m**, except the roof band, which is stretched up the
+  slope (316 rows over 5.716 m, about 55 px/m; the ribs run down the slope, so
+  nothing changes along it). The corner-board strip is also stretched along its
+  length.
+- **The atlas is a trim sheet** generated by `facade_atlas.py` through
+  `scripts/atlas.py` at 4×4 supersampling, box-filtered in linear light. The
+  bands run from the bottom of the atlas:
+
+  | Band | Rows | Content |
+  | --- | --- | --- |
+  | S1 | 0–256 | The lower walls by height from the ground: concrete plinth with a formwork line, drip flashing, board-and-batten. |
+  | S2 | 258–448 | The gables from the eave: white belt board, board-and-batten. |
+  | ROOF | 452–772 | Trapezoidal profiled steel. |
+  | FASCIA | 774–798 | White fascia board under the sheet's drip edge. |
+  | Unique | 802–1010 | The braced vehicle doors, the plank door, the loft hatch, two byre-window regions, the vent, the corner strip and flat patches. |
+
+  Every band spans the full width and tiles in U. The battens (0.25 m), board
+  tones and roof ribs (0.25 m) all repeat at periods that divide 1024.
+  `check_bands()` fails the bake on a stray id in a band. `atlas.pad()` fills
+  every gutter last, in every channel.
+- **Relief heights**, used by `atlas.normal_map()`:
+  - battens 20 mm, with arrises rounded over a pixel;
+  - casings and the corner board 20 mm, sills 35 mm, sashes 12 mm;
+  - door frame and brace boards 22 mm, strap hinges 28 mm, plank V-grooves
+    3 mm deep;
+  - roof ribs 22 mm on a trapezoid, with a 2 mm flute mid-pan and the ridge
+    flashing;
+  - the flashing and drip caps.
+
+  Glass stays flat. The ridge flashing, which varies along the stretched V, is
+  scaled by the band's px/m over 64.
+- **Roughness / metallic:**
+
+  | Surface | Roughness | Metallic |
+  | --- | --- | --- |
+  | Boards | 0.82 | 0 |
+  | Trim | 0.62 | 0 |
+  | Sashes | 0.52 | 0 |
+  | Door leaves | 0.78 | 0 |
+  | Glass | 0.08 | 0 |
+  | Concrete | 0.90 | 0 |
+  | Roof steel | 0.46 | 0.25 |
+  | Flashing and drip caps | 0.42 | 0.30 |
+  | Hinge iron | 0.55 | 0.45 |
+- **Albedo carries no directional light.** Shade holds only tone, wear and the
+  occlusion that holds whatever the sun does: beside battens, under rails and
+  drips, under the soffit.
+
+### Weathering
+
+Placed by `facade_atlas.py`'s `weather()` and drawn by `scripts/weathering.py`
+at the catalog's moderate level:
+
+- light grime everywhere;
+- paint chalking on boards, trim and doors;
+- faint rain wash on the boards;
+- soil, splash specks and a green film at the plinth's foot;
+- splash-back up the boards from the flashing;
+- dust under the soffit from 3.3 m;
+- on the roof, long runs, more dirt toward the eave, chalking toward the
+  ridge, silt beside the ribs and specks of rust on the drip edge;
+- runs down the fascia from the sheet's edge;
+- dirt on the sills and head casings;
+- hand grime and kicked-up dirt on the doors;
+- splash at the corner boards' foot;
+- dust in the cavities beside the battens.
+
+Glass never weathers. Everything that follows height sits in S1, S2 or ROOF,
+whose V is height or slope.
+
+## Glazing treatment
+
+Panes are painted by `scripts/glazing.py`'s `rooms()` on the finished albedo.
+
+| | |
+| --- | --- |
+| base colour | sRGB 50/54/57 (`glazing.BASE`) |
+| measured over the glass mask, every variant | mean sRGB 55, linear 0.034 |
+| relative to the trim around it | 0.25× (red, yellow), 0.41× (grey) |
+| roughness / metallic | 0.08 / 0 |
+| panes in the atlas | 2 |
+
+Every window is the same plain byre window: one clear pane in a white sash,
+with no glazing bars. It is painted on two atlas regions, `window` and
+`window_b`, and `build.py` alternates them along each wall, so neighbouring
+windows show different rooms. `rooms()` seeds each pane's room from the pane's
+box in the atlas. With a single region, the first bake drew a dark room
+(level 0.75 of `glazing.BASE`), which measured sRGB 40, under the 45–70
+band. The two region origins were then chosen so both rooms land mid-band
+(levels 1.09 and 1.06). That was a placement choice, not a change to the
+treatment or its constants.
+
+The grey variant's trim is dark weathered timber, and the glass is still well
+under it. No brief-driven departure. Pending: calibration in the consumer's
+lighting.
+
+## Variant list
+
+Three variants, `export/navetta_board_gable_albedo_<name>.png`, sharing one
+ORM, normal map and emission mask:
+
+| Variant | Boards | Trim | Doors | Roof |
+| --- | --- | --- | --- | --- |
+| `red_ochre` (default) | red ochre (punamulta), sRGB 120/52/42 | off-white | red ochre, a shade darker | dark grey steel |
+| `grey_weathered` | unpainted boards gone silver-grey, 106/102/95 | darker weathered grey-brown, 74/69/62 | silvered | dark grey steel |
+| `yellow_ochre` | yellow ochre, 178/142/84 | off-white | yellow ochre, a shade darker | dark red-brown steel |
+
+This is the low-rise case: a farm building that differs in paint. The roof
+shifts a little with the body colour. Glass, concrete and hinge iron never
+change. Every `.glb` references the default (`red_ochre`) albedo. The other
+variants are the same mesh with that one file swapped, since geometry and UVs
+are identical by construction.
+
+## Night lighting
+
+- **Mask.** `navetta_board_gable_emission.png` is the neutral glazing mask: the
+  byre windows' panes, each lit as a room by `glazing.night_rooms()` (its own
+  level, a lamp glow and a falloff toward the floor, never under about a fifth).
+  Everything else is black: the frames, walls, roof and every door, none of
+  which is glazed. There are no signs or lamps.
+- **Bindings.** All four GLBs bind the mask through `emissiveTexture` on UV0,
+  with `emissiveFactor` `[0, 0, 0]` by default and the texture kept
+  (`scripts/window_emission.py`, via `asset_build.export_all()`).
+- **Reference lit factor.** Linear RGB `[1.0, 0.55, 0.23]`, the catalog
+  default.
+- **Control.** One building-wide control. The windows share two atlas regions,
+  so individual windows cannot be switched. The consumer owns intensity,
+  colour and schedule; a byre lit at night is a milking or feeding hour.
+- **Preview.** `variants.png` is 1920×904, with all three colours at `LOD0`:
+  a DAY row (emission off, catalog grey world, white sun at 3) above a NIGHT
+  row (reference emission on, blue moon proxy at 0.12, blue world at 0.08).
+  Camera, framing and exposure are fixed between the rows (Cycles, AgX/None,
+  exposure 0), via `scripts/variant_previews.py`. Cycles simulates spill onto
+  nearby surfaces in that sheet. Spill in the consumer depends on its lighting.
+- **Day cycle.** The day cycle (`cycle/`: morning, noon, dusk, night with
+  emission on) was rendered on the reimported `LOD0`.
+- **Pending in the consumer:** import, material control, night exposure, spill
+  and LOD switching at night.
+
+## Export
+
+```
+python3 facade_atlas.py export                      # textures, all three variants
+blender --background source.blend --python build.py  # meshes, preview, variants, sidecar
+blender --background --python build.py -- facts      # the facts sidecar alone
+```
+
+Generate the textures first, because the UVs index into the atlas and the
+renders read it. The first build ran from an empty scene
+(`blender --background --python build.py`), which saves `source.blend`.
+`facade_atlas.py` is the single source of the numbers the two scripts share.
+
+Export settings, as `asset_build.export_all()` passes them:
+
+- `export_format='GLB'`
+- `use_selection=True`
+- `export_yup=True`
+- `export_apply=True`
+- `export_keep_originals=True`
+- `export_cameras=False`
+- `export_lights=False`
+
+The material has backface culling on, so it exports single-sided.
+`strip_embedded_images()` removes the placeholder `bufferView` beside each
+image `uri`.
+
+The material bindings, traced per tier, are one material on every tier:
+
+- `baseColorTexture`: the `red_ochre` albedo;
+- `metallicRoughnessTexture` and `occlusionTexture`: the ORM, through the
+  `glTF Material Output` group;
+- `normalTexture` at scale 1, through a tangent-space Normal Map node, with
+  no tangents exported;
+- `emissiveTexture`: the mask, with a zero factor.
+
+All of them are on UV0 and reference external PNGs.
+
+The facts sidecar `export/navetta_board_gable.model.json` records:
+
+- the footprint, as the wall outline without the ramps and eaves;
+- one storey at the 0.40 m floor, 144 m², and zero dwellings;
+- four doors:
+
+  | Door | Kind | Main |
+  | --- | --- | --- |
+  | Pedestrian door (`front`) | entrance | yes |
+  | Vehicle pair (`big_doors`) | vehicle | no |
+  | Rear door (`rear`) | service | no |
+  | Loft hatch (`loft_hatch`) | balcony, because nobody reaches it from the ground | no |
+
+**Preview.** `preview.png` uses the catalog's fixed camera orientation, lens,
+sun and flat grey world (`asset_build.preview_studio()`), with the distance
+fitted to the `LOD0` bounds and an 8 % margin. It shows `LOD0`, the default
+variant, with the lights off.
+
+## Review status
+
+Checked here, in Blender:
+
+- `scripts/validate_asset.py`: no failures.
+  - All four tiers have uri-only external images, one opaque material slot and
+    welded manifold topology.
+  - The pivot is at ground level and centred.
+  - Every tier binds emission on UV0, default off, and the normal map at
+    scale 1.
+  - Six 1024² RGB PNGs; normal vectors are unit length and face out.
+  - The glass measures in band and darker than the trim.
+  - The facts sidecar is consistent.
+  - The one warning is `source.dirty` in the sidecar, expected until the asset
+    is committed and the sidecar regenerated with `build.py -- facts`.
+- `check_layout()` passes.
+- The six pre-export views at `LOD0` and `LOD2`.
+- The tier comparisons at the three switches, the 12 m close range, the day
+  cycle and the mip4 stress renders, all recorded under LOD review. Battens,
+  laps on the casings and roof ribs read raised in direct sun, which confirms
+  the OpenGL green channel.
+- The variant sheet (`variants.png`): day and night for all three colours.
+
+Pending, and outside this repository:
+
+- Consumer import, MikkTSpace tangent generation and the normal map at
+  distance.
+- Consumer mip and anisotropic filtering.
+- LOD switching, night exposure and spill.
+- Runtime performance.
+
+## Tooling versions
+
+- **Blender 5.3.0**, headless, which saved `source.blend`. The MCP addon was
+  not used for this asset.
+- **CPython 3.14.10** with numpy 2.5.5, scipy 1.18.1 and Pillow 13.0.0, for
+  the texture export.
+
+These are recorded as known-good markers, not requirements.
