@@ -3,7 +3,7 @@
   "version": 1,
   "name": "viljakuivuri_tower",
   "path": "buildings/agricultural/viljakuivuri_tower",
-  "source": {"commit": "841f3ff8518f6691fec7cc420e7e014335c6bd6f", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "3655f55d58396fe4415d343ed7d2447890f38ad6", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-4.85, 0.0, -4.4], "max": [4.85, 12.1934, 4.4]},
   "footprint": [
