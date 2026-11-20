@@ -3,7 +3,7 @@
   "version": 1,
   "name": "konehalli_open_bays",
   "path": "buildings/agricultural/konehalli_open_bays",
-  "source": {"commit": "140154fa60d16dcac796d7d655f3213cbc1a0d4e", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "a63afeef87011843d913649d80d9f2f9c8b2a6c5", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-5.65, 0.0, -3.3], "max": [5.65, 4.3167, 3.3]},
   "footprint": [
