@@ -3,7 +3,7 @@
   "version": 1,
   "name": "liikekeskus_pharmacy",
   "path": "buildings/commercial/liikekeskus_pharmacy",
-  "source": {"commit": "157d8f2bc2ffc06e27157ed6bcc640e96b587127", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "2dbe474483bc446451ecf6106283b03f45b59394", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-12.9, 0.0, -9.24], "max": [12.9, 11.925, 9.24]},
   "footprint": [

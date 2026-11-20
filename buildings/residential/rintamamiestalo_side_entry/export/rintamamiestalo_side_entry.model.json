@@ -3,7 +3,7 @@
   "version": 1,
   "name": "rintamamiestalo_side_entry",
   "path": "buildings/residential/rintamamiestalo_side_entry",
-  "source": {"commit": "157d8f2bc2ffc06e27157ed6bcc640e96b587127", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "2dbe474483bc446451ecf6106283b03f45b59394", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-5.35, 0.0, -6.22], "max": [5.35, 9.5625, 6.22]},
   "footprint": [
