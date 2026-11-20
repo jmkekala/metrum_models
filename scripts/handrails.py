@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-2.0-only
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 """Handrails on an entrance flight: a steel rail on posts along one side of
 the steps, level along the landing and following the nosings down the flight,

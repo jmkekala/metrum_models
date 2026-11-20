@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-2.0-only
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 """Shared trim-sheet rasteriser: a supersampled canvas with a height channel,
 and the maps it resolves to (albedo, ORM, normal, emission coverage).

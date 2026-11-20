@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-2.0-only
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 """Deterministic rebuild of rivitalo_two_storey, all four LOD tiers.
 

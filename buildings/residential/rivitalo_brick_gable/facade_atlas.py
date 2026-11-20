@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-2.0-only
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 """Albedo, ORM, normal and emission atlas for rivitalo_brick_gable, and the
 layout build.py maps into.

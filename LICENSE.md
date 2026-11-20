@@ -40,16 +40,16 @@ When reusing an asset from this repository, credit it as:
 
 > "[Asset name]" from Metrum Models, licensed under CC BY 4.0.
 
-## Code License — GPL-2.0-only
+## Code License — GPL-3.0-or-later
 
 **Code** — every `.py` file in the repository: the shared helpers under
 `scripts/` and each asset's own scripts, such as `build.py` and its texture
 generator `facade_atlas.py` — is licensed under the **GNU General Public
-License v2.0 only (GPL-2.0-only)**.
+License v3.0 or later (GPL-3.0-or-later)**.
 
 Every `.py` file in this repository must begin with
-`# SPDX-License-Identifier: GPL-2.0-only` as its first line (see
+`# SPDX-License-Identifier: GPL-3.0-or-later` as its first line (see
 `CLAUDE.md`'s Licensing section). This notice does not extend to
 content files, and the content license above does not extend to code.
 
-- Full legal text: <https://www.gnu.org/licenses/old-licenses/gpl-2.0.html>
+- Full legal text: <https://www.gnu.org/licenses/gpl-3.0.html>

@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-2.0-only
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 """Downpipes: the rainwater pipe from an eave's gutter down a wall to the
 ground, as one closed solid for a build.py to union into its tier.

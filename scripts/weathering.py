@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-2.0-only
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 """Weathering for any atlas: dirt, algae, rust, faded paint and rain runs, as
 per-sample fields that scripts/atlas.py resolves per variant.

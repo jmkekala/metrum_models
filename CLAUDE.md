@@ -713,8 +713,9 @@ Two licences; the file format decides, not the location:
   **CC-BY-4.0**, with the full notice in `LICENSE.md`. No licence headers in
   art files.
 - **Code:** every `.py` file, in `scripts/` or an asset folder, is
-  **GPL-2.0-only** and begins with `# SPDX-License-Identifier: GPL-2.0-only`,
-  then a blank line, then any docstring. No author names or boilerplate.
+  **GPL-3.0-or-later** and begins with
+  `# SPDX-License-Identifier: GPL-3.0-or-later`, then a blank line, then any
+  docstring. No author names or boilerplate.
 
 ## Blender MCP Workflow
 
@@ -868,7 +869,7 @@ with rationale in owning sections.
 - No large binary commits outside Git LFS.
 - No tracked scratch/test `.blend` files.
 - No `.py` commits without `# SPDX-License-Identifier:
-  GPL-2.0-only` first line (Licensing).
+  GPL-3.0-or-later` first line (Licensing).
 - No new top-level docs beyond `README.md`, `LICENSE.md`, `CATALOG.md`,
   and per-asset `notes.md` without a durable distinct role.
 

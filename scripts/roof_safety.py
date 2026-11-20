@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-2.0-only
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 """Roof safety equipment: the wall ladder, the roof ladder and the walkway
 that take a sweep or a fitter from the ground to whatever on a roof is

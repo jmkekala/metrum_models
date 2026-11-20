@@ -41,7 +41,7 @@ their conventions and budgets are specified and waiting for the first one.
 - **Each asset's `notes.md`** — what was built and why, the checks it
   passed, and how to rebuild it from its scripts.
 - **[`LICENSE.md`](LICENSE.md)** — this repo carries two licenses:
-  GPL-2.0-only for code (every `.py` file), CC BY 4.0 for everything else.
+  GPL-3.0-or-later for code (every `.py` file), CC BY 4.0 for everything else.
 
 ## Requirements
 
