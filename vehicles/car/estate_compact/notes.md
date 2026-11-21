@@ -49,7 +49,7 @@ its chin.
 the atlas generator and `build.py` read one description.
 
 - **Body**: a closed shell lofted through 19 stations along the length
-  (`key_stations()`), each a loop of up to 12 rows a side (sill to belt,
+  (`key_stations()`), each a loop of up to 13 rows a side (sill to belt,
   then glass bottom over the roof to the centre line). Station points carry
   their own s, so a station bends where a pillar leans. Behind the
   windscreen's header the roof keeps three rows only (edge, the row under
@@ -70,7 +70,11 @@ the atlas generator and `build.py` read one description.
   its own under the doors' lower edge. The door's lower zone leans out 9
   degrees to a soft break at 0.60 (0.877), above which the skin is crowned,
   fullest (0.884) at 0.78 and back to 0.878 at the shoulder crease 65 mm
-  under the belt (row `S5`); above the crease it leans in 40 mm to the belt
+  under the belt (row `S5`). A row of the doors and the rear quarter only
+  (`SD`, carried by the stations from the cowl to the D-pillar, ending as a
+  point of the cells beside it elsewhere) sits 45 mm under the crease and
+  6 mm proud of the line between its neighbours, so the skin swells under
+  the crease and rolls in to it over the last 45 mm; above the crease it leans in 40 mm to the belt
   (32 degrees) and a further 22 mm of painted shoulder to the glass. The
   crease is a real break along the doors and the rear quarter:
   `crease_edges()` hands its edges to `build.py`, which marks them sharp
@@ -134,14 +138,16 @@ the atlas generator and `build.py` read one description.
   intake; each pod is the rest of the lamp's grid cell, an unpainted dark
   face, so its leaning edges are the mesh's own.
 - **Wiper, tailpipe, aerial**: three small closed solids of their own
-  (LOD0): the rear wiper, one dark bar 0.42 long a few millimetres off the
-  tailgate glass above its foot; the tailpipe's bright tip, a six-sided
-  prism under the rear bumper on the right (x -0.46, 0.19-0.24 m high, the
-  mirror's metallic patch, its ends dark); and the aerial's fin on the
+  (LOD0): the rear wiper's blade, one dark bar 0.42 long a few millimetres
+  off the tailgate glass above its foot (its arm and pivot are drawn on the
+  glass, as dark as the printed band); the exhaust, a six-sided prism
+  tucked up under the rear bumper on the right (x -0.46, 0.20-0.25 m high), dark
+  from under the floor back to a bright tip 9 cm long (the mirror's
+  metallic patch), its ends dark; and the aerial's fin on the
   roof's rear centre line, a dark wedge 0.15 long and 45 mm high, lower
   than the rails.
 - **Wheel arches**: exact boolean difference (`asset_build.difference`,
-  snapped) of a prism per arch (radius 0.37, centre 15 mm above the axle, 16
+  snapped) of a prism per arch (radius 0.37, centre 15 mm above the axle, 18
   arc segments at LOD0, 5 at LOD1) reaching in to the liner wall at
   |x| = 0.465; its faces stay as the dark closed liners. The arch lip is
   painted relief.
@@ -167,9 +173,11 @@ Four parts (front left/right steering, rear left/right), radius 0.320,
 width 0.205, each a closed solid with its origin at the wheel centre and a
 tread corner at the very bottom. LOD0: 16 sides, a revolved profile (tread
 from the flat inner face, a rounded outer shoulder, the sidewall down to a
-rim lip standing 2 mm proud at r 0.226, the lip, and the spoke face dished
-38 mm at r 0.208: rim face about 0.66 of the radius, sidewall 0.10), 188
-triangles each. One wheel face picture for all four wheels and every tier:
+rim lip standing 2 mm proud at r 0.226, the dish's wall 38 mm deep to
+r 0.208, and the spoke face rising from there as a cone to the hub's flat
+cap, 24 mm proud of the dish's floor at r 0.064: rim face about 0.66 of the
+radius, sidewall 0.10), 188 triangles each, every vertex inside the
+wheel's cylinder (radius 0.320, x -0.1025 to 0.1045). One wheel face picture for all four wheels and every tier:
 five silver spokes over near-black openings, a dark gap at the bead, a bright
 lip, a hub with cap and nuts; alloy as metallic 0.85, roughness 0.35, the
 openings rough and nonmetallic, rubber 0.88, the tread's crown worn lighter.
@@ -292,8 +300,12 @@ bonnet, 0.09-0.10 inboard of the wing's crest), curving in over its last
 shows as a strip about 0.10 wide outboard of it. The lines are texture and normal
 map only, no modelled grooves; the bonnet strips ahead of the cowl stay in the top island so
 the side lines run straight to the windscreen. The waist seal is relief and darkening on the paint. Each door handle is
-a raised grip across a scallop dished 7 mm into the door just under the
-shoulder crease (height and a soft shade, darker under its upper edge).
+a raised grip across a scallop dished 12 mm into the door, 10 cm under the
+shoulder crease (height and a soft shade, darker under its upper edge),
+deep enough to read in the catalog's light. The doors' lower break at
+0.60 m is pressed deeper in the height channel than the mesh has it (the
+skin 4 mm in below the line, over a 3 cm turn, fading out at the doors'
+ends), so it reads as a soft pressed line above the mouldings.
 The doors' frames are drawn too: their shut line to the roof above the
 window seal, the doors' lower edge over the sill cover (0.337 m), and the
 door gaps carried up the B- and C-pillars' black-outs as lighter lines;
@@ -320,13 +332,13 @@ plate rect (no mirror seam). The preview multiplies the paint by linear
 
 | Tier | Triangles | Ceiling |
 | --- | --- | --- |
-| LOD0 | 2910 | 3000 |
+| LOD0 | 2990 | 3000 |
 | LOD1 | 880 | 900 |
 | LOD2 | 216 | 220 |
 | LOD3 | 40 | 40 |
 
-LOD0: body shell about 1450 before the arches and 1826 after them, four
-wheels 752, mirrors 2 x 110, rails 2 x 36, wiper 12, tailpipe 20, fin 8.
+LOD0: body shell about 1474 before the arches and 1894 after them, four
+wheels 752, mirrors 2 x 110, rails 2 x 36, wiper 12, exhaust 32, fin 8.
 The nose's corner columns, the roll station, the stations round the
 arches, the plates' recesses, the eight-sided mirrors and the three small
 solids were paid for with the roof's spare rows, the mid-door and second
@@ -376,7 +388,7 @@ the consumer.
 
 ## Interior geometry
 
-Validator hidden-surface test: LOD0 10/2910 (the roof rails' buried feet and the fin's foot), LOD1 0, LOD2 22/216 (the middles of the
+Validator hidden-surface test: LOD0 13/2990 (the roof rails' buried feet, the fin's foot and the exhaust's top), LOD1 0, LOD2 22/216 (the middles of the
 axle prisms inside the body, kept: one prism per axle is cheaper than two
 wheels), LOD3 0. No seats, no interior.
 
@@ -418,10 +430,10 @@ LOD0 face uses carry LOD2's pictures (light wheels in the arches, shadow
 under the sills). Deviations: the under-body patch and LOD3's blocks carry
 no density (uniform colour); 45-degree faces stretch up to 1.4x in
 their projection. Painted with `scripts/atlas.py` at SS 4; heights for the
-normal map: panel gaps -4 mm (the bonnet's lines -6 mm with a +1.5 mm lip), handle grips +8 mm over scallops -7 mm, side mouldings +6 mm and rub strips +5 mm, arch
+normal map: panel gaps -4 mm (the bonnet's lines -6 mm with a +1.5 mm lip), handle grips +8 mm over scallops -12 mm, the doors' lower break -4 mm, side mouldings +6 mm and rub strips +5 mm, arch
 trim +2 mm and lip +4 mm, plate holders +4 mm, the tailgate's recess -6 mm
 under a +6 mm garnish, headlamp bowls -5 mm, grille slats +4 mm over a -6 mm grille, intake mesh, rim lip and hub
-+3 mm, spoke openings -4 mm, tread grooves -6 mm; glass and lens faces flat
++3 mm, spoke openings -12 mm, tread grooves -6 mm; glass and lens faces flat
 (0.5 mm ribs on amber and red); cavity darkens grooves. Weathering
 through `scripts/weathering.py` at the moderate level (grime, road film
 falling off over 0.2 m above the sills, spray behind each wheel, bumper and

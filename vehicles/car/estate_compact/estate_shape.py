@@ -46,10 +46,17 @@ LINER_X = 0.465                     # the arch liner's inner wall
 
 # K1..K3 are cap-only columns round the plan corners: the end stations
 # carry them, the tube between does not.
-ROWS = ("SB", "S1", "S2", "S3", "S4", "S5", "SH", "K1", "GB", "K2", "GT", "K3", "RE", "R1",
+ROWS = ("SB", "S1", "S2", "S3", "S4", "SD", "S5", "SH", "K1", "GB", "K2", "GT", "K3", "RE", "R1",
         "R2", "R3", "RC")
-SIDE_ROWS = ROWS[:7]
-TOP_ROWS = ROWS[7:]
+SIDE_ROWS = ("SB", "S1", "S2", "S3", "S4", "S5", "SH")
+TOP_ROWS = ROWS[8:]
+# SD is a row of the doors and the rear quarter only: the stations from the
+# cowl to the D-pillar carry it, just under the shoulder crease, where the
+# skin swells before it rolls in to the crease. Elsewhere it ends as a
+# point of the cells beside it.
+DOOR_ROW = "SD"
+DOOR_STATIONS = ("CW", "A1", "HD", "B1", "B2", "C1", "C2", "X1", "D1")
+DOOR_DROP, DOOR_SWELL = 0.045, 0.006      # SD under the crease, and proud of the S4-S5 chord
 CAP_ONLY = ("K1", "K2", "K3")
 IDX = {r: i for i, r in enumerate(ROWS)}
 
@@ -384,6 +391,11 @@ def key_stations():
         if name in ROOF_STATIONS:
             for r in ROOF_SPARE:
                 d.pop(r, None)
+        if name in DOOR_STATIONS:
+            (x4, s4, z4), (x5, s5, z5) = d["S4"], d["S5"]
+            z = z5 - DOOR_DROP
+            f = (z - z4) / (z5 - z4)
+            d[DOOR_ROW] = (min(x4 + (x5 - x4) * f + DOOR_SWELL, HW), s4 + (s5 - s4) * f, z)
     return st
 
 
@@ -855,7 +867,7 @@ def arch_cutter(axle, sign, level):
     from the liner wall at |x| = LINER_X to outside the body."""
     sc = S_AXLE[axle]
     zc = WHEEL_R + ARCH_DZ
-    n = {0: 16, 1: 5}.get(level, 5)
+    n = {0: 18, 1: 5}.get(level, 5)
     a0, a1 = math.radians(-36.0), math.radians(216.0)
     arc = [(sc + ARCH_R * math.cos(a0 + (a1 - a0) * k / n),
             zc + ARCH_R * math.sin(a0 + (a1 - a0) * k / n)) for k in range(n + 1)]
@@ -1023,9 +1035,10 @@ R_FOGLAMP = LENS_CELLS[-1][0] + 64, LENS_CELLS[-1][1] + 16, 64, 64
 # profile (x outward from the wheel's centre plane, radius), inner side first
 WHEEL_PROFILE = {
     # tread from the inner face, the outer shoulder, the sidewall down to a
-    # rim lip standing 2 mm proud, the lip, and the spoke face dished 38 mm
+    # rim lip standing 2 mm proud, the dish's wall 38 mm deep, and the spoke
+    # face rising as a cone to the hub, 24 mm proud of the dish's floor
     0: [(-TYRE_W / 2, WHEEL_R), (0.080, WHEEL_R), (TYRE_W / 2, 0.292), (0.1045, 0.226),
-        (0.096, 0.214), (0.066, 0.208)],
+        (0.066, 0.208), (0.090, 0.064)],
     1: [(-TYRE_W / 2, WHEEL_R), (TYRE_W / 2, WHEEL_R)],
 }
 WHEEL_SIDES = {0: 16, 1: 8}
@@ -1429,7 +1442,7 @@ def _box(c, ax, hx, at, ht, an, hn, kind, island):
 
 
 WIPER_X = (-0.05, 0.37)        # the rear wiper's blade, parked along the glass's foot
-TAILPIPE = dict(x=-0.46, z=0.218, r=0.026, s=(4.33, 4.447), sides=6)
+TAILPIPE = dict(x=-0.46, z=0.229, r=0.026, s=(4.10, 4.355, 4.447), sides=6)
 
 
 def wiper_faces():
@@ -1467,19 +1480,21 @@ def fin_faces():
 
 
 def tailpipe_faces():
-    """The tailpipe's bright tip under the rear bumper, on the right: a short
-    closed prism, its ends dark."""
+    """The exhaust under the rear bumper, on the right: a dark pipe running
+    back from under the floor to a bright tip. One closed prism, its ends
+    dark."""
     d = TAILPIPE
     n = d["sides"]
     ring = [(math.cos(2 * math.pi * k / n), math.sin(2 * math.pi * k / n)) for k in range(n)]
     ends = [[P(d["x"] + d["r"] * c, s, d["z"] + d["r"] * w) for c, w in ring] for s in d["s"]]
     faces = []
-    for k in range(n):
-        j = (k + 1) % n
-        faces.append(Face([ends[0][k], ends[1][k], ends[1][j], ends[0][j]], "mirror_glass",
-                          smooth=True, island="mirror"))
+    for i, (kind, island) in enumerate((("rail", "rail"), ("mirror_glass", "mirror"))):
+        for k in range(n):
+            j = (k + 1) % n
+            faces.append(Face([ends[i][k], ends[i + 1][k], ends[i + 1][j], ends[i][j]], kind,
+                              smooth=True, island=island))
     faces.append(Face(ends[0], "rail", smooth=False, island="rail"))
-    faces.append(Face(ends[1][::-1], "rail", smooth=False, island="rail"))
+    faces.append(Face(ends[-1][::-1], "rail", smooth=False, island="rail"))
     return faces
 
 

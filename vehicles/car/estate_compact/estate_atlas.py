@@ -336,21 +336,31 @@ def paint_side(c):
         # handles: each a grip across a scallop dished into the door, just
         # under the shoulder crease
         zcr = np.array([S.z_side("S5", v) for v in s[0]])[None, :]
-        for s0, s1 in ((2.045, 2.215), (3.005, 3.165)):
-            sm, hs, hz = (s0 + s1) / 2.0, (s1 - s0) / 2.0, 0.034
-            zc = zcr - 0.052
+        for s0, s1 in ((2.040, 2.220), (3.000, 3.170)):
+            sm, hs, hz = (s0 + s1) / 2.0, (s1 - s0) / 2.0, 0.038
+            zc = zcr - 0.100
             rr = ((s - sm) / hs) ** 2 + ((z - zc) / hz) ** 2
             dish = rr < 1.0
             hh = c.height[R.sy, R.sx]
             mm = dish & np.isin(R.mid(), BODY)
-            hh[mm] -= (0.007 * (1.0 - rr))[mm]
+            hh[mm] -= (0.012 * (1.0 - rr))[mm]
             c.height[R.sy, R.sx] = hh
-            R.put(dish, shade=1.0, ao=0.75, on=BODY)
+            R.put(dish, shade=1.0, ao=0.65, on=BODY)
             sha = c.shade[R.sy, R.sx]
-            sha[mm] *= np.clip(0.80 + 0.22 * (zc + hz - z) / (2 * hz), 0.78, 1.0)[mm]
+            sha[mm] *= np.clip(0.72 + 0.30 * (zc + hz - z) / (2 * hz), 0.70, 1.0)[mm]
             c.shade[R.sy, R.sx] = sha
             R.put(rrect(s, z, sm - hs * 0.84, sm + hs * 0.84, zc + 0.000, zc + 0.020, 0.010),
                   mid=M["handle"], height=0.008)
+        # the doors' lower break, pressed a little deeper than the mesh has
+        # it: below the line the skin sits 4 mm in, over a 3 cm turn; it
+        # fades out at the doors' ends, short of the arches
+        zb = np.array([S.z_side("S3", v) for v in s[0]])[None, :]
+        fade = np.clip((s - 1.32) / 0.10, 0, 1) * np.clip((3.08 - s) / 0.10, 0, 1)
+        turn = np.clip((zb + 0.015 - z) / 0.030, 0, 1)
+        hh = c.height[R.sy, R.sx]
+        mm = np.isin(R.mid(), BODY) & (z > DOOR_FOOT + 0.01)
+        hh[mm] -= (0.004 * fade * turn * turn * (3 - 2 * turn))[mm]
+        c.height[R.sy, R.sx] = hh
         # the doors' frames: the shut line to the roof above the window seal,
         # and the door gaps carried up the B- and C-pillars' black-outs
         zgt0 = np.interp(s, [a for a, _ in S.GLASS_TOP], [b for _, b in S.GLASS_TOP])
@@ -731,7 +741,7 @@ def paint_wheels(c):
     dist = np.abs(np.mod(a + pitch / 2, pitch) - pitch / 2) * r
     window = (r < 0.192) & (r > 0.072) & (dist > 0.022 + 0.045 * (r - 0.072) / 0.12)
     mid[window] = M["disc"]
-    hgt[window] = -0.004
+    hgt[window] = -0.012
     hub = r < 0.062
     mid[hub] = M["rim"]
     hgt[hub] = 0.003
@@ -858,6 +868,22 @@ def frit():
         core = ndimage.distance_transform_edt(inner) > rad * k
         opened = ndimage.distance_transform_edt(~core) <= rad * k
         out |= pane & ~(opened & inner)
+        if gid == 35:
+            # the rear wiper's arm and pivot, as dark as the band: from the
+            # glass's foot on the centre line up to the blade (a solid of its own)
+            st = dict(S.key_stations())
+            a = np.array((0.0, st["R0"]["RC"][1], st["R0"]["RC"][2]))
+            b = np.array((0.0, st["RG"]["RC"][1], st["RG"]["RC"][2]))
+            piv = a + (b - a) * 0.035
+            tip = a + (b - a) * 0.13 + np.array((0.17, 0.0, 0.0))
+            pa = np.array(S.project("glass_tg", S.P(*piv))) * k
+            pb = np.array(S.project("glass_tg", S.P(*tip))) * k
+            arm = Image.new("L", (n, n), 0)
+            da = ImageDraw.Draw(arm)
+            da.line([tuple(pa), tuple(pb)], fill=1, width=int(round(2.4 * k)))
+            r_ = 3.2 * k
+            da.ellipse([pa[0] - r_, pa[1] - r_, pa[0] + r_, pa[1] + r_], fill=1)
+            out |= pane & np.asarray(arm, bool)
     return atlas.box(out.astype(np.float32), k)
 
 
