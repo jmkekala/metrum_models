@@ -79,7 +79,9 @@ the atlas generator and `build.py` read one description.
   painted relief.
 - **Mirrors**: separate closed solids lofted outward from a short arm on the
   sail (x 0.80-1.01), a tapered rounded housing, a dark mirror face (not a
-  glass id) and the side repeater across the outer end.
+  glass id) and the side repeater across the outer end. LOD1's 3-section
+  mirror has its whole rear face dark (arm to end), so it reads as a mirror
+  from behind like LOD0's.
 - **Roof rails**: closed solids at x +-0.525 floating 10-12 mm over the roof,
   their ends dipped into it as feet.
 - **Smoothing**: smooth shading throughout; edges are sharp past 50 degrees,
@@ -129,10 +131,15 @@ part 0 and paint only.
   its place on the right.
 
 Unlit lens colours: red (128, 28, 26), amber (196, 112, 30), clear
-(172, 175, 174) sRGB; lit as `vehicle_ids.LENS_LIT`. Lens pictures: pale
-lenses with soft reflector shading (a projector bowl in the low beam, a
-bowl in the high beam), a lighter strip for the daytime lamp, ribbed amber,
-ribbed red clusters with a lighter light guide, a clear reverse cell, LED
+(172, 175, 174) sRGB; lit as `vehicle_ids.LENS_LIT`. Headlamps: a light silvery
+housing behind the clear lens (its own id `hl_chrome`, sRGB 206, roughness
+0.25, metallic 0.55: at 0.85 it mirrored the neutral world's grey and read
+darker than the paint, so it was lowered), in each upper cell a shaded dish
+(light rim, darker centre) inside a fine bezel line, a projector lens with a
+shaded lower half in the low beam and a small bulb cap in the high beam, a
+soft darker band under the housing's roof; the daytime strip a pale lens with
+a slim, slightly lighter light guide; the indicator a ribbed amber cell in a
+silver surround. Elsewhere ribbed red clusters with a lighter light guide, a clear reverse cell, LED
 dots in the high-mounted lamp; a one-texel dark outline where each unit
 meets the body; glossy in the ORM only (roughness 0.12). Every lens rect is
 lit in full in the emission. LOD1 keeps every lens (its brake and fog lamps
@@ -167,11 +174,21 @@ albedo the painted faces sample is, in linear, LOD0 0.723, LOD1 0.712
 sill's top, so they never sample the black sill, and the wheel pictures they
 show in the arches are a large light rim in a thin dark tyre with the arch
 gap left as paint. LOD3's painted faces sample a uniform light block (shaded
-to the tiers' level); its dark parts are unpainted faces. Panel gaps, handles, the waist seal, the bonnet shut lines
-and the flank's character line are relief and darkening on the paint; the
-black trims (sill, lips, slim cowl, grille, intake, B/C pillars, sail) are
-unpainted faces, rastered a texel past their outlines so their edges never
-pick up a light fringe. Plates are blank white 0.52 x 0.11 with
+to the tiers' level); its dark parts are unpainted faces. Panel gaps (doors,
+tailgate, fuel flap, bumper-to-wing joints, roof hinge) and the bonnet's
+shut lines (one each side from the headlamp's inner top corner to the
+windscreen's base corner, and one across the nose over grille and lamps)
+are 13.5 mm (1.7 texels) dark gap lines, albedo at 0.10 of the paint (about
+sRGB 70 on the light field), a 4 mm groove with a 1.5 mm raised lip on the
+bonnet's side; the bonnet strips ahead of the cowl stay in the top island so
+the side lines run straight to the windscreen. Handles, the waist seal and
+the flank's character line are relief and darkening on the paint; the
+black trims (sill, lips, slim cowl, grille, intake, B/C pillars) are
+unpainted faces, and the mirror sail is unpainted satin black (sRGB 24,
+roughness 0.62). Trim and glass faces are rastered grown by a true offset of
+1.3 (glass 1.2) texels all round their outline, so even a thin sliver face
+(the sail's wedge under the mirror) samples its own colour and never picks
+up a light fringe. Plates are blank white 0.52 x 0.11 with
 a thin dark border, unpainted, each one face group mapped whole onto one
 plate rect (no mirror seam). The preview multiplies the paint by linear
 (0.22, 0.30, 0.40).
@@ -241,7 +258,7 @@ take the body colour at 100 m and beyond.
 One 1024 atlas at 128 texels/m (the owner's decision for every vehicle
 class): albedo `plain`, ORM, normal, emission and `glass_texels.png`, all
 1024, no alpha. The layout is the 512 one scaled by 2 (`SC`), the pictures
-the same, painted crisper (1-texel panel gaps of 8.5 mm, thinner seals).
+the same, painted crisper (panel gaps 13.5 mm, thinner seals).
 Local densities above that: the lamp rects at 224 texels/m (1.75x, each
 centred in its own 192 x 96 cell) and the wheel face at 294 texels/m
 (192 x 192, shared by all four wheels), because they are small in area and
@@ -260,7 +277,7 @@ LOD0 face uses carry LOD2's pictures (light wheels in the arches, shadow
 under the sills). Deviations: the under-body patch and LOD3's blocks carry
 no density (uniform colour); 45-degree faces stretch up to 1.4x in
 their projection. Painted with `scripts/atlas.py` at SS 4; heights for the
-normal map: panel gaps -2.5 mm, handles +6 mm, side moulding +6 mm, arch lip
+normal map: panel gaps -4 mm with a +1.5 mm lip on the bonnet lines, handles +6 mm, side moulding +6 mm, arch lip
 +3 mm, grille slats +4 mm over a -6 mm grille, intake mesh, rim lip and hub
 +3 mm, spoke openings -4 mm, tread grooves -6 mm; glass and lens faces flat
 (0.5 mm ribs on amber and red); cavity darkens grooves. Weathering
@@ -307,7 +324,12 @@ review sheet (`scripts/review_vehicle.py`): side, front, rear, top,
 three-quarter, steered wheels, each lamp group, night set, cabin, ids,
 white/dark grey/red paint, tiers at 30/100/400 m; close-ups of nose, tail,
 wheel, belt, roof, lamps, bumper corners, sills and glass feet at LOD0 and
-LOD1; the hand-in lamp close-ups beside the polished ones. Pending in the
+LOD1; the hand-in lamp close-ups beside the polished ones; the gap lines
+in the preview and at 30 m (review camera) on LOD0 and LOD1; both mirrors
+from below-front and behind at LOD0 and LOD1, flat-shaded, without the
+normal map, without shadows and in Cycles, to place the light wedge (the
+sail sampling paint, now fixed); the headlamps before/after beside a
+reference crop. Pending in the
 consumer: runtime LOD switching and
 mip filtering, lamp intensities and cabin lighting, paint colours on the
 real shader, tangents for the normal map, performance.

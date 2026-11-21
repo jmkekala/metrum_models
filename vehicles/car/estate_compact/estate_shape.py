@@ -496,9 +496,11 @@ def body_faces(level):
                     q = (poly[0], poly[3], poly[2], poly[1])   # a along, b up
                 for p, kd in tube_cell(level, (na, nb), (lo, hi), sign, q, poly):
                     f = Face(p, **kind_args(kd))
-                    if (lo, hi) == ("GT", "RE") and f.kind == "paint":
-                        # the pillars and the roof's side: always the side
-                        # island, whatever their slope
+                    if (lo, hi) == ("GT", "RE") and f.kind == "paint" \
+                            and na not in ("F0", "F1", "F2", "F3", "F4"):
+                        # the pillars and the roof's side (not the bonnet's
+                        # strip ahead of the cowl): always the side island,
+                        # whatever their slope
                         f.island = "side_l" if sign > 0 else "side_r"
                     faces.append(f)
         # the underside strip, sill to sill
@@ -932,7 +934,7 @@ MIRROR_LOFT = {   # x, scale, centre (s, z)
         (1.010, 0.70, MIRROR_C)],
     1: [(0.800, 0.85, MIRROR_C), (0.990, 0.92, MIRROR_C), (1.010, 0.70, MIRROR_C)],
 }
-MIRROR_GLASS_SEG = {0: (3, 4), 1: (1,)}            # the loft segment whose rear face is glass
+MIRROR_GLASS_SEG = {0: (3, 4), 1: (0, 1)}            # the loft segment whose rear face is glass
 
 
 def mirror_faces(level, sign):

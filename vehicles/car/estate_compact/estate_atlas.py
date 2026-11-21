@@ -47,10 +47,10 @@ VARIANTS = [("plain", True)]
 DEFAULT_VARIANT = "plain"
 
 # ================================================================ materials
-M = dict(paint=1, lip=2, grille=3, intake=4, pillar=5, sail=5, under=6, liner=7, plate=8,
+M = dict(paint=1, lip=2, grille=3, intake=4, pillar=5, sail=35, under=6, liner=7, plate=8,
          plate_rim=9, glass=10, tread=11, tyre=12, rim=13, wheel_inner=14, mirror_glass=15,
          rail=16, seal=17, rim_dark=18, gap=19, handle=20, lens_body=21, chrome=22,
-         glass_dark=23, pic_red=24, pic_amber=25, pic_white=26, disc=27)
+         glass_dark=23, pic_red=24, pic_amber=25, pic_white=26, disc=27, hl_chrome=28)
 M_LENS = {lid: 40 + lid for lid in range(1, 16)}
 SRGB = {M["paint"]: (228, 228, 228), M["lip"]: (40, 41, 42), M["grille"]: (24, 25, 26),
         M["intake"]: (30, 31, 32), M["pillar"]: (16, 17, 18), M["under"]: (20, 20, 21),
@@ -60,8 +60,9 @@ SRGB = {M["paint"]: (228, 228, 228), M["lip"]: (40, 41, 42), M["grille"]: (24, 2
         M["mirror_glass"]: (120, 124, 128), M["rail"]: (52, 53, 55), M["seal"]: (22, 22, 23),
         M["rim_dark"]: (60, 61, 63), M["gap"]: (120, 120, 120), M["handle"]: (205, 205, 205),
         M["lens_body"]: (110, 112, 114), M["chrome"]: (176, 178, 180),
-        M["glass_dark"]: (44, 47, 50), M["pic_red"]: (110, 30, 28), M["pic_amber"]: (150, 90, 30),
-        M["pic_white"]: (165, 167, 165), M["disc"]: (24, 24, 26)}
+        M["glass_dark"]: (44, 47, 50), M["sail"]: (24, 24, 25), M["pic_red"]: (110, 30, 28), M["pic_amber"]: (150, 90, 30),
+        M["pic_white"]: (165, 167, 165), M["disc"]: (24, 24, 26),
+        M["hl_chrome"]: (206, 208, 210)}
 ROUGH = {M["paint"]: (0.32, 0.0), M["lip"]: (0.86, 0.0), M["grille"]: (0.55, 0.0),
          M["intake"]: (0.62, 0.0), M["pillar"]: (0.18, 0.0), M["under"]: (0.9, 0.0),
          M["liner"]: (0.92, 0.0), M["plate"]: (0.45, 0.0), M["plate_rim"]: (0.5, 0.0),
@@ -69,8 +70,9 @@ ROUGH = {M["paint"]: (0.32, 0.0), M["lip"]: (0.86, 0.0), M["grille"]: (0.55, 0.0
          M["rim"]: (0.35, 0.85), M["wheel_inner"]: (0.85, 0.0), M["mirror_glass"]: (0.06, 0.9),
          M["rail"]: (0.5, 0.0), M["seal"]: (0.6, 0.0), M["rim_dark"]: (0.5, 0.0),
          M["gap"]: (0.5, 0.0), M["handle"]: (0.32, 0.0), M["lens_body"]: (0.2, 0.0),
-         M["chrome"]: (0.25, 0.0), M["glass_dark"]: (0.1, 0.0), M["pic_red"]: (0.2, 0.0),
-         M["pic_amber"]: (0.2, 0.0), M["pic_white"]: (0.2, 0.0), M["disc"]: (0.9, 0.0)}
+         M["chrome"]: (0.25, 0.0), M["sail"]: (0.62, 0.0), M["glass_dark"]: (0.1, 0.0), M["pic_red"]: (0.2, 0.0),
+         M["pic_amber"]: (0.2, 0.0), M["pic_white"]: (0.2, 0.0), M["disc"]: (0.9, 0.0),
+         M["hl_chrome"]: (0.25, 0.55)}
 LENS_UNLIT = {"red": (128, 28, 26), "amber": (196, 112, 30), "white": (172, 175, 174)}
 for _lid in range(1, 16):
     SRGB[M_LENS[_lid]] = LENS_UNLIT[vi.lamp_colour(_lid)]
@@ -83,11 +85,13 @@ KIND_MID = {"paint": M["paint"], "lip": M["lip"], "grille": M["grille"],
 
 
 # ================================================================ raster
-def polygon(c, pts, mid=None, shade=None, ao=None, height=None):
-    """Fill a polygon given in atlas pixels (even-odd, per sample)."""
+def polygon(c, pts, mid=None, shade=None, ao=None, height=None, grow=0.0):
+    """Fill a polygon given in atlas pixels (even-odd, per sample), grown
+    by *grow* pixels all round its outline (a true offset: a thin sliver
+    grows across its width too)."""
     pts = np.asarray(pts, float)
-    x0, y0 = pts.min(axis=0) - 1
-    x1, y1 = pts.max(axis=0) + 1
+    x0, y0 = pts.min(axis=0) - 1 - grow
+    x1, y1 = pts.max(axis=0) + 1 + grow
 
     def test(X, Y):
         inside = np.zeros(X.shape, bool)
@@ -98,6 +102,11 @@ def polygon(c, pts, mid=None, shade=None, ao=None, height=None):
             with np.errstate(divide="ignore", invalid="ignore"):
                 xc = ax + (Y - ay) * (bx - ax) / (by - ay)
             inside ^= cond & (X < xc)
+            if grow > 0:
+                dx, dy = bx - ax, by - ay
+                ll = max(dx * dx + dy * dy, 1e-12)
+                t = np.clip(((X - ax) * dx + (Y - ay) * dy) / ll, 0.0, 1.0)
+                inside |= np.hypot(X - ax - t * dx, Y - ay - t * dy) <= grow
         return inside
     c.shape(x0, x1, y0, y1, test, mid, shade, ao, height)
 
@@ -142,13 +151,13 @@ def paint():
         for f in T[lv]["body"]:
             if f.island in ("side_l", "side_r", "top", "front", "rear") and not f.paint \
                     and f.kind in KIND_MID:
-                polygon(c, dilated(f.uv, 1.1), mid=KIND_MID[f.kind])
+                polygon(c, f.uv, mid=KIND_MID[f.kind], grow=1.3)
     lod3_gaps(c, T)
     # glass: the union of every tier's panes, a pixel wide
     for lv in order:
         for f in T[lv]["body"]:
             if f.kind == "glass":
-                polygon(c, dilated(f.uv, 1.2), mid=M["glass"])
+                polygon(c, f.uv, mid=M["glass"], grow=1.2)
     paint_side(c)
     paint_top(c)
     paint_front(c)
@@ -216,11 +225,15 @@ class Region:
             a[m] = np.minimum(a[m], ao)
             c.ao[sy, sx] = a
 
-    def groove(self, m, depth=0.0025, shade=0.55, on=None):
+    def groove(self, m, depth=0.004, shade=0.10, on=None, lip=None):
+        """A panel gap: dark (sRGB about 70 on the field), grooved, and
+        optionally a slightly raised lip on one side that catches light."""
         self.put(m, shade=shade, add_h=-depth, ao=0.7, on=on)
+        if lip is not None:
+            self.put(lip & ~m, add_h=0.0015, on=on)
 
 
-SEAM = 0.0085                   # a panel gap's painted width: one texel
+SEAM = 0.0135                   # a panel gap's painted width: 1.7 texels, to read at 30 m
 BODY = (M["paint"],)
 
 
@@ -332,8 +345,6 @@ def paint_side(c):
         zgt = np.interp(s, [a for a, _ in S.GLASS_TOP], [b for _, b in S.GLASS_TOP])
         R.put((z > zgt - 0.01) & (z < zgt + 0.018) & (s > S.A_GT_TOP - 0.02) & (s < 3.875),
               mid=M["seal"], on=BODY)
-        R.put(seg_dist(s, z, (S.A_GT_BASE, 0.94), (S.A_GT_TOP, 1.345)) < 0.012, mid=M["seal"],
-              on=BODY)
         R.put(seg_dist(s, z, (3.88, 1.075), (3.865, 1.335)) < 0.010, mid=M["seal"], on=BODY)
         # fuel flap on the right rear quarter
         if isl == "side_r":
@@ -352,12 +363,13 @@ def paint_top(c):
     s, x = R.U, R.V
     # bonnet shut lines along the wings, and its rear edge at the cowl
     # from the headlamps' inner top corners back along the wings
-    shut = np.interp(s, [0.15, 0.45, 0.85, 1.20], [0.50, 0.625, 0.705, 0.745])
-    R.groove(near(x, shut, 0.012) & (s > 0.15) & (s < cowl_s(0.745) - 0.046), depth=0.003,
-             shade=0.5, on=BODY)
+    shut = np.interp(s, [0.145, 0.40, 0.80, 1.27], [0.50, 0.60, 0.665, 0.70])
+    run = (s > 0.14) & (s < cowl_s(0.70) - 0.044)
+    R.groove(near(x, shut) & run, on=BODY,
+             lip=(x - shut > SEAM / 2) & (x - shut < SEAM / 2 + 0.006) & run)
     sc = cowl_s(x)
-    cowl = (s > sc - 0.046) & (s < sc + 0.01) & (x < 0.72)
-    R.groove(near(s, sc - 0.046) & (x < 0.79), on=BODY)
+    cowl = (s > sc - 0.046) & (s < sc + 0.01) & (x < 0.69)
+    R.groove(near(s, sc - 0.046) & (x < 0.71), on=BODY)
     R.put(cowl, mid=M["lip"], on=BODY)
     R.put(cowl & (np.mod(x, 0.05) < 0.012) & (s > sc - 0.036) & (s < sc - 0.012), shade=0.6,
           add_h=-0.003)
@@ -385,12 +397,16 @@ def paint_front(c):
     # (the frame reaches a texel past the grille's cells, so their edges
     # find dark frame, never paint)
     zs5 = 0.695 + 0.03 * (x / S.W_SIDE["S5"]) ** 2
-    gfr = (x < 0.392) & (z > zs5 - 0.016) & (z < 0.83)
+    zb = 0.80 + 0.012 * (1.0 - (x / S.W_SIDE["SH"]) ** 2)    # the bonnet's leading edge
+    gfr = (x < 0.392) & (z > zs5 - 0.016) & (z < zb + 0.012)
     R.put(gfr, mid=M["rim_dark"], height=0.002)
     gin = (x < 0.356) & (z > zs5 + 0.010) & (z < 0.795)
     R.put(gin, mid=M["grille"], height=-0.006)
     slat = gin & (np.mod(z - 0.704 - 0.008, 0.029) < 0.012)
     R.put(slat, mid=M["rim_dark"], height=0.004)
+    # the bonnet's front shut line across the nose, over grille and lamps
+    R.groove(near(z, zb - 0.006) & (x < 0.52), on=BODY + (M["rim_dark"],),
+             lip=(z - zb + 0.006 > SEAM / 2) & (z - zb + 0.006 < SEAM / 2 + 0.006) & (x < 0.52))
     # the lamp housings' dark edge on the body round them (the lamps' lower
     # edge rises toward the wing with the S4 row)
     zl = 0.655 + 0.03 * (x / S.W_SIDE["S4"]) ** 2
@@ -440,7 +456,7 @@ def paint_rear(c):
 # are crisper; pixel sizes below are in body texels (F scales them).
 F = S.LENS_PPM / 64.0
 LENS_STYLE = {(7, "front"): "projector", (8, "front"): "reflector", (9, "front"): "strip",
-              (4, "front"): "ribs", (1, "rear"): "bars", (3, "rear"): "guide",
+              (4, "front"): "indicator", (1, "rear"): "bars", (3, "rear"): "guide",
               (4, "rear"): "ribs", (6, "rear"): "clear", (2, "rear"): "dots",
               (11, "rear"): "ribs", (4, "mirror"): "plain"}
 
@@ -455,20 +471,44 @@ def paint_lenses(c):
         hh = np.zeros(u.shape, np.float32)
         style = LENS_STYLE.get(key, "plain")
         cx, cy = w / 2.0, h / 2.0
-        if style == "projector":
-            # a chrome bowl round a projector lens, the cut-off shield dark
-            r = np.hypot(u - w * 0.62, v - cy)
-            sh *= 1.15
-            sh[r < h * 0.36] = 0.55
-            sh[r < h * 0.26] = 1.25
-            sh[(r < h * 0.26) & (v < cy - h * 0.06)] = 0.75
-            hh[r < h * 0.36] = -0.006
-        elif style == "reflector":
-            r = np.hypot(u - cx, v - cy)
-            sh *= 0.85 + 0.35 * np.clip(1 - r / (h * 0.5), 0, 1)
-            sh[np.abs(r - h * 0.18) < 0.6 * F] *= 0.7
-        elif style == "strip":
-            sh[np.abs(v - cy) < max(1.0 * F, h * 0.18)] = 1.3
+        md = np.full(u.shape, M_LENS[key[0]], np.uint8)
+        if style in ("projector", "reflector"):
+            # the headlamp's inside behind a clear lens: a bright metallic
+            # housing, shaded dishes with a fine bezel line, a soft shadow
+            # under the housing's roof; no glints (the lens's gloss is the
+            # ORM's)
+            md[:] = M["hl_chrome"]
+            sh *= 1.06
+        if style in ("projector", "reflector"):
+            bx = w * (0.62 if style == "projector" else 0.5)
+            R = h * 0.40
+            r = np.hypot(u - bx, v - cy)
+            dish = r < R
+            sh[dish] = (0.84 + 0.26 * (r / R) ** 2)[dish]
+            sh[np.abs(r - R) < 0.55] = 1.28                       # the bezel line
+            sh[(r >= R + 0.55) & (r < R + 1.6)] *= 0.84
+            hh[dish] = -0.004 * (1 - (r / R) ** 2)[dish]
+            if style == "projector":
+                # the projector's lens: glossy, a little darker, its lower
+                # half shaded by the cut-off shield
+                pl = r < R * 0.52
+                md[pl] = M_LENS[key[0]]
+                sh[pl] = 0.86
+                sh[pl & (v < cy - R * 0.12)] = 0.78
+                sh[(r >= R * 0.52) & (r < R * 0.52 + 0.9)] *= 0.8
+            else:
+                cap = r < R * 0.16                                # the bulb cap
+                sh[cap] = 1.2
+                sh[(r >= R * 0.16) & (r < R * 0.16 + 0.9)] *= 0.82
+        if style == "strip":
+            # a slim light guide along the unit's foot, only a little lighter
+            g = (np.abs(v - h * 0.45) < max(2.0, h * 0.09)) & (u > w * 0.06) & (u < w * 0.94)
+            md[g] = M_LENS[key[0]]
+            sh[g] = 1.12
+        if style in ("projector", "reflector"):
+            # the housing's roof under the bonnet lip: a soft darker band
+            t = np.clip((h - v) / (h * 0.30), 0, 1)
+            sh *= 0.80 + 0.20 * t
         elif style == "ribs":
             sh[np.mod(v, 2.0 * F) < 0.8 * F] *= 0.82
         elif style == "guide":
@@ -479,6 +519,13 @@ def paint_lenses(c):
         elif style == "bars":
             sh[np.mod(v, 1.6 * F) < 0.6 * F] *= 0.85
             sh[np.abs(v - h * 0.62) < max(1.2 * F, h * 0.09)] *= 1.45
+        elif style == "indicator":
+            # a ribbed amber cell behind the clear lens, in a silver surround
+            ring = (u < 4.0 + 0.11 * w) | (u > w - 4.0 - 0.06 * w) | (v < 4.0 + 0.10 * h) \
+                | (v > h - 4.0 - 0.10 * h)
+            md[ring] = M["hl_chrome"]
+            sh[ring] = 1.05
+            sh[~ring & (np.mod(u, 1.8 * F) < 0.7 * F)] *= 0.86
         elif style == "dots":
             sh[(np.mod(u, 2.5 * F) < 1.2 * F) & (np.abs(v - cy) < 1.5 * F)] *= 1.3
         elif style == "clear":
@@ -490,6 +537,7 @@ def paint_lenses(c):
         edge = (u < e) | (u > w - e) | (v < e) | (v > h - e)
         sh[edge] *= 0.45
         hh[edge] = -0.003
+        c.mid[sy, sx] = md
         c.shade[sy, sx] = sh
         c.height[sy, sx] = hh
     # the front fog lamps, as at hand-in: a dark bezel round a pale lens
@@ -580,7 +628,8 @@ def paint_wheels(c):
 # ================================================================ weather
 def weather(c):
     import weathering
-    clean = (M["glass"], M["glass_dark"], M["mirror_glass"], M["plate"]) + tuple(M_LENS.values())
+    clean = (M["glass"], M["glass_dark"], M["mirror_glass"], M["plate"],
+             M["hl_chrome"]) + tuple(M_LENS.values())
     w = weathering.Weather(c, clean=clean,
                            steel=(M["paint"], M["rim"], M["handle"], M["chrome"], M["lip"],
                                   M["seal"], M["rim_dark"], M["intake"], M["grille"],

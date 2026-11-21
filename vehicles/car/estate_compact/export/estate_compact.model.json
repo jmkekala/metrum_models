@@ -4,7 +4,7 @@
   "kind": "vehicle",
   "name": "estate_compact",
   "path": "vehicles/car/estate_compact",
-  "source": {"commit": "fa039ae9e68dc6281e6aa9b542c1e8fd990bb299", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "9b88e49c16e2ee37393ee492558a073e0a7d8b9f", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-1.01, 0.0, -2.24], "max": [1.01, 1.468, 2.24]},
   "body": {
@@ -61,19 +61,19 @@
   "coupling": null,
   "interior": null,
   "lods": [
-    {"file": "estate_compact_lod0.glb", "triangles": 2906, "sha256": "918742745ddb360ccd99ca3885200830e9f91faac4ebb2d03564dcde043924a7", "wheel_parts": true, "lamp_ids": true, "glass_ids": true},
-    {"file": "estate_compact_lod1.glb", "triangles": 890, "sha256": "a93248b221a7d745046a1832e723fffb6a706035988342f8ffaf6bdfafa3ad6d", "wheel_parts": true, "lamp_ids": true, "glass_ids": true},
+    {"file": "estate_compact_lod0.glb", "triangles": 2906, "sha256": "a81fa1a0310248d704a398795418429001adba2b4621acc5926763581cbc9fca", "wheel_parts": true, "lamp_ids": true, "glass_ids": true},
+    {"file": "estate_compact_lod1.glb", "triangles": 890, "sha256": "b2a82ccd7fc20be61ea2a06fa2635c0ffaa1d800042311ebe0a509c2a8b35de5", "wheel_parts": true, "lamp_ids": true, "glass_ids": true},
     {"file": "estate_compact_lod2.glb", "triangles": 218, "sha256": "fd0f0e5d2f59b187a03a464455c899e822f22411f591f872875e71e5ae9f296d", "wheel_parts": false, "lamp_ids": true, "glass_ids": true},
     {"file": "estate_compact_lod3.glb", "triangles": 40, "sha256": "1d022f998b59958fcf9fd6b8ec05e94d6f0d55a843a87fa5719ed8d385741790", "wheel_parts": false, "lamp_ids": false, "glass_ids": false}
   ],
   "textures": {
-    "orm": {"file": "estate_compact_orm.png", "sha256": "6eb22177a7be304683060864666cd9fb7d9c64bfc7cf98bb06c696369363954e"},
-    "emission": {"file": "estate_compact_emission.png", "sha256": "08e8dd1730a3e82951cdfdbcbd8f63f37051432fdae7191155ce3d74d26caf47"},
-    "normal": {"file": "estate_compact_normal.png", "sha256": "1c426e7fbf25dddd1714623ce4988fe9725c77a912b0e9da501bbd447396438a"}
+    "orm": {"file": "estate_compact_orm.png", "sha256": "6547ee026fddc5057e6407820878b0fda71ab49ce20275e0869b384724deaffc"},
+    "emission": {"file": "estate_compact_emission.png", "sha256": "f4f617665a62d7c03d726a636f46116978d966912246f3465af3cceb8cf3822e"},
+    "normal": {"file": "estate_compact_normal.png", "sha256": "3c312a6fe3ef18189a4174da39697db881f170e4ad4a09141d36b94dde2995bf"}
   },
   "variants": [
-    {"name": "plain", "albedo": {"file": "estate_compact_albedo_plain.png", "sha256": "84d8105f1658bbaccec61af689465574f13938f34bb787e17202ee62c66373f5"}, "paint": true}
+    {"name": "plain", "albedo": {"file": "estate_compact_albedo_plain.png", "sha256": "019b7784c6860a9e3939bfeea295eb2bd8b318f154e1547eaa3cdcf98ef8e312"}, "paint": true}
   ],
   "default_variant": "plain",
-  "preview": {"file": "preview.png", "sha256": "c04a8aa18e570d0e3ceaa95d01d610e465f6bd725f8456784da85e5001ec83fa"}
+  "preview": {"file": "preview.png", "sha256": "def4062c73a42cbac182661e16bda674d9c6b375b7514ea93c08ab1ae53a5251"}
 }
