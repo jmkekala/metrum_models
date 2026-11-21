@@ -28,18 +28,23 @@ concrete portal: two 0.4 m piers and a lintel at 6.00 m, the band that runs
 round the shed as its ring beam, brick and the shallow gable above. Inside,
 two tie beams cross the lane at 6.20 m under a pitched sheet ceiling, and the
 tipping grate lies in the floor 2.5 m west of mid-length, under the tail of a
-truck stopped at the lane's centre. Three tall steel windows light the shed
-high on its front (-Y) wall.
+truck stopped at the lane's centre. The lane's traffic paint is texture only:
+black and yellow bands on the portal legs (the shed's four corner columns)
+and their jambs, a stop mark where the stopped truck's front is, the
+tipping height over the grate and a signal box on the entry jambs. Three
+tall steel windows light the shed high on its front (-Y) wall.
 
 Behind it (+Y), the side that faces the hall's coal side: a brick lean-to
 with the attendant's room (a window onto the lane, its door in the lean-to's
 east end) and the drive room, and through it the elevator tower: a slim
 brick shaft 2.6 x 4.1 m with its stair's windows stacked up its east face,
-under a sheet-clad head house 4.0 x 4.8 x 4.2 m that oversails it on three
-sides, a loading hatch and hoist beam on its east face. From the head
-house's rear face the inclined conveyor gallery rises at 20 degrees away from
-the building, 4.0 m in plan to a closed end, on two raking struts back to
-the shaft: nothing of it stands on the ground behind the tower.
+under a sheet-clad head house 4.0 x 4.8 x 4.2 m (floor 11.30 m) that
+oversails it on three sides, a loading hatch and a hoist beam with its
+trolley on its east face. From the head house's rear face the inclined
+conveyor gallery rises at 20 degrees away from the building, 6.5 m in plan
+to a closed end whose centre (15.366 m) lines up with the plant hall's
+gallery stub, on two raking struts from low on the shaft to two-thirds
+along it: nothing of it stands on the ground behind the tower.
 
 Construction. The shed is one closed box with the lane cut out of it by an
 exact boolean difference (asset_build.difference): the lane's void, extended
@@ -49,8 +54,8 @@ keeps a 0.02 m floor slab under the lane, the lane's floor face, and the
 void's own faces become the lane's walls, ceiling, the lintels' soffits and
 the gables' inner faces over them, with the void's UVs. Then the lean-to and
 shaft (one hand-built solid), the head house, the two roof slabs, the head
-house's slab, the gallery, its struts, the hoist beam, the tie beams and the
-downpipes are unioned in (asset_build.union).
+house's slab, the gallery, its struts, the hoist beam and trolley, the tie
+beams and the downpipes are unioned in (asset_build.union).
 """
 
 import importlib
@@ -192,8 +197,11 @@ def uv_brick(fr, u_off, shift=0.0):
     return lambda co: ((fr.s_of(co) + u_off) * PPM, L.BRICK_Y0 + (co.z - shift) * PPM)
 
 
-def uv_col(fr, a):
-    x0 = L.COL[0]
+def uv_col(fr, a, strip=None):
+    """The concrete frame's column strip; *strip* L.PIER for the portal legs
+    (the shed's four corner columns), whose traffic bands run on round each
+    leg's corners."""
+    x0 = (strip or L.COL)[0]
     return lambda co: (x0 + (fr.s_of(co) - a) * PPM, L.BRICK_Y0 + co.z * PPM)
 
 
@@ -423,7 +431,9 @@ def build_wall(B, spec, level):
                     placed.add(i)
                     if r[2] > EPS:
                         holes.append(poly)
-        fn = uv_col(fr, a) if is_col else uv_brick(fr, spec["u_off"], shift)
+        leg = is_col and any(abs(a - c0) < 1e-6 for c0, _ in spec.get("legs", []))
+        fn = (uv_col(fr, a, L.PIER if leg else None) if is_col
+              else uv_brick(fr, spec["u_off"], shift))
         fill_region(B, fr.P, piece, holes, fn)
     if len(placed) != len(items):
         raise ValueError("%s: an opening straddles a split or a column" % spec["name"])
@@ -475,23 +485,24 @@ def close_solid(B, n_loops, split=None):
 # centre in plan x or y, sill z). top: the wall's top, from s_hi back to s_lo.
 COLS_LONG = [(0.0, L.COL_W)] + [(HX + fx - L.COL_W / 2.0, HX + fx + L.COL_W / 2.0)
                                 for fx in L.FRAME_X] + [(2 * HX - L.COL_W, 2 * HX)]
+LEGS_LONG = [COLS_LONG[0], COLS_LONG[-1]]       # the corner columns: the portals' legs
 SPAN = L.Y_R - L.Y_F
 GABLE_TOP_F = [(SPAN, house_top(L.Y_R)), (SPAN / 2.0, house_top(YC)), (0.0, house_top(L.Y_F))]
+GABLE_COLS = [(0.0, L.WALL_T), (SPAN - L.WALL_T, SPAN)]   # the portals' legs
 WIN_X = (-4.6, 0.0, 4.6)
 SHED_WALLS = [
     dict(name="front", p0=(-HX, L.Y_F), p1=(HX, L.Y_F), s_lo=0.0, s_hi=2 * HX,
          top=[(2 * HX, house_top(L.Y_F)), (0.0, house_top(L.Y_F))], cols=COLS_LONG,
+         legs=LEGS_LONG,
          items=[("win", WIN_X[0], L.Z_WIN), ("win_b", WIN_X[1], L.Z_WIN),
                 ("win", WIN_X[2], L.Z_WIN)], u_off=0.4),
     dict(name="east", p0=(HX, L.Y_F), p1=(HX, L.Y_R), s_lo=0.0, s_hi=SPAN,
-         top=GABLE_TOP_F, cols=[(0.0, L.WALL_T), (SPAN - L.WALL_T, SPAN)],
-         items=[], u_off=4.0),
+         top=GABLE_TOP_F, cols=GABLE_COLS, legs=GABLE_COLS, items=[], u_off=4.0),
     dict(name="rear", p0=(HX, L.Y_R), p1=(-HX, L.Y_R), s_lo=0.0, s_hi=2 * HX,
          top=[(2 * HX, house_top(L.Y_R)), (0.0, house_top(L.Y_R))], cols=COLS_LONG,
-         items=[], u_off=0.7),
+         legs=LEGS_LONG, items=[], u_off=0.7),
     dict(name="west", p0=(-HX, L.Y_R), p1=(-HX, L.Y_F), s_lo=0.0, s_hi=SPAN,
-         top=GABLE_TOP_F, cols=[(0.0, L.WALL_T), (SPAN - L.WALL_T, SPAN)],
-         items=[], u_off=7.0),
+         top=GABLE_TOP_F, cols=GABLE_COLS, legs=GABLE_COLS, items=[], u_off=7.0),
 ]
 
 
@@ -638,7 +649,7 @@ ANNEX_WALLS = [
     dict(name="a_front", p0=(AX0, AY0), p1=(AX1, AY0), s_lo=0.0, s_hi=AX1 - AX0,
          top=[(AX1 - AX0, AT0), (TX1 - AX0, AT0), (TX1 - AX0, ZT), (TX0 - AX0, ZT),
               (TX0 - AX0, AT0), (0.0, AT0)],
-         items=[("win_s", 0.0, 10.2)], u_off=0.3),
+         items=[("win_s", 0.0, L.SHAFT_FRONT_Z)], u_off=0.3),
     dict(name="a_east", p0=(AX1, AY0), p1=(AX1, AY1), s_lo=0.0, s_hi=AY1 - AY0,
          top=[(AY1 - AY0, AT1), (0.0, AT0)],
          items=[("door", DOOR_Y, 0.0), ("win_s", 5.6, 1.0)], u_off=10.0),
@@ -648,7 +659,8 @@ ANNEX_WALLS = [
     # the stair's windows, one a flight, stacked up the shaft's east face
     dict(name="t_east", p0=(TX1, AY1), p1=(TX1, TY1), s_lo=0.0, s_hi=TY1 - AY1,
          top=[(TY1 - AY1, ZT), (AY0 - AY1, ZT), (AY0 - AY1, AT0), (0.0, AT1)],
-         items=[("win_s", 4.8, 4.6), ("win_s_b", 4.8, 7.6), ("win_s", 4.8, 10.6)],
+         items=[("win_s", 4.8, L.SHAFT_WIN_Z[0]), ("win_s_b", 4.8, L.SHAFT_WIN_Z[1]),
+                ("win_s", 4.8, L.SHAFT_WIN_Z[2])],
          u_off=5.0),
     dict(name="t_rear", p0=(TX1, TY1), p1=(TX0, TY1), s_lo=0.0, s_hi=TX1 - TX0,
          top=[(TX1 - TX0, ZT), (0.0, ZT)],
@@ -763,12 +775,14 @@ def tower_slab():
 # wall's U in the cladding region, inside its 7.0 m.
 HH_WALLS = [
     dict(name="h_front", p0=(L.HX0, L.HY0), p1=(L.HX1, L.HY0),
-         items=[("win_s", -0.8, 13.5), ("win_s_b", 0.8, 13.5)], u_off=0.2),
+         items=[("win_s", -0.8, L.HH_WIN_Z), ("win_s_b", 0.8, L.HH_WIN_Z)], u_off=0.2),
     dict(name="h_east", p0=(L.HX1, L.HY0), p1=(L.HX1, L.HY1),
-         items=[("win_s", 3.1, 13.5), ("hatch", L.HOIST_Y, 12.6)], u_off=1.0),
-    dict(name="h_rear", p0=(L.HX1, L.HY1), p1=(L.HX0, L.HY1), items=[], u_off=2.6),
+         items=[("win_s", 3.1, L.HH_WIN_Z), ("hatch", L.HOIST_Y, L.HH_HATCH_Z)], u_off=1.0),
+    dict(name="h_rear", p0=(L.HX1, L.HY1), p1=(L.HX0, L.HY1), items=[],
+         u_off=L.CLAD_REAR_U),
     dict(name="h_west", p0=(L.HX0, L.HY1), p1=(L.HX0, L.HY0),
-         items=[("louvre", L.HOIST_Y, 14.6), ("win_s_b", 3.1, 13.5)], u_off=2.0),
+         items=[("louvre", L.HOIST_Y, L.HH_LOUVRE_Z), ("win_s_b", 3.1, L.HH_WIN_Z)],
+         u_off=2.0),
 ]
 
 
@@ -817,6 +831,22 @@ def hoist_beam():
                uv_patch("hoist"))
 
 
+def trolley_box():
+    """(x0, x1, y0, y1, z0, z1) of the trolley block under the hoist beam's
+    outer end, its top run 0.02 m up into the beam."""
+    a, b, c = L.TROLLEY
+    x1 = L.HX1 + L.HOIST_OUT - 0.08
+    return (x1 - a, x1, L.HOIST_Y - b / 2.0, L.HOIST_Y + b / 2.0,
+            L.HOIST_Z[0] - c, L.HOIST_Z[0] + 0.02)
+
+
+def trolley():
+    """The hoist's trolley block, hanging under the beam's outer end."""
+    x0, x1, y0, y1, z0, z1 = trolley_box()
+    return box(x0, x1, y0, y1, z0, z1, uv_patch("hoist"), uv_patch("hoist"),
+               uv_patch("strut"))
+
+
 # ---------------------------------------------------------------- gallery
 GAL_YA = TY1 - L.GAL_BURY           # its start, inside the head house
 GAL_XW = L.GAL_W / 2.0
@@ -828,7 +858,7 @@ def gal_end_recessed(level):
 
 def uv_gal_side(co):
     x0, y0 = L.GAL_SIDE[:2]
-    return (x0 + (co.y - GAL_YA) * PPM, y0 + (co.z - L.gal_floor(co.y)) * L.GAL_VPM)
+    return (x0 + (co.y - GAL_YA) * L.GPPM, y0 + (co.z - L.gal_floor(co.y)) * L.GAL_VPM)
 
 
 def uv_gal_roof(co):
@@ -887,7 +917,10 @@ def gallery(level):
 def strut(x):
     """One raking strut: a square steel member from inside the shaft's rear
     face at STRUT_FOOT up and out to the gallery's floor at STRUT_TOP_Y,
-    both ends run on into the solids it joins."""
+    two-thirds along it, both ends run on into the solids it joins. No tie
+    hangs the gallery from the head house: the gallery's roof rises past the
+    head house's about 3 m out, so a member from the roof's edge to the
+    gallery's top two-thirds along would rise to it and push, not hang."""
     (fy, fz), ty = L.STRUT_FOOT, L.STRUT_TOP_Y
     tz = L.gal_floor(ty)
     a = Vector((0.0, ty - fy, tz - fz)).normalized()
@@ -937,8 +970,9 @@ def keeps_downpipes(level):
 
 
 def keeps_fittings(level):
-    """The hoist beam and the gallery's two struts, 0.16-0.20 m steel, go at
-    LOD3 with the downpipes: past 120 m they are under two pixels across."""
+    """The hoist beam and its trolley and the gallery's two struts, 0.16-0.30
+    m steel, go at LOD3 with the downpipes: past 120 m they are two pixels
+    or so across."""
     return level < 3
 
 
@@ -956,6 +990,7 @@ def build_lod(level):
              to_object(gallery(level), "tmp_gallery")]
     if keeps_fittings(level):
         parts.append(to_object(hoist_beam(), "tmp_hoist"))
+        parts.append(to_object(trolley(), "tmp_trolley"))
         parts += [to_object(strut(x), "tmp_strut%d" % i) for i, x in enumerate(L.STRUT_X)]
     if keeps_beams(level):
         parts += [to_object(tie_beam(x), "tmp_beam%d" % i) for i, x in enumerate(L.FRAME_X)]
@@ -1009,6 +1044,7 @@ def ground_parts():
             L.HY1 + L.T_OV, L.Z_TSLAB),
            ("hoist beam", L.HX1, L.HX1 + L.HOIST_OUT, L.HOIST_Y - L.HOIST_W / 2.0,
             L.HOIST_Y + L.HOIST_W / 2.0, L.HOIST_Z[0]),
+           ("hoist trolley",) + tuple(trolley_box()[:4]) + (trolley_box()[4],),
            ("gallery", -GAL_XW, GAL_XW, TY1, L.GAL_Y1, L.gal_floor(TY1)),
            ("struts", L.STRUT_X[0] - L.STRUT_W / 2.0, L.STRUT_X[1] + L.STRUT_W / 2.0, TY1,
             L.STRUT_TOP_Y + 0.15, L.STRUT_FOOT[1] - 0.2),
@@ -1090,15 +1126,26 @@ def check_layout():
         bad.append("the gallery's mouth is not inside the head house's rear face")
     if GAL_XW > L.HX1 - 0.3:
         bad.append("the gallery's mouth crowds the head house's corners")
-    if abs(L.GAL_Z1 - 15.456) > 0.001:
-        bad.append("the gallery's end centre is at %.3f m, not 15.456" % L.GAL_Z1)
+    if abs(L.GAL_Z1 - 15.3658) > 0.001:
+        bad.append("the gallery's end centre is at %.4f m, not 15.3658" % L.GAL_Z1)
+    if abs(L.GAL_Z1 + L.GAL_GAP * L.GAL_TAN - L.HALL_STUB_Z) > 1e-6 or not 0.5 < L.GAL_GAP < 2.5:
+        bad.append("the gallery does not line up with the hall's stub")
+    # the struts: their heads two-thirds along the gallery, under its floor,
+    # their feet low on the shaft but well clear of the strip under them
+    if not 0.6 < (L.STRUT_TOP_Y - TY1) / L.GAL_LEN < 0.75:
+        bad.append("the struts do not meet the gallery about two-thirds along")
+    if L.STRUT_FOOT[1] - L.STRUT_W < 8.0 or L.STRUT_FOOT[1] > L.HH_Z0 - 1.5:
+        bad.append("the struts' feet are not between 8 m and well under the head house")
+    tb = trolley_box()
+    if tb[4] < hatch_top + 0.2 or tb[1] > L.HX1 + L.HOIST_OUT:
+        bad.append("the hoist's trolley hangs into the hatch or off the beam")
     for x in L.STRUT_X:
         if abs(x) + L.STRUT_W / 2.0 > TX1 - 0.15 or abs(x) + L.STRUT_W / 2.0 > GAL_XW - 0.1:
             bad.append("a strut is not on the shaft's rear face under the gallery")
     if L.STRUT_FOOT[1] < L.OPENINGS["door"][1] + 2.0:
         bad.append("the struts' feet crowd the elevator door")
     # the tower front's window, above the shed's roof
-    if 10.2 < L.roof_under(L.TY0) + L.ROOF_T + 1.0:
+    if L.SHAFT_FRONT_Z < L.roof_under(L.TY0) + L.ROOF_T + 1.0:
         bad.append("the tower's front window is not clear of the shed's roof")
     # the attendant's window onto the lane: inside the room's walls
     s0, s1, z0, z1 = lane_win_rect()

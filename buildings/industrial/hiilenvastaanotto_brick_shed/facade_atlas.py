@@ -16,11 +16,13 @@ dust are scripts/weathering.py's fields, placed by weather() below.
 
 A trim sheet. Rows from the bottom:
 
-    y    0 ..  422   BRICK   z 0 .. 6.5625 m at 64 px/m, x 0 .. 960: concrete
+    y    0 ..  422   BRICK   z 0 .. 6.5625 m at 64 px/m, x 0 .. 944: concrete
                              plinth, stretcher-bond facing brick, the cast
                              concrete band (the portal lintels and the ring
                              beam) at 6.0 .. 6.5625; the concrete frame's
-                             column strip beside it at x 972, same rows
+                             column strip beside it at x 952, and the portal
+                             legs' strip (PIER, black and yellow traffic bands
+                             to 2.0 m) at x 984, same rows
     y  426 ..  526   ROOF    profiled roof sheet, V stretched up the slope,
                              snow guard near the eave, ridge cap at the top
     y  530 ..  550   EAVE    the eave fascia with its gutter
@@ -28,7 +30,10 @@ A trim sheet. Rows from the bottom:
                              tipping grate (32 px/m), the windows, the doors,
                              the loading hatch, the louvre, the head house's
                              cladding (CLAD), the conveyor gallery's sides
-                             (GAL_SIDE) and closed end (GAL_END), flat patches
+                             (GAL_SIDE, 54 px/m along it) and closed end
+                             (GAL_END), flat patches; the lane's traffic paint
+                             (jamb bands, stop mark, tipping height, the entry
+                             signal) is painted into its own regions
 
 Every wall above the band's top (6.5625 m) samples the brick rows again,
 GABLE_SHIFT or twice that lower, a whole tone period of courses, so the bond
@@ -117,8 +122,8 @@ TY0, TY1 = AY0, 7.0
 HH_OV = 0.70
 HX0, HX1 = TX0 - HH_OV, TX1 + HH_OV          # the head house: x -2.0 .. 2.0
 HY0, HY1 = TY0 - HH_OV, TY1                  # ... y 2.2 .. 7.0
-HH_Z0 = 12.30           # its floor: the shaft's top, the oversail's soffit
-Z_TSLAB = 16.25         # its flat roof slab, 16.25 .. 16.50
+HH_Z0 = 11.30           # its floor: the shaft's top, the oversail's soffit
+Z_TSLAB = 15.25         # its flat roof slab, 15.25 .. 15.50
 T_SLAB_T = 0.25
 T_OV = 0.15
 Z_TOWER_TOP = HH_Z0 + WALL_INTO     # the shaft's lid, inside the head house
@@ -130,25 +135,41 @@ Z_HH_TOP = Z_TSLAB + WALL_INTO      # the head house walls' lid, inside the slab
 # degrees away from the building, toward +Y, GAL_LEN metres in plan to a
 # closed end. It is carried as a cantilever on two raking steel struts back
 # to the shaft's rear face: nothing of it reaches the ground.
+#
+# The plant hall's gallery stub has the same section and slope, descending
+# toward this one, its lower end's centre at HALL_STUB_Z. The two are
+# collinear when their ends stand GAL_GAP apart along the line in plan.
 GAL_W, GAL_H = 2.6, 2.8
 GAL_ANG = 20.0
 GAL_TAN = math.tan(math.radians(GAL_ANG))
-GAL_Z0 = 14.0
-GAL_LEN = 4.0
-GAL_Y1 = TY1 + GAL_LEN                       # its end face's plane, 11.0
-GAL_Z1 = GAL_Z0 + GAL_LEN * GAL_TAN          # its end's centre, 15.456
+GAL_Z0 = 13.0
+GAL_LEN = 6.5
+GAL_Y1 = TY1 + GAL_LEN                       # its end face's plane, 13.5
+GAL_Z1 = GAL_Z0 + GAL_LEN * GAL_TAN          # its end's centre, 15.3658
+HALL_STUB_Z = 15.8051                        # the hall's stub's lower end centre
+GAL_GAP = (HALL_STUB_Z - GAL_Z1) / GAL_TAN   # 1.207 m end to end
 GAL_BURY = 0.30                              # it starts this far inside the head house
 GAL_END_RIM = 0.15                           # the end face's rim round its panel
 GAL_END_RECESS = 0.08                        # the panel's set-back at the close tiers
-STRUT_X = (-1.0, 1.0)                        # the two struts, under the gallery
-STRUT_W = 0.20
-STRUT_FOOT = (TY1, 9.80)                     # (y, z) of their axis at the shaft's face
-STRUT_TOP_Y = TY1 + 3.40                     # ... and under the gallery's floor
-# The hoist beam over the head house's loading hatch, east face
+# Two raking struts under the gallery's sides, from low on the shaft's rear
+# face to two-thirds along the gallery: a cantilever on knee braces.
+STRUT_X = (-1.0, 1.0)
+STRUT_W = 0.24
+STRUT_FOOT = (TY1, 8.60)                     # (y, z) of their axis at the shaft's face
+STRUT_TOP_Y = TY1 + GAL_LEN * 2.0 / 3.0      # ... and under the gallery's floor, 11.33
+# The hoist beam over the head house's loading hatch, east face, with a
+# trolley block under its outer end
 HOIST_Y = 4.6
 HOIST_OUT = 1.10
-HOIST_Z = (15.55, 15.80)
+HOIST_Z = (HH_Z0 + 3.25, HH_Z0 + 3.50)      # 14.55 .. 14.80
 HOIST_W = 0.16
+TROLLEY = (0.30, 0.22, 0.28)                 # along, across, down from the beam
+# Openings' sills over the head house's floor, and on the shaft
+HH_WIN_Z = HH_Z0 + 1.20                      # its windows, 12.50
+HH_HATCH_Z = HH_Z0 + 0.30                    # the loading hatch, 11.60
+HH_LOUVRE_Z = HH_Z0 + 2.30                   # the louvre, 13.60
+SHAFT_WIN_Z = (4.65, 7.15, 9.65)             # the stair's windows up the east face
+SHAFT_FRONT_Z = 9.65                         # the front face's window over the roof
 
 
 def gal_floor(y):
@@ -170,6 +191,17 @@ STOP_X = 0.0
 GRATE_C = -2.5
 GRATE_X = (GRATE_C - 1.5, GRATE_C + 1.5)
 GRATE_Y = (YC - 2.0, YC + 2.0)
+# Painted lane markings (texture only, nothing stands in the lane): black and
+# yellow bands on the portal legs to HAZARD_TOP, the front of a stopped 8 m
+# truck marked on the floor and both side walls at STOP_LINE_X, the highest a
+# raised body may go painted over the tipping zone at TIP_Z, and a signal
+# box on the entry (west) jambs.
+HAZARD_TOP = 2.0
+HAZARD_W = 0.20                  # band width along the diagonal's normal
+STOP_LINE_X = STOP_X + 4.0
+TIP_Z = 5.50
+TIP_X = (GRATE_X[0] - 1.0, GRATE_X[1] + 1.0)
+SIGNAL_Z = (2.45, 3.05)          # the signal box on the entry jambs
 
 
 def roof_under(y):
@@ -212,8 +244,11 @@ LEAF_W, LEAF_H = OPENINGS["door"][0] - 2 * DOOR_FRAME, OPENINGS["door"][1] - DOO
 # ------------------------------------------------------------------- bands
 BRICK_Y0 = 0
 BRICK_H = 420                    # z 0 .. Z_BAND1
-BRICK_W = 960.0                  # the brick band's width; U stays inside it
-COL = (972.0, 0.0, COL_W * PPM, BRICK_H)      # the column strip, same rows
+BRICK_W = 944.0                  # the brick band's width; U stays inside it
+COL = (952.0, 0.0, COL_W * PPM, BRICK_H)      # the column strip, same rows
+# The portal legs: the four corner columns, gable and long-wall faces alike,
+# the frame's column strip with black and yellow bands to HAZARD_TOP
+PIER = (984.0, 0.0, COL_W * PPM, BRICK_H)
 ROOF_Y0, ROOF_H = 428, 96
 ROOF_LEN = MAIN_SLOPE + 0.10     # metres up the slope ROOF_H rows cover
 ROOF_RPM = ROOF_H / ROOF_LEN
@@ -248,10 +283,17 @@ REGION = {
 CLAD = (4.0, 908.0, 448.0, 88.0)
 CLAD_H = Z_HH_TOP - HH_Z0 + 0.10                 # metres V covers
 CLAD_VPM = CLAD[3] / CLAD_H
+CLAD_GIRTS = (0.10, 1.00, 2.00, 3.00, 3.80)     # fixing rows up the head house's walls
+CLAD_REAR_U = 3.0           # the rear wall's U offset in CLAD (build.py's HH_WALLS)
+GAL_REAR_S = (HX1 - GAL_W / 2.0, HX1 + GAL_W / 2.0)   # the gallery's mouth along it
 # The gallery's two sides: U along the gallery in plan from inside the head
-# house (GAL_BURY) at 64 px/m, V up from its floor across its 2.8 m section.
-GAL_SIDE = (716.0, 912.0, (GAL_LEN + GAL_BURY) * PPM, 106.0)
+# house (GAL_BURY) at GPPM, V up from its floor across its 2.8 m section.
+# GPPM is under 64 px/m so its 6.8 m fit one row of the sheet.
+GPPM = 54.0
+GAL_SIDE = (648.0, 912.0, (GAL_LEN + GAL_BURY) * GPPM, 106.0)
 GAL_VPM = GAL_SIDE[3] / GAL_H
+# the side lights' centres from its mouth, one a metre, clear of its end
+GAL_LIGHTS = tuple(0.55 + k for k in range(int(GAL_LEN - 1.0) + 1))
 # The gallery's closed end, at LPM: U across from its west side, V up.
 GAL_END = (914.0, 560.0, GAL_W * LPM, GAL_H * LPM)
 PATCH_NAMES = ("blank", "soffit", "sill", "conc", "barge", "lintel", "beam",
@@ -263,7 +305,8 @@ PATCHES = {n: (4.0 + 20.0 * i, 1000.0, 16.0, 16.0) for i, n in enumerate(PATCH_N
 (ID_BLANK, ID_PLINTH, ID_BRICK, ID_BRICK2, ID_MORTAR, ID_CONC, ID_FRAME,
  ID_GLASS, ID_ROOF, ID_FLASH, ID_DOOR, ID_GUTTER, ID_HANDLE, ID_DARK,
  ID_SOFFIT, ID_SEAL, ID_STEEL, ID_COAL, ID_FLOOR, ID_SHEET, ID_FELT,
- ID_CLAD) = range(22)
+ ID_CLAD, ID_HAZ_Y, ID_HAZ_K, ID_LENS_R, ID_LENS_G) = range(26)
+HAZ = (ID_HAZ_Y, ID_HAZ_K)       # the lane's painted markings
 
 # (roughness, metallic). Painted steel stays mostly dielectric; the gutter,
 # downpipes, snow guard and ridge are the catalog's galvanised steel.
@@ -276,6 +319,8 @@ SURFACE = {
     ID_SOFFIT: (0.74, 0.0), ID_SEAL: (0.90, 0.0), ID_STEEL: (0.62, 0.30),
     ID_COAL: (0.92, 0.0), ID_FLOOR: (0.88, 0.0), ID_SHEET: (0.58, 0.25),
     ID_FELT: (0.90, 0.0), ID_CLAD: (0.56, 0.10),
+    ID_HAZ_Y: (0.62, 0.0), ID_HAZ_K: (0.60, 0.0),
+    ID_LENS_R: (0.18, 0.0), ID_LENS_G: (0.18, 0.0),
 }
 
 # ---------------------------------------------------------------- palettes
@@ -315,11 +360,18 @@ FIXED = {
     ID_STEEL: (72, 72, 70), ID_COAL: (28, 28, 28), ID_FLOOR: (132, 130, 124),
     ID_SHEET: (124, 126, 126), ID_FELT: (54, 54, 56),
     ID_CLAD: (184, 186, 180),   # pale grey painted sheet: head house and gallery
+    # traffic paint, muted: a warm yellow and a black; the signal's unlit
+    # lenses, dark red over dark green (not emissive)
+    ID_HAZ_Y: (190, 156, 52), ID_HAZ_K: (38, 38, 36),
+    ID_LENS_R: (92, 30, 26), ID_LENS_G: (30, 70, 50),
 }
 
-# A stray pixel in a tiling band repeats under every surface sampling it.
+# A stray pixel in a tiling band repeats under every surface sampling it. The
+# brick band's rows also hold the portal legs' strip (PIER), whose bands are
+# checked to stay inside it (check_pier()).
 BAND_IDS = {
-    "BRICK": ((0, BRICK_H + PAD), {ID_BRICK, ID_BRICK2, ID_MORTAR, ID_PLINTH, ID_CONC}),
+    "BRICK": ((0, BRICK_H + PAD), {ID_BRICK, ID_BRICK2, ID_MORTAR, ID_PLINTH, ID_CONC,
+                                   ID_HAZ_Y, ID_HAZ_K}),
     "ROOF": ((ROOF_Y0 - PAD, ROOF_Y0 + ROOF_H + PAD), {ID_ROOF, ID_GUTTER, ID_FLASH}),
     "EAVE": ((EAVE_Y0 - PAD, EAVE_Y0 + EAVE_H + PAD), {ID_FLASH, ID_GUTTER}),
 }
@@ -357,6 +409,9 @@ COAL_DUST = (44, 43, 42)    # sRGB: settled coal fines
 FOOT_COAL = 1.30            # at the walls' foot ...
 FOOT_FALL = 1.10            # ... falling by 1/e every this many metres ...
 FOOT_TOP = 1.90             # ... and gone by here, under SAMPLE_LO
+FOOT_TAIL = 2.30            # a faint tail on above it, gone by here
+FOOT_TAIL_K = 0.08
+BRICK_FILM = 0.025          # the light film over all the brick above
 LANE_COAL = 0.55
 
 
@@ -445,6 +500,57 @@ def paint_col(c):
                         + 0.008 * np.clip(d / 1.5, 0.0, 1.0))
     paint_plinth(c, a, b)
     paint_band(c, a, b)
+
+
+def hazard(u, z):
+    """Black and yellow traffic bands on a portal leg, as a mid id array
+    (0 above HAZARD_TOP): diagonal, falling along U, HAZARD_W tall. Their
+    period, 2 x HAZARD_W, divides the legs' 0.40 m faces, so the bands run on
+    round every corner of a leg, whichever way its faces' U runs."""
+    k = np.floor((z + u) / HAZARD_W).astype(np.int64) % 2
+    ids = np.where(k == 0, ID_HAZ_Y, ID_HAZ_K).astype(np.uint8)
+    return np.where(z < HAZARD_TOP, ids, 0).astype(np.uint8)
+
+
+def paint_pier(c):
+    """The portal legs' strip: the column strip's concrete, plinth and band,
+    painted in black and yellow traffic bands from the ground to HAZARD_TOP,
+    a dark lap line along the paint's top."""
+    x0, _, w, _ = PIER
+    a, b = x0 - PAD, x0 + w + PAD
+    c.paint(a, b, BRICK_Y0 + m(Z_PLINTH), BRICK_Y0 + m(Z_BAND0), ID_CONC, 1.0, 1.0,
+            height=0.0)
+    sy, sx, Y, X = c.field(a, b, BRICK_Y0 + m(Z_PLINTH), BRICK_Y0 + m(Z_BAND0))
+    z = (Y - BRICK_Y0) / PPM
+    lift = np.floor(z / 1.2).astype(np.int64)
+    line = ((z - lift * 1.2) * PPM) < 0.8
+    tone = 1.0 + 0.04 * (atlas.hash_unit(37, lift) - 0.5)
+    c.shade[sy, sx] = np.where(line, tone * 0.90, tone)
+    c.ao[sy, sx] = np.where(line, 0.88, 1.0)
+    d = np.minimum(X - x0, x0 + w - X)
+    c.height[sy, sx] = (np.where(line, -BOARD_LINE_H, 0.0)
+                        + 0.008 * np.clip(d / 1.5, 0.0, 1.0))
+    paint_plinth(c, a, b)
+    paint_band(c, a, b)
+    sy, sx, Y, X = c.field(a, b, BRICK_Y0 - PAD, BRICK_Y0 + m(HAZARD_TOP))
+    z = np.clip((Y - BRICK_Y0) / PPM, 0.0, None)
+    haz = hazard((X - x0) / PPM, z)
+    on = haz > 0
+    c.mid[sy, sx] = np.where(on, haz, c.mid[sy, sx])
+    c.shade[sy, sx] = np.where(on, c.shade[sy, sx] * 0.97 + 0.03, c.shade[sy, sx])
+    c.mul(a, b, BRICK_Y0 + m(HAZARD_TOP) - 1, BRICK_Y0 + m(HAZARD_TOP), 0.90, ao=0.92)
+
+
+def check_pier(c):
+    """The traffic bands stay inside the portal legs' strip in the brick
+    band's rows (BAND_IDS allows them there, for this strip only)."""
+    sy, _ = c.sl(0, 1, 0, BRICK_H + PAD)
+    _, a = c.sl(PIER[0] - PAD - 1, PIER[0] + PIER[2] + PAD + 1, 0, 1)
+    rows = c.mid[sy]
+    out = np.isin(rows, HAZ)
+    out[:, a] = False
+    if out.any():
+        raise ValueError("traffic paint outside the portal legs' strip")
 
 
 def paint_sheet(c, x0, x1, y0, y1, mid, seed, rib_h=RIB_H, k=1.0):
@@ -578,12 +684,58 @@ def paint_lane_side(c):
     # the impact wall's top chamfer and the band's arrises
     shade = np.where((z >= 1.17) & (z < 1.2), shade * 0.80, shade)
     shade = np.where((z >= Z_BAND0 - 0.04) & (z < Z_BAND0), shade * 0.82, shade)
+    # traffic paint: the portal legs' bands on both mouths' jambs, run on
+    # from the legs' outer faces (PIER) round the corner
+    paint = np.zeros(Y.shape, np.uint8)
+    for j0 in (0.0, 2 * HX - WALL_T):
+        on = (u >= j0) & (u < j0 + WALL_T)
+        paint = np.where(on, hazard(u - j0, z), paint)
+    # the stop mark: where a stopped truck's front is, a banded post painted
+    # on both side walls from the floor to a cab's height
+    sm = np.abs(xp - STOP_LINE_X) < 0.15
+    band = np.where(np.floor((z + (xp - STOP_LINE_X)) / HAZARD_W).astype(np.int64) % 2 == 0,
+                    ID_HAZ_Y, ID_HAZ_K).astype(np.uint8)
+    paint = np.where(sm & (z < 3.0), band, paint)
+    # the tipping height: a banded line over the tipping zone, the highest a
+    # raised body may go clear of the lintels and the tie beams
+    th = (xp >= TIP_X[0]) & (xp < TIP_X[1]) & (np.abs(z - TIP_Z) < 0.075)
+    band = np.where(np.floor((xp - z) / HAZARD_W).astype(np.int64) % 2 == 0,
+                    ID_HAZ_Y, ID_HAZ_K).astype(np.uint8)
+    paint = np.where(th, band, paint)
+    on = paint > 0
+    mid = np.where(on, paint, mid)
+    shade = np.where(on, 1.0, shade)
+    ao = np.where(on, 1.0, ao)
+    height = np.where(on, 0.0, height)
+    edge = (th & (np.abs(z - TIP_Z) > 0.06)) | (sm & (np.abs(xp - STOP_LINE_X) > 0.13))
+    shade = np.where(edge & (z < 3.0) | th & (z < TIP_Z - 0.06), shade * 0.80, shade)
+    # the entry's signal: a steel box with a hood over two unlit lenses, red
+    # over green, on the west mouth's jambs at a driver's eye
+    sx0, sx1 = 0.05, 0.35
+    s0, s1 = SIGNAL_Z
+    box = (u >= sx0) & (u < sx1) & (z >= s0) & (z < s1)
+    mid = np.where(box, ID_STEEL, mid)
+    shade = np.where(box, 0.55, shade)
+    height = np.where(box, 0.0, height)
+    cu = (sx0 + sx1) / 2.0
+    for zc, lens in ((s1 - 0.17, ID_LENS_R), (s0 + 0.15, ID_LENS_G)):
+        r = np.hypot(u - cu, z - zc)
+        mid = np.where(box & (r < 0.065), lens, mid)
+        shade = np.where(box & (r < 0.065), 1.0 - 0.25 * np.clip((z - zc) / 0.065, 0, 1),
+                         shade)
+        hood = box & (r >= 0.065) & (r < 0.09) & (z > zc)
+        shade = np.where(hood, 0.35, shade)
+    shade = np.where((u >= sx0) & (u < sx1) & (z >= s0 - 0.04) & (z < s0), shade * 0.70,
+                     shade)
     # occlusion
     e = np.minimum(u, 2 * HX - u)
     f = lane_fall(e)
     corner = 0.16 * np.exp(-np.clip(z, 0, None) / 0.30) + 0.18 * np.exp(
         -np.clip(ceil_z(YL0) - z, 0, None) / 0.40)
-    shade = shade * (1.0 - (1.0 - SIDE_SHADE) * f) * (1.0 - corner)
+    # the traffic paint takes half the fall: it is there to be seen in the
+    # lane's gloom (AO, which the renderer applies, stays whole)
+    f_shade = np.where(np.isin(mid, HAZ), 0.5 * f, f)
+    shade = shade * (1.0 - (1.0 - SIDE_SHADE) * f_shade) * (1.0 - corner)
     ao = ao * (1.0 - (1.0 - SIDE_AO) * f) * (1.0 - 1.4 * corner)
     c.mid[sy, sx], c.shade[sy, sx], c.ao[sy, sx], c.height[sy, sx] = mid, shade, ao, height
 
@@ -685,6 +837,16 @@ def paint_lane_floor(c):
     height = np.where(pit, -GRATE_BAR_H * k, np.where(steel, 0.0, height))
     rim = (~inside) & (grate_d(u, v) < 0.05)
     shade = np.where(rim, shade * 0.75, shade)
+    # traffic paint: a banded border round the grate, and the stop line
+    # across the lane where a stopped truck's front is
+    d = grate_d(u, v)
+    border = (~inside) & (d >= 0.05) & (d < 0.20)
+    band = np.where(np.floor((u + v) / HAZARD_W).astype(np.int64) % 2 == 0,
+                    ID_HAZ_Y, ID_HAZ_K).astype(np.uint8)
+    stop = np.abs(u - (STOP_LINE_X + HX)) < 0.075
+    mid = np.where(border, band, np.where(stop, ID_HAZ_Y, mid))
+    shade = np.where(border | stop, np.minimum(tone, 1.0) * 0.96, shade)
+    height = np.where(border | stop, 0.0, height)
     # occlusion: toward mid-length and along the walls
     e = np.minimum(u, 2 * HX - u)
     f = lane_fall(e, 0.3, 4.0)
@@ -823,9 +985,9 @@ def paint_gal_side(c):
     c.paint(x0 - PAD, x0 + w + PAD, y0 + h - 0.14 * v, y0 + h + PAD, ID_FLASH, 0.95, 0.95,
             height=0.015)
     c.mul(x0 - PAD, x0 + w + PAD, y0 + h - 0.14 * v - 1.5, y0 + h - 0.14 * v, 0.85, ao=0.86)
-    for d in (0.55, 1.55, 2.55, 3.55):
-        a = x0 + (GAL_BURY + d - 0.30) * PPM
-        b = a + 0.60 * PPM
+    for d in GAL_LIGHTS:
+        a = x0 + (GAL_BURY + d - 0.30) * GPPM
+        b = a + 0.60 * GPPM
         s0, s1 = y0 + 1.30 * v, y0 + 1.85 * v
         _bar(c, a, b, s0, s1, h=FRAME_H)
         _grid(c, a + 3, b - 3, s0 + 3, s1 - 3, 2, 1)
@@ -894,8 +1056,15 @@ def check_regions():
     for s in SHIFTS:
         if abs((m(s) / m(COURSE)) % TONE_COURSES) > 1e-6:
             problems.append("shift %.3f is not a whole tone period" % s)
-    if COL[0] < BRICK_W + 8 or COL[0] + COL[2] + 4 > ATLAS:
-        problems.append("the column strip crowds the brick band")
+    if COL[0] < BRICK_W + 8 or COL[0] + COL[2] + 4 > PIER[0]:
+        problems.append("the column strip crowds the brick band or the legs' strip")
+    if PIER[0] + PIER[2] + 4 > ATLAS:
+        problems.append("the portal legs' strip runs off the atlas")
+    legs = WALL_T / (2 * HAZARD_W)
+    if round(legs) < 1 or abs(legs - round(legs)) > 1e-9:
+        problems.append("the traffic bands' period does not divide the legs' faces")
+    if GAL_LIGHTS[-1] + 0.30 > GAL_LEN - 0.15:
+        problems.append("the gallery's last light runs into its end")
     if ANNEX_SLOPE * ANNEX_V_K > MAIN_SLOPE - 0.15 - 0.05:
         problems.append("the lean-to reaches the ridge cap's rows")
     if ROOF_Y0 - PAD < BRICK_H + PAD + 2 or EAVE_Y0 - PAD < ROOF_Y0 + ROOF_H + PAD + 2:
@@ -932,14 +1101,32 @@ def weather(c):
     w.add("D", 0, xb1, b1 - 4, b1, lambda Y, X, nz: 0.10 + 0.10 * nz("blotch"), (ID_CONC,))
     w.runs(0, xb1, BRICK_Y0 + m(SAMPLE_HI + 0.02), b0, brick, 0.10, fall=3.0)
     w.add("D", 0, xb1, b0, b1, lambda Y, X, nz: 0.05 * nz("big"), (ID_CONC,))
-    # coal the trucks throw up, at every wall's foot; gone by FOOT_TOP
-    def foot(Y, X, nz):
+    # coal the trucks throw up, at every wall's foot: heavy to about 1.5 m,
+    # gone by FOOT_TOP, with a faint tail to FOOT_TAIL. Over the rest of the
+    # brick only a light film (BRICK_FILM), so each variant's own brick
+    # colour shows on the upper walls. The tail is under 0.04 where the
+    # shifted walls' rows start (SAMPLE_LO), so no shift shows a step.
+    def heavy(Y, nz):
         z = np.clip((Y - BRICK_Y0) / PPM, 0.0, None)
         return (FOOT_COAL * np.exp(-z / FOOT_FALL) * (0.7 + 0.3 * nz("blotch"))
-                * atlas.smoothstep(FOOT_TOP, FOOT_TOP - 0.7, z)
-                + 0.10 + 0.06 * nz("big")
-                + 0.10 * atlas.smoothstep(0.4, 1.8, nz("runs")))
-    w.coal(0, xb1, BRICK_Y0, band_top, foot, (ID_PLINTH, ID_CONC) + brick)
+                * atlas.smoothstep(FOOT_TOP, FOOT_TOP - 0.7, z))
+
+    def foot(Y, X, nz):
+        z = np.clip((Y - BRICK_Y0) / PPM, 0.0, None)
+        return (heavy(Y, nz)
+                + FOOT_TAIL_K * atlas.smoothstep(FOOT_TAIL, FOOT_TOP - 0.3, z)
+                + BRICK_FILM + 0.03 * nz("big")
+                + 0.04 * atlas.smoothstep(0.6, 1.8, nz("runs")))
+    w.coal(0, xb1, BRICK_Y0, band_top, foot, (ID_PLINTH,) + brick)
+    # the concrete frame keeps its heavier dust: the foot and a moderate film
+    w.coal(0, xb1, BRICK_Y0, band_top, lambda Y, X, nz: heavy(Y, nz) + 0.10
+           + 0.06 * nz("big") + 0.10 * atlas.smoothstep(0.4, 1.8, nz("runs")), (ID_CONC,))
+    # the portal legs' traffic paint: dusted at the foot, kept legible above
+    # (it is repainted)
+    w.fade(HAZ, amount=0.12)
+    w.coal(PIER[0] - PAD, PIER[0] + PIER[2] + PAD, BRICK_Y0 - PAD, band_top,
+           lambda Y, X, nz: 0.08 + 0.05 * nz("blotch") + 0.55 * np.exp(
+               -np.clip((Y - BRICK_Y0) / PPM, 0.0, None) / 0.45), HAZ)
     # the plinth: a dull grey-black film all along, the dust it catches
     w.coal(0, xb1, BRICK_Y0 - PAD, BRICK_Y0 + m(Z_PLINTH), lambda Y, X, nz: 0.45
            + 0.15 * nz("blotch"), (ID_PLINTH,))
@@ -975,7 +1162,12 @@ def weather(c):
         jamb = np.clip(1.0 - (np.minimum(u, 2 * HX - u) - WALL_T) / 0.8, 0, 1)
         return (LANE_COAL + 0.10 * nz("blotch")
                 + 0.45 * np.exp(-z / 1.2) + 0.40 * jamb * np.exp(-z / 4.0))
-    w.coal(x0 - PAD, x0 + lw + PAD, y0 - PAD, y0 + lh + PAD, side)
+    w.coal(x0 - PAD, x0 + lw + PAD, y0 - PAD, y0 + lh + PAD, side, brick + (ID_CONC,))
+    # the traffic paint and the signal: dusted, but wiped and repainted, so
+    # they still read in the lane's gloom
+    w.coal(x0 - PAD, x0 + lw + PAD, y0 - PAD, y0 + lh + PAD, lambda Y, X, nz: 0.12
+           + 0.06 * nz("blotch") + 0.45 * np.exp(-np.clip((Y - y0) / LPM, 0, None) / 0.5),
+           HAZ + (ID_STEEL, ID_LENS_R, ID_LENS_G))
     # the ceiling: dust thickest over the grate, where it rises when a load
     # is tipped
     x0, y0, cw, ch = LANE_CEIL
@@ -1002,6 +1194,9 @@ def weather(c):
           lambda Y, X, nz: 0.10 + 0.10 * nz("blotch"), (ID_FLOOR, ID_STEEL))
     w.coal(x0 - PAD, x0 + fw + PAD, y0 - PAD, y0 + fh + PAD, floor,
            (ID_FLOOR, ID_STEEL))
+    # the painted grate border and stop line: worn by the tyres, dusted
+    w.coal(x0 - PAD, x0 + fw + PAD, y0 - PAD, y0 + fh + PAD,
+           lambda Y, X, nz: 0.5 * floor(Y, X, nz), HAZ)
     # the windows: dirt standing on the bottom rail
     for kind in ("win", "win_b", "win_s", "win_s_b"):
         x, y, rw, rh = REGION[kind]
@@ -1031,10 +1226,50 @@ def weather(c):
     w.add("D", x0 - PAD, x0 + cw + PAD, y0 - PAD, y0 + ch + PAD,
           lambda Y, X, nz: 0.06 + 0.06 * nz("blotch"), (ID_CLAD,))
     w.runs(x0 - PAD, x0 + cw + PAD, y0, y0 + (Z_TSLAB - HH_Z0) * CLAD_VPM, (ID_CLAD,),
-           0.16, fall=0.9 * CLAD_VPM)
-    w.coal(x0 - PAD, x0 + cw + PAD, y0 - PAD, y0 + ch + PAD, lambda Y, X, nz: 0.12
-           + 0.06 * nz("blotch") + 0.25 * np.exp(-np.clip(Y - y0, 0, None)
-                                                 / (0.6 * CLAD_VPM)))
+           0.24, fall=1.1 * CLAD_VPM)
+    w.coal(x0 - PAD, x0 + cw + PAD, y0 - PAD, y0 + ch + PAD, lambda Y, X, nz: 0.15
+           + 0.10 * nz("blotch") + 0.06 * nz("big") + 0.32 * np.exp(
+               -np.clip(Y - y0, 0, None) / (0.7 * CLAD_VPM)))
+    # a working plant's head house, years on: the paint chalked a little,
+    # coal settled on the lap's ledge and run down under it, rust at every
+    # fixing on the girts with short runs under them, and on the foot's
+    # drip flashing
+    w.fade((ID_CLAD,), amount=0.10)
+    lap = y0 + 2.0 * CLAD_VPM
+    w.coal(x0 - PAD, x0 + cw + PAD, lap + 1, lap + 2.5, lambda Y, X, nz: 0.40
+           + 0.15 * nz("blotch"), (ID_CLAD,))
+    w.coal(x0 - PAD, x0 + cw + PAD, lap - 0.8 * CLAD_VPM, lap,
+           lambda Y, X, nz: 0.40 * atlas.smoothstep(0.0, 1.2, nz("runs"))
+           * np.exp(-(lap - Y) / (0.30 * CLAD_VPM)), (ID_CLAD,))
+    w.add("R", x0 - PAD, x0 + cw + PAD, lap - 1, lap + 1, lambda Y, X, nz: 0.10
+          + 0.15 * nz("blotch"), (ID_CLAD,))
+    for zg in CLAD_GIRTS:
+        g = y0 + zg * CLAD_VPM
+
+        def fix(Y, X, nz, g=g):
+            xm = np.mod(X, 2 * RIB_P)
+            dot = (np.abs(xm - 10.5) < 1.2) & (np.abs(Y - g) < 0.9)
+            run = (np.abs(xm - 10.5) < 0.8) & (Y < g) & (Y > g - 0.45 * CLAD_VPM)
+            return (np.where(dot, 0.55 + 0.25 * nz("blotch"), 0.0)
+                    + np.where(run, 0.35 * atlas.smoothstep(-0.5, 1.0, nz("runs"))
+                               * np.exp(-(g - Y) / (0.2 * CLAD_VPM)), 0.0))
+        w.add("R", x0 - PAD, x0 + cw + PAD, g - 0.5 * CLAD_VPM, g + 1, fix, (ID_CLAD,))
+    w.add("R", x0 - PAD, x0 + cw + PAD, y0 - PAD, y0 + 2.5, lambda Y, X, nz: 0.30
+          + 0.25 * nz("blotch"), (ID_FLASH,))
+    w.add("R", x0 - PAD, x0 + cw + PAD, y0 + 2.0, y0 + 0.5 * CLAD_VPM, lambda Y, X, nz: 0.18
+          * atlas.smoothstep(0.0, 1.4, nz("runs")) * np.exp(-(Y - y0 - 2.0) / 3.0),
+          (ID_CLAD,))
+    # under and beside the gallery's mouth on the rear face (U from
+    # HH_WALLS' rear offset): spill from the transfer, and streaks down the
+    # seal either side
+    m0 = x0 + (CLAD_REAR_U + GAL_REAR_S[0]) * PPM
+    m1 = x0 + (CLAD_REAR_U + GAL_REAR_S[1]) * PPM
+    zm = (GAL_Z0 - GAL_H / 2.0 - HH_Z0) * CLAD_VPM
+    w.coal(m0, m1, y0 - PAD, y0 + zm + 1, lambda Y, X, nz: 0.35 + 0.15 * nz("blotch"),
+           (ID_CLAD, ID_FLASH))
+    for a in (m0 - 0.15 * PPM, m1):
+        w.coal(a, a + 0.15 * PPM, y0 - PAD, y0 + ch, lambda Y, X, nz: 0.22
+               * atlas.smoothstep(0.0, 1.2, nz("runs")) + 0.08, (ID_CLAD,))
     # the gallery's sides: the dust the belt throws out of its joints, thick
     # along the bottom chord and running down from the top flashing and
     # from every window's sill in dark streaks
@@ -1050,9 +1285,13 @@ def weather(c):
                 + 0.55 * streak * np.exp(-(GAL_H - z) / 1.6))
     w.coal(x0 - PAD, x0 + gw + PAD, y0 - PAD, y0 + gh + PAD, gal,
            (ID_CLAD, ID_STEEL, ID_FLASH))
-    for d in (0.55, 1.55, 2.55, 3.55):
-        a = x0 + (GAL_BURY + d - 0.30) * PPM
-        w.add("D", a, a + 0.60 * PPM, y0 + 0.25 * v, y0 + 1.30 * v,
+    # heavier by the head house, where the belt is loaded
+    w.coal(x0 - PAD, x0 + gw + PAD, y0 - PAD, y0 + gh + PAD, lambda Y, X, nz: 0.30
+           * np.exp(-np.clip((X - x0) / GPPM - GAL_BURY, 0, None) / 1.2)
+           * (0.6 + 0.4 * nz("blotch")), (ID_CLAD, ID_STEEL, ID_FLASH))
+    for d in GAL_LIGHTS:
+        a = x0 + (GAL_BURY + d - 0.30) * GPPM
+        w.add("D", a, a + 0.60 * GPPM, y0 + 0.25 * v, y0 + 1.30 * v,
               lambda Y, X, nz: 0.45 * atlas.smoothstep(0.2, 1.2, nz("runs"))
               * np.exp(-(y0 + 1.30 * v - Y) / (0.5 * v)), (ID_CLAD,))
     w.coal(GAL_END[0] - PAD, GAL_END[0] + GAL_END[2] + PAD, GAL_END[1] - PAD,
@@ -1075,9 +1314,11 @@ def paint(ss=atlas.SS):
     c = atlas.Canvas(ATLAS, ss, PPM)
     paint_brick(c)
     paint_col(c)
+    paint_pier(c)
     paint_roof(c)
     paint_eave(c)
     c.check_bands(BAND_IDS)
+    check_pier(c)
     paint_lane_side(c)
     paint_lane_ceil(c)
     paint_lane_floor(c)
