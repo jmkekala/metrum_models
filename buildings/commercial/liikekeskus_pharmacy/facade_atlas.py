@@ -19,13 +19,13 @@ would eat two thirds of the sheet. build.py cuts the gable into horizontal
 courses at the wrap lines and the band carries periodic padding at both, so the
 seam samples the artwork that actually continues there rather than a neighbour.
 
-Everything singular -- the doors, the sign boards, the gable curtain wall, the
-roof, the plant -- gets a region of its own above the bands. atlas.pad() fills
+Everything singular -- the entrance doors, the two sign boards, the gable
+curtain wall, the roof, the plant -- gets a region of its own above the bands. atlas.pad() fills
 every sample no region claims from the nearest region's own edge.
 
 Rasterising is scripts/atlas.py's: a canvas supersampled SS x SS per pixel,
-with a height channel the normal map is derived from, so the sign boards'
-lettering and marks come out anti-aliased like everything else (numpy and
+with a height channel the normal map is derived from, so the sign board's
+lettering and the marks come out anti-aliased like everything else (numpy and
 scipy; Pillow to save).
 
 Density is 64 texels/metre on everything a customer stands in front of. The
@@ -83,34 +83,43 @@ Z_HEAD = 3.25               # shopfront head: 208 px, the band's full height
 Z_FASCIA = Z_EAVE           # top of the sign boards; the eave springs here
 GLAZE_DEPTH = 0.18          # the shopfront sits this far back in its opening
 
-# The front is four quarters. The pharmacy has the middle two, the beauty salon
-# the left one and the barber the right one, so the two party walls land on 6.0
-# and 18.0 m. Every bay is 4 m wide, which is four of the shopfront band's
-# 1 m lights and two of its heavier structural mullions.
+# One shop, the pharmacy, behind one door. The front is two display windows,
+# one each side of the stone pier that carries the gable apex, and the
+# entrance goes through the foot of that pier, on the building's centre line,
+# so the street front is symmetric about its one door. Each window is 9.0 m:
+# nine of the shopfront band's 1 m lights, a heavier structural mullion every
+# second one, so both runs end on a mullion and mirror each other about the
+# pier.
 FRONT_W = 2.0 * HX          # 24.0
-BAY_W = 4.0
-PIER_CORNER = 1.4
-PIER_PARTY = 1.2
+BAY_W = 4.0                 # one gable curtain-wall panel
+SHOP_W = 9.0                # one display window
+PIER_CORNER = 1.6
 PIER_MID = 2.8              # carries the gable apex, so it is the wide one
 
 BAYS = [
-    ("salon", PIER_CORNER, PIER_CORNER + BAY_W),
-    ("pharmacy_left", 6.6, 10.6),
-    ("pharmacy_right", 13.4, 17.4),
-    ("barber", 18.6, 22.6),
+    ("left", PIER_CORNER, PIER_CORNER + SHOP_W),
+    ("right", FRONT_W - PIER_CORNER - SHOP_W, FRONT_W - PIER_CORNER),
 ]
-PIERS = [(0.0, 1.4), (5.4, 6.6), (10.6, 13.4), (17.4, 18.6), (22.6, 24.0)]
+PIERS = [(0.0, PIER_CORNER), (10.6, 13.4), (FRONT_W - PIER_CORNER, FRONT_W)]
 
-# (bay, centre s, leaf count). The pharmacy's pair is deliberately not on the
-# building's centre line: it sits in the second quarter of the front, two
-# whole shopfront lights wide. The salon's and the barber's are centred in
-# their own bays instead -- against a party pier a single door reads as an
-# afterthought squeezed into the corner of the glazing rather than as that
-# unit's way in.
-DOORS = [("pharmacy_left", 8.6, 2), ("salon", 3.4, 1), ("barber", 20.6, 1)]
-DOOR_W = {1: 1.0, 2: 2.0}
+# The entrance: a pair of glazed leaves, 2.0 m overall, under a transom light
+# to the shopfront head, centred on the front and recessed GLAZE_DEPTH into
+# the wall like the display windows. The middle pier is opened over it as a
+# portal, PORTAL_REBATE wider and taller than the door on every side, so the
+# pier's jambs never lie in the plane of the wall's own reveal and a 50 mm
+# step of wall frames the door inside the passage.
+ENTRANCE_S = HX             # 12.0, the middle of the front
+ENTRANCE_W = 2.0
+PORTAL_REBATE = 0.05
+PORTAL_W = ENTRANCE_W + 2.0 * PORTAL_REBATE      # 2.10
+PORTAL_HEAD = Z_HEAD + PORTAL_REBATE             # 3.30
 
-# The gable curtain wall stands over the pharmacy, one panel each side of the
+# The pharmacy mark over the entrance, a lit plaque on the pier's face: the
+# same square artwork as the sign on the ridge (LOGO), at 1.2 m rather than
+# 1.6 m, so it is drawn at 85 px/m instead of 64.
+DOOR_SIGN = {"w": 1.2, "h": 1.2, "z0": 3.45, "out": 0.10}
+
+# The gable curtain wall stands over the shop, one panel each side of the
 # middle pier. Its head follows the rake down to the eaves and is capped flat
 # before it reaches the band's wrap line, which keeps the opening inside one
 # region and leaves a proper head of stone under the rafters.
@@ -193,7 +202,6 @@ MULLION = 2.0                       # heavier structural mullion pitch
 SHELF_A, SHELF_B = 610, 824
 
 DOOR_DOUBLE = (8, SHELF_A, 128, 208)        # 2.00 x 3.25 m at 64 px/m
-DOOR_SINGLE = (142, SHELF_A, 64, 208)       # 1.00 x 3.25 m
 MAINT_DOOR = (212, SHELF_A, 77, 150)        # 1.20 x 2.35 m
 SIDE_WINDOW = (295, SHELF_A, 122, 109)      # 1.90 x 1.70 m
 LOGO = (423, SHELF_A, 102, 102)             # 1.60 x 1.60 m of sign face
@@ -201,15 +209,13 @@ GABLE_GLAZE = (531, SHELF_A, 192, 178)      # 4.00 x 3.71 m at 48 px/m
 AHU_SIDE = (729, SHELF_A, 122, 77)          # 1.90 x 1.20 m
 AHU_TOP = (729, SHELF_A + 83, 122, 38)      # 1.90 x 0.60 m
 LOUVRE = (729, SHELF_A + 127, 51, 38)       # 0.80 x 0.60 m
+VENT_BOX = (863, SHELF_A, 45, 96)           # 0.70 x 1.50 m, seat to cowl
+VENT_PIPE = (920, SHELF_A, 19, 80)          # 0.30 x 1.25 m
 
 ROOF = (8, SHELF_B, 240, 184)               # 18.4 x 14.15 m at 13 px/m
-FASCIA_W, FASCIA_H = 256, 48                # 4.00 x 0.75 m at 64 px/m
-FASCIA = {"salon": (254, SHELF_B, FASCIA_W, FASCIA_H),
-          "pharmacy_left": (254, SHELF_B + 54, FASCIA_W, FASCIA_H),
-          "pharmacy_right": (516, SHELF_B, FASCIA_W, FASCIA_H),
-          "barber": (516, SHELF_B + 54, FASCIA_W, FASCIA_H)}
-VENT_BOX = (778, SHELF_B, 45, 96)           # 0.70 x 1.50 m, seat to cowl
-VENT_PIPE = (829, SHELF_B, 19, 80)          # 0.30 x 1.25 m
+FASCIA_W, FASCIA_H = 576, 48                # 9.00 x 0.75 m at 64 px/m
+FASCIA = {"left": (254, SHELF_B, FASCIA_W, FASCIA_H),
+          "right": (254, SHELF_B + 54, FASCIA_W, FASCIA_H)}
 
 GABLE_PPM = 48.0
 ROOF_PPM = 13.0
@@ -221,7 +227,7 @@ ROOF_PPM = 13.0
 # coursed stone reads as a missing texture rather than as a surface turning
 # away from the light.
 PATCH_NAMES = ("blank", "sign_side", "steel")
-PATCHES = {n: (856 + 20 * (i % 5), SHELF_B + 20 * (i // 5), 12, 12)
+PATCHES = {n: (951 + 20 * i, SHELF_A, 12, 12)
            for i, n in enumerate(PATCH_NAMES)}
 
 
@@ -248,8 +254,8 @@ SURFACE = {
 
 # ---------------------------------------------------------------- palettes
 # One coherent treatment per instance: the stone changes and the roof and the
-# white move a little with it, never within one building. The shop signs are
-# the centre's identity and are the same in every colour.
+# white move a little with it, never within one building. The pharmacy's signs
+# are its identity and are the same in every colour.
 VARIANTS = {
     "grey_stone": {"stone": (152, 147, 138), "roof": (50, 50, 52),
                    "eave": (236, 235, 230), "door": (62, 66, 64),
@@ -281,8 +287,8 @@ BAND_IDS = {
 }
 
 # The candidate-glazing mask doubles as the emission map. Glass is neutral
-# white so scripts/validate_asset.py can pick it out as glazing; the four sign
-# boards and the roof sign are luminous fixtures rather than windows and carry
+# white so scripts/validate_asset.py can pick it out as glazing; the two sign
+# boards, the plaque over the door and the roof sign are luminous fixtures rather than windows and carry
 # their own colours. A lit box is a bright diffuser with the graphics printed
 # on it, and print transmits far less light than the blank panel does, so the
 # ink emits roughly twenty times less than the field it sits on.
@@ -343,30 +349,19 @@ def _arc(cx, cy, rx, ry, a0, a1, n=16):
 
 # A geometric sans, drawn as stroked centrelines on a unit em: y = 0 is the
 # baseline, y = 1 the cap line, and the advance is the first item. Only the
-# letters the sign boards need exist, which is the point of drawing them here
-# rather than shipping a font: PHARMACY, BEAUTY SALON, BARBER.
+# letters the sign board needs exist, which is the point of drawing them here
+# rather than shipping a font: PHARMACY.
 GLYPHS = {
     " ": (0.34, []),
     "A": (0.70, [[(0.00, 0.00), (0.35, 1.00), (0.70, 0.00)],
                  [(0.105, 0.30), (0.595, 0.30)]]),
     # Stem, upper bowl and waist in one polyline, then the lower bowl from the
     # waist back to the baseline: the two meet on the stem at half height.
-    "B": (0.64, [[(0.00, 0.00), (0.00, 1.00), (0.28, 1.00)]
-                 + _arc(0.28, 0.75, 0.30, 0.25, 90, -90, 10)
-                 + [(0.00, 0.50)],
-                 [(0.00, 0.50), (0.30, 0.50)]
-                 + _arc(0.30, 0.25, 0.32, 0.25, 90, -90, 10)
-                 + [(0.00, 0.00)]]),
     "C": (0.72, [_arc(0.36, 0.50, 0.36, 0.50, 55, 305, 18)]),
-    "E": (0.60, [[(0.60, 1.00), (0.00, 1.00), (0.00, 0.00), (0.60, 0.00)],
-                 [(0.00, 0.50), (0.48, 0.50)]]),
     "H": (0.70, [[(0.00, 1.00), (0.00, 0.00)], [(0.70, 1.00), (0.70, 0.00)],
                  [(0.00, 0.50), (0.70, 0.50)]]),
-    "L": (0.54, [[(0.00, 1.00), (0.00, 0.00), (0.54, 0.00)]]),
     "M": (0.86, [[(0.00, 0.00), (0.00, 1.00), (0.43, 0.30), (0.86, 1.00),
                   (0.86, 0.00)]]),
-    "N": (0.72, [[(0.00, 0.00), (0.00, 1.00), (0.72, 0.00), (0.72, 1.00)]]),
-    "O": (0.76, [_arc(0.38, 0.50, 0.38, 0.50, 0, 360, 24)]),
     "P": (0.62, [[(0.00, 0.00), (0.00, 1.00), (0.30, 1.00)]
                  + _arc(0.30, 0.755, 0.32, 0.245, 90, -90, 10)
                  + [(0.00, 0.51)]]),
@@ -374,15 +369,6 @@ GLYPHS = {
                  + _arc(0.30, 0.755, 0.32, 0.245, 90, -90, 10)
                  + [(0.00, 0.51)],
                  [(0.28, 0.51), (0.64, 0.00)]]),
-    # Two bowls that hand over across the middle: the last point of the upper
-    # arc and the first of the lower are joined by the segment between them,
-    # which is the S's spine.
-    "S": (0.62, [_arc(0.31, 0.745, 0.28, 0.255, 20, 235, 14)
-                 + _arc(0.31, 0.255, 0.28, 0.255, 55, -145, 14)]),
-    "T": (0.68, [[(0.00, 1.00), (0.68, 1.00)], [(0.34, 1.00), (0.34, 0.00)]]),
-    "U": (0.66, [[(0.00, 1.00), (0.00, 0.24)]
-                 + _arc(0.33, 0.24, 0.33, 0.24, 180, 360, 12)
-                 + [(0.66, 1.00)]]),
     "Y": (0.68, [[(0.00, 1.00), (0.34, 0.48), (0.68, 1.00)],
                  [(0.34, 0.48), (0.34, 0.00)]]),
 }
@@ -584,14 +570,14 @@ def paint_gable_glaze(c):
         c.bevel(a0, a1, b0, b1, FRAME_H * k, 1.0, axes=axes)
 
 
-def paint_door(c, leaves):
-    """A shopfront entrance: leaves to 2.25 m, a transom light over them.
+def paint_door(c, leaves=2):
+    """The shop's entrance: a pair of leaves to 2.25 m, a transom light over
+    them.
 
     A pair opens in the middle, so its two pull handles sit either side of the
     meeting stile rather than one in the middle and one out at the jamb.
     """
-    rect = DOOR_DOUBLE if leaves == 2 else DOOR_SINGLE
-    x, y, w, h = rect
+    x, y, w, h = DOOR_DOUBLE
     c.paint(x, x + w, y, y + h, mid=ID_FRAME, shade=1.0, ao=0.82, height=FRAME_H)
     c.paint(x, x + w, y, y + m(0.05), mid=ID_KICK, ao=0.78, height=0.010)   # threshold
     c.paint(x + m(0.05), x + w - m(0.05), y + m(Z_LEAF + 0.07),
@@ -717,51 +703,31 @@ def _mark(c, cx, cy, r, mid):
             c.stroke(p, q, 0.16 * r, mid=mid)
 
 
-# (word, green field). The pharmacy has two boards and is not named twice: the
-# left one, over its doors, is the one that carries the word, and the right is
-# the mark on its own.
-FASCIA_TEXT = {"salon": ("BEAUTY SALON", False), "barber": ("BARBER", False),
-               "pharmacy_left": ("PHARMACY", True),
-               "pharmacy_right": ("", True)}
+# What each display window's board carries. The shop is named once, over the
+# left window; the right board is the same green field with the mark on it, so
+# the two read as one fascia broken by the pier rather than as two shops.
+FASCIA_TEXT = {"left": "PHARMACY", "right": ""}
 
 
 def paint_fascia(c, key):
-    """One shop's lit sign board, 4.0 x 0.75 m of it.
+    """One of the shop's two lit sign boards, 9.0 x 0.75 m.
 
-    The two pharmacy boards are a green field with white out of it; the salon
-    and the barber are dark on white. Generic trade words, set in this sheet's
-    own letterforms. The face is a flat printed diffuser.
-
-    A board sets its word as large as it will go and no larger, so BARBER
-    fills its board at the full cap height while BEAUTY SALON, twice as long,
-    steps down to fit. Two tenants' signs being different sizes is what a
-    parade of shops actually looks like; one of them running off its board is
-    not.
+    A green field with white out of it, the word set in this sheet's own
+    letterforms and centred on its board. The face is a flat printed diffuser.
     """
-    word, green = FASCIA_TEXT[key]
+    word = FASCIA_TEXT[key]
     x0, y0, w, h = FASCIA[key]
-    field, ink = (ID_SIGN_G, ID_SIGN) if green else (ID_SIGN, ID_SIGN_T)
+    field, ink = ID_SIGN_G, ID_SIGN
     c.paint(x0, x0 + w, y0, y0 + h, mid=field, shade=1.0, ao=1.0, height=0.0)
-    c.paint(x0, x0 + w, y0, y0 + 2, mid=ink if green else ID_SIGN_T)
-    margin, x = 14.0, 14.0
-    if key == "pharmacy_left":
-        r = 17.0
-        _mark(c, x0 + x + r, y0 + h / 2.0, r, ink)
-        x += 2.9 * r
-    elif not word:
+    c.paint(x0, x0 + w, y0, y0 + 2, mid=ink)
+    if not word:
         _mark(c, x0 + w / 2.0, y0 + h / 2.0, 0.34 * h, ink)
         return
-    cap, weight = 26.0, 4.6
+    cap, weight = 30.0, 5.3
     # text_width measures centrelines; stroked letters overrun them by half a
-    # stroke at each end, so the last glyph needs that back or it sets flush
-    # against the edge of the board.
-    avail = w - x - margin - weight
+    # stroke at each end, so the word is centred on its ink, not its pen path.
     tw = text_width(word, cap, weight=weight)
-    if tw > avail:                      # uniform, so the ratio is unchanged
-        cap, weight, tw = cap * avail / tw, weight * avail / tw, avail
-    if key != "pharmacy_left":
-        x = (w - tw) / 2.0
-    text(c, word, x0 + x, y0 + (h - cap) / 2.0, cap, weight, ink)
+    text(c, word, x0 + (w - tw) / 2.0, y0 + (h - cap) / 2.0, cap, weight, ink)
 
 
 def paint_logo(c):
@@ -786,7 +752,7 @@ def paint_patches(c):
 
 
 # ------------------------------------------------------------------ checks
-REGIONS = {"door_double": DOOR_DOUBLE, "door_single": DOOR_SINGLE,
+REGIONS = {"door_double": DOOR_DOUBLE,
            "maint_door": MAINT_DOOR, "side_window": SIDE_WINDOW, "logo": LOGO,
            "gable_glaze": GABLE_GLAZE, "ahu_side": AHU_SIDE,
            "ahu_top": AHU_TOP, "louvre": LOUVRE, "roof": ROOF,
@@ -827,7 +793,7 @@ def weather(c):
     height goes on it -- ground splash would come back at 4 and 8 m -- and its
     noise repeats on the band's period (tile_y=4). Splash goes on the
     shopfront's kick panels instead, whose band starts at the pavement. The
-    shop signs are their tenants' to keep clean."""
+    shop's signs are its own to keep clean."""
     steel = (ID_ROOF, ID_METAL, ID_STEEL, ID_FRAME, ID_DOOR)
     w = weathering.Weather(c, clean=(ID_GLASS, ID_SIGN, ID_SIGN_G, ID_SIGN_T),
                            steel=steel, tile_y=4)
@@ -837,8 +803,8 @@ def weather(c):
     w.splash(0, ATLAS, SHOP_Y0, SHOP_Y0 + m(Z_KICK) + 6, (ID_KICK, ID_FRAME))
     x, y, rw, rh = ROOF
     w.roof(x, x + rw, y, rh, rh / ROOF_PPM, (ID_ROOF,))
-    # the shop doors: kicked feet, hand grime round the pulls
-    for rect, leaves in ((DOOR_DOUBLE, 2), (DOOR_SINGLE, 1)):
+    # the shop's door: kicked feet, hand grime round the pulls
+    for rect, leaves in ((DOOR_DOUBLE, 2),):
         x, y, dw, dh = rect
         w.splash(x, x + dw, y, y + m(Z_LEAF), (ID_DOOR, ID_FRAME, ID_KICK),
                  amount=0.18, fall=0.15, specks=0.0)
@@ -886,8 +852,7 @@ def paint(ss=atlas.SS):
 
     paint_roof(c)
     paint_gable_glaze(c)
-    paint_door(c, 2)
-    paint_door(c, 1)
+    paint_door(c)
     paint_side_window(c)
     paint_maint_door(c)
     paint_ahu(c)
@@ -924,24 +889,24 @@ def lut(variant):
 
 def export(out_dir, ss=atlas.SS):
     """Candidate glazing in the emission map is neutral white so it reads as
-    glazing downstream; the four shop boards and the sign on the ridge carry
-    their own colours (EMIT). No occupancy or schedule is baked in."""
+    glazing downstream; the two sign boards and the mark (over the door and
+    on the ridge) carry their own colours (EMIT). No occupancy or schedule is baked in."""
     c = paint(ss)
     cav = atlas.cavity(c, radius_px=1.5, depth_m=0.012)
     c.weather.dust(cav, (ID_STONE,))                 # in the bed joints
     rough = 0.04 * atlas.noise(c, 13, 20.0, tile_y=4)
     path = os.path.join(out_dir, ASSET)
-    # A door unit is one opening into one shop, so its leaves, their vision
+    # The door unit is one opening into the shop, so its leaves, their vision
     # panels and the transom above them have to be one room, by day and by
     # night. The default merge bridges a glazing bar, not a pair of 0.10 m
-    # meeting stiles, and left to it the two leaves of the pharmacy's doors
-    # came out at different levels with a lit wall behind one of them. The
-    # doors are painted first, with a merge wide enough to reach across their
-    # stiles; everything else keeps the shared default.
+    # meeting stiles, and left to it the two leaves came out at different
+    # levels with a lit wall behind one of them. The door is painted first,
+    # with a merge wide enough to reach across its stiles; everything else
+    # keeps the shared default.
     cover = atlas.coverage(c, ID_GLASS)
     glass = cover >= 0.5
     door = np.zeros_like(glass)
-    for dx, dy, dw, dh in (DOOR_DOUBLE, DOOR_SINGLE):
+    for dx, dy, dw, dh in (DOOR_DOUBLE,):
         door[dy:dy + dh, dx:dx + dw] = True
     emit = atlas.emission_colours(c, EMIT)
     emit = glazing.night_rooms((cover > 0) & door, emit, merge=8)

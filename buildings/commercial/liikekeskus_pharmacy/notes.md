@@ -2,27 +2,35 @@
 
 ## Style brief
 
-A small suburban shopping centre of the kind that stands on its own in a car
-park at the edge of a housing estate: three units under one roof, anchored by a
-pharmacy that takes the middle half of the frontage, with a beauty salon in the
-left quarter and a barber in the right. One tall retail storey in coursed
+A neighbourhood pharmacy of the kind that stands on its own in a car park at
+the edge of a housing estate: one shop under one roof, behind one customer
+door in the middle of the street front. One tall retail storey in coursed
 split-face stone under a single broad gable whose ridge runs front to back, so
 the whole of the street elevation is one gable end. Deep overhangs in white
 painted boarding, a white crest capping the ridge from rake to rake, and the
-centre's own illuminated sign standing on the crest on short steel legs: a
+pharmacy's illuminated sign standing on the crest on short steel legs: a
 1.6 m cube carrying the pharmacy mark on all four sides, because a building in
 a car park is approached from every direction and a flat blade would show half
 of them nothing but its edge.
 
+The street front reads as one generous shop: two 9 m display windows on a low
+kick panel, one each side of the middle pier, and the entrance -- a glazed
+pair under a transom light -- through a portal in the foot of that pier, on
+the centre line, so a central walk can run straight to it between parking
+either side. One green sign band over the windows, broken only by the pier,
+names the shop once ("PHARMACY", over the left window) and carries the mark
+once (over the right); a lit plaque with the same mark hangs on the pier over
+the door.
+
 The type's recognisable move is the contrast between that white A and the stone
-under it, and the way the gable is opened up: above the shop fascias the wall
+under it, and the way the gable is opened up: above the sign band the wall
 becomes two raking curtain-wall panels, one each side of a wide stone pier that
-runs unbroken from the pavement to the apex.
+runs from the pavement to the apex, opened at its foot for the door.
 
 ## Category and secondary use
 
-`buildings/commercial/`. Single use: three retail/service units. No secondary
-use, no residential component.
+`buildings/commercial/`. Single use: one shop, a pharmacy. No secondary use,
+no residential component.
 
 ## Hero/landmark status
 
@@ -34,9 +42,24 @@ met; no budget exception is claimed.
 24.0 x 16.0 m of wall. Including the roof, which overhangs on every side, the
 exported bounding box is 25.8 x 18.5 m in plan and 11.9 m tall to the top of
 the ridge sign; the ridge crest's end caps stand 0.04 m past each rake board.
-The middle pier projects 0.30 m in front of the wall line and
-the wall-hung air handler 0.55 m to the right of it; neither is inside the
-24.0 x 16.0 figure, so a placement footprint should use the bounding box.
+The middle pier projects 0.25 m in front of the wall line (`LOD0` - `LOD2`)
+and the lit plaque over the door 0.10 m in front of the pier; the side
+buttresses 0.30 m and the wall-hung air handler 0.55 m from the side walls.
+None is inside the 24.0 x 16.0 figure, so a placement footprint should use the
+bounding box.
+
+### What stands outside the wall line
+
+- **Front (street):** the middle pier, 2.8 m wide, 0.25 m proud, with the
+  entrance through its foot (the passage is open pavement, no step); the
+  plaque over the door, 0.35 m proud of the wall line at 3.45 - 4.65 m; the
+  roof's 1.2 m rake overhead. Nothing else on the ground: no steps, ramp,
+  canopy, bollards or planters.
+- **Sides:** two stone buttresses per side, 0.70 m wide and 0.30 m proud, on
+  the ground (`LOD0`/`LOD1` only); the air handler on the right side at
+  1.5 - 2.7 m, 0.55 m proud; the 0.9 m eaves overhead.
+- **Rear:** nothing on the ground; the maintenance door and the louvres are
+  in the wall plane. The 1.2 m rake overhead.
 
 ## Story height
 
@@ -48,16 +71,18 @@ floor -- the gable is roof space, lit through the curtain wall.
 
 ## Door leaf height
 
-2.25 m to the head of every leaf, inside the 2.0 - 2.4 m band, with no fanlight
-or transom light needed. The pharmacy's pair is 2.0 m wide overall (two 1.0 m
-leaves); the salon's and the barber's are single 1.0 m leaves; the maintenance
-door at the back is 1.0 m. Above each shopfront door the glazing continues to
-the 3.25 m head as a transom light, which is glazing rather than door.
+2.25 m to the head of every leaf, inside the 2.0 - 2.4 m band. The shop has
+one customer door, its main entrance: a pair 2.0 m wide overall (two 1.0 m
+leaves), centred on the street front. Above it a 1.0 m transom light runs to
+the 3.25 m head, glazing rather than door, behind a transom bar at 2.25 m, so
+the leaf height stays readable. The maintenance door at the back (service) is
+a 1.0 m single leaf, 2.25 m.
 
 ## Window sills
 
-The shopfront glazing starts at 0.35 m, above a kick panel; the side windows
-sit at 1.1 m, below the 1.4 m the catalog treats as chest height. The gable
+The display windows start at 0.35 m, above a kick panel, with a transom
+bar at the door's 2.25 m head line and their head at 3.25 m; the side
+windows sit at 1.1 m (head 2.5 m), below the 1.4 m the catalog treats as chest height. The gable
 curtain wall starts at 4.0 m, which is above the occupied floor and reads as
 clerestory, not as a window anyone stands at.
 
@@ -72,13 +97,14 @@ overhang, `lahikauppa_corner` at 1.5 m.
 
 ## Construction
 
-The exported shell is the union of eight kinds of closed solid: the wall ring,
-the roof, the ridge crest, the middle pier, the ridge sign and its stand, the
-wall-hung air handler and the roof stacks, plus four buttresses. Each is
+The exported shell is the union of nine kinds of closed solid: the wall ring,
+the roof, the ridge crest, the middle pier, the plaque over the door, the
+ridge sign and its stand, the wall-hung air handler and the roof stacks, plus
+four buttresses. Each is
 simple on its own; the union is what trims the wall tops into the roof slab
 and leaves the boundary of one empty volume.
 
-Four details are worth knowing before changing anything:
+Five details are worth knowing before changing anything:
 
 - **The wall ring's lid is two faces, not one.** Its rim follows the gable, so
   a single n-gon across it would not be planar. It is split at the two ridge
@@ -105,40 +131,64 @@ Four details are worth knowing before changing anything:
   crest and the cube so the union meets solid overlaps. `check_layout()` fails
   the build if a leg stands off the crest or outside the cube, if the crest's
   foot leaves the slab, or if a roof stack comes within 0.1 m of the crest.
+- **The entrance goes through the middle pier.** The front is corner pier
+  (1.6 m), display window (9.0 m), middle pier (2.8 m), display window,
+  corner pier; there are no party piers. The door unit (2.0 x 3.25 m, leaves
+  to 2.25 m) is cut into the wall at the front's centre and recessed 0.18 m
+  like the windows. The pier solid has a portal through its whole depth,
+  2.10 x 3.30 m, i.e. 50 mm clear of the door's reveal on each side and at
+  the head, so no pier face lies in the plane of a wall face; the 50 mm step
+  of wall reads as a rebate round the door inside the passage. The portal is
+  lined in the pier's own coursing turned round its corners and has no floor.
+  `check_layout()` fails the build if the door leaves the front's centre, if
+  the portal leaves less than 0.3 m of stone either side, or if the plaque
+  leaves the pier above the portal. The plaque runs back 0.10 m behind the
+  wall line on every tier, so at `LOD3`, where the pier is gone, it still
+  meets a solid overlap and stands 0.20 m proud of the bare wall.
+- **The sign boards carry the gable panels' outer jambs** (6.6 m and 17.4 m
+  along the front) as vertices on their top edge, since those no longer land
+  on a pier.
 
 ## Per-tier triangle counts
 
 | Tier | Triangles | Ceiling | Note |
 | --- | --- | --- | --- |
-| `LOD0` | 1,018 | 12,000 | far under the ceiling |
-| `LOD1` | 894 | 4,000 | far under the ceiling |
+| `LOD0` | 1,024 | 12,000 | far under the ceiling |
+| `LOD1` | 898 | 4,000 | far under the ceiling |
 | `LOD2` | 428 | 1,500 | under the ceiling |
-| `LOD3` | 348 | 500 | under the ceiling |
+| `LOD3` | 328 | 500 | under the ceiling |
 
 Every tier is under its ceiling, the first three far under, and nothing has
 been padded. The
 building is a rectangular box with a single unbroken gable over it: there are
 no dormers, no roof steps, no bays and no returns in the plan. What makes it
 read is texture and one large piece of massing, and the only geometry that
-earns its place is the opening reveals, the middle pier, the four side
-buttresses, the wall-hung air handler, the five roof stacks, the ridge crest
+earns its place is the opening reveals, the middle pier and its portal, the
+plaque over the door, the four side buttresses, the wall-hung air handler, the five roof stacks, the ridge crest
 and the sign's stand. The crest and the stand cost 110 triangles on every
 tier, most of them where the union cuts the four legs into the crest's top
 and the cube's underside. Adding triangles would buy nothing visible at any
 of the review distances below.
 
+Against the three-unit front this replaced (1,018 / 894 / 428 / 348), the two
+party piers, two single doors and two of the four sign boards went, and the
+portal through the pier and the plaque came in: +6, +4, 0 and -20.
+
 The tiers are genuinely distinct rather than four copies:
 
 - `LOD0` cuts every opening on every elevation, and the roof pipes are drums of
   eight sides.
-- `LOD1` keeps the front cut -- the shopfronts and the gable panels -- and
+- `LOD1` keeps the front cut -- the display windows, the door and the gable
+  panels -- and
   takes the side windows, the back door and the gable louvres flat. It also
   drops the pipes to four sides. This departs from the catalog default of
   cutting through `LOD1`: see the LOD review below for why.
-- `LOD2` takes the whole building flat and drops the three pipes.
-- `LOD3` also drops the two roof stacks and the middle pier's 0.30 m
-  projection. The pier is the same stone as the wall behind it, so what is
-  lost is a shadow line, not a colour.
+- `LOD2` takes every opening flat, the door included (the pier and its
+  portal stay, as massing), and drops the three pipes.
+- `LOD3` also drops the two roof stacks and the middle pier's 0.25 m
+  projection, portal included: the door stays, painted flat in the wall, and
+  the plaque stays over it. The pier is the same stone as the wall behind it,
+  so what is lost is a shadow line, not a colour.
 - The ridge crest and the sign's stand stay on every tier. The crest is the
   white line along the roofline, which Appearance Across LODs keeps, and
   without its legs the sign would float over the ridge.
@@ -164,6 +214,12 @@ camera, framing, lighting and variant.
 - **120 m, `LOD2` vs `LOD3`:** the two roof stacks go and the middle pier
   flattens. Neither is separable from `LOD0` at that size.
 
+The single-shop front was reviewed the same way, before against after:
+`LOD0`/`LOD1` at 30 and 40 m, `LOD1`/`LOD2` at 65 and 75 m, `LOD2`/`LOD3` at
+115 and 125 m, front and oblique, noon. The portal reads as a dark recess at
+the pier's foot through `LOD2`; at `LOD3` the flat door, the plaque and the
+two green boards keep the entrance and the window rhythm legible.
+
 One change was found and fixed rather than accepted: the pipes originally
 stopped at `LOD0`, and at the 35 m switch three dark posts disappearing off the
 ridge was the one thing the comparison caught. They now carry to `LOD1`.
@@ -179,11 +235,11 @@ taken here.
 
 ## Interior geometry
 
-`scripts/validate_asset.py`'s sampled test reports 1 of 1,018 triangles hidden
-at `LOD0` (0.1 %) and 2 of 894 at `LOD1`, 0.0 m2 of it vertical, with nothing
-at all at `LOD2` or `LOD3`. They are slivers the exact boolean leaves where the middle pier meets
-the front wall and where a gable panel's raking head meets the rake, each
-smaller than a centimetre across. They are inspection candidates, not proof
+`scripts/validate_asset.py`'s sampled test reports 1 of 1,024 triangles hidden
+at `LOD0` (0.1 %), 1 of 898 at `LOD1`, none at `LOD2` and 1 of 328 at `LOD3`,
+0.0 m2 of it vertical. They are slivers the exact boolean leaves where a gable
+panel's raking head meets the rake (front) and in the rear gable's coursing
+(`LOD3`), each smaller than a centimetre across. They are inspection candidates, not proof
 either way; nothing of area, and no buried partition, was found. The wall ring
 is a single closed solid capped with a floor and a two-plane lid, so there is
 no interior to bury anything in.
@@ -201,8 +257,10 @@ What the shell does not model, and what carries the feature instead:
   catalog default, for the reason recorded under LOD review.
 - **The roof is textured at 13 texels/metre**, a fifth of the density used at
   eye level, so a shingle reads as a tab and a course rather than as an edge.
-- **The three tenants share one emissive factor**, because their shopfront
-  bays share atlas regions and therefore UVs.
+- **One emissive factor for the whole shop**: the two display windows share
+  the shopfront band, so they cannot be lit separately.
+- **The entrance has no step, ramp or canopy.** The pavement runs level
+  through the portal to the threshold, and the 1.2 m rake overhangs it.
 - **The sign's stand is four plain legs.** No rails, braces or fixing plates:
   at 80 mm they span under three pixels at the 35 m switch, and anything
   finer is open framework that no texture could carry.
@@ -232,7 +290,7 @@ carries the split-face coursing, the shopfront sections, the board joints and
 the shingles (see Supersampled atlas, normal map and padding below).
 
 **Texel density.** 64 texels/metre on everything a customer stands in front
-of -- the stone, the shopfronts, the doors, the side windows, the soffit and
+of -- the stone, the display windows, the doors, the side windows, the soffit and
 the sign boards. Two documented deviations:
 
 - the gable curtain wall at 48, because it is 4 m above the fascia and never
@@ -262,9 +320,10 @@ which is the largest unbroken run of stone on the building.
 
 Opening reveals and the returns of the buttresses and the middle pier sample
 the stone band too, unrolled round their corner, rather than taking a flat
-swatch. Only three flat swatches remain: for the caps the union buries, for
-the sign box's lid and its steel underside and legs, and for the painted
-returns of the roof plant.
+swatch. The portal through the middle pier is lined the same way. Only three
+flat swatches remain: for the caps the union buries, for the sign box's lid
+(and the plaque's edges) and its steel underside and legs, and for the
+painted returns of the roof plant.
 
 The ridge crest is white board like the fascia, so it samples the soffit
 band's 24 fascia rows. Its sides and end caps map the solid's whole height,
@@ -274,7 +333,15 @@ cut the long sides off above it. That stretches the rows about 1.8 times in
 v, on a plain white face. The top takes the middle of the rows, clear of the
 lines along both edges. The sign's four faces share one 1.6 x 1.6 m region
 (`LOGO`, 102 x 102 px); the whole face is clear of the roof, so the mark is
-centred on it between a white edge top and bottom.
+centred on it between a white edge top and bottom. The plaque over the door
+takes the same region on its 1.2 m face, so it is drawn at 85 texels/metre
+rather than 64: a third deviation, sharper rather than blurrier, on one small
+sign.
+
+The two sign boards are 9.0 x 0.75 m each, 576 x 48 px at 64 texels/metre,
+one region per board (`FASCIA`). To make room for them the roof stacks'
+regions and the three flat swatches moved to the free corner of the upper
+shelf; the single-door region of the old three-unit front is gone.
 
 **Padding** is 6 px everywhere, clamped for the non-repeating bands and the
 regions, periodic for the stone band. **Pending:** mipmapped appearance has
@@ -289,15 +356,17 @@ letterforms are stroked centrelines defined in that file, so no font file is
 read and the artwork carries no third party's licence.
 
 The pharmacy mark is this asset's own device: a bold cross with a broken ring,
-four short arcs sitting in the quadrants between its arms. The shop names are
-generic trade words rather than business names.
+four short arcs sitting in the quadrants between its arms. The shop is named
+once, by the generic trade word "PHARMACY" (0.47 m capitals, 3.7 m long,
+centred on the left board), not by a business name. The right board carries
+the mark alone. The glyph table holds only the letters that word needs.
 
 ### Supersampled atlas, normal map and padding
 
 - **Rasterised by `scripts/atlas.py` at 4 x 4 samples per pixel.** `facade_atlas.py` paints in
   final-pixel coordinates and the canvas stores the samples; they are
   box-filtered down in linear light, so an edge at a fractional position lands
-  partway across its pixel and the sign boards' lettering and marks come out anti-aliased like everything else, instead of snapping to it. The emission mask
+  partway across its pixel and the sign board's lettering and the marks come out anti-aliased like everything else, instead of snapping to it. The emission mask
   carries the same coverage as grey at pane edges.
 - **The normal map is derived from a painted height channel** in metres by
   `atlas.normal_map()`, OpenGL convention. The relief is physical, not
@@ -351,12 +420,12 @@ generic trade words rather than business names.
 - **Splash goes on the shopfront's kick panels instead**, whose band starts at
   the pavement.
 - **Elsewhere:** the shingle roof's long runs, dirtier eave course and
-  chalking toward the ridge; kicked-up dirt at the shop doors' feet and hand
-  grime round their pulls; the maintenance door's foot and handle; the staff
+  chalking toward the ridge; kicked-up dirt at the shop door's foot and hand
+  grime round its pulls; the maintenance door's foot and handle; the staff
   window's bottom rail with runs down the stone below it; the curtain wall's
   sill member; runs down the air handler, louvre and vent box.
-- **Kept clean:** the four shop boards and the ridge sign, which their tenants
-  keep, and every pane.
+- **Kept clean:** the two sign boards, the plaque and the ridge sign, which
+  the shop keeps, and every pane.
 - The level was chosen on `rintamamiestalo_porch` (see its notes); this
   building takes the same helpers with its own layout.
 - The albedo and ORM PNGs are larger on disk (5 files, 2.3 MB against 2.1 MB before), as the noise
@@ -365,8 +434,8 @@ generic trade words rather than business names.
 ## Glazing treatment
 
 Measured on the finished albedo over the emission mask's neutral glazing:
-**sRGB 60.2, linear 0.042**, and 0.25x the 99th percentile of everything else
-on the sheet -- comfortably inside Style Direction's 45 - 70 band and well
+**sRGB 61, linear 0.042**, and 0.25 - 0.26x the trim (validator, all four
+colours) -- comfortably inside Style Direction's 45 - 70 band and well
 below the trim around it. Roughness 0.08, metallic 0, from
 `scripts/glazing.ROUGHNESS`.
 
@@ -374,17 +443,17 @@ Painted with `scripts/glazing.py`: `rooms()` is called on the finished albedo
 after the id/shade/AO pass, so every pane gets its own level, a vertical
 falloff and, on rather more than half of them, a lit patch of far wall. No
 departure from the default band, and no baked reflection or sky gradient. The
-shopfront glazing and the gable curtain wall are both handled by it; the
+two display windows and the gable curtain wall are all handled by it; the
 glazing bars divide panes, not rooms, so a run of shopfront reads as one
 interior.
 
-The door units are painted first, with a wider merge. A door is one opening
-into one shop, so its two leaves, their vision panels and the transom above
-them have to be one room; the default merge bridges a glazing bar but not a
-pair of 0.10 m meeting stiles, and left to it the pharmacy's two leaves came
-out at different levels with a lit wall behind one of them.
+The door unit is painted first, with a wider merge. It is one opening into
+the shop, so its two leaves, their vision panels and the transom above them
+have to be one room; the default merge bridges a glazing bar but not a pair of
+0.10 m meeting stiles, and left to it the two leaves came out at different
+levels with a lit wall behind one of them.
 
-One thing worth recording for anyone extending this asset: the lit sign boards
+One thing worth recording for anyone extending this asset: the lit signs
 are written into the emission mask in a **cool** white, not a neutral one.
 Downstream the mask is read as glazing wherever it is bright and neutral, so a
 neutral white board would be measured against the glazing band and dragged the
@@ -402,8 +471,8 @@ nor the glazing changes:
 - `red_stone` -- muted red-brown
 - `brown_stone` -- dark grey-brown
 
-The stone changes and the roof and the white move slightly with it; the shop
-signs are the centre's identity and are the same green and the same white in
+The stone changes and the roof and the white move slightly with it; the
+pharmacy's signs are its identity and are the same green and the same white in
 every colour. Four rather than the low-rise default of three to six: this is a
 small-scale building by Color & Material Variants' test, and four covers the
 range without any two reading as the same building twice.
@@ -420,11 +489,16 @@ retained at zero factor. Verified on reimport of all four tiers.
 
 The mask marks:
 
-- **glazing**, in neutral grey, each pane lit as a room (see Room-lit panes below): the four shopfronts, their door transoms and
-  door vision panels, and the two gable curtain-wall panels;
-- **luminous fixtures**, in their own colours: the four lit sign boards on the
-  fascia and all four faces of the cube on its stand over the ridge, whose lid
-  glows faintly in the field's green; its steel underside and legs are black.
+- **glazing**, in neutral grey, each pane lit as a room (see Room-lit panes below): the two display windows, the door's transom
+  and vision panels, and the two gable curtain-wall panels;
+- **luminous fixtures**, in their own colours, all of them the pharmacy's
+  own: the two green sign boards over the windows (`FASCIA`, the name on the
+  left, the mark on the right), the plaque over the door and all four faces
+  of the cube on its stand over the ridge (both `LOGO`), whose lid and the
+  plaque's edges glow faintly in the field's green; the cube's steel
+  underside and legs are black. No luminous region was added for the single
+  shop: the plaque reuses `LOGO`, and two of the four old board regions were
+  removed.
     The cube is square in plan so its four faces can share one atlas region;
     `check_layout()` fails the build if its depth stops matching its width, or
     if it grows past the roof it stands on.  The mark is symmetric about its
@@ -444,10 +518,9 @@ rather than taking the catalog's warmer default.
 
 **Control granularity.** Per placed building, not per window. Every shopfront
 bay and both gable panels reuse the same atlas regions, so their UVs are
-shared and a consumer cannot light one unit and leave another dark without
-splitting the material. Three tenants behind one emissive factor is the
-limitation; it is inherent to the shared UVs and would cost a second material
-slot and a second set of regions to lift.
+shared, and the signs share the glazing's one emissive factor: the consumer
+cannot light the signs and leave the shop dark without splitting the
+material. For one shop that is the expected granularity.
 
 `variants.png` shows all four colours at `LOD0`, a labelled day row with
 emission off above a night row at factor 1.0, camera, framing, exposure and
@@ -459,7 +532,7 @@ illumination of the ground and of anything standing near it depends on the
 consumer's lighting or GI, or on separately placed lights.
 
 **Pending:** off/on behaviour has been checked on reimported tiers at `LOD0`
-only. Oblique and distant filtering of the mask, and its behaviour across the
+only (and in the single-shop review's night renders, `LOD0` at 25 m). Oblique and distant filtering of the mask, and its behaviour across the
 `LOD` switches, have not been reviewed; a `LOD0` sheet cannot validate those.
 
 ### Room-lit panes
@@ -501,16 +574,20 @@ packed.
 
 ### Reproducing
 
+From the repository root:
+
 ```bash
-python3 facade_atlas.py export          # bake the seven textures first
-blender --background --python build.py  # geometry, export, preview, variants
+python3 buildings/commercial/liikekeskus_pharmacy/facade_atlas.py export   # the seven textures first
+blender --background buildings/commercial/liikekeskus_pharmacy/source.blend \
+    --python buildings/commercial/liikekeskus_pharmacy/build.py           # geometry, export, previews, sidecar
 ```
 
 `facade_atlas.py` owns every number the mesh and the atlas share, and
 `build.py` imports it rather than repeating them, so a change to a bay
 position or a band row cannot leave the UVs pointing at the wrong artwork.
 `build.check_layout()` runs before any geometry and fails on a gap in the
-front's bays, a door outside its bay, a leaf outside the 2.0 - 2.4 m band, a
+front's bays, an entrance off the front's centre or too wide for the middle
+pier, a plaque off the pier, a leaf outside the 2.0 - 2.4 m band, a
 gable panel whose head is through the roof or across the band's wrap line, and
 on any region whose pixel size does not match the metres it is stretched over.
 
@@ -523,6 +600,16 @@ and emission bindings. No tangents are exported; a glTF consumer generates
 MikkTSpace tangents when none are given, as Blender's importer does. The export
 still writes every tier lit and rewrites its emission factor to zero, and
 strips the placeholder `bufferView` keep-originals leaves.
+
+### Facts sidecar
+
+`export/liikekeskus_pharmacy.model.json`, schema version 1, glTF frame
+(metres, +Y up, +Z street front, origin at the pivot): bounds
+`[-12.9, 0, -9.24]` - `[12.9, 11.925, 9.24]`; footprint the 24 x 16 m wall
+ring; one storey, floor at 0, 384 m2; 0 dwellings; hero false. Two doors:
+`pharmacy`, kind `entrance`, main, at `[0, 0, 8]` facing `+Z`, 2.0 x 2.25 m,
+on the front's centre line; `maintenance`, kind `service`, at `[1, 0, -8]`
+facing `-Z`, 1.0 x 2.25 m. No other door.
 
 ## Review status
 
@@ -562,6 +649,17 @@ Checked here, in Blender:
   shortened to 0.25 m. `scripts/validate_asset.py` reports no failures or
   warnings.
 
+- The single-shop redesign, before against after with
+  `scripts/review_asset.py` and `scripts/review_compare.py` (identical
+  settings and bounds): the six orthographic/aerial views; `LOD0` front and
+  oblique at 15 and 25 m; the tier pairs at 30/40, 65/75 and 115/125 m; the
+  night state at 25 m; and every colour by day and by night at 25 m through
+  `--texture-dir`. The front reads as one pharmacy with one door; no trace of
+  the old salon and barber boards, doors or party piers is left by day or
+  by night, in any colour. `scripts/validate_asset.py` reports no failures;
+  its one warning is the sidecar's dirty source, pending a rewrite from the
+  committed tree.
+
 Pending, and outside this repository:
 
 - Mipmapped and anisotropic appearance at and beyond the switch distances, and
@@ -572,8 +670,9 @@ Pending, and outside this repository:
 
 ## Tooling versions
 
-Blender **5.2.2 LTS** (hash `d13f752e3b9c`, built 2026-09-15), at or above
-the 5.2 floor `build.py` asserts. numpy 2.5.3 and Pillow for the bake.
+Blender **5.3.0** (hash `02f0899d78e3`, built 2026-11-11), at the 5.3 floor
+`scripts/asset_build.py` asserts for every `build.py`. numpy and Pillow for the
+bake.
 
 The Blender MCP addon was available in this session but was **not** used to
 build this asset: the geometry, the export and every review render were run
@@ -581,13 +680,28 @@ headless, `blender --background --python build.py` and
 `blender -b -P scripts/review_asset.py`, so no addon version applies to the
 result. Recorded as a known-good diagnostic, not a pin: nobody has to match it.
 
-`source.blend` was saved by 5.2.2, which is why the floor is 5.2: Blender
-opens older files, not newer ones. The `.glb` and PNG exports are unaffected.
+`source.blend` was saved by 5.3.0, the catalog floor: Blender opens older
+files, not newer ones. The `.glb` and PNG exports are unaffected.
 
 - **CPython 3.14.7 with numpy 2.5.3, scipy 1.18.1 and Pillow 12.3.0** for the
   texture export.
 
 ## Revision log
+
+- **2026-11-21 — one shop, one door.** The three-unit front (a pharmacy
+  between a beauty salon and a barber, three customer doors, four sign boards)
+  became one pharmacy: two 9 m display windows either side of the middle
+  pier, the party piers gone and the corner piers 1.6 m instead of 1.4 m; one
+  door, a glazed pair under a transom, through a portal in the foot of the
+  middle pier on the front's centre line, with a lit plaque carrying the mark
+  above it; two green boards naming the shop once and carrying the mark once.
+  The salon's and barber's doors, boards, lettering and glyphs are gone, and
+  so is the single-door atlas region. Bounds, pivot, storeys, the rear
+  service door, the roof, the ridge sign and the four colours are unchanged.
+  Triangles 1,024 / 898 / 428 / 328 (were 1,018 / 894 / 428 / 348). Every
+  PNG, the GLBs, the sidecar (one entrance, main, at the centre),
+  `source.blend` (now saved by 5.3.0), `preview.png` and `variants.png`
+  changed.
 
 - **2026-09-25 — ridge crest and sign stand.** A white crest now caps the
   ridge from rake to rake, and the sign stands on it on four steel legs, 0.25 m

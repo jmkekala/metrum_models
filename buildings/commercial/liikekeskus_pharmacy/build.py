@@ -13,25 +13,25 @@ or headless, which builds, exports, and renders preview.png and variants.png:
 Regenerate the textures first (python3 facade_atlas.py export): the UVs index
 into the atlas, and the renders read it.
 
-A small suburban shopping centre of three units under one roof: a pharmacy
-with the middle half of the frontage, a beauty salon in the left quarter and a
-barber in the right. The plan is a 24 x 16 m rectangle and the roof is a single
+A free-standing neighbourhood pharmacy in a car park: one shop under one
+roof, behind one door. The plan is a 24 x 16 m rectangle and the roof is a single
 gable whose ridge runs front to back, so the whole of the front is one wide
 gable end. It overhangs 1.2 m at the rakes and 0.9 m at the eaves, in white
 boarded soffit behind a white fascia, and that deep white A over coursed stone
 is what the type is recognised by.
 
-The front is four 4 m shopfront bays between stone piers. The pharmacy's pair
-of doors is in the second quarter rather than on the centre line, the other two
-units' doors are centred in their own bays, and above the
-sign boards the gable opens into two raking curtain-wall panels either side of
-a 2.8 m stone pier that runs unbroken from the pavement to the apex. A white
-crest caps the ridge from rake to rake, and the centre's own sign stands on it
-above the pier, a lit cube on four steel legs.
+The front is two 9 m display windows either side of a 2.8 m stone pier that
+runs from the pavement to the apex. The shop's one door goes through the foot
+of that pier, on the building's centre line, under a lit plaque with the
+pharmacy mark; a green sign board over each window carries the name once and
+the mark once. Above the boards the gable opens into two raking curtain-wall
+panels either side of the pier. A white crest caps the ridge from rake to
+rake, and the pharmacy's sign stands on it above the pier, a lit cube on four
+steel legs.
 
 Construction is a set of closed solids unioned with Blender's exact boolean:
-the wall ring, the roof, the ridge crest, the middle pier, the sign and its
-stand, the wall-hung air handler and the roof stacks. Each is simple on its
+the wall ring, the roof, the ridge crest, the middle pier, the plaque over the
+door, the sign and its stand, the wall-hung air handler and the roof stacks. Each is simple on its
 own; the union is what
 trims the wall tops into the roof and leaves the boundary of one empty volume,
 so interior geometry cannot occur. The wall ring is capped at the top by two
@@ -108,16 +108,19 @@ def gglass(s):
     return min(L.GABLE_HEAD_CAP, gunder(s) - L.GABLE_HEAD_DROP)
 
 
-# The five piers of the front, and which of their vertical edges carry the
+# The three piers of the front, and which of their vertical edges carry the
 # shopfront head as a breakpoint: the two corner piers meet a side wall that
 # has no such break, and putting one there would leave a T-junction.
-PIER_BREAK = {0: (False, True), 1: (True, True), 2: (True, True),
-              3: (True, True), 4: (True, False)}
+PIER_BREAK = {i: (i > 0, i < len(L.PIERS) - 1) for i in range(len(L.PIERS))}
+MID_PIER = next(i for i, (a, b) in enumerate(L.PIERS)
+                if a < L.ENTRANCE_S < b)
 
-BAY_OF = {name: (a, b) for name, a, b in L.BAYS}
-DOOR_AT = {}
-for _name, _s, _n in L.DOORS:
-    DOOR_AT.setdefault(_name, []).append((_s, _n))
+# The entrance, as a rectangle in the front's (s, z), and the portal through
+# the middle pier round it.
+DOOR_RECT = (L.ENTRANCE_S - L.ENTRANCE_W / 2.0, L.ENTRANCE_S + L.ENTRANCE_W / 2.0,
+             0.0, L.Z_HEAD)
+PORTAL_RECT = (L.ENTRANCE_S - L.PORTAL_W / 2.0, L.ENTRANCE_S + L.PORTAL_W / 2.0,
+               0.0, L.PORTAL_HEAD)
 
 
 def opening_mode(level, where):
@@ -270,8 +273,8 @@ def uv_shop(fr, s0, s1=None, flip=False):
     return lambda co: ((fr.s_of(co) - s0) * PPM, L.SHOP_Y0 + co.z * PPM)
 
 
-def uv_door(fr, s0, leaves):
-    x, y, w, h = L.DOOR_DOUBLE if leaves == 2 else L.DOOR_SINGLE
+def uv_door(fr, s0):
+    x, y, w, h = L.DOOR_DOUBLE
     return lambda co: (x + (fr.s_of(co) - s0) * PPM, y + co.z * PPM)
 
 
@@ -345,6 +348,13 @@ def uv_eave_fascia(x):
 
 def uv_rake_board(co):
     return (co.x / COS * PPM, L.SOF_Y0 + (co.z - L.roof_under(co.x)) * PPM)
+
+
+def uv_plaque(x0, z0):
+    """The plaque over the door: LOGO squeezed onto DOOR_SIGN's square."""
+    x, y, w, h = L.LOGO
+    sx, sz = w / L.DOOR_SIGN["w"], h / L.DOOR_SIGN["h"]
+    return lambda co: (x + (co.x - x0) * sx, y + (co.z - z0) * sz)
 
 
 def uv_logo(axis, origin):
@@ -534,26 +544,17 @@ def gable_apex(B, fr):
 
 
 # --------------------------------------------------------------- elevations
-def bay_runs(name):
-    """One shopfront bay, split into glazed runs and door units."""
-    s0, s1 = BAY_OF[name]
-    runs, cur = [], s0
-    for ds, n in sorted(DOOR_AT.get(name, [])):
-        a, b = ds - L.DOOR_W[n] / 2.0, ds + L.DOOR_W[n] / 2.0
-        if a - cur > EPS:
-            runs.append((cur, a, 0))
-        runs.append((a, b, n))
-        cur = b
-    if s1 - cur > EPS:
-        runs.append((cur, s1, 0))
-    return runs
-
-
 def build_front(B, fr, level):
     mode = opening_mode(level, "front")
+    d0, d1, _dz0, dz1 = DOOR_RECT
     for i, (a, b) in enumerate(L.PIERS):
         lb, rb = PIER_BREAK[i]
-        poly = [(a, 0.0), (b, 0.0)]
+        poly = [(a, 0.0)]
+        if i == MID_PIER:
+            # the entrance stands on the ground, so it is a notch in the
+            # pier's outline rather than a hole in it
+            poly += [(d0, 0.0), (d0, dz1), (d1, dz1), (d1, 0.0)]
+        poly.append((b, 0.0))
         if rb:
             poly.append((b, L.Z_HEAD))
         poly += [(b, L.Z_FASCIA), (a, L.Z_FASCIA)]
@@ -561,29 +562,33 @@ def build_front(B, fr, level):
             poly.append((a, L.Z_HEAD))
         fill_region(B, fr, poly, [], uv_stone(fr, 0.0))
 
+    # The door unit, recessed like the display windows while they are.
+    door = rect_poly(DOOR_RECT)
+    out = 0.0
+    if mode == "cut":
+        reveal(B, fr, door, L.GLAZE_DEPTH, skip_z=0.0)
+        out = -L.GLAZE_DEPTH
+    B.face([fr.P(s, z, out) for s, z in door], uv_door(fr, d0))
+
+    # The gable panels' outer jambs stand over the display windows' sign
+    # boards, so the board's top edge carries them as breakpoints.
+    panel_edges = [v for p in L.GABLE_PANELS for v in p]
     for name, a, b in L.BAYS:
-        runs = bay_runs(name)
-        # The shopfront head is one line shared by three things: the sign
-        # board above it, the opening's head reveal, and the tops of the
-        # glazed runs and door units below. They all have to break at the same
-        # places or the run boundaries land in the middle of somebody's edge.
-        joints = [r[0] for r in runs[1:]]
+        tops = sorted(v for v in panel_edges if a + EPS < v < b - EPS)
         B.face([fr.P(s, z) for s, z in
-                [(a, L.Z_HEAD)] + [(j, L.Z_HEAD) for j in joints]
-                + [(b, L.Z_HEAD), (b, L.Z_FASCIA), (a, L.Z_FASCIA)]],
+                [(a, L.Z_HEAD), (b, L.Z_HEAD), (b, L.Z_FASCIA)]
+                + [(v, L.Z_FASCIA) for v in reversed(tops)]
+                + [(a, L.Z_FASCIA)]],
                uv_fascia(fr, name, a))
-        poly = ([(a, 0.0), (b, 0.0), (b, L.Z_HEAD)]
-                + [(j, L.Z_HEAD) for j in reversed(joints)] + [(a, L.Z_HEAD)])
+        poly = rect_poly((a, b, 0.0, L.Z_HEAD))
         out = 0.0
         if mode == "cut":
             reveal(B, fr, poly, L.GLAZE_DEPTH, skip_z=0.0)
             out = -L.GLAZE_DEPTH
-        for i, (r0, r1, leaves) in enumerate(runs):
-            after_door = any(r[2] for r in runs[i + 1:])
-            fn = (uv_door(fr, r0, leaves) if leaves
-                  else uv_shop(fr, r0, r1, flip=after_door))
-            B.face([fr.P(s, z, out)
-                    for s, z in rect_poly((r0, r1, 0.0, L.Z_HEAD))], fn)
+        # Each window's lights are counted from its pier end, so the two
+        # mirror each other about the entrance.
+        B.face([fr.P(s, z, out) for s, z in poly],
+               uv_shop(fr, a, b, flip=b <= L.ENTRANCE_S))
 
     breaks = [v for a, b in L.PIERS for v in (a, b)]
     gable_band(B, fr, L.GABLE_SILL, Z_CUT, notches=L.GABLE_PANELS,
@@ -753,32 +758,45 @@ PIER_IN = 0.10              # and how far it sinks into it, so no face is
 
 
 def mid_pier():
-    """The stone pier under the apex, 2.8 m wide and unbroken to the top.
+    """The stone pier under the apex, 2.8 m wide, from the pavement to the
+    top, with the shop's entrance through its foot.
 
     Its face is three courses, cut where the stone band wraps, so the coursing
     runs on from the wall it stands against instead of restarting. Every other
     face of the solid carries the same two breakpoints, or the face edges meet
     the front's in their middles.
+
+    The portal is an opening through the whole depth of the solid, lined in
+    the pier's own coursing turned round its corners, PORTAL_REBATE clear of
+    the door's reveal on every side so no face of the pier lies in the plane
+    of one of the wall's. It has no floor: the passage is pavement.
     """
     B = Builder()
-    a, b = L.PIERS[2]
+    a, b = L.PIERS[MID_PIER]
     x0, x1 = a - HX, b - HX
+    p0, p1, _pz0, pz1 = PORTAL_RECT
+    xp0, xp1 = p0 - HX, p1 - HX
     y_out, y_in = -HY - PIER_OUT, -HY + PIER_IN
     fr = Frame((-HX, -HY), (HX, -HY))          # so the coursing lines up
+    face = Frame((-HX, y_out), (HX, y_out))    # the pier's own face
 
     def top(x):
         return L.roof_under(x) + L.WALL_INTO_ROOF
 
-    for lo, hi in ((0.0, CUT), (CUT, Z_CUT)):
-        fill_region(B, fr, rect_poly((a, b, lo, hi)), [], uv_stone(fr, lo),
-                    out=PIER_OUT)
+    portal = [(p0, 0.0), (p0, pz1), (p1, pz1), (p1, 0.0)]
+    fill_region(B, fr, [(a, 0.0)] + portal + [(b, 0.0), (b, CUT), (a, CUT)],
+                [], uv_stone(fr, 0.0), out=PIER_OUT)
+    fill_region(B, fr, rect_poly((a, b, CUT, Z_CUT)), [], uv_stone(fr, CUT),
+                out=PIER_OUT)
     fill_region(B, fr, [(a, Z_CUT), (b, Z_CUT), (b, top(x1)), (HX, top(0.0)),
                         (a, top(x0))], [], uv_stone(fr, Z_CUT), out=PIER_OUT)
+    reveal(B, face, rect_poly(PORTAL_RECT), PIER_OUT + PIER_IN, skip_z=0.0)
 
     blank = uv_patch("blank")
-    B.face([(x0, y_in, 0.0), (x1, y_in, 0.0), (x1, y_in, CUT),
-            (x1, y_in, Z_CUT), (x1, y_in, top(x1)), (0.0, y_in, top(0.0)),
-            (x0, y_in, top(x0)), (x0, y_in, Z_CUT), (x0, y_in, CUT)], blank)
+    fill_region(B, fr, [(a, 0.0)] + portal
+                + [(b, 0.0), (b, CUT), (b, Z_CUT), (b, top(x1)), (HX, top(0.0)),
+                   (a, top(x0)), (a, Z_CUT), (a, CUT)], [], blank,
+                out=-PIER_IN)
     for x, s_edge, sign in ((x0, a, -1.0), (x1, b, 1.0)):
         for lo, hi, base in ((0.0, CUT, 0.0), (CUT, Z_CUT, CUT),
                              (Z_CUT, top(x), Z_CUT)):
@@ -787,8 +805,33 @@ def mid_pier():
     for xa, xb in ((x0, 0.0), (0.0, x1)):
         B.face([(xa, y_in, top(xa)), (xb, y_in, top(xb)),
                 (xb, y_out, top(xb)), (xa, y_out, top(xa))], blank)
-    B.face([(x0, y_in, 0.0), (x0, y_out, 0.0), (x1, y_out, 0.0),
-            (x1, y_in, 0.0)], blank)
+    for xa, xb in ((x0, xp0), (xp1, x1)):         # the portal's two feet
+        B.face([(xa, y_in, 0.0), (xa, y_out, 0.0), (xb, y_out, 0.0),
+                (xb, y_in, 0.0)], blank)
+    return B
+
+
+def door_sign(level):
+    """The lit plaque with the pharmacy mark, over the entrance.
+
+    It stands DOOR_SIGN["out"] proud of the pier's face, or of the wall's
+    where the pier has gone flat, and runs back to PIER_IN behind the wall
+    line either way, so the union always meets a solid overlap.
+    """
+    B = Builder()
+    w, h = L.DOOR_SIGN["w"], L.DOOR_SIGN["h"]
+    x0, x1 = L.ENTRANCE_S - HX - w / 2.0, L.ENTRANCE_S - HX + w / 2.0
+    z0, z1 = L.DOOR_SIGN["z0"], L.DOOR_SIGN["z0"] + h
+    face = -HY - (PIER_OUT if pier_kept(level) else 0.0)
+    y0, y1 = face - L.DOOR_SIGN["out"], -HY + PIER_IN
+    side, blank = uv_patch("sign_side"), uv_patch("blank")
+    B.face([(x0, y0, z0), (x1, y0, z0), (x1, y0, z1), (x0, y0, z1)],
+           uv_plaque(x0, z0))
+    B.face([(x1, y1, z0), (x0, y1, z0), (x0, y1, z1), (x1, y1, z1)], blank)
+    B.face([(x0, y1, z0), (x0, y0, z0), (x0, y0, z1), (x0, y1, z1)], side)
+    B.face([(x1, y0, z0), (x1, y1, z0), (x1, y1, z1), (x1, y0, z1)], side)
+    B.face([(x0, y0, z1), (x1, y0, z1), (x1, y1, z1), (x0, y1, z1)], side)
+    B.face([(x0, y1, z0), (x1, y1, z0), (x1, y0, z0), (x0, y0, z0)], side)
     return B
 
 
@@ -973,7 +1016,8 @@ def build_lod(level):
     # along the roofline, and without its legs the sign would float.
     parts = [to_object(roof(), "tmp_roof"), to_object(crest(), "tmp_crest"),
              to_object(sign_stand(), "tmp_stand"),
-             to_object(sign_box(), "tmp_sign")]
+             to_object(sign_box(), "tmp_sign"),
+             to_object(door_sign(level), "tmp_door_sign")]
     if pier_kept(level):
         parts.append(to_object(mid_pier(), "tmp_pier"))
     if ahu_kept(level):
@@ -1024,11 +1068,21 @@ def check_layout():
     for (a0, a1), (b0, b1) in zip(spans, spans[1:]):
         if abs(a1 - b0) > EPS:
             bad.append("gap or overlap on the front at %.3f m" % a1)
-    for name, s, n in L.DOORS:
-        a, b = BAY_OF[name]
-        w = L.DOOR_W[n]
-        if s - w / 2.0 < a - EPS or s + w / 2.0 > b + EPS:
-            bad.append("the %s door runs outside its bay" % name)
+    a, b = L.PIERS[MID_PIER]
+    p0, p1, _z0, pz1 = PORTAL_RECT
+    if p0 - a < 0.3 - EPS or b - p1 < 0.3 - EPS:
+        bad.append("the portal leaves the middle pier less than 0.3 m of stone "
+                   "either side")
+    if abs(L.ENTRANCE_S - HX) > EPS:
+        bad.append("the entrance is %.2f m off the front's centre"
+                   % (L.ENTRANCE_S - HX))
+    sw = L.DOOR_SIGN["w"]
+    if (L.DOOR_SIGN["z0"] < pz1 + 0.1 or L.ENTRANCE_S - sw / 2.0 < a + 0.2
+            or L.ENTRANCE_S + sw / 2.0 > b - 0.2):
+        bad.append("the plaque over the door is not on the pier above the "
+                   "portal")
+    if abs(L.DOOR_SIGN["w"] - L.DOOR_SIGN["h"]) > EPS:
+        bad.append("the plaque is not square; it takes the square LOGO region")
     if not 2.0 <= L.Z_LEAF <= 2.4:
         bad.append("door leaf %.2f m is outside the 2.0 - 2.4 m band"
                    % L.Z_LEAF)
@@ -1043,8 +1097,7 @@ def check_layout():
                        "which its region cannot straddle")
     # region pixel sizes against the metres they are stretched over
     for rect, size, ppm, what in (
-            (L.DOOR_DOUBLE, (L.DOOR_W[2], L.Z_HEAD), PPM, "double door"),
-            (L.DOOR_SINGLE, (L.DOOR_W[1], L.Z_HEAD), PPM, "single door"),
+            (L.DOOR_DOUBLE, (L.ENTRANCE_W, L.Z_HEAD), PPM, "double door"),
             (L.SIDE_WINDOW, L.item_size_m("side_window"), PPM, "side window"),
             (L.MAINT_DOOR, L.item_size_m("maint_door"), PPM, "maintenance door"),
             (L.LOUVRE, L.LOUVRE_WH, PPM, "gable louvre"),
@@ -1106,17 +1159,15 @@ def facts():
 
     The footprint is the 24 x 16 m wall ring; the middle pier and the side
     buttresses are relief applied to it, and the air handler hangs on it.
-    Every shopfront door is given on the front wall's plane, though the
-    glazing stands GLAZE_DEPTH back in its bay. A leaf runs from the pavement
-    to Z_LEAF, under a transom light. The pharmacy's pair is the main door:
-    the unit with half the frontage. One storey; the gable is roof space.
+    The shop's one door, its main entrance, is given on the front wall's
+    plane, though the door stands GLAZE_DEPTH back in the portal through the
+    middle pier. Its pair of leaves runs from the pavement to Z_LEAF, under a
+    transom light. One storey; the gable is roof space.
     """
     front = ((-HX, -HY), (HX, -HY))
     rear = ((HX, HY), (-HX, HY))
-    ids = {"pharmacy_left": "pharmacy", "salon": "salon", "barber": "barber"}
-    doors = [model_facts.wall_door(ids[bay], "entrance", *front, s, 0.0, L.DOOR_W[n],
-                                   L.Z_LEAF, main=bay == "pharmacy_left")
-             for bay, s, n in L.DOORS]
+    doors = [model_facts.wall_door("pharmacy", "entrance", *front, L.ENTRANCE_S,
+                                   0.0, L.ENTRANCE_W, L.Z_LEAF, main=True)]
     w, h = L.OPENINGS["maint_door"][:2]
     doors.append(model_facts.wall_door("maintenance", "service", *rear, L.MAINT_DOOR_S,
                                        0.0, w, h))
