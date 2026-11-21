@@ -7,9 +7,11 @@ local Blender through an MCP (Model Context Protocol) server: it interprets
 reference imagery, issues `bpy` operations, checks viewport renders, and
 iterates toward game-ready meshes.
 
-Output: exterior building shells (massing, roofline, facade texture) and props
-(street furniture, lighting, boundary pieces), with colour/material variants
-that share geometry where appropriate. No interiors, rigging, or animation.
+Output: exterior building shells (massing, roofline, facade texture), props
+(street furniture, lighting, boundary pieces) and road vehicles, with
+colour/material variants that share geometry where appropriate. No
+interiors, rigging or animation: a vehicle's wheels and lamps are moved and
+lit by the consumer from ids in its mesh (Vehicles).
 
 The repository has its own git history, licence and workflow, and depends on no
 other project's source, tooling, files or directory layout. Its primary
@@ -62,13 +64,14 @@ budgets; style ambition never raises a ceiling.
     about it: the door splits the storey, so the three read as a door between
     flanking windows, not as a pair. Long walls are the exception and may
     carry several.
-  - Props (and future vehicles) have no doors; check them against a 1.8 m
-    standing figure instead.
+  - Props and vehicles have no doors to scale by; check them against a
+    1.8 m standing figure instead.
 - **Material palette:** muted, realistic brick, stucco, concrete, weathered
   wood, glass, metal trim, with believable baked wear and grime
   (`scripts/weathering.py`, Texture Requirements). No flat, clean,
   saturated "toy" colours, and no photoreal decay that suggests abandonment.
-  Applies to every class.
+  Applies to every class; a vehicle's painted panels are neutral grey, and
+  the consumer paints them (Vehicles).
 - **ORM (occlusion/roughness/metallic) is required for every asset.** Roughness
   separation between glass, concrete and metal trim carries much of the realism
   at this budget.
@@ -97,7 +100,8 @@ budgets; style ambition never raises a ceiling.
     mirror-glazed towers, boarded windows); record the values and the reason in
     `notes.md`.
 - **Colour/material variants stay within this palette:** per-building
-  diversity, not stylistic range. See Color & Material Variants — Buildings.
+  diversity, not stylistic range. See Color & Material Variants — Buildings,
+  Props and Vehicles.
 
 ## Target Consumer
 
@@ -112,16 +116,18 @@ budgets; style ambition never raises a ceiling.
 
 ## Scope
 
-- **Classes: buildings (exterior shells only) and props.** No interiors,
-  opening door/window meshes, rigging, animation, vehicles or characters.
+- **Classes: buildings (exterior shells only), props and vehicles.** No
+  interiors, opening door/window meshes, rigging, animation or characters.
+  One exception is reserved: a vehicle's optional, separate interior mesh
+  (Vehicles).
 - **Props v1: street furniture and lighting** (benches, bins, bollards,
   mailboxes, planters, lamp posts) and **boundary pieces** (wall runs,
   piers, gates) that the consumer assembles round a lot. Add signage,
   kiosks, shelters etc. only when work on them starts.
-- **Vehicles** may later get a `vehicles/` folder beside `buildings/` and
-  `props/`, with their own section. Before writing it, decide the animation
-  scope (engine-side wheel rotation versus rigging); do not inherit Props
-  conventions by assumption.
+- **Vehicles:** cars, vans, trucks and buses in `vehicles/`, with their own
+  section. The animation scope is settled: no rig; the consumer spins and
+  steers the wheels and lights the lamps from ids in the mesh. Trailers,
+  emergency and service vehicles get their rules when work on them starts.
 - **Characters stay excluded.** They need real animation, typically baked to
   vertex animation textures; decide first whether that belongs here at all.
 
@@ -199,6 +205,30 @@ metrum_models/
       <asset_name>/           # same per-asset layout as street_furniture/
     boundary/
       <asset_name>/           # as street_furniture/, plus _lod2.glb, _lod3.glb and the facts sidecar
+  vehicles/
+    car/
+      <asset_name>/
+        source.blend        # authoring file; each tier's pieces in <asset_name>_parts, wheels with the origin at the wheel centre
+        build.py             # required; the parts, their ids and facts() for vehicle_build.VehicleAsset
+        <other>.py           # required texture generator, e.g. car_atlas.py; also writes glass_texels.png
+        export/
+          <asset_name>_lod0.glb               # ... _lod3.glb, all four; ids in COLOR_0, see Vehicles
+          <asset_name>_albedo_<variant>.png   # plain, and any livery
+          <asset_name>_orm.png                # required
+          <asset_name>_emission.png           # required: lit lenses and the lit cabin
+          <asset_name>_normal.png             # optional
+          <asset_name>_interior.glb           # reserved, optional; not built yet
+          <asset_name>.model.json             # required; version 2, kind vehicle
+        glass_texels.png     # required; the atlas's glass texels for the validator, not shipped
+        notes.md
+        preview.png          # required
+        variants.png         # day/night rows
+    van/
+      <asset_name>/           # same per-asset layout as car/
+    truck/
+      <asset_name>/           # same per-asset layout as car/
+    bus/
+      <asset_name>/           # same per-asset layout as car/
   scripts/                  # helper scripts that are genuinely reusable across assets — see below
   CATALOG.md                 # running list of finished assets, one line each, linking each asset's preview.png as a browsable visual index
   .gitattributes             # LFS patterns
@@ -211,7 +241,9 @@ metrum_models/
 
 **Categories:** `residential/`, `commercial/`, `industrial/`, `service/`,
 `agricultural/` under `buildings/`; `street_furniture/`, `lighting/` and
-`boundary/` under `props/`. Add categories when needed. A mixed-use building
+`boundary/` under `props/`; the body classes `car/`, `van/`, `truck/` and
+`bus/` under `vehicles/`, fixed by the class boxes (Vehicles). Add
+categories when needed. A mixed-use building
 goes under its primary category, with the secondary use recorded in
 `notes.md`.
 
@@ -229,7 +261,8 @@ other. When the same function appears in two assets' scripts, move it to
 (the toolchain check, the material, the export, the previews, the tier
 bookkeeping, the facts sidecar's writing and the headless entry point) is
 `scripts/asset_build.py`'s: `build.py` keeps the massing, UVs, layout checks
-and its `facts()` and hands the rest to one `asset_build.Asset`.
+and its `facts()` and hands the rest to one `asset_build.Asset` (a vehicle's
+to `vehicle_build.VehicleAsset`, its subclass).
 
 ### Shared scripts
 
@@ -237,9 +270,11 @@ and its `facts()` and hands the rest to one `asset_build.Asset`.
 | --- | --- |
 | `atlas.py` | Rasterises every atlas: a supersampled `Canvas` with id, shade, AO and height channels, rect, bevel and shape primitives (stroke, disc, rounded rect), and `pad()`; periodic `noise()`; `cavity()`; and resolvers for albedo, ORM, normal map and emission (Texture Requirements). |
 | `weathering.py` | Weathering as per-sample fields (dirt, algae, rust, faded paint, rain runs, coal dust) that the canvas carries through `pad()` and `atlas.albedo()`/`orm()` resolve per variant, with helpers for a plinth, splash-back, a sheltered eave, runs under a drip, a roof band, a window and a door. Each atlas's `weather()` places them. |
-| `asset_build.py` | The shared half of every `build.py`: `check_toolchain()`, the catalog preview constants, `open_stack()` (a chimney or stack open at the top round a sooted flue), `union()` (the exact boolean, which triangulates any keyhole face it returns round a hole before the build's weld can fold it; opt-in `snap=SNAP` first puts the operands on a 0.1 mm grid) and `difference()`, its subtracting twin, and an `Asset` (`night_lit=False` for one without lit regions; `pivot=` and `levels=` for a prop) with `material()`, `build_all()`, `export_all()`, `render_preview()`, `render_variants()`, `write_facts()` and `main()`. Runs inside Blender only. |
-| `model_facts.py` | The facts sidecar `export/<asset_name>.model.json`: its schema, the build-frame to glTF conversion, `wall_door()`, `lane_passage()` and `roof_clear_width()` for a `build.py`'s `facts()`, `compose()`/`write()`, and `check()`, which `validate_asset.py` runs on the file. Pure Python. |
+| `asset_build.py` | The shared half of every `build.py`: `check_toolchain()`, the catalog preview constants, `open_stack()` (a chimney or stack open at the top round a sooted flue), `union()` (the exact boolean, which triangulates any keyhole face it returns round a hole before the build's weld can fold it; opt-in `snap=SNAP` first puts the operands on a 0.1 mm grid) and `difference()`, its subtracting twin, and an `Asset` (`night_lit=False` for one without lit regions; `pivot=` and `levels=` for a prop; `id_attribute`, set by `VehicleAsset`, exports a corner colour attribute as `COLOR_0`, compression off, rewritten as exact bytes) with `material()`, `build_all()`, `export_all()`, `render_preview()`, `render_variants()`, `write_facts()` and `main()`. Runs inside Blender only. |
+| `model_facts.py` | The facts sidecar `export/<asset_name>.model.json`: its schema, the build-frame to glTF conversion, `wall_door()`, `lane_passage()` and `roof_clear_width()` for a `build.py`'s `facts()`, `compose()`/`write()`, and `check()`, which `validate_asset.py` runs on the file: version 1 for buildings and boundary props; version 2 (`kind: vehicle`) with `compose_vehicle()`, `wheel_part()`, `lamp_lens()`, `glass_group()`, `cargo_box()` and `interior_file()` for vehicles. Pure Python (numpy for version 2). |
 | `boundary_wall.py` | The brick perimeter wall pieces of `props/boundary/`: their shared 512 atlas (`export`, written into each piece's `export/`), the joint rule, `Run`/`Pier`/`Gate` and their four tiers, layout checks and facts; each piece's `build.py` names its piece and calls `piece_asset()`. |
+| `vehicle_ids.py` | The vehicle contract's numbers and the ids as they ship: class boxes, ceilings, atlas sizes, the part, lamp and glass tables, `encode()`/`decode()`, a GLB accessor reader (`tier()`), `convert_color0_to_ubyte()`, `steer()`, the lens axes, and `save_glass_texels()`/`load_glass_texels()`. numpy only; runs in Blender and in system Python. |
+| `vehicle_build.py` | The vehicle half of `asset_build`: `Builder` (faces with surface and paint ids), `patch_face()`, `wheel_solid()`, `conform()` (inserts T-junction vertices), `Piece`, the id attribute's writing and checks, the paint and lamp-gate preview nodes, and `VehicleAsset` (`build_all()`, `write_facts()`, `material(paint=, lamps=)`, `steer()`). Runs inside Blender only. |
 | `glazing.py` | Paints glass as the room behind it: `rooms()` on the finished albedo by day, `night_rooms()` on the emission mask by night. Called by texture generators. |
 | `downpipes.py` | Downpipes as swept, mitred closed solids for `build.py` to union: a `Pipe` placed on a wall, swan-neck and shoe, UVs on the atlas's painted gutter (`PIPE_STRIP`), per-tier `MODES`, and `problems()` for `check_layout()`. Runs inside Blender only. |
 | `roof_safety.py` | Roof safety equipment as closed solids for `build.py` to union: the wall ladder and its safety cage, the roof ladder and the walkway, UVs on the painted gutter (`PIPE_STRIP`) or a fixed patch, per-tier `MODES`, and `problems()` for `check_layout()`; an opt-in lean wall ladder and cage (`lean=True`), separate solids that cut nothing, added after the weld by `append(check=True)` at a fraction of the triangles. Runs inside Blender only. |
@@ -247,11 +282,13 @@ and its `facts()` and hands the rest to one `asset_build.Asset`.
 | `window_emission.py` | Wires the emission mask into the material (`attach`, `set_state`), rewrites an exported GLB's emission factor (`rewrite_glb_emission`, which `asset_build` uses to ship it default-off), holds the reference `LIT_FACTOR`. |
 | `glb_images.py` | `strip_embedded_images()`: removes the `bufferView` the exporter leaves beside each image `uri`; `asset_build`'s export runs it on every tier (Texture Requirements). |
 | `variant_previews.py` | `render_sheet()`: the day/night (or, for unlit assets, day-only) `variants.png`, called by `asset_build`. |
-| `validate_asset.py` | Mechanical export checks (Validation Checklist). |
+| `validate_asset.py` | Mechanical export checks (Validation Checklist); the vehicle classes add `vehicle_checks.py`. |
+| `vehicle_checks.py` | The vehicle checks on the exported files, for `validate_asset.py`: accessors, sidecar, PNGs and `glass_texels.png`, with exact point-to-triangle distances for steer clearance. numpy and Pillow. |
 | `review_asset.py` | Renders exported tiers in a disposable scene: day cycle, LOD distance pairs, views, light states, optional mip textures, another colour by `--variant`. Run in a separate background Blender. |
 | `review_atlas_mips.py` | Writes temporary atlas mips for filtering stress renders (`review_asset.py --texture-dir`). |
 | `review_gallery.py` | Contact sheets and an HTML gallery from `review_asset.py` output. |
 | `review_compare.py` | Before/after sheets and an HTML page from two `review_asset.py` runs with identical settings; `--ignore-distance` pairs by view where the fitted distance changed, `--pad` centres differing sizes. |
+| `review_vehicle.py` | The vehicle review sheet (Vehicles) from the exported accessors, frames and a contact sheet. Run in a separate background Blender. |
 
 Each script's docstring gives its command line.
 
@@ -322,6 +359,20 @@ position. Other building-only sections are left out, not filled with "n/a".
 an authored front. Inside a required section, an inapplicable field is
 marked "n/a" rather than dropped.
 
+**Vehicles — required, in order:** `Style brief`, `Body class` (the class
+and its box), `Dimensions` (target and built length, width with and without
+mirrors, height, wheelbase, track, overhangs and ground clearance, against
+the 1.8 m figure), `Construction` (pieces, how lamp and glass faces are cut,
+the front and the pivot), `Wheels` (parts, radius, width, sides per tier,
+twin, arch clearance), `Ids` (each tier's ids and the encoding measured),
+`Lamps` (lenses per group, colours, what each tier keeps), `Glass` (groups,
+areas, measured colour and roughness, cabin level, the `LOD2` merge), `Paint`
+(panels, grey level, plates), `Per-tier triangle counts`, `LOD review`,
+`Interior geometry`, `Known simplifications`, `Texture set`, `Variant list`,
+`Export`, `Review status`, `Tooling versions`. Vehicles have their own list:
+a building or prop heading is a schema error in a vehicle's notes, and the
+other way round.
+
 **Notes describe the asset as it stands now.** A revision edits the section
 that owns the change; it never appends a second, dated section that says
 something different. Where the history is worth keeping, add one optional
@@ -380,8 +431,9 @@ thumbnail, so the index is browsable without opening asset folders.
 - **Textures:** 1024 square; 2048 only for a documented hero/landmark exception.
   Target 64 texels/metre and record intentional local deviations.
 - **Facts sidecar:** every building ships `export/<asset_name>.model.json`,
-  written by `asset_build`'s `write_facts()` from the `build.py`'s `facts()`
-  (`scripts/model_facts.py` holds the schema).
+  version 1, written by `asset_build`'s `write_facts()` from the `build.py`'s
+  `facts()` (`scripts/model_facts.py` holds the schema; vehicles write
+  version 2, Vehicles).
   - It is in the frame of the exported `.glb` files: metres, `+Y` up, `+Z`
     front, origin at the pivot.
   - It states the `LOD0` bounds, the outer wall outline at ground level
@@ -598,9 +650,9 @@ loss of white corner boards, dark windows or another dominant colour.
 ## Texture Requirements
 
 - **Format:** lossless PNG, 8 bits per channel, square, power of two, no alpha.
-  Buildings 1024 (hero/landmark 2048); props 256–512 (Props). The consumer owns
-  GPU compression and shipping mipmaps; authoring owns padding and filtering
-  review.
+  Buildings 1024 (hero/landmark 2048); props 256–512 (Props); vehicles 512 or
+  1024 by class (Vehicles). The consumer owns GPU compression and shipping
+  mipmaps; authoring owns padding and filtering review.
 - **Painting:** rasterise atlases with `scripts/atlas.py`, supersampled
   `atlas.SS` = 4 samples per pixel per axis and box-filtered down in linear
   light, so edges at fractional positions, curves and lettering are
@@ -678,8 +730,8 @@ loss of white corner boards, dark windows or another dominant colour.
 
 ## Color & Material Variants — Buildings
 
-Buildings only; Props has its own rules. Variation follows scale and material
-uniformity, not category folder.
+Buildings only; Props and Vehicles have their own rules. Variation follows
+scale and material uniformity, not category folder.
 
 - **Low-rise / small-scale** (houses, most service buildings, small industrial
   sheds): 3–6 albedo variants (paint, brick/siding, roof, metal-panel colours)
@@ -754,6 +806,261 @@ orientation, budgets and variants differ:
   - Up to three brick variants, matching the buildings they enclose.
   - They ship the facts sidecar, with no doors, storeys or dwellings; the
     footprint is the plan outline at ground level.
+
+## Vehicles
+
+Vehicles share format, colour spaces, licensing, reference policy, Texture
+Requirements, `Z`-up authoring with `+Y`-up export, and the
+`build.py`/`preview.png`/`notes.md` workflow with buildings and props. The
+consumer turns the wheels, lights the lamps and paints the body itself, per
+vehicle, from ids stored in the mesh, so everything else differs. Lamp and
+glass groups the consumer does not use yet are still required, so no model is
+reworked later.
+
+### Scope, direction and layout
+
+- **Road vehicles as closed exterior shells.** No rig and no animation: the
+  wheels are parts of the one mesh, and the consumer spins and steers them.
+  One mesh and one material per tier; no separate wheel files.
+  - No interior and no seats in the body mesh, on any tier; glass stays
+    opaque.
+  - Reserved, not built yet: an optional `export/<asset_name>_interior.glb`
+    in the body's frame and origin, one mesh and one material, about 400
+    triangles (seat shapes, dashboard, steering wheel, optionally a driver's
+    silhouette). The sidecar's `interior` is `null` until it exists; adding
+    it later changes no body mesh.
+  - Not yet: trailers, emergency and service vehicles; each gets its rules
+    when work starts.
+- **Direction (the owner's):** cars follow European and Japanese models,
+  trucks European only, of 2005–2020: modern everyday vehicles. Generic
+  composites with no recognisable make: no badge, signature grille, lamp
+  graphic or real livery. Gather references before design in
+  `reference/vehicles/` (Reference Image Policy).
+- **Layout:** `vehicles/<class>/<asset_name>/`, class `car`, `van`, `truck`
+  or `bus` (Repository Structure): the props' files with all four tiers,
+  `_emission.png` required, `_normal.png` optional, the facts sidecar, and
+  `glass_texels.png` beside `notes.md` (Glass).
+- **A builder writes** each tier's parts as `vehicle_build.Piece`s (`body`,
+  `mirror`, and `wheel` with its part, centre and steer flag), a texture
+  generator that also writes `glass_texels.png`, `check_layout()` and
+  `facts()`; everything else is `vehicle_build.VehicleAsset`'s.
+- **Frame:** Blender `Z` up, front toward `-Y`; exported `+Y` up, nose toward
+  `+Z`. `+X` is the driver's left in both frames, so a left lamp has `x > 0`
+  and sits on the viewer's right in a front view. "Left" and "right" always
+  mean the driver's.
+  - Origin on the ground at the centre of the body's plan box (length x
+    width, mirrors excluded), one origin for every tier.
+  - Tyres touch the ground exactly and nothing is below it, on every tier.
+  - Symmetric about `x = 0` unless the brief says otherwise: wheel and lens
+    pairs mirror within 1 mm. A rear fog lamp, a single reverse lamp, a
+    plate lamp, a beacon or a sign may stand alone off the centre line.
+
+### Class boxes
+
+Hard limits: the consumer parks and queues every vehicle of a class as its
+box.
+
+| Class | Length x width x height (m) | Mirrors, a side | Atlas |
+| --- | --- | --- | --- |
+| `car` | 4.50 x 1.80 x 1.95 | 0.12 | 512 |
+| `van` | 6.00 x 2.10 x 2.70 | 0.25 | 512 |
+| `truck` | 8.00 x 2.55 x 3.80 | 0.25 | 1024 |
+| `bus` | 12.00 x 2.55 x 3.20 | 0.25 | 1024 |
+
+- Width is without mirrors, and nothing but the mirrors reaches past it: the
+  validator takes vertices outside it, above the lowest wheel centre and in
+  the front half, for mirrors.
+- The box holds for every tier as exported, wheels straight ahead; a steered
+  wheel may leave it.
+- Sizes are targets within ±0.05 m. A target that equals a class limit has
+  −0.05 to 0, so it is built slightly under. Record targets and built sizes
+  in `notes.md`.
+
+### Wheels
+
+- In `source.blend` each wheel is its own object with its origin at the
+  wheel centre (the `<asset_name>_parts` collection); the tier that exports
+  is the join of the tier's pieces.
+- A closed solid (tyre, rim face, inner face) with a corner at the very
+  bottom, so it rests on the ground exactly and a turned wheel shows no hole
+  (`vehicle_build.wheel_solid()`). A twin rear pair is one part a side. At
+  most 8 parts, numbered in sidecar order: front axle first, left before
+  right (1 front left, 2 front right, 3 rear left, 4 rear right).
+- `LOD0` 16–20 sides, `LOD1` 8–10; from `LOD2` the wheels are body (part 0).
+- The arch is a dark recess. Each wheel straight ahead, and each front wheel
+  turned 35° either way about the vertical through its centre, keeps 10 mm
+  from every body triangle.
+- No brake discs, suspension or tread geometry.
+
+### Ids
+
+Every tier has one colour attribute, `COLOR_0`, normalised `UNSIGNED_BYTE`
+`VEC4`, id n stored as the byte n:
+
+| Channel | Meaning | Values |
+| --- | --- | --- |
+| R | part | 0 body; 1..8 the wheel parts |
+| G | surface | 0 plain; 1..15 a lamp; 32..47 glass |
+| B | paint | 255 on painted body panels, 0 elsewhere |
+| A | unused | 255 |
+
+- One R and one G per triangle: ids never blend. A lamp or glass face is
+  unpainted body (R 0, B 0).
+- Set each face's surface and paint as it is made
+  (`vehicle_build.Builder.face(..., surface=, paint=)`) and each wheel's part
+  on its piece. `VehicleAsset` writes them as the `FLOAT_COLOR` corner
+  attribute `metrum_ids`, never `BYTE_COLOR` (sRGB bends it), on every piece
+  before the join (a piece without it joins in as A = 0), and refuses a tier
+  with A != 1 or two ids in one polygon.
+- The export writes `metrum_ids` as `COLOR_0` and no other colour, Draco and
+  meshopt off, then rewrites it as exact bytes
+  (`vehicle_ids.convert_color0_to_ubyte()`, which refuses a value more than
+  1e-3 off a byte). The consumer truncates any other form, so the byte form
+  is required. No other custom attribute ships.
+- Standard glTF viewers multiply `COLOR_0` into base colour and show these
+  files dark, and Blender's importer reads it as sRGB bytes. Nothing here
+  reads it that way: previews use the plain material; the review sheet and
+  the validator read the accessors (`scripts/vehicle_ids.py`).
+
+### Lamps
+
+Ordinary faces of the mesh with a lamp id in G, unlit in the albedo and lit
+in their own colour in the emission. No glow, halo or beam geometry.
+
+| Id | Group | Colour | Where |
+| --- | --- | --- | --- |
+| 1 | `tail` | red | rear, both sides |
+| 2 | `brake` | red | rear, both sides; a car's high-mounted lamp |
+| 3 | `tail_brake` | red | a rear lens that is both |
+| 4 | `indicator_left` | amber | front, rear and side repeater, left |
+| 5 | `indicator_right` | amber | the same, right |
+| 6 | `reverse` | white | rear |
+| 7 | `low_beam` | white | front, both sides |
+| 8 | `high_beam` | white | front, both sides |
+| 9 | `daytime` | white | front, both sides |
+| 10 | `fog_front` | white | optional |
+| 11 | `fog_rear` | red | optional |
+| 12 | `plate` | white | rear plate lamp, optional |
+| 13 | `beacon` | livery | roof; reserved |
+| 14 | `sign` | livery | taxi sign, bus destination board; reserved |
+| 15 | `marker` | amber, white, red | truck and bus outline lamps |
+
+- Every vehicle has 3 (or 1 and 2), 4, 5, 6, 7, 8 and 9; a car also a
+  high-mounted 2 on the centre line, a truck 15.
+- Low beam, high beam and daytime are separate faces even inside one
+  headlamp.
+- A lens is a connected group of same-id faces; the sidecar lists each one,
+  measured from `LOD0`.
+- `LOD0` and `LOD1` carry every lamp face; `LOD2` keeps the ids on flat faces
+  inside the same lens rectangles; `LOD3` has none.
+
+### Glass
+
+Opaque, dark and glossy, in the Style Direction glass band and painted with
+`glazing.rooms()`. Every pane is its own tagged faces, so tint, lit cabins
+and see-through glass can come later without touching a model.
+
+| Id | Group | Covers |
+| --- | --- | --- |
+| 32 | `glass_windscreen` | the windscreen |
+| 33 | `glass_front_side` | front door windows; a cab's side windows |
+| 34 | `glass_rear_side` | rear door and quarter windows |
+| 35 | `glass_rear` | rear window or tailgate glass; a van's glazed rear doors |
+| 36 | `glass_roof` | a glass roof or sunroof (optional) |
+| 37 | `glass_cab_rear` | a truck or pickup cab's rear window |
+| 38 | `glass_saloon` | a bus's passenger windows; a van's load-area windows |
+| 39 | `glass_door` | a bus's glazed doors |
+| 40–47 | reserved | |
+
+- Separate faces, paint 0. Mirror glass, lenses and plates are not glass. A
+  car has at least 32–35, a van and a truck 32 and 33, a bus 32.
+- `LOD0` and `LOD1` carry every glass id. On `LOD2` a wholly glass face keeps
+  its id, and the side glass may merge into one band a side, tagged 33.
+  `LOD3` has none; its glass is in the texture.
+- In the emission, glass texels hold a dim, neutral lit cabin:
+  `glazing.night_rooms()` at about a quarter, no colour. The consumer keeps
+  it dark until lit cabins are built.
+- The texture generator writes `glass_texels.png` beside `notes.md` with
+  `vehicle_ids.save_glass_texels()`: atlas size, 8-bit grey, 255 where glass
+  covers half a texel or more, rows as the atlas PNGs. It is the validator's
+  record of which texels are glass, and does not ship.
+
+### Paint, textures and variants
+
+- **Paint:** painted panels (B = 1) are neutral light grey in the albedo,
+  about 0.75 linear, with panel gaps and light wear only; the consumer
+  multiplies them by the vehicle's paint colour, so no body colour is baked.
+  Plates are blank white rectangles, unpainted.
+- **Textures:** albedo per variant, ORM and emission required, a normal map
+  optional; external PNGs, one set for every tier, one material slot. The
+  class's atlas size at 64 texels/metre. Mirrored left/right UVs are fine
+  except under lettering. The emission holds the lit lenses, the lit cabin on
+  glass and black everywhere else, bound with factor zero.
+- **Variants:** `plain` (paint true) on every vehicle. A livery is another
+  albedo on the same geometry; one that paints its panels in full colour is
+  marked paint false, and the consumer then paints it white. A livery names
+  no real company and copies no real mark.
+
+### Tiers
+
+Ceilings, no floors; every tier shares the origin, plan box and textures.
+The distances assume a 4.5 m car on a 1080p screen at a 75° vertical FOV:
+about 105 px long at 30 m, 32 at 100 m, 8 at 400 m.
+
+| Tier | Seen at | Car | Van | Truck, bus | Must keep |
+| --- | --- | --- | --- | --- | --- |
+| `LOD0` | under 30 m | 3,000 | 3,500 | 4,500 | wheel parts (16–20 sides), every lamp and glass face, mirrors, arches |
+| `LOD1` | 30–100 m | 900 | 1,000 | 1,400 | wheel parts (8–10 sides), every lamp and glass face |
+| `LOD2` | 100–400 m | 220 | 260 | 350 | silhouette; wheels as body; lamp ids on flat faces; glass ids on wholly glass faces; paint |
+| `LOD3` | beyond 400 m | 40 | 40 | 60 | a box with the roofline; paint only (R 0, G 0) |
+
+### Facts sidecar
+
+`export/<asset_name>.model.json`, version 2 with `"kind": "vehicle"`
+(`scripts/model_facts.py`); buildings and boundary props stay version 1. The
+exported frame, geometry and files only.
+
+- The `build.py`'s `facts()` states `cargo` (`model_facts.cargo_box()`;
+  `None` for a car) and may override `lamps`, `glass`, `coupling` or
+  `interior`. `VehicleAsset.write_facts()` measures the rest from `LOD0` and
+  reads counts, bounds, id flags and hashes from the exported files.
+- In order: `schema`, `version`, `kind`, `name`, `path`, `source`,
+  `license`; `bounds` (`LOD0`, mirrors included); `body` (class, length,
+  width without and with mirrors, height, wheelbase from the first to the
+  last axle, front and rear overhang, ground clearance: the lowest body
+  point); `axles`, front first (z, track, steer, twin); `wheels`, one per
+  part in part order (id such as `front_left`, part, axle, side, centre,
+  radius, width, steer; centre.y equals the radius); `attributes`
+  (`{"set": "COLOR_0", "r": "part", "g": "surface", "b": "paint",
+  "version": 1}`); `lamps`, one per lens (group, lamp id, side
+  left/right/centre, position front/rear/side/roof from the facing's
+  dominant axis, centre, unit outward facing, width along up x facing,
+  height across it); `glass`, one per group present (group, id, area in
+  m²); `cargo` (a van's or truck's load box: min, max, door), `null` for a
+  car; `coupling`, `null` (reserved for trailers); `interior`, `null` or the
+  file, its triangles and hash; `lods`, all four (file, triangles, hash, and
+  whether the tier has wheel parts, lamp ids, glass ids); `textures` (orm,
+  emission, normal or `null`); `variants` (name, albedo file and hash,
+  paint); `default_variant`; `preview` (`preview.png` in the asset folder).
+- The lists and `LOD0` agree both ways, and every lens has a face. No seats,
+  weights, palettes or other consumer terms.
+- A full rebuild rewrites it; `build.py -- facts` rewrites it alone, from a
+  committed tree.
+
+### Previews and the review sheet
+
+- `preview.png` is the catalog setup with the painted panels multiplied by
+  the asset's `preview_paint`, or white (the albedo as shipped).
+  `variants.png` has every variant by day and at night with the driving
+  lamps lit (tail, tail and brake, low beam, daytime, markers).
+- The review sheet is one command, `scripts/review_vehicle.py`, into
+  `review/` and never committed: side, front, rear, top and three-quarter
+  views; the front wheels turned ±35°; each lamp group lit in turn, and tail,
+  low beam and brake together at night; the cabin lit; a false-colour view of
+  the ids; white, dark grey and red paint through B; the four tiers side by
+  side at 30, 100 and 400 m; a 1.8 m figure and the class's bay outline (car
+  2.5 x 5.0 m, van and truck 3.0 x 8.0 m, bus 3.0 x 13.0 m). It stands in for
+  the six pre-export views; the far side is the mirror check's.
 
 ## Determinism & Reproducibility
 
@@ -866,6 +1173,7 @@ blender --background --python scripts/validate_asset.py -- buildings/service/bri
 blender --background --python scripts/validate_asset.py -- props/street_furniture/your_asset prop_small
 blender --background --python scripts/validate_asset.py -- props/lighting/your_asset prop_medium
 blender --background --python scripts/validate_asset.py -- props/boundary/tiilimuuri_run_10m prop_boundary
+blender --background --python scripts/validate_asset.py -- vehicles/car/your_asset vehicle_car
 ```
 
 It checks required exports, GLB structure, image references, material count and
@@ -880,6 +1188,21 @@ default-off factor) and measures the albedo under the mask's neutral
 pixels against the glazing band; coloured pixels are reported as luminous
 fixtures. It does not check `variants.png` or variant naming. A `PASS`
 covers only its printed check.
+
+The vehicle classes (`vehicle_car`, `vehicle_van`, `vehicle_truck`,
+`vehicle_bus`) take the class's ceilings and atlas size, one material, the
+vehicle notes list and the version 2 sidecar, skip the glazing measure
+(their emission holds lamps), and add `scripts/vehicle_checks.py`, which
+reads the accessors directly: the class box, mirror reach, ground contact,
+origin and `LOD0`'s plan box on every tier; wheel and lens pairs mirrored;
+`COLOR_0` as normalised `UNSIGNED_BYTE` `VEC4` with A 255, whole ids from the
+allowed sets, one R and G per triangle, unpainted body under lamps and
+glass; each tier's wheel parts, wheel sides and required and listed ids;
+wheel vertices inside their sidecar cylinders and no body vertex inside one;
+10 mm steer clearance; lamp faces inside their lens rectangles, no lens
+without a face, lit lens texels; glass ids against `glass_texels.png` both
+ways, lit cabin texels and the glass band; emission black under plain faces;
+painted faces neutral grey.
 
 - Geometry checks inspect only the first mesh in each tier. Multi-mesh exports
   need manual aggregate counts, bounds and material slots.
@@ -898,7 +1221,7 @@ extent and percentage together. Remove buried partitions, duplicate surfaces
 and unused geometry; document the small closure faces you keep. Recessed glass
 is exterior surface.
 
-### Universal (buildings and props)
+### Universal (every class)
 
 - Required files open; the whole export has no loose geometry, unintended holes
   or non-manifold joins (checked on a welded copy; exported normal/UV splits
@@ -908,7 +1231,7 @@ is exterior surface.
 - PNGs lossless, 8-bit, square, power of two, within size limits; colour
   spaces correct; normals OpenGL `+Y`; no alpha.
 - ORM present and bound on every tier; the normal map too for buildings (for
-  props when used), at scale 1;
+  props and vehicles when used), at scale 1;
   emission binding checked when used; image URIs resolve to external files
   with no `bufferView`. Laps and seams read raised, not dented, in a lit
   render.
@@ -920,8 +1243,9 @@ is exterior surface.
 - Glazing inside the Style Direction band and darker than its surrounding trim,
   painted with `scripts/glazing.py`, or a brief-driven exception recorded.
 - No unexplained buried partitions or duplicate interior surfaces.
-- All six views inspected; LODs compared at intended switches with fixed camera
-  and lighting; dominant colours and materials consistent across tiers.
+- All six views inspected (a vehicle: its review sheet); LODs compared at
+  intended switches with fixed camera and lighting; dominant colours and
+  materials consistent across tiers.
 - Variants keep tier geometry and UVs; per-texture size limits met; unique
   texture inventory recorded.
 - Reference Image Policy met; no recognisable real building or object.
@@ -960,6 +1284,25 @@ is exterior surface.
   genuinely asymmetric props, verified on reimport.
 - Switch/cull distances and appearance reviewed at prop scale.
 - Variants 1–2 (boundary up to 3), or a documented exception.
+
+### Vehicles only
+
+- Four tiers within the class's ceilings and what each must keep; the class
+  box, mirrors and ground contact on every tier; `-Y` front, the origin at
+  the body's plan centre.
+- `COLOR_0` normalised `UNSIGNED_BYTE` `VEC4` on every tier, A 255, ids whole
+  and per triangle; no other custom attribute.
+- Wheels: parts, sides, cylinders and 35° clearance pass; the review sheet's
+  turned wheels look right.
+- Every required lamp and glass id present; lens rectangles and glass texels
+  pass; each lamp group, the night set and the cabin checked lit on the
+  review sheet.
+- Painted panels neutral grey, plates blank, no body colour baked; white,
+  dark grey and red paint read right on the review sheet.
+- The facts sidecar passes with `source.dirty` false and describes the
+  vehicle as built; `glass_texels.png` matches the atlas.
+- A generic composite after the owner's direction, with no recognisable make
+  or real livery; the review sheet looked at, and kept out of the commit.
 
 ## What Not To Do
 
