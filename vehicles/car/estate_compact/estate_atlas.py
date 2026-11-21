@@ -52,7 +52,7 @@ M = dict(paint=1, lip=2, grille=3, intake=4, pillar=5, sail=5, under=6, liner=7,
          rail=16, seal=17, rim_dark=18, gap=19, handle=20, lens_body=21, chrome=22,
          glass_dark=23, pic_red=24, pic_amber=25, pic_white=26, disc=27)
 M_LENS = {lid: 40 + lid for lid in range(1, 16)}
-SRGB = {M["paint"]: (237, 237, 237), M["lip"]: (40, 41, 42), M["grille"]: (24, 25, 26),
+SRGB = {M["paint"]: (228, 228, 228), M["lip"]: (40, 41, 42), M["grille"]: (24, 25, 26),
         M["intake"]: (30, 31, 32), M["pillar"]: (16, 17, 18), M["under"]: (20, 20, 21),
         M["liner"]: (38, 38, 39), M["plate"]: (238, 238, 234), M["plate_rim"]: (40, 42, 44),
         M["glass"]: glazing.BASE, M["tread"]: (40, 40, 40), M["tyre"]: (30, 30, 31),
@@ -156,23 +156,12 @@ def paint():
     paint_lenses(c)
     paint_plate(c)
     paint_wheels(c)
-    # LOD3's perimeter strip: each face's band in its kind
-    for f in T[3]["body"]:
-        if f.island == "lod3":
-            mid = {"paint": M["paint"], "lod3_glass": M["glass_dark"],
-                   "lod3_nose": M["lip"], "under": M["under"]}[f.kind]
-            polygon(c, dilated(f.uv, 0.5), mid=mid)
-    # LOD3's nose band: the lamps and the grille in a picture (u is x)
-    nose = T[3]["body"][2]
-    (u0, v0), (u1, v1) = nose.uv[0], nose.uv[2]
-    sy, sx, Y_, X_ = c.field(u0, u1, v0, v1)
-    xx = -S.HW + 2 * S.HW * (X_ - u0) / (u1 - u0)
-    tt = (Y_ - v0) / (v1 - v0)                       # 0 at the bumper, 1 at the bonnet
-    m = c.mid[sy, sx]
-    m[(np.abs(xx) > 0.50) & (tt > 0.55)] = M["pic_white"]
-    m[(np.abs(xx) < 0.37) & (tt > 0.55)] = M["grille"]
-    m[(np.abs(xx) < 0.50) & (tt < 0.25)] = M["intake"]
-    c.mid[sy, sx] = m
+    # LOD3's uniform blocks: light paint at about the tiers' painted level,
+    # dark glass, dark under-body
+    for rect, mid, sh in ((S.R_L3_PAINT, M["paint"], 0.93), (S.R_L3_GLASS, M["glass_dark"], 1.0),
+                          (S.R_L3_UNDER, M["under"], 1.0)):
+        x, y, w, h = rect
+        c.paint(x, x + w, y, y + h, mid=mid, shade=sh, height=0.0)
     for name, rect in (("paint", S.R_FLAT_PAINT), ("mirror_glass", S.R_MIRROR_GLASS),
                        ("rail", S.R_RAIL), ("under", S.R_UNDER),
                        ("pic_red", S.R_REFLECTOR)):
@@ -231,7 +220,7 @@ class Region:
         self.put(m, shade=shade, add_h=-depth, ao=0.7, on=on)
 
 
-SEAM = 0.011                    # a panel gap's painted width, metres
+SEAM = 0.0085                   # a panel gap's painted width: one texel
 BODY = (M["paint"],)
 
 
@@ -291,12 +280,13 @@ def paint_side(c):
         for sa in S.S_AXLE:
             r = np.hypot(s - sa, z - (S.WHEEL_R + S.ARCH_DZ))
             rw = np.hypot(s - sa, z - S.WHEEL_R)
+            # (only LOD2's painted sides sample these: a light rim in a thin
+            # dark tyre, the arch gap left as paint, so they keep the paint's
+            # brightness at the tier switch)
             hole = r < S.ARCH_R
-            R.put(hole, mid=M["liner"])
             R.put(hole & (rw < S.WHEEL_R), mid=M["tyre"])
-            R.put(hole & (rw < 0.222), mid=M["rim"])
-            R.put(hole & (rw < 0.19) & (rw > 0.07)
-                  & (np.cos(5 * np.arctan2(z - S.WHEEL_R, s - sa)) < -0.3), mid=M["disc"])
+            R.put(hole & (rw < 0.26), mid=M["rim"])
+            R.put(hole & (rw < 0.05), mid=M["rim_dark"])
             # the arch lip: a raised, slightly shaded rim on the body
             lip = (r >= S.ARCH_R) & (r < S.ARCH_R + 0.016)
             R.put(lip, shade=0.86, add_h=0.003, on=BODY)
@@ -448,7 +438,7 @@ def paint_rear(c):
 # The hand-in lamp pictures (pale lenses with soft reflector shading, the
 # amber end cell, ribbed red clusters), painted at LENS_PPM so their edges
 # are crisper; pixel sizes below are in body texels (F scales them).
-F = S.LENS_PPM / S.PPM
+F = S.LENS_PPM / 64.0
 LENS_STYLE = {(7, "front"): "projector", (8, "front"): "reflector", (9, "front"): "strip",
               (4, "front"): "ribs", (1, "rear"): "bars", (3, "rear"): "guide",
               (4, "rear"): "ribs", (6, "rear"): "clear", (2, "rear"): "dots",
@@ -496,7 +486,8 @@ def paint_lenses(c):
             sh[np.mod(u, 2.0 * F) < 0.6 * F] *= 0.88
         # a thin dark outline, the first texel inside the faces' mapping
         # (they map to the rect inset 3 texels)
-        edge = (u < 4.0) | (u > w - 4.0) | (v < 4.0) | (v > h - 4.0)
+        e = 3.0 + S.LENS_PPM / 112.0
+        edge = (u < e) | (u > w - e) | (v < e) | (v > h - e)
         sh[edge] *= 0.45
         hh[edge] = -0.003
         c.shade[sy, sx] = sh
@@ -519,9 +510,10 @@ def paint_plate(c):
     # white round the plate's rect to a 32-texel block, so its coarse mips
     # stay white; the faces map to the rect inset a texel: the border is the
     # next texel
-    c.paint(x - 8, x + w + 16, y - 8, y + h + 12, mid=M["plate"], height=0.0)
+    c.paint(x - 16, x + w + 32, y - 16, y + h + 24, mid=M["plate"], height=0.0)
     c.paint(x, x + w, y, y + h, mid=M["plate_rim"], height=0.0)
-    c.paint(x + 2.0, x + w - 2.0, y + 2.0, y + h - 2.0, mid=M["plate"], height=0.0)
+    b = 1.0 + S.SC                                   # the inset texel and the border
+    c.paint(x + b, x + w - b, y + b, y + h - b, mid=M["plate"], height=0.0)
 
 
 # ---------------------------------------------------------------- wheels
@@ -574,7 +566,7 @@ def paint_wheels(c):
     ss = np.ones(v.shape, np.float32)
     hh[m] = -0.006
     ss[m] = 0.7
-    sip = ((v < 0.28) | (v > 0.72)) & (np.mod(X_ - x, 3.0) < 0.9)
+    sip = ((v < 0.28) | (v > 0.72)) & (np.mod(X_ - x, 3.0 * S.SC) < 0.9 * S.SC)
     hh[sip] = -0.004
     ss[sip] *= 0.8
     ss[(v < 0.15) | (v > 0.85)] *= 0.9
@@ -657,7 +649,7 @@ def export(out_dir):
     c = paint()
     w = weather(c)
     c.pad()
-    cav = atlas.cavity(c, radius_px=1.5, depth_m=0.006)
+    cav = atlas.cavity(c, radius_px=1.5 * S.SC, depth_m=0.006)
     lut = np.zeros((256, 3), np.float32)
     for mid, col in SRGB.items():
         lut[mid] = col
@@ -666,7 +658,7 @@ def export(out_dir):
     rgb = atlas.albedo(c, lut, grime=0.25 * cav)
     rgb = vehicle_glass(glass, rgb)
     out = [atlas.save(rgb, os.path.join(out_dir, "%s_albedo_plain.png" % ASSET))]
-    rough = 0.03 * atlas.noise(c, 31, 12.0)
+    rough = 0.03 * atlas.noise(c, 31, 12.0 * S.SC)
     out.append(atlas.save(atlas.orm(c, ROUGH, rough, 0.5 * cav),
                           os.path.join(out_dir, "%s_orm.png" % ASSET)))
     out.append(atlas.save(atlas.normal_map(c, flat_ids=(M["glass"],)),

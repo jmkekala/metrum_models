@@ -27,8 +27,9 @@ import math
 import numpy as np
 
 ASSET = "estate_compact"
-ATLAS = 512
-PPM = 64.0
+ATLAS = 1024                        # every vehicle class's atlas (owner's decision)
+PPM = 128.0
+SC = 2                              # the layout below was drawn at 512: scaled to 1024
 
 # ================================================================ dimensions
 L = 4.48
@@ -160,7 +161,7 @@ def _cap_rows(end):
     return FRONT_ROWS if end == "front" else REAR_ROWS
 
 
-FLUSH_SB = set()           # levels whose bottom cap row stands on the bumper line
+FLUSH_SB = {}             # level -> its bottom cap row, which stands on the bumper line
 
 
 def cap_xy(end, row, t, level=0):
@@ -168,7 +169,7 @@ def cap_xy(end, row, t, level=0):
     the centre line, 1 at the side tangent point). A tier in FLUSH_SB keeps
     no S2 row, so its SB row carries the bumper's foremost line instead."""
     z, sb, rc = _cap_rows(end)[row]
-    if row == "SB" and level in FLUSH_SB:
+    if FLUSH_SB.get(level) == row:
         sb = 0.0
     w = W_SIDE[row]
     a = w - rc
@@ -386,15 +387,17 @@ TIERS = {
             ("S1", "S3", "S4", "SH", "GT", "RE", "RC"),
             {"front": (("S1", "S3", "S4", "S5", "SH"), ("GB", "GT", "RE", "R2", "RC")),
              "rear": (("S1", "S3", "S4", "S5", "SH"), ("GB", "GT", "RE", "R2", "RC"))}),
-    2: Tier(2, ["F0", "CW", "HD", "RG", "R0"], ("SB", "SH", "GT", "RC"),
-            {"front": (("SB", "S4", "S5", "SH"), ("GB", "GT", "RE", "RC")),
-             "rear": (("SB", "S4", "S5", "SH"), ("GB", "GT", "RE", "RC"))}),
+    # LOD2's sides start at the sill's top (S1): its painted faces never
+    # sample the black sill, and the wheel prisms show more under them
+    2: Tier(2, ["F0", "CW", "HD", "RG", "R0"], ("S1", "SH", "GT", "RC"),
+            {"front": (("S1", "S4", "S5", "SH"), ("GB", "GT", "RE", "RC")),
+             "rear": (("S1", "S4", "S5", "SH"), ("GB", "GT", "RE", "RC"))}),
 }
 # a cap strip that keeps fewer columns than the tier's (its cells become
 # polygons over the row points the neighbouring strips need)
-STRIP_COLS = {(2, "front", "SB"): ("RC", "SIDE"), (2, "rear", "SB"): ("RC", "RE", "SIDE")}
+STRIP_COLS = {(2, "front", "S1"): ("RC", "SIDE"), (2, "rear", "S1"): ("RC", "RE", "SIDE")}
 LOD2_SB_X = HW            # LOD2 keeps no widest row: its sill carries the width
-FLUSH_SB.add(2)
+FLUSH_SB[2] = "S1"
 
 
 # ================================================================ faces
@@ -462,12 +465,13 @@ def station_points(level):
     out = []
     for n in tier.stations:
         half = dict(names[n])
+        low = tier.rows[0]
         if level == 2 and n not in ("F0", "R0"):
-            x, s, z = half["SB"]
-            half["SB"] = (LOD2_SB_X, s, z)
+            x, s, z = half[low]
+            half[low] = (LOD2_SB_X, s, z)
         if level in FLUSH_SB and n in ("F0", "R0"):
-            half["SB"] = _xsz(cap_point("front" if n == "F0" else "rear", "SB", "SIDE",
-                                        level=level))
+            half[low] = _xsz(cap_point("front" if n == "F0" else "rear", low, "SIDE",
+                                       level=level))
         rows = tier.loop_rows(n)
         out.append((n, {r: half[r] for r in rows}))
     return out
@@ -699,17 +703,17 @@ def arch_cutter(axle, sign, level):
 
 # ================================================================ atlas layout
 # rects (x, y, w, h) in atlas pixels, V up
-R_SIDE_L = (16, 16, 290, 96)
-R_SIDE_R = (16, 116, 290, 96)
-R_TOP = (16, 224, 290, 60)
-R_GLASS_SIDE = (16, 304, 182, 36)
-R_GLASS_BAND = (16, 352, 182, 36)
-R_GLASS_WS = (208, 304, 96, 60)
-R_GLASS_TG = (208, 384, 84, 26)
-R_FRONT = (320, 16, 62, 48)
-R_REAR = (320, 80, 62, 82)
-R_UNDER = (64, 416, 28, 28)
-R_PLATE = (440, 152, 40, 12)
+R_SIDE_L = (32, 32, 580, 192)
+R_SIDE_R = (32, 232, 580, 192)
+R_TOP = (32, 448, 580, 120)
+R_GLASS_SIDE = (32, 608, 364, 72)
+R_GLASS_BAND = (32, 704, 364, 72)
+R_GLASS_WS = (416, 608, 192, 120)
+R_GLASS_TG = (416, 768, 168, 52)
+R_FRONT = (640, 32, 124, 96)
+R_REAR = (640, 160, 124, 164)
+R_UNDER = (128, 832, 56, 56)
+R_PLATE = (880, 304, 80, 24)
 
 
 def island_of(face):
@@ -824,22 +828,22 @@ def _components(faces):
 
 
 # ================================================================ more rects
-R_WHEEL_FACE = (400, 16, 96, 96)
-R_WHEEL_INNER = (192, 416, 24, 24)
-R_FLAT_PAINT = (144, 416, 16, 16)
-R_MIRROR_GLASS = (128, 416, 12, 12)
-R_RAIL = (96, 416, 16, 16)
-R_REFLECTOR = (176, 416, 12, 12)
-R_TREAD = (386, 120, 124, 20)
+R_WHEEL_FACE = (800, 32, 192, 192)
+R_WHEEL_INNER = (384, 832, 48, 48)
+R_FLAT_PAINT = (288, 832, 32, 32)
+R_MIRROR_GLASS = (256, 832, 24, 24)
+R_RAIL = (192, 832, 32, 32)
+R_REFLECTOR = (352, 832, 24, 24)
+R_TREAD = (772, 240, 248, 40)
 # lenses, each in its own 64 x 32 cell of a coarse grid, so that a
 # minified atlas does not bleed one lens into another or into paint (the
 # paint islands end on 32-texel boundaries, with a free block before any
 # dark or coloured patch)
 # The lamps carry the car's face in a small area: their rects are painted at
-# LENS_PPM, 1.75 times the body's density, in 96 x 48 cells.
-LENS_PPM = 112.0
-LENS_CELLS = [(320 + 96 * i, 192 + 48 * j) for j in range(6) for i in range(2)]
-R_FOGLAMP = LENS_CELLS[-1][0] + 32, LENS_CELLS[-1][1] + 8, 32, 32
+# LENS_PPM, 1.75 times the body's density, in 192 x 96 cells.
+LENS_PPM = 224.0
+LENS_CELLS = [(640 + 192 * i, 384 + 96 * j) for j in range(6) for i in range(2)]
+R_FOGLAMP = LENS_CELLS[-1][0] + 64, LENS_CELLS[-1][1] + 16, 64, 64
 
 
 # ================================================================ wheels
@@ -1022,9 +1026,9 @@ def lens_refs():
         pu, pv = pts @ u, pts @ v
         w = int(math.ceil((pu.max() - pu.min()) * LENS_PPM)) + 6
         h = int(math.ceil((pv.max() - pv.min()) * LENS_PPM)) + 6
-        if w > 88 or h > 42:
+        if w > 176 or h > 84:
             raise ValueError("lens %s (%d x %d px) overflows its cell" % (key, w, h))
-        cx, cy = cell[0] + (96 - w) // 2, cell[1] + (48 - h) // 2
+        cx, cy = cell[0] + (192 - w) // 2, cell[1] + (96 - h) // 2
         _LENS_REF[key] = dict(u=u, v=v, lo=(pu.min(), pv.min()), hi=(pu.max(), pv.max()),
                               rect=(cx, cy, w, h))
     if len(groups) > len(LENS_CELLS) - 1:
@@ -1154,12 +1158,29 @@ def axle_faces(s):
 
 
 # LOD3: the side profile, extruded across the width (s, z, kind of the
-# perimeter face that starts at the point)
+# perimeter face that starts at the point). Each side is three polygons cut
+# along existing profile points: the glasshouse (cowl, header, roof end,
+# glass foot), the lower strip (chin, the wheel contacts, the tail's foot)
+# and the painted body between, so the triangle count is the plain
+# extrusion's. Every face samples one uniform 64-texel block, so no mip
+# mixes paint with glass or under-body.
 LOD3_PROFILE = [(0.0, 0.45, "paint"), (0.12, 0.80, "paint"), (1.27, 1.01, "lod3_glass"),
                 (2.05, 1.40, "paint"), (3.99, 1.395, "lod3_glass"), (4.19, 1.05, "paint"),
-                (4.48, 0.52, "paint"), (4.43, 0.25, "under"), (3.51, 0.0, "under"),
-                (0.86, 0.0, "under"), (0.06, 0.20, "lod3_nose")]
-R_LOD3 = (16, 416, 40, 64)
+                (4.48, 0.52, "paint"), (4.43, 0.25, "lod3_under"), (3.51, 0.0, "lod3_under"),
+                (0.86, 0.0, "lod3_under"), (0.06, 0.20, "paint")]
+LOD3_SIDES = [((2, 3, 4, 5), "lod3_glass"), ((7, 8, 9, 10), "lod3_under"),
+              ((0, 1, 2, 5, 6, 7, 10), "paint")]
+R_L3_PAINT = (448, 896, 64, 64)
+R_L3_GLASS = (512, 896, 64, 64)
+R_L3_UNDER = (576, 896, 64, 64)
+L3_BLOCK = {"paint": R_L3_PAINT, "lod3_glass": R_L3_GLASS, "lod3_under": R_L3_UNDER}
+
+
+def _block_uv(kind, pts):
+    """Every corner well inside the kind's uniform block."""
+    x, y, w, h = L3_BLOCK[kind]
+    return [(x + w / 2.0 + 6.0 * math.sin(7.0 * (p[1] + p[2])),
+             y + h / 2.0 + 6.0 * math.cos(7.0 * (p[0] + p[2]))) for p in pts]
 
 
 def lod3_faces():
@@ -1167,23 +1188,17 @@ def lod3_faces():
     n = len(prof)
     faces = []
     for sg in (1, -1):
-        pts = [P(sg * HW, s, z) for s, z, _k in prof]
-        faces.append(Face(pts if sg > 0 else pts[::-1], "paint", paint=True, smooth=False))
-    per = [0.0]
-    for k in range(n):
-        (s0, z0, _), (s1, z1, _) = prof[k], prof[(k + 1) % n]
-        # each band at least a few texels tall, so a short one (the nose)
-        # does not blur into its neighbours
-        per.append(per[-1] + max(math.hypot(s1 - s0, z1 - z0), 0.55))
-    x, y, w, h = R_LOD3
+        for idx, kind in LOD3_SIDES:
+            pts = [P(sg * HW, prof[i][0], prof[i][1]) for i in idx]
+            f = Face(pts if sg > 0 else pts[::-1], kind, paint=(kind == "paint"),
+                     smooth=False, island="lod3")
+            f.uv = _block_uv(kind, f.pts)
+            faces.append(f)
     for k in range(n):
         (s0, z0, kind), (s1, z1, _) = prof[k], prof[(k + 1) % n]
         q = [P(-HW, s0, z0), P(HW, s0, z0), P(HW, s1, z1), P(-HW, s1, z1)]
-        # every LOD3 face painted: a coarse mip of the strip averages to light
-        # grey, and an unpainted face would show it untinted
-        f = Face(q, kind, paint=True, smooth=False, island="lod3")
-        va, vb = y + 1 + (h - 2) * per[k] / per[-1], y + 1 + (h - 2) * per[k + 1] / per[-1]
-        f.uv = [(x + 1, va), (x + w - 1, va), (x + w - 1, vb), (x + 1, vb)]
+        f = Face(q, kind, paint=(kind == "paint"), smooth=False, island="lod3")
+        f.uv = _block_uv(kind, q)
         faces.append(f)
     return faces
 

@@ -145,7 +145,7 @@ LOD3 none.
 Groups 32 windscreen (1.20 m2), 33 front door (0.41), 34 rear door and
 quarter (0.82), 35 tailgate (0.39). Separate faces on their own UV islands;
 LOD2 merges the side glass into one band a side, tagged 33. Measured over
-the glass texels: sRGB 49 mean, roughness 0.086, metallic 0.
+the glass texels: sRGB 52 mean, roughness 0.080, metallic 0.
 
 ### Glazing treatment
 
@@ -158,11 +158,16 @@ on the glass texels; partly covered texels are black.
 
 ## Paint
 
-Painted panels (B = 1) are neutral grey 237 sRGB before wear; the validator
-measures the painted faces at 0.75 linear on average (chroma 0.1): per tier
-LOD0 0.76, LOD1 0.73, LOD2 0.70, LOD3 0.40 (LOD3's faces are all painted,
-its windows and under-body included, so a coarse mip of its strip never
-shows untinted). Panel gaps, handles, the waist seal, the bonnet shut lines
+Painted panels (B = 1) are neutral grey 228 sRGB before wear (chroma 0.1):
+the panel field (the area-weighted median of the painted texels, LOD0 and
+LOD1) measures 0.761 linear, level with the catalog's other vehicles. The
+tiers keep one brightness under one paint: the area-weighted mean of the
+albedo the painted faces sample is, in linear, LOD0 0.723, LOD1 0.712
+(-1.4 %), LOD2 0.691 (-4.4 %), LOD3 0.711 (-1.7 %). LOD2's sides start at the
+sill's top, so they never sample the black sill, and the wheel pictures they
+show in the arches are a large light rim in a thin dark tyre with the arch
+gap left as paint. LOD3's painted faces sample a uniform light block (shaded
+to the tiers' level); its dark parts are unpainted faces. Panel gaps, handles, the waist seal, the bonnet shut lines
 and the flank's character line are relief and darkening on the paint; the
 black trims (sill, lips, slim cowl, grille, intake, B/C pillars, sail) are
 unpainted faces, rastered a texel past their outlines so their edges never
@@ -186,9 +191,15 @@ rails 2 x 14): 12 stations, rows sill
 top / widest / lamp foot / belt / glass top / roof edge / centre, 8-sided
 wheels, 3-section mirrors, triangular rails, 5-segment arches. LOD2: 5
 stations, rows sill / belt / glass top / centre (the sill carries the width),
-caps with the lamp rows, two axle prisms. LOD3: the side profile (11 points:
+caps with the lamp rows, two axle prisms; its sides start at the sill's top
+(0.30), the prisms showing under them. LOD3: the side profile (11 points:
 nose, bonnet edge, cowl, header, roof end, glass foot, tail, tail foot, two
-wheel contacts, chin) extruded across the width.
+wheel contacts, chin) extruded across the width; each side cut along those
+points into three polygons (2 + 5 + 2 triangles, the plain extrusion's 9):
+the glasshouse (cowl, header, roof end, glass foot) and the lower strip
+(chin, wheel contacts, tail foot) unpainted and dark, the body between
+painted; the windscreen, rear glass and the three underside quads unpainted
+and dark, the other perimeter quads painted.
 
 ## LOD review
 
@@ -198,10 +209,14 @@ tier rows at 30, 100 and 400 m and in close-ups: LOD1 keeps the stations,
 glasshouse, pillars, rails, mirrors and arches; LOD2 keeps the two-box
 silhouette, bonnet step and windscreen slope, the wheels as dark prisms
 under painted wheels in the side texture; LOD3 keeps the bonnet step and
-both glass slopes, its sides show the painted car (wheels, glass band). Known
-transition limits: LOD1's front lip sits at the sill-top row (0.27 instead of
-0.19, about 2 px at 30 m); LOD2 loses the arches (painted) and the
-high-mounted brake lamp. Runtime switching and performance are pending in
+both glass slopes, a dark glass band and a dark lower strip on plain body
+colour. The tier switches checked for brightness and colour under white,
+dark grey and red paint at 100 m and 400 m, with full textures and with
+mips 4 and 6 (`review_atlas_mips.py`): no brightness jump at LOD1-LOD2 or
+LOD2-LOD3. Known transition limits: LOD1's front lip sits at the sill-top row
+(0.27 instead of 0.19, about 2 px at 30 m); LOD2's body bottom at 0.30;
+LOD2 loses the arches (painted) and the high-mounted brake lamp; LOD3 has no
+wheels, only the dark lower strip. Runtime switching and performance are pending in
 the consumer.
 
 ## Interior geometry
@@ -217,30 +232,33 @@ mouldings, window and waist seals, grille slats, intake mesh, wipers (on the
 cowl), fuel flap (right rear), arch lips, bumper break lines and tailgate
 handle strip. No rear
 wiper, exhaust, antenna, washer jets, tow eye or brake discs. Glass is
-opaque. Wheels have no tread geometry and no hub geometry. LOD2 and LOD3 show
-the wheels as painted pictures on painted side faces, so their rims take the
-body colour at 100 m and beyond.
+opaque. Wheels have no tread geometry and no hub geometry. LOD2 shows the
+wheels' upper parts as painted pictures on painted side faces, so their rims
+take the body colour at 100 m and beyond.
 
 ## Texture set
 
-One 512 atlas at 64 texels/m: albedo `plain`, ORM, normal, emission (four
-unique PNGs, 512, no alpha). Local densities above that: the lamp rects at
-112 texels/m (1.75x, each centred in its own 96 x 48 cell) and the wheel
-face at 147 texels/m (96 x 96, shared by all four wheels), because they are
-small in area and carry the car's face. Islands (`estate_shape.py`, `R_*`): both
+One 1024 atlas at 128 texels/m (the owner's decision for every vehicle
+class): albedo `plain`, ORM, normal, emission and `glass_texels.png`, all
+1024, no alpha. The layout is the 512 one scaled by 2 (`SC`), the pictures
+the same, painted crisper (1-texel panel gaps of 8.5 mm, thinner seals).
+Local densities above that: the lamp rects at 224 texels/m (1.75x, each
+centred in its own 192 x 96 cell) and the wheel face at 294 texels/m
+(192 x 192, shared by all four wheels), because they are small in area and
+carry the car's face. Islands (`estate_shape.py`, `R_*`): both
 sides unmirrored (s, z), top mirrored (s, |x|), front and rear mirrored
 (|x|, z), each face choosing by its normal; glass on its own islands (side
 mirrored, windscreen and tailgate whole, LOD2's band apart); lenses on rects
 packed from LOD0's lens extents (left and right share one, mirrored);
 plate, front fog lamp, wheel face, tread, mirror, rail, reflector,
-under-body and LOD3 strip patches. The layout keeps the paint islands on
-32-texel blocks apart from every dark or coloured patch (a free block
-between), so the minified atlas does not bleed lamp or trim colour into
-paint. Every tier's face is mapped by the same projections, so the
+under-body patches and LOD3's three uniform 64-texel blocks (paint, dark
+glass, under-body). The layout keeps the paint islands on 64-texel blocks
+apart from every dark or coloured patch (a free block between), so the
+minified atlas does not bleed lamp or trim colour into paint. Every tier's face is mapped by the same projections, so the
 tiers share the artwork. The projected islands start as paint; texels no
-LOD0 face uses carry LOD3's pictures (side glass dark, wheels in the arches,
-shadow under the sills). Deviations: under-body patch and LOD3 strip far
-below 64 texels/m (never seen near); 45-degree faces stretch up to 1.4x in
+LOD0 face uses carry LOD2's pictures (light wheels in the arches, shadow
+under the sills). Deviations: the under-body patch and LOD3's blocks carry
+no density (uniform colour); 45-degree faces stretch up to 1.4x in
 their projection. Painted with `scripts/atlas.py` at SS 4; heights for the
 normal map: panel gaps -2.5 mm, handles +6 mm, side moulding +6 mm, arch lip
 +3 mm, grille slats +4 mm over a -6 mm grille, intake mesh, rim lip and hub
@@ -249,17 +267,19 @@ normal map: panel gaps -2.5 mm, handles +6 mm, side moulding +6 mm, arch lip
 through `scripts/weathering.py` at the moderate level (grime, road film
 falling off over 0.2 m above the sills, spray behind each wheel, bumper and
 tailgate wake dust; dirt resolved to its neutral steel dust so the paint
-stays neutral).
+stays neutral). The weathering module's noise is sized in texels, so its
+blotches are half the physical size they were at 512.
 
 ### Mip review
 
-`scripts/review_atlas_mips.py` at mips 3, 4 and 5, rendered on LOD1 and
-LOD2 from `source.blend` (not through the glTF importer): no lamp red or
+`scripts/review_atlas_mips.py` at mips 3, 4 and 5 (512 atlas) and again at
+mips 4 and 6 (1024), rendered on LOD1, LOD2 and LOD3 from `source.blend`
+(not through the glTF importer): no lamp red or
 amber bleeds into paint, the black trims stay inside their parts, the white
 plate greyed toward its border at mip 4 and beyond (it averaged with its
 dark rim; it is a 3-pixel feature at those distances; the plate's rect sits
-in a white 32-texel block so it stays light). LOD2's painted wheels
-blur into dark blotches on the sides by mip 4, as intended. Consumer
+in a white block so it stays light). LOD3's faces each sample one uniform
+block, so its mips keep paint, glass and under-body apart. Consumer
 filtering is pending.
 
 ## Variant list
