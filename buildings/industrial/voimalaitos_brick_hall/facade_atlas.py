@@ -33,12 +33,12 @@ The atlas is a trim sheet. Five bands run the full width and tile in U:
     y  536 .. 1020   unique  the steel hall window and the small square one,
                              the doors, the flue stub, the cable bushings, the
                              lettering and the coal-dusted wall under the
-                             gallery (both brick in the band's own bond), the
-                             coping over the gallery, the gallery's sheeting,
-                             the stub stacks (a plain face and the ladder's),
-                             the two
-                             roof decks (8 px/m), the LOD3 elevations (6 px/m)
-                             and flat patches.
+                             conveyor inlet (both brick in the band's own
+                             bond), the coping over the inlet, the closed
+                             inlet itself (40 px/m), the stub stacks (a plain
+                             face and the ladder's), the two roof decks
+                             (8 px/m), the LOD3 elevations (6 px/m) and flat
+                             patches.
 
 The hall window is painted once, four columns and four pane rows, and
 build.py assembles every multi-pane window from its sections: the bottom
@@ -46,7 +46,7 @@ row, middle rows with or without the hopper, the top row, and in width the
 outer columns and the middle ones (window_sections()).
 
 Two unique regions continue the brick band: the lettering under the turbine
-hall's coping and the wall under the coal gallery. Each sits in the atlas
+hall's coping and the wall round and under the conveyor inlet. Each sits in the atlas
 at the U its wall samples the band at (U_OFF is chosen for that) and on rows
 a whole number of bond repeats (32 rows, six courses) from the band rows its
 heights sample, so its bond runs on into the band's across its edges.
@@ -72,7 +72,7 @@ ATLAS = 1024
 PPM = 64.0
 LPPM = 6.0              # the LOD3 elevations
 DPPM = 8.0              # the roof decks
-GPPM = 24.0             # the coal gallery's sheeting
+IPPM = 40.0             # the closed conveyor inlet
 SPPM = 32.0             # the stub stacks
 BPPM = 48.0             # the cable bushing panel
 FPPM = 32.0             # the flue stub's plain concrete sides
@@ -137,8 +137,8 @@ SIZES = {
     "sq": (SQ, SQ),
     "bushing": (2.5, 1.25),     # flush: painted on the wall at every tier
     "letters": (10.5, 1.25),    # flush: brick with the lettering on it
-    "mouth": (3.75, 3.875),     # flush: brick under the coal gallery, dusted
-}
+    "mouth": (3.875, 3.875),    # flush: brick round and under the inlet, dusted
+}                               # (and "inlet", the inlet's frame, set below)
 REVEAL = {"win": 0.25, "sq": 0.2, "entrance": 0.25, "bigdoor": 0.3,
           "service": 0.25}
 FLUSH = ("bushing", "letters", "mouth", "conc")
@@ -187,22 +187,26 @@ DOOR_WIN = (3, 6)
 DOOR_WIN_SILL = 4.75
 LETTERS_Z = 9.625       # the lettering band's foot, under the hall's coping
 
-# The coal gallery on the west wall: an enclosed conveyor stub leaving the
-# wall at GAL_ZM (centre line), sloping down away from it at GAL_SLOPE,
-# GAL_W wide and GAL_H tall (vertical), GAL_LEN on the plan, its end a
-# closed blank face. Its back runs GAL_BURY into the parapet's brick.
-GAL_Y = 4.5
-GAL_W, GAL_H = 2.6, 2.8
-GAL_ZM = 17.625
-GAL_SLOPE = 20.0
-GAL_LEN = 5.0
-GAL_BURY = 0.2
-GAL_TAN = math.tan(math.radians(GAL_SLOPE))
-GAL_X0 = BH[0]                          # the wall face it leaves
-GAL_X1 = BH[0] - GAL_LEN                # its far end
-MOUTH_Z = 12.625                        # the dusted brick under it, from here
-# The west coping over the gallery carries the dust too: its outer face
-# from GAL_Y + COPE_DUST_HALF to GAL_Y - COPE_DUST_HALF has a region of its own.
+# The coal conveyor's inlet in the west wall, closed: the hall carries no
+# gallery of its own; the coal reception's gallery, rising at 20 degrees,
+# ends against this wall's face here. An opening of the gallery's section,
+# INLET_W wide and INLET_H tall, centred at plan y INLET_Y and at
+# INLET_ZC = 13.0 + 12.0 tan 20 deg (the reception gallery's centre line
+# where it reaches the wall), recessed INLET_DEPTH to a dark steel blanking
+# panel; round it a galvanised flashing frame INLET_FRAME wide, flush on the
+# brick, on which the gallery's 0.05 m collar lands.
+INLET_Y = 4.5
+INLET_W, INLET_H = 2.6, 2.8
+INLET_ZC = 13.0 + 12.0 * math.tan(math.radians(20.0))     # 17.3676
+INLET_FRAME = 0.15
+INLET_DEPTH = 0.12
+INLET_Z0 = INLET_ZC - INLET_H / 2.0 - INLET_FRAME         # the frame's foot
+SIZES["inlet"] = (INLET_W + 2 * INLET_FRAME, INLET_H + 2 * INLET_FRAME)
+INLET_COPE_CLEAR = 0.15         # the frame's head, at least this under the coping
+MOUTH_Z = 12.625                # the dusted brick round and under it, from here
+# The west coping over the inlet carries the dust too: its outer face
+# from INLET_Y + COPE_DUST_HALF to INLET_Y - COPE_DUST_HALF has a region of
+# its own.
 COPE_DUST_HALF = 2.0
 
 # Openings: (kind, plan centre along the wall, z of its foot, extra): extra
@@ -225,9 +229,10 @@ ITEMS = {
     "bh_ret_rear": [],
     "bh_rear": ([("sq", x, z, None) for x in (-4.5, -13.5) for z in SQ_Z]
                 + [("sq", -9.0, 4.0, None), ("sq", -9.0, 7.75, None)]),
-    "bh_west": ([("sq", GAL_Y, z, None) for z in SQ_Z[:3]]
-                + [("sq", -GAL_Y, z, None) for z in SQ_Z]
-                + [("mouth", GAL_Y, MOUTH_Z, None)]),
+    "bh_west": ([("sq", INLET_Y, z, None) for z in SQ_Z[:3]]
+                + [("sq", -INLET_Y, z, None) for z in SQ_Z]
+                + [("inlet", INLET_Y, INLET_Z0, None),
+                   ("mouth", INLET_Y, MOUTH_Z, None)]),
     "step": [("sq", -5.0, 15.25, None), ("sq", 5.0, 15.25, None)],
 }
 
@@ -357,18 +362,17 @@ FLUE_END = (628, 536, 128, 128)                 # 2.0 x 2.0 m
 FLUE_SIDE = (608, 884, 64, 32)                  # 2.0 m (U, up) x 1.0 m (V, out), FPPM
 BUSHING = (628, 672, 120, 60)                   # 2.5 x 1.25 m at BPPM
 SQWIN = (520, 700, 52, 52)                      # 0.8125 m square
-MOUTH = (772, 552, 240, 248)                    # 3.75 x 3.875 m, brick
+MOUTH = (768, 552, 248, 248)                    # 3.875 x 3.875 m, brick
 COPE_DUST = (236, 764, 256, 24)                 # 4.0 x 0.375 m of the west coping
 LETTERS = (4, 936, 672, 80)                     # 10.5 x 1.25 m, brick
 DECK_T = (604, 744, 148, 132)                   # 18.5 x 16.5 m at DPPM
 DECK_B = (756, 806, 116, 140)                   # 14.5 x 17.5 m at DPPM
-GAL_SIDE = (876, 806, 128, 67)                  # 5.33 x 2.8 m at GPPM
-GAL_TOP = (876, 880, 128, 62)                   # 5.33 x 2.6 m at GPPM
-GAL_END = (684, 946, 62, 67)                    # 2.6 x 2.8 m at GPPM
+INLET = (880, 810, 116, 124)                    # 2.9 x 3.1 m at IPPM
 REGION = {"entrance": ENTRANCE, "bigdoor": BIGDOOR, "service": SERVICE,
-          "sq": SQWIN, "bushing": BUSHING, "letters": LETTERS, "mouth": MOUTH}
+          "sq": SQWIN, "bushing": BUSHING, "letters": LETTERS, "mouth": MOUTH,
+          "inlet": INLET}
 # pixels per metre of each region, where it is not PPM
-REGION_PPM = {"bushing": BPPM}
+REGION_PPM = {"bushing": BPPM, "inlet": IPPM}
 # where each deck's region starts on the plan
 DECK_T_O = (-2.55, -8.1)
 DECK_B_O = (-16.1, -8.6)
@@ -390,7 +394,7 @@ ELEV_ZB = {"front": 0.0, "rear": 0.0, "west": 0.0, "east": 0.0, "step": Z_TWT}
 WALL_ELEV = {w: (e, off) for e, ws in ELEV_WALLS.items() for w, off in ws}
 
 PATCH_NAMES = ("blank", "soffit", "cope_top", "conc", "duct", "soot", "felt",
-               "rim", "gal_under", "dark")
+               "rim", "lining", "dark")
 PATCHES = {n: (756 + 20 * (i % 12), 952 + 22 * (i // 12), 16, 16)
            for i, n in enumerate(PATCH_NAMES)}
 
@@ -437,8 +441,8 @@ SURFACE = {
 # ---------------------------------------------------------------- palettes
 # One coherent brick per instance: the brick changes, and the window steel
 # and the doors move with it. Window steel is always lighter than the glass
-# it holds. The concrete, the coping, the roofs, the gallery and the kit
-# stay the same.
+# it holds. The concrete, the coping, the roofs, the conveyor inlet and the
+# kit stay the same.
 #
 # red_brick and brown_brick are shared, constant for constant, with the
 # plant's other four pieces. red_brick is the catalog red (144, 72, 52),
@@ -497,8 +501,7 @@ TRAN_H = 0.030          # mullions and bars
 SASH_H = 0.045          # the hopper's sash
 DOOR_FRAME_H = 0.030    # door frames and stiles
 RIB_H = 0.006           # sheet ribs on the machinery door
-CORR_H = 0.012          # the gallery's corrugations
-SEAM_H = 0.020          # its roof's standing seams
+FLASH_H = 0.020         # the inlet's flashing frame, over the brick
 LETTER_H = 0.020        # the letters, proud of the brick
 FLANGE_H = 0.012        # the stacks' flanges
 
@@ -601,11 +604,11 @@ def paint_cope_band(c):
 def cope_dust_s0():
     """Where along the boiler house's west coping face (from its north end,
     the coping's oversail included) the dusted segment starts."""
-    return (BH[3] + CO) - (GAL_Y + COPE_DUST_HALF)
+    return (BH[3] + CO) - (INLET_Y + COPE_DUST_HALF)
 
 
 def paint_cope_dust(c):
-    """The west coping's face over the gallery: the band's coping, at the U
+    """The west coping's face over the inlet: the band's coping, at the U
     its face samples the band at, for weather() to dust."""
     x, y, w, h = COPE_DUST
     paint_cope_area(c, x - PAD, x + w + PAD, y, cope_dust_s0() * PPM - PAD)
@@ -987,57 +990,58 @@ def paint_letters_region(c):
 
 
 def paint_mouth(c):
-    """The brick under the coal gallery: the band's bond; weather() dusts it."""
+    """The brick round and under the conveyor inlet: the band's bond;
+    weather() dusts it."""
     x, y, w, h = MOUTH
     paint_brick_area(c, x - PAD, x + w + PAD, y - PAD, y + h + PAD)
 
 
-# --------------------------------------------------------------- gallery
-def gal_slope_len():
-    return (GAL_LEN + GAL_BURY) / math.cos(math.radians(GAL_SLOPE))
+# ----------------------------------------------------------------- inlet
+def paint_inlet(c, x0, y0, ppm, pad=PAD):
+    """The conveyor inlet, closed, its frame's corner at pixel (x0, y0):
+    a galvanised flashing frame INLET_FRAME wide, flush on the brick, its
+    outer edge a drip and its inner edge returning into the opening, a bolt
+    every 0.3 m; inside it the dark steel blanking panel that closes the
+    opening, three bolted plates on two joints with two upright
+    stiffeners, shadowed under the head and inside the jambs."""
+    w, h = SIZES["inlet"]
+    k = ppm / PPM
+    bw = max(0.25, k)
+    F = INLET_FRAME * ppm
+    X1, Y1 = x0 + w * ppm, y0 + h * ppm
+    c.paint(x0 - pad, X1 + pad, y0 - pad, Y1 + pad, ID_GALV, 0.96, 0.92, height=0.0)
+    c.bevel(x0 - pad, X1 + pad, y0 - pad, Y1 + pad, FLASH_H, bw)
+    c.mul(x0 - pad, X1 + pad, y0 - pad, y0 + 1.0 * k, 0.82, ao=0.80)   # the drip's shadow
+    a0, a1, b0, b1 = x0 + F, X1 - F, y0 + F, Y1 - F
+    c.mul(a0 - 1.5 * k, a1 + 1.5 * k, b0 - 1.5 * k, b1 + 1.5 * k, 0.86, ao=0.82)
+    if ppm >= IPPM:
+        for xx in np.arange(x0 + F / 2.0, X1 - F / 4.0, 0.3 * ppm):
+            for yy in (y0 + F / 2.0, Y1 - F / 2.0):
+                c.disc(xx, yy, 0.9 * k, ID_HANDLE, 0.85, 0.85, height=FLASH_H + 0.008)
+        for yy in np.arange(y0 + F / 2.0 + 0.3 * ppm, Y1 - F, 0.3 * ppm):
+            for xx in (x0 + F / 2.0, X1 - F / 2.0):
+                c.disc(xx, yy, 0.9 * k, ID_HANDLE, 0.85, 0.85, height=FLASH_H + 0.008)
+    # the blanking panel
+    c.paint(a0, a1, b0, b1, ID_PANEL, 1.0, 0.85, height=-0.02)
+    for i in (1, 2):                                    # stiffeners
+        xx = a0 + i * (a1 - a0) / 3.0
+        c.paint(xx - 0.05 * ppm, xx + 0.05 * ppm, b0, b1, ID_PANEL, 1.06, 0.86,
+                height=-0.004)
+        c.mul(xx + 0.05 * ppm, xx + 0.05 * ppm + 1.5 * k, b0, b1, 0.86, ao=0.84)
+    for i in (1, 2):                                    # the plates' joints
+        yy = b0 + i * (b1 - b0) / 3.0
+        c.paint(a0, a1, yy - 0.5 * k, yy + 0.5 * k, ID_DARK, 1.0, 0.7, height=-0.025)
+        c.mul(a0, a1, yy - 2.0 * k, yy - 0.5 * k, 0.88, ao=0.84)
+    # the recess: the head's shadow, the jambs', a little at the sill
+    c.mul(a0, a1, b1 - 0.22 * ppm, b1, 0.80, ao=0.72)
+    c.mul(a0, a1, b1 - 0.08 * ppm, b1, 0.86, ao=0.66)
+    c.mul(a0, a0 + 0.08 * ppm, b0, b1, 0.86, ao=0.80)
+    c.mul(a1 - 0.08 * ppm, a1, b0, b1, 0.86, ao=0.80)
+    c.mul(a0, a1, b0, b0 + 0.04 * ppm, 0.90, ao=0.86)
 
 
-def paint_gallery(c):
-    """The coal gallery's light sheeting at GPPM. Sides: vertical
-    corrugations, U along the slope from the far end, V up from the floor
-    line, a flashing at the top and the floor rail at the foot. Roof:
-    standing seams down the slope. End: a sheet frame round the dark
-    blanking panel, set back."""
-    k = GPPM / PPM
-    x, y, w, h = GAL_SIDE
-    c.paint(x - PAD, x + w + PAD, y - PAD, y + h + PAD, ID_SHEET, 1.0, 1.0, height=0.0)
-    sy, sx, Y, X = c.field(x - PAD, x + w + PAD, y - PAD, y + h + PAD)
-    ph = 2.0 * np.pi * (X - x) / (0.1875 * GPPM)
-    c.shade[sy, sx] = 0.96 + 0.05 * np.cos(ph)
-    c.height[sy, sx] = CORR_H * (0.5 + 0.5 * np.cos(ph))
-    for b0, b1 in ((y - PAD, y + 0.12 * GPPM), (y + h - 0.12 * GPPM, y + h + PAD)):
-        c.paint(x - PAD, x + w + PAD, b0, b1, ID_SHEET, 0.90, 0.92, height=0.0)
-    c.mul(x - PAD, x + w + PAD, y + h - 0.12 * GPPM - 1, y + h - 0.12 * GPPM, 0.84, ao=0.84)
-    c.mul(x - PAD, x + w + PAD, y + 0.12 * GPPM, y + 0.12 * GPPM + 1, 0.88, ao=0.88)
-    for i in range(1, 4):                               # sheet laps every 1.33 m
-        xx = x + i * w / 4.0
-        c.mul(xx, xx + 1, y, y + h, 0.88, ao=0.88)
-
-    x, y, w, h = GAL_TOP
-    c.paint(x - PAD, x + w + PAD, y - PAD, y + h + PAD, ID_SHEET, 0.94, 1.0, height=0.0)
-    sy, sx, Y, X = c.field(x - PAD, x + w + PAD, y - PAD, y + h + PAD)
-    r = (Y - y) % (0.52 * GPPM)
-    c.height[sy, sx] = np.where(r < 1.0, SEAM_H, 0.0)
-    c.shade[sy, sx] = np.where(r < 1.0, 1.0, np.where(r < 2.0, 0.92, 0.95))
-    c.mul(x - PAD, x + w + PAD, y - PAD, y + 1.5, 0.86, ao=0.86)
-    c.mul(x - PAD, x + w + PAD, y + h - 1.5, y + h + PAD, 0.86, ao=0.86)
-
-    x, y, w, h = GAL_END
-    f = 0.16 * GPPM
-    c.paint(x - PAD, x + w + PAD, y - PAD, y + h + PAD, ID_SHEET, 0.92, 1.0, height=0.0)
-    c.bevel(x - PAD, x + w + PAD, y - PAD, y + h + PAD, 0.01, 1.0)
-    c.paint(x + f, x + w - f, y + f, y + h - f, ID_PANEL, 1.0, 0.8, height=-0.02)
-    c.mul(x + f, x + w - f, y + h - f - 2 * k * 4, y + h - f, 0.82, ao=0.75)
-    c.mul(x + f, x + f + 2, y + f, y + h - f, 0.86, ao=0.8)
-    c.mul(x + w - f - 2, x + w - f, y + f, y + h - f, 0.86, ao=0.8)
-    for i in range(1, 3):                               # the panel's joints
-        yy = y + f + i * (h - 2 * f) / 3.0
-        c.paint(x + f, x + w - f, yy - 0.5, yy + 0.5, ID_DARK, 1.0, 0.7, height=-0.025)
+def paint_inlet_region(c):
+    paint_inlet(c, INLET[0], INLET[1], IPPM)
 
 
 def stack_face_w():
@@ -1234,7 +1238,8 @@ def paint_brick_lo(c, x0, x1, y0, y1):
 
 
 PAINTERS = {"entrance": paint_entrance, "bigdoor": paint_bigdoor,
-            "service": paint_service, "bushing": paint_bushing, "sq": paint_sq}
+            "service": paint_service, "bushing": paint_bushing, "sq": paint_sq,
+            "inlet": paint_inlet}
 
 
 def paint_elevation(c, ename):
@@ -1281,7 +1286,7 @@ def paint_patches(c):
         "soot": (ID_SOOT, 1.0, 0.5),
         "felt": (ID_FELT, 1.0, 1.0),
         "rim": (ID_STACK, 0.9, 0.95),
-        "gal_under": (ID_SHEET, 0.80, 0.85),
+        "lining": (ID_GALV, 0.80, 0.85),
         "dark": (ID_DARK, 1.0, 0.8),
     }
     for name, (mid, sh, ao) in spec.items():
@@ -1302,8 +1307,7 @@ def check_regions():
              "service": SERVICE, "stack": STACK, "flue_end": FLUE_END,
              "flue_side": FLUE_SIDE, "bushing": BUSHING, "sq": SQWIN,
              "mouth": MOUTH, "letters": LETTERS, "deck_t": DECK_T, "deck_b": DECK_B,
-             "gal_side": GAL_SIDE, "gal_top": GAL_TOP, "gal_end": GAL_END,
-             "stack_l": STACK_L, "cope_dust": COPE_DUST}
+             "inlet": INLET, "stack_l": STACK_L, "cope_dust": COPE_DUST}
     rects.update({"elev_" + k: v for k, v in ELEV.items()})
     rects.update(PATCHES)
     bands_top = PIPE_Y0 + PIPE_H + PAD
@@ -1364,10 +1368,6 @@ def check_regions():
         problems.append("a stack region cannot hold a face")
     if (COPE_DUST[2], COPE_DUST[3]) != (m(2 * COPE_DUST_HALF), COPE_H):
         problems.append("the dusted coping region is not its face")
-    if GAL_SIDE[2] < (GAL_LEN / math.cos(math.radians(GAL_SLOPE))) * GPPM - 1 or \
-            GAL_SIDE[3] < GAL_H * GPPM - 1 or GAL_TOP[3] < GAL_W * GPPM - 1 or \
-            (GAL_END[2], GAL_END[3]) != (round(GAL_W * GPPM), round(GAL_H * GPPM)):
-        problems.append("a gallery region cannot hold its face")
     if text_width() * CAP > SIZES["letters"][0] - 0.3:
         problems.append("the lettering does not fit its panel")
     for ename, (ex, ey, ew, eh) in ELEV.items():
@@ -1388,24 +1388,29 @@ def check_regions():
 # ================================================================ weather
 def mouth_dust(s, z):
     """The coal dust on the west wall at *s* along it and height *z*: a
-    broad soft stain under the gallery's floor, as wide as the gallery and
-    spreading a little as it falls, fading downward over some 4 m, and a
-    little round the mouth beside it; faded to nothing at the dusted
-    panel's edges, so the band's brick runs on round it."""
-    sc = wall_s("bh_west", GAL_Y)
+    broad soft stain falling from the conveyor inlet's sill, heaviest under
+    its middle, where a belt drops its fines, over a fainter veil as wide
+    as the frame, both spreading as they fall; fading downward over the
+    panel's 3.3 m under the sill, and a little up the frame's sides; faded
+    to nothing at the dusted panel's edges, so the band's brick runs on
+    round it."""
+    sc = wall_s("bh_west", INLET_Y)
     pw, ph = SIZES["mouth"]
-    d = (GAL_ZM - GAL_H / 2.0) - z                  # below the floor at the wall
+    d = (INLET_ZC - INLET_H / 2.0) - z              # below the inlet's sill
     dd = np.clip(d, 0.0, None)
-    hw = GAL_W / 2.0 + 0.06 * dd
+    sig = 0.55 + 0.12 * dd
+    core = np.exp(-(s - sc) ** 2 / (2.0 * sig ** 2))
+    hw = SIZES["inlet"][0] / 2.0 - 0.15 + 0.05 * dd
     off = np.clip(np.abs(s - sc) - hw, 0.0, None)
-    across = np.exp(-off ** 2 / (2.0 * 0.30 ** 2))
+    veil = np.exp(-off ** 2 / (2.0 * 0.35 ** 2))
+    across = 0.6 * core + 0.4 * veil
     vert = np.where(d >= 0.0, 0.5 * np.exp(-dd / 1.6) + 0.5 * np.exp(-dd / 4.0),
-                    np.exp(np.clip(d, None, 0.0) / 0.35))
+                    np.exp(np.clip(d, None, 0.0) / 0.30))
     edge = (atlas.smoothstep(sc - pw / 2.0, sc - pw / 2.0 + 0.375, s)
             * atlas.smoothstep(sc + pw / 2.0, sc + pw / 2.0 - 0.375, s)
             * atlas.smoothstep(MOUTH_Z, MOUTH_Z + 1.0, z)
-            * atlas.smoothstep(MOUTH_Z + ph, MOUTH_Z + ph - 0.125, z))
-    return 0.95 * across * vert * edge
+            * atlas.smoothstep(MOUTH_Z + ph, MOUTH_Z + ph - 0.45, z))
+    return 0.90 * across * vert * edge
 
 
 def stack_runs(c, rot):
@@ -1427,16 +1432,16 @@ def weather(c):
     wall; above it each 4 m slab samples the same rows again, so nothing
     that follows height goes there, only noise on the slab period (TILE_Y).
     The plant burns coal: a light film of soot and coal dust lies evenly on
-    all the brick and the coping, heavier on the gallery and in a broad
-    stain on the wall and the coping round its mouth, and soot on the
+    all the brick and the coping, heavier on the conveyor inlet and in a
+    broad stain on the wall and the coping round it, and soot on the
     stacks, the flue stub and the deck round them.
     """
     brick = (ID_BRICK, ID_BRICK2, ID_MORTAR)
-    steel = (ID_GALV, ID_DUCT, ID_DOOR, ID_HANDLE, ID_SHEET, ID_STACK, ID_PANEL)
+    steel = (ID_GALV, ID_DUCT, ID_DOOR, ID_HANDLE, ID_STACK, ID_PANEL)
     w = weathering.Weather(c, clean=(ID_GLASS, ID_PORC), steel=steel, tile_y=TILE_Y,
                            coal_dust=weathering.COAL_DUST)
     w.grime()
-    w.fade((ID_FRAME, ID_DOOR, ID_SHEET, ID_LETTER, ID_STACK))
+    w.fade((ID_FRAME, ID_DOOR, ID_LETTER, ID_STACK))
     w.wash(brick)
     w.plinth(0, ATLAS, BRICK_Y0, BRICK_Y0 + m(Z_PLINTH), (ID_PLINTH,))
     w.splash(0, ATLAS, BRICK_Y0 + m(Z_PLINTH), BRICK_Y0 + m(1.25), brick,
@@ -1487,34 +1492,29 @@ def weather(c):
     w.coal(x - PAD, x + rw + PAD, y - PAD, y + rh + PAD, lambda Y, X, nz: (
         0.08 + 0.30 * np.exp(-(x + rw - X) / (26.0 * k)) * np.exp(-(y + rh - Y) / (40.0 * k)))
         * (0.6 + 0.4 * nz("blotch")), (ID_CONC,))
-    # the gallery: a coal-plant's film of fines, thick on its roof, on the
-    # sides' floor rail and toward the wall, where the conveyor's dust leaks
-    x, y, rw, rh = GAL_SIDE
+    # the conveyor inlet: fines on its frame and its blanking panel, heavy
+    # along the sill where they gather, and runs down the panel from the
+    # head
+    x, y, rw, rh = INLET
     w.coal(x - PAD, x + rw + PAD, y - PAD, y + rh + PAD, lambda Y, X, nz: (
-        0.08 + 0.10 * nz("big") + 0.45 * np.exp(-np.clip(Y - y, 0.0, None) / (0.45 * GPPM))
-        + 0.25 * np.exp(-np.clip(Y - y, 0.0, None) / (1.4 * GPPM))
-        + 0.20 * np.clip((X - x) / rw, 0.0, 1.0) ** 2), (ID_SHEET,))
-    w.runs(x - PAD, x + rw + PAD, y - PAD, y + rh + PAD, (ID_SHEET,), 0.18, fall=30.0)
-    x, y, rw, rh = GAL_TOP
-    w.coal(x - PAD, x + rw + PAD, y - PAD, y + rh + PAD, lambda Y, X, nz: (
-        0.22 + 0.16 * nz("big") + 0.14 * np.clip((X - x) / rw, 0.0, 1.0)), (ID_SHEET,))
-    x, y, rw, rh = GAL_END
-    w.coal(x - PAD, x + rw + PAD, y - PAD, y + rh + PAD, lambda Y, X, nz: (
-        0.10 + 0.10 * nz("big") + 0.25 * np.exp(-(Y - y) / 8.0)), (ID_SHEET, ID_PANEL))
-    # the wall under the gallery: a broad soft stain of fines falling from
-    # the gallery's floor, spreading as it falls, faded to nothing at the
-    # panel's edges so the band runs on (mouth_dust())
+        0.12 + 0.08 * nz("big") + 0.45 * np.exp(-np.clip(Y - y, 0.0, None) / (0.35 * IPPM))
+        + 0.15 * np.exp(-np.clip(Y - y, 0.0, None) / (1.2 * IPPM))),
+        (ID_GALV, ID_PANEL, ID_DARK, ID_HANDLE))
+    w.runs(x - PAD, x + rw + PAD, y - PAD, y + rh + PAD, (ID_PANEL,), 0.16, fall=40.0)
+    # the wall round and under the inlet: a broad soft stain of fines falling
+    # from its sill, spreading as it falls, faded to nothing at the panel's
+    # edges so the band runs on (mouth_dust())
     x, y, rw, rh = MOUTH
-    s_lo = wall_s("bh_west", GAL_Y) - SIZES["mouth"][0] / 2.0
+    s_lo = wall_s("bh_west", INLET_Y) - SIZES["mouth"][0] / 2.0
 
     def mouth(Y, X, nz):
         v = mouth_dust(s_lo + (X - x) / PPM, MOUTH_Z + (Y - y) / PPM)
-        return v * (0.80 + 0.20 * nz("big") + 0.10 * atlas.smoothstep(
-            0.4, 1.8, nz("wash")))
+        return v * (0.72 + 0.18 * nz("big") + 0.10 * atlas.smoothstep(
+            0.4, 1.8, nz("wash")) + 0.22 * atlas.smoothstep(0.2, 1.6, nz("runs")))
     w.coal(x - PAD, x + rw + PAD, y - PAD, y + rh + PAD, mouth, brick, dark=0.30)
-    # the gallery's underside and the coping over its mouth
-    gx, gy, gw, gh = PATCHES["gal_under"]
-    w.coal(gx - 2, gx + gw + 2, gy - 2, gy + gh + 2, 0.80, (ID_SHEET,))
+    # the inlet's reveals and the coping over it
+    gx, gy, gw, gh = PATCHES["lining"]
+    w.coal(gx - 2, gx + gw + 2, gy - 2, gy + gh + 2, 0.45, (ID_GALV,))
     x, y, rw, rh = COPE_DUST
     xc = x + COPE_DUST_HALF * PPM
     w.runs(x - PAD, x + rw + PAD, y, y + rh, (ID_COPE,), 0.14, fall=14.0)
@@ -1561,12 +1561,17 @@ def weather(c):
                * np.exp(-((X - cx) ** 2 + (Y - cy) ** 2) / 120.0), (ID_FELT, ID_BALLAST))
     w.coal(x, x + rw, y, y + rh, lambda Y, X, nz: 0.06 + 0.06 * nz("big"),
            (ID_FELT, ID_BALLAST, ID_COPE))
-    # the LOD3 west elevation: the same dust under the gallery
+    # the LOD3 west elevation: the same dust round and under the inlet, and
+    # on the inlet itself
     ex, ey, ew, eh = ELEV["west"]
-    s_lo = wall_s("bh_west", GAL_Y) - SIZES["mouth"][0] / 2.0
+    s_lo = wall_s("bh_west", INLET_Y) - SIZES["mouth"][0] / 2.0
     w.coal(ex + s_lo * LPPM, ex + (s_lo + SIZES["mouth"][0]) * LPPM, ey + MOUTH_Z * LPPM,
            ey + (MOUTH_Z + SIZES["mouth"][1]) * LPPM, lambda Y, X, nz: mouth_dust(
                (X - ex) / LPPM, (Y - ey) / LPPM), brick, dark=0.30)
+    iw, ih = SIZES["inlet"]
+    s0 = wall_s("bh_west", INLET_Y) - iw / 2.0
+    w.coal(ex + s0 * LPPM, ex + (s0 + iw) * LPPM, ey + INLET_Z0 * LPPM,
+           ey + (INLET_Z0 + ih) * LPPM, 0.25, (ID_GALV, ID_PANEL, ID_DARK, ID_HANDLE))
     return w
 
 
@@ -1592,7 +1597,7 @@ def paint(ss=atlas.SS):
     paint_letters_region(c)
     paint_mouth(c)
     paint_cope_dust(c)
-    paint_gallery(c)
+    paint_inlet_region(c)
     paint_stack(c, STACK)
     paint_stack(c, STACK_L, rot=True, ladder=True)
     paint_decks(c)
