@@ -20,7 +20,10 @@ coping. It is a generic composite of the type, not any one plant.
   - A **raised coal bunker bay** runs along the rear half of its roof, 13.8 ×
     6.5 m and up to 24.0 m. It is brick with a row of small square windows
     and a coping.
-  - Two **steel stub stacks** stand on the deck in front of the bay.
+  - Two **steel stub stacks** stand on the deck in front of the bay: welded
+    plate in weathered aluminium paint, sooted toward the mouth, with a
+    rolled cap ring, two stiffening rings, a guy collar and a caged ladder
+    up one side.
 - **Turbine hall**, the east volume (+X): 18 × 16 m and 11.6 m, abutting the
   boiler house's east face.
   - Its front has four tall steel hall windows on equal brick piers, and the
@@ -159,8 +162,9 @@ Fifty-six windows are cut into the walls:
 | Boiler house east, over the hall roof | 2 | 0.8125 m square | 15.25 m | 16.0625 m |
 
 The bunker bay carries 20 more square windows (seven on each long face,
-three on each end), painted flush on its face (Construction, *The bunker
-bay*), with their sills at 21.22 m.
+three on each end), sills at 21.22 m and heads at 22.03 m. They are cut
+with 0.20 m reveals on `LOD0`/`LOD1` and painted flush from `LOD2`
+(Construction, *The bunker bay*).
 
 The band sits on a 0.25 m concrete sill at 3.5–3.75 m, directly over the
 entrance canopy. Its spandrels are 0.625 m, and its head is 0.25 m. The only
@@ -184,7 +188,7 @@ floor, which is the type.
 
 ## Construction
 
-`build.py` builds up to nineteen closed solids and unions them with
+`build.py` builds up to eleven closed solids and unions them with
 Blender's exact boolean (`asset_build.union`):
 
 - **The shell**: both volumes' walls as one closed solid, meshed directly.
@@ -192,17 +196,23 @@ Blender's exact boolean (`asset_build.union`):
     brick inner faces and the sunk decks), so it closes with its floor alone.
   - On `LOD2`/`LOD3` flat lids at the wall tops close it, under coping boxes.
 - **The copings**: a ring over each parapet (on `LOD2`/`LOD3`, a box over
-  the whole roof, its top the deck).
+  the whole roof, its top the deck). The boiler house's west face is cut
+  4 m either side of the gallery's axis, and that middle stretch samples the
+  dusted coping (`COPE_DUST`).
 - **The coal bunker bay**, **the gallery head** and the two **stub stacks**.
 - The two hall **ventilators** (`asset_build.open_stack`, `LOD0`/`LOD1`
   only), the **flue stub** and the **entrance canopy**.
-- Two **wall ladders** with **safety cages** (`scripts/roof_safety.py`).
 
 The walls run 0.125 m up into the copings, and every roof item's foot is
 buried in its deck. The union trims what is inside, so the result is the
 boundary of one empty volume. After the union every tier is welded at 0.1 mm.
 `LOD2`/`LOD3` are then dissolved with `dissolve_limit` (UV and material seams
 kept). N-gons are triangulated by ear clipping with the beauty rule.
+
+The two **wall ladders** with **safety cages** are `scripts/roof_safety.py`'s
+lean kit: separate closed solids that touch nothing, appended after the
+cleanup with `RS.append(..., check=True)` on `LOD0`–`LOD2`, never through the
+union (Roof safety).
 
 ### The shell
 
@@ -257,7 +267,7 @@ stand 0.1 m behind the walls under it on the west, rear and east, so the
 boiler house's coping reads as a string course under it. Its front stands on
 the deck at y 1.9.
 
-Each face is four horizontal bands of quads:
+Each face is four horizontal bands:
 
 | Band | Height | Texture |
 | --- | --- | --- |
@@ -267,13 +277,18 @@ Each face is four horizontal bands of quads:
 | Coping | 23.625–24.0 m | coping band |
 
 The window row is brick with a square window every 2.0 m, one centred on
-each face: seven on each long face, three on each end. The windows are
-painted flush, a concrete sill and the recess's occlusion painted round
-them. That departs from cut openings at `LOD0`/`LOD1`. Cutting 20 more
-windows would cost about 400 triangles at `LOD1`, which has 590 to spare.
-They are 21–22 m up, so from the ground their reveal is a sliver, and they
-read as recessed in the elevated views. Its top is a felt roof with a drain
-and a hatch, its edge the coping's top.
+each face: seven on each long face, three on each end
+(`bunker_windows()`). The band paints each window with a concrete sill
+under it and the recess's occlusion round it.
+
+- On `LOD0`/`LOD1` each window is cut into the row's face (a polygon with
+  20 holes in all), with 0.20 m concrete reveals and the small square
+  window's region on its closing plane, as on the walls. The painted sill
+  under each hole stays, as a sill. The 20 windows cost 320 triangles.
+- From `LOD2` the band's painted windows stand flush, as the walls' do.
+
+Its top is a felt roof with a drain and a hatch, its edge the coping's
+top.
 
 ### The gallery head
 
@@ -307,6 +322,25 @@ hollow (CLAUDE.md): a 0.08 m rim round a flue sunk 1.0 m, sooted, its floor
 at 23.75 m, well clear of the deck. They are made locally rather than with
 `asset_build.open_stack()`, which builds square stacks; a round steel stack
 reads as one only with facets. They are kept on every tier.
+
+Each is built as one closed solid from a profile (`stub_stack()`), so its
+rings cost no boolean:
+
+| Ring | Height | Proud | Modelled on |
+| --- | --- | --- | --- |
+| Rolled cap ring | 24.60–24.75 m | 0.035 m | `LOD0`, `LOD1` |
+| Stiffening rings | 20.875–20.955 and 22.875–22.955 m | 0.03 m | `LOD0` |
+
+Every ring is also painted, with its shadow line, on every tier, so a tier
+that drops its geometry keeps it in the texture (`stack_rings()`). The cap
+ring shapes the mouth's outline, so it stays to 70 m; at 35 m the
+stiffening rings are about a pixel proud.
+
+The rest is texture: welded seams every 1.5 m, the foot flange, a guy
+collar at 23.625 m with a lug on seven faces, and on face 6 (facing the
+front and the turbine hall) a caged ladder: rails, a rung every 0.3 m, and
+hoops every 0.75 m from 2.6 m over the deck with three straps. That face
+samples a region of its own (`STACK_L`), turned a quarter.
 
 ### Roof joins
 
@@ -360,19 +394,37 @@ Both run more than 8 m, so each carries a safety cage (`roof_safety.Cage`,
 its defaults): hoops from 2.5 m over the foot to just under the top, 1.43 m
 and 1.36 m apart (8 and 6 hoops), and three straps.
 
-Both ladders use `roof_safety.WallLadder` on a level `Eave` (the coping's
-foot, its 0.05 m oversail and its top). They take brackets every 2.4 m at
+Both ladders use `roof_safety.WallLadder(..., lean=True)` on a level
+`Eave` (the coping's foot, its 0.05 m oversail and its top), with their
+cages `roof_safety.Cage` lean with them. They take brackets every 2.4 m at
 most rather than the shared 1.6 m. `check_layout()` passes
 `roof_safety.problems()` for both ladders and both cages.
 
-Tiers (`LADDER_MODES`, `CAGE_MODES`):
+The lean kit cuts nothing: rungs stop 1.5 mm short of the rails, brackets
+as short of the wall and the rails, hoops of the rails and straps of the
+hoops. It goes into each tier with one `RS.append(obj, RS.solids(kit(level),
+level, PAINT, extents=True, modes=LADDER_MODES), check=True)` after the
+cleanup; `check=True` raises if any part meets the building or another
+part.
+
+- The walls and the plinth are flush, and the copings oversail 0.05 m, 0.12 m
+  inside the rails, so no bracket needs `behind`.
+- The upper ladder's foot hangs 0.3 m over the hall's deck, clear of it.
+- From `LOD2` the hall's roof is its coping box, whose top is 0.875 m above
+  that deck. There the upper ladder's bare rails start 0.01 m over the box
+  (`WALL2_FLAT`), and its back strap keeps the cage's hoop heights
+  (`CAGE2_FLAT`). The parapet hides that stretch from the ground on every
+  tier.
+
+Tiers (`LADDER_MODES`, `CAGE_MODES`, and the lean forms of
+`roof_safety.LEAN_FORMS`):
 
 | Tier | Rungs | Brackets | Cage |
 | --- | --- | --- | --- |
-| `LOD0` | every one | yes | every hoop |
-| `LOD1` | every third | no | every third hoop, the top one always |
-| `LOD2` | bare rails | no | each cage's back strap; appended after the cleanup (`RS.append`, `extents=True`) |
-| `LOD3` | no kit | no | none |
+| `LOD0` | every one, three-sided | yes, three-sided | every hoop |
+| `LOD1` | every other one, three-sided | yes, tetrahedra | every other hoop, the top one always |
+| `LOD2` | bare rails | no | each cage's back strap |
+| `LOD3` | no kit | no | none (no append) |
 
 The ladders never set the bounds, so `LOD3` can drop them.
 
@@ -389,7 +441,9 @@ Every tier derives from `facade_atlas.py`:
   turbine hall's windows (`TH_WIN_X`, `TH_SILL`);
 - `SIZES` and `REVEAL` for the other openings;
 - `WALLS` and `ITEMS`;
-- `CANOPY`, `FLUE`, `BUNKER`, `STACKS`, `VENTS` and the gallery (`GAL_*`).
+- `CANOPY`, `FLUE`, `BUNKER` and `BUNKER_SILL`, `STACKS` and the stacks'
+  rings (`STACK_CAP`, `STACK_STIFF`, `STACK_GUY`, `STACK_LADDER_FACE`),
+  `VENTS`, the gallery (`GAL_*`) and the dusted coping (`COPE_DUST_HALF`).
 
 `check_layout()` asserts:
 
@@ -406,43 +460,47 @@ Every tier derives from `facade_atlas.py`:
 
 | Tier | Triangles | Ceiling |
 | --- | --- | --- |
-| `LOD0` | 5596 | 12,000 |
-| `LOD1` | 3410 | 4,000 |
-| `LOD2` | 1408 | 1,500 |
-| `LOD3` | 292 | 500 |
+| `LOD0` | 4114 | 12,000 |
+| `LOD1` | 3276 | 4,000 |
+| `LOD2` | 1434 | 1,500 |
+| `LOD3` | 316 | 500 |
 
-Where they go, counted on the solids before the union:
+Where they go, counted on the solids before the union (the kit is appended
+whole, so its count is exact):
 
 | | `LOD0` | `LOD1` | `LOD2` | `LOD3` |
 | --- | --- | --- | --- | --- |
-| Shell (walls, openings, parapets, decks) | 1594 | 1594 | 1090 | 32 |
-| Copings | 60 | 60 | 24 | 24 |
-| Bunker bay | 36 | 36 | 36 | 36 |
+| Shell (walls, openings, parapets, decks) | 1598 | 1598 | 1094 | 32 |
+| Copings | 68 | 68 | 32 | 32 |
+| Bunker bay (its windows cut to `LOD1`) | 356 | 356 | 36 | 36 |
 | Gallery head | 12 | 12 | 12 | 12 |
-| Stub stacks | 120 | 120 | 120 | 120 |
+| Stub stacks (their rings, `stack_rings()`) | 440 | 184 | 120 | 120 |
 | Ventilators | 56 | 56 | 0 | 0 |
-| Roof safety kit | 2720 | 1004 | 48 | 0 |
+| Flue stub and canopy | 24 | 24 | 24 | 24 |
+| Roof safety kit | 1412 | 830 | 48 | 0 |
 
-The **roof safety kit's share of the finished tier** was measured by
-building each tier with and without it, so it includes its union cuts:
+The **roof safety kit's share of the finished tier**:
 
 | | `LOD0` | `LOD1` | `LOD2` | `LOD3` |
 | --- | --- | --- | --- | --- |
-| Kit | 3554 (63.5 %) | 1368 (40.1 %) | 48 (3.4 %) | 0 |
-| The rest | 2042 | 2042 | 1360 | 292 |
+| Kit | 1412 (34.3 %) | 830 (25.3 %) | 48 (3.3 %) | 0 |
+| The rest | 2702 | 2446 | 1386 | 316 |
 
-The kit is far over the quarter of a tier CLAUDE.md suggests for trim. Two
-ladders of 12.6 m and 9.45 m make 22 m of rail and 76 rungs, and both cages
-are required by length. The cages are the dearer part: each hoop is 52
-triangles, and the union cuts every strap at every hoop. The kit follows the
-rules and keeps every rung where a missing one would show. `LOD0` has 6,400
-triangles to spare, and `LOD1` keeps 590 (15 %) of its ceiling. Bringing
-the kit under a third of `LOD0` would mean thinning `LOD0`'s rungs, which
-this asset does not do.
+Two ladders of 12.6 m and 9.45 m make 22 m of rail and 76 rungs, and both
+cages are required by length. As the lean kit it cuts nothing: a rung is a
+three-sided prism of 8 triangles, the hoops and straps are three-sided, and
+no rail or strap is split where another part meets it. Unioned, the same
+kit was 3554 triangles at `LOD0` and 1368 at `LOD1` (every third rung and
+hoop), 63.5 % and 40.1 % of those tiers. `LOD1` keeps every other rung and every other hoop, and its
+brackets as tetrahedra.
 
-Without the kit the building is about 2,000 triangles at `LOD0`. That is
-beside the catalog's two-storey terraces, though its walls are no denser: one
-polygon per brick slab and a few quads per opening.
+The kit is still over the quarter of a tier CLAUDE.md suggests for trim at
+`LOD0`, by 9 points, because the rungs are kept whole. `LOD0` has 7,900
+triangles to spare, and thinning rungs that read at 20–35 m would show.
+
+The 20 cut bunker windows (320 triangles to `LOD1`) and the stacks' rings
+(320 at `LOD0`, 64 at `LOD1`) are what the lean kit's saving paid for.
+`LOD1` keeps 724 (18 %) of its ceiling, `LOD2` 66.
 
 ## LOD review
 
@@ -452,36 +510,41 @@ centre of the facing wall.
 
 | Switch | Intended distance | Renders |
 | --- | --- | --- |
-| `LOD0` → `LOD1` | ~35 m | 35 m, all four tiers, front, oblique and rear, noon |
-| `LOD1` → `LOD2` | ~70 m | 70 m, all four tiers, front, oblique and rear, noon; 60 m oblique at night, emission on |
-| `LOD2` → `LOD3` | ~120 m | 120 m, all four tiers, front, oblique and rear, noon; oblique at night, emission on |
+| `LOD0` → `LOD1` | ~35 m | 30 and 40 m, `LOD0` and `LOD1`, front, oblique and rear, noon |
+| `LOD1` → `LOD2` | ~70 m | 65 and 75 m, `LOD1` and `LOD2`, front, oblique and rear, noon; 60 m oblique at night, emission on |
+| `LOD2` → `LOD3` | ~120 m | 115 and 125 m, `LOD2` and `LOD3`, front, oblique and rear, noon; 120 m oblique at night, emission on |
 
 No distance overrides.
 
-- **35 m.** `LOD1` matches `LOD0`. The ladders lose two rungs in three and
-  their brackets, and the cages two hoops in three. At 35 m a rung is about
-  one pixel, and the ladders' outline and the cages' straps stay.
-- **70 m.** Flattening the openings loses the 0.2–0.25 m reveal shadow,
-  about 2 px. The ventilators go. The sunk decks become coping boxes, which
-  read the same from the ground and nearly so from above. The ladders keep
-  their rails and the cages' back straps as hair lines. The silhouette is
-  unchanged: the bay, stacks, gallery, canopy, flue stub and coping line.
+- **35 m.** `LOD1` matches `LOD0`. The ladders lose every other rung and
+  keep their brackets as tetrahedra; the cages keep every other hoop and
+  all three straps. The stacks lose their stiffening rings' geometry; the
+  painted rings and shadow lines stay. At 35 m a rung is about one pixel.
+- **70 m** (re-checked at 65/75 m after the lean kit). Flattening the
+  openings loses the 0.2–0.25 m reveal shadow, about 2 px, the bunker
+  bay's windows included. The ventilators and the stacks' cap ring
+  geometry go. The sunk decks become coping boxes, which read the same from
+  the ground and nearly so from above. The ladders keep their rails and the
+  cages' back straps as hair lines, as before the lean kit. The silhouette
+  is unchanged: the bay, stacks, gallery, canopy, flue stub and coping line.
   So are the window band, the spandrels and the lettering.
 - **120 m.** `LOD3` replaces the walls' geometry with the 6 px/m
   elevations. The plinth, the band and its spandrels, the windows, the doors
   and the lettering are painted on single faces. At 120 m a metre is about
   9.7 px, so the elevations are slightly soft. The bay, the stacks and the
   gallery keep their geometry and textures. The ladder rails go. The hall
-  windows average within about 10 sRGB levels of what `LOD2` samples (Texture
-  set, *The LOD3 elevations*). The small square windows average darker, but
-  they are 5 px.
+  windows average within about 10 sRGB levels of what `LOD2` samples, the
+  small square windows within -13 to +6 measured with their frames
+  (Texture set, *The LOD3 elevations*); at 115/125 m they read alike.
 
-The working renders are local and git-ignored, in
-`review/power_plant_rev_2026_11_21/voimalaitos_brick_hall/`:
+The working renders are local and git-ignored:
 
-- `before/` and `after/`, with sheets in `compare/`;
-- `views_pass*/`, the six views and more;
-- `mip3/`, `mip4/` and `daycycle/`.
+- `review/power_plant_polish_2026_11_21/voimalaitos_brick_hall/`: `before/`
+  and `after/` (six views, the rear and west at 30 m, the LOD pairs and
+  night), sheets in `compare/`, and `views_pass*/` (the build's eye views
+  and close views of the gallery, the stacks, the bay and the ladders);
+- `review/power_plant_rev_2026_11_21/voimalaitos_brick_hall/`, the
+  previous revision's sets, `mip3/`, `mip4/` and `daycycle/`.
 
 These are authoring comparisons. Consumer switching, filtering and
 performance are pending.
@@ -492,16 +555,18 @@ The validator's hidden-surface test reports:
 
 | Tier | Hidden triangles |
 | --- | --- |
-| `LOD0` | 251 (4.5 %) |
-| `LOD1` | 88 (2.6 %) |
-| `LOD2` | 35 (2.5 %) |
+| `LOD0` | 207 (5.0 %) |
+| `LOD1` | 99 (3.0 %) |
+| `LOD2` | 35 (2.4 %) |
 | `LOD3` | 0 |
 
 The candidates are exterior surfaces the rays cannot reach:
 
-- the copings' 0.05 m inner drips over the decks;
+- the copings' 0.05 m inner drips over the decks, the largest of them;
 - the ladder rails' backs, 0.17 m off the walls;
-- at `LOD0`, the rungs' and cages' faces between the rails and the walls.
+- the lean kit's small faces between the rails and the walls: the rungs'
+  and brackets' undersides and the hoops' inner ridges, each a closed solid
+  of its own 1.5 mm clear of its neighbours.
 
 The shell's floor and lids, the parapet tops inside the copings, the roof
 items' buried feet, the gallery's buried back, and the flue stub's and
@@ -517,7 +582,10 @@ or duplicate surfaces. Recessed glass and doors are exterior surfaces.
   - the service door's vent panel;
   - the flue's flange and bolts;
   - the bushings and cable glands;
-  - the bunker bay's windows (flush, Construction);
+  - the bunker bay's windows from `LOD2` (flush, Construction);
+  - the stacks' welded seams, guy collar and lugs, and the ladder and cage
+    on one face of each (and their stiffening rings on `LOD1`, every ring
+    from `LOD2`);
   - the gallery's corrugations, its end panel and the end's slight recess;
   - the lettering;
   - the stacks' flanges.
@@ -570,7 +638,11 @@ The unique regions:
 - the machinery door, the entrance and the service door;
 - the flue's end and sides, and the bushing panel;
 - the lettering and the brick under the gallery, both 64 px/m brick;
-- the gallery's side, roof and end (24 px/m), and one stack face (32 px/m);
+- the gallery's side, roof and end (24 px/m);
+- two stack faces (32 px/m): the plain one, and the one with the ladder,
+  turned a quarter (U up the stack) to fit a 20-row strip;
+- the dusted stretch of the west coping, 4.0 × 0.375 m, painted as the
+  coping band at the U its face samples it at, so its unit joints run on;
 - the two roof decks (8 px/m);
 - the five `LOD3` elevations (6 px/m);
 - ten flat patches.
@@ -579,7 +651,9 @@ The unique regions:
 
 - that the regions neither overlap nor run off the sheet, and that each
   matches its face's size;
-- the bands' periods, and that the brick regions keep the band's bond;
+- the bands' periods, and that the brick regions keep the band's bond (a
+  panel may cross a slab line, since a slab is 256 rows, eight bond
+  repeats);
 - that the lettering fits its panel, and the elevations and decks their
   walls and roofs.
 
@@ -600,8 +674,10 @@ opening's edge 0.1 m off a slab line.
 Three places carry brick that cannot come from the tiling band:
 
 - **the lettering panel** under the turbine hall's coping, 10.5 × 1.25 m;
-- **the panel under the gallery**, 3.25 × 2.375 m, where coal dust falls
-  from the gallery's floor;
+- **the panel under the gallery**, 3.75 × 3.875 m at 12.625–16.5 m, where
+  coal dust falls from the gallery's floor. It crosses the 13.25 m slab
+  line, which the bond does not see, and stops 0.31 m over the head of the
+  small window under the gallery;
 - **the bunker bay's window row**.
 
 Each is painted by the band's own brick painter, so its bond runs on into
@@ -614,7 +690,9 @@ the band's across its edges:
   courses) from the band rows their heights sample.
 
 The brick tones and noise across those edges are random either way, so the
-joins do not show. The coal dust fades to nothing at the panel's edges.
+joins do not show. The coal dust fades to nothing at the panel's edges, and
+the even film every brick surface carries (Weathering) is the same inside
+and outside them.
 
 ### The lettering
 
@@ -635,7 +713,12 @@ Texel density is 64 px/m everywhere, with these exceptions:
 - the roof decks, at 8 px/m: felt seen only from above;
 - the gallery's sheeting, at 24 px/m: a light corrugated sheet seen 15 m up
   or more;
-- the stacks, at 32 px/m: dark plate seen from below or far off;
+- the stacks, at 32 px/m: plate seen from below or far off, its ladder's
+  rails 1.3 px and its rungs 0.8 px wide, supersampled;
+- the cable bushing panel, at 48 px/m: a flush painted panel 6–7.5 m up on
+  the end facing the transformer yard, moved off the 64 px/m sheet to make
+  room for the larger dusted panel;
+- the flue stub's sides, at 32 px/m: plain concrete with a soot gradient;
 - the `LOD3` elevations, at 6 px/m: about 1:1.6 at the 120 m switch;
 - the flat patches.
 
@@ -655,9 +738,14 @@ windows the average colour of the region `LOD2` samples:
   - Without it the elevations' windows average 54 sRGB levels darker than
     their `LOD2` regions, up to 88.
   - With it the hall windows are within about 10 levels (the band's lights
-    -10, the turbine hall's -1 to -2). The 5 px small squares are about 25
-    darker by that measure, most of it the measurement's crop dropping their
-    light frames.
+    -10, the turbine hall's -1 to -2).
+  - The small square windows, measured again with the crop including their
+    frames (an area-weighted mean in linear light over each window's exact
+    rectangle in the elevation, against the whole 52 px region `LOD2`
+    samples): the front's 8 average +6 sRGB levels, the rear's 17 -7 to
+    -9, the west's 7 -6 to -8, the east's and the step's -6 to -13. The
+    earlier -25 came from a crop that dropped their light frames, so they
+    are left as they are.
 
 ### Relief
 
@@ -675,7 +763,9 @@ The normal map is derived from a painted height channel, in metres:
 | Gallery corrugations | 0.012 |
 | Gallery roof seams | 0.020 |
 | Letters | 0.020 |
-| Stack flanges | 0.012 |
+| Stack flanges and rings | 0.012 |
+| Stack ladder, hoops and straps | 0.025–0.035 |
+| Guy lug | 0.025 |
 
 Glass is flat.
 
@@ -710,16 +800,34 @@ the 256-row period:
 - runs down the coping's face;
 - dirt on the windows' bottom rails;
 - kicked-up dirt and handle grime on the doors;
-- rust under the stacks' flanges;
 - dirt on the decks.
 
-The plant burns coal, so `Weather.coal()` lays coal dust:
+The plant burns coal, so `Weather.coal()` lays coal dust and soot:
 
+- **an even film on every brick surface**: coal 0.10 ± 0.04 with faint long
+  runs on the slab period, and dirt 0.04. It takes the newness off the
+  brick without changing the plant's shared palette (Variant list). It is
+  even, not heavier toward the coping, because every 4 m slab samples the
+  same band rows; for the same reason darker runs under the copings and
+  sills cannot live in the band and are not painted (the coping's own face
+  carries its runs);
 - a light film on the coping and the boiler house's deck;
-- heavier on the gallery's roof, its sides' floor rail and toward the wall;
-- falling down the brick under the gallery's floor;
-- soot on the flue stub's plate and casing, and down from the stacks'
-  mouths;
+- **a broad soft stain under the gallery** (`mouth_dust()`): as wide as the
+  gallery, spreading a little as it falls, from about 0.95 at the
+  gallery's floor at the wall to 0.5 at 1.5 m below and 0.3 at 3 m, then
+  out over the panel's last metre, 3.6 m below the floor, and a little
+  round the mouth beside it. It cannot run the 5–6 m a free wall would
+  show: the small window under the gallery (11.5–12.3 m) is shared with
+  every other, and a taller 64 px/m panel has no room on the sheet. The
+  `LOD3` west elevation carries the same function;
+- the gallery's underside heavily dusted, its sides' lower sheet heavily
+  over its bottom metre and its roof throughout;
+- the stretch of west coping over the gallery, darkest over its axis;
+- soot on the flue stub's plate and casing;
+- the stacks: soot from the mouth (about 0.9 at the rim, falling off over
+  1 m) and in streaks to mid-height, rust running from under the
+  stiffening rings and the guy collar, and soot on the rims; their lower
+  plate keeps the lighter aluminium paint;
 - soot rings round the stacks' feet on the deck.
 
 Cavity dust settles in the mortar joints. Glass and porcelain stay clean.
@@ -739,8 +847,9 @@ The validator measures:
 All of this is inside the Style Direction band, and the glass is darker than
 its steel frames in every variant. There are no brief-driven departures. In
 the `LOD3` elevations the glass is `glazing.BASE` box-filtered with its bars
-(Texture set). The bunker bay's painted windows take `rooms()` like the
-rest.
+(Texture set). The bunker bay's windows take `rooms()` like the rest: the
+small square window's region where they are cut, the band's painted ones
+from `LOD2`.
 
 ## Variant list
 
@@ -750,7 +859,8 @@ brick alternatives on the shared mesh.
 - The window steel and the doors move with the brick, and the window steel
   is always lighter than its glass.
 - The concrete, coping, roofs, gallery, stacks and kit are the same in every
-  variant.
+  variant, and so is the weathering, the even soot film on the brick
+  included.
 
 | Variant | Meaning |
 | --- | --- |
@@ -772,16 +882,19 @@ the plant's pieces, so any two of them match side by side:
   luma), times 0.94; the mortar is 10 % darker again.
 - `brown_brick` is a dark clinker, well below the red in value and in
   redness, so the three variants read apart at a glance.
-- The mean plain-wall albedo (the brick band's rows 720–900, clear of
-  windows and plinth) measures sRGB (110.5, 81.0, 71.9) on `red_brick`,
-  R − G 29.5, and (82.5, 67.3, 64.6) on `brown_brick`, R − G 15.3.
+- The mean plain-wall albedo (the albedo PNG's rows 720–900, the brick
+  band clear of windows and plinth) measures sRGB (102.7, 76.7, 68.2) on
+  `red_brick`, R − G 26.0, and (78.6, 65.2, 61.9) on `brown_brick`, R − G
+  13.4. The soot film took the red from (110.5, 81.0, 71.9), R − G 29.5,
+  with the palette constants unchanged.
 - `yellow_brick` keeps its brick; only its lettering is dark (Texture set).
 
 ## Night lighting
 
 - **Mask.** `voimalaitos_brick_hall_emission.png` is the neutral glazing
   mask:
-  - every window's panes, the bunker bay's painted windows included;
+  - every window's panes, the bunker bay's included (the square window's
+    region where they are cut, the band's painted ones from `LOD2`);
   - the entrance's leaf lights and fanlight;
   - the machinery door's lights;
   - the same in the `LOD3` elevations.
@@ -885,7 +998,7 @@ Checked here, in Blender:
   - All four tiers have uri-only external images, one opaque material slot,
     and welded manifold topology.
   - Their hidden-surface candidates are only the exterior faces listed under
-    Interior geometry.
+    Interior geometry (207, 99, 35 and 0 triangles).
   - The pivot is at ground level and centred.
   - Every tier binds emission on UV0, default off, and the normal map at
     scale 1.
@@ -922,6 +1035,13 @@ Checked here, in Blender:
   albedo changed only in the lettering; a 35 m oblique noon render of each
   variant before and after; the three variants distinct in `variants.png`.
 
+- The polish pass: before/after sets with identical settings and their
+  sheets; the sidecar diffed against the previous one (only triangle
+  counts, hashes and source changed); `check=True` on every appended kit;
+  the `LOD3` small windows re-measured. The mip 3/4 stress renders were not
+  re-run after the atlas repack: the moved regions keep 4 px gutters and
+  are padded by `pad()`, but that review is outstanding.
+
 Pending, outside this repository:
 
 - **In the consumer:**
@@ -943,6 +1063,24 @@ These are recorded as known-good markers, not requirements.
 
 ## Revision log
 
+- **2026-11-21**: Polish pass; LOD0 bounds, pivot, footprint, doors, the
+  gallery head and the `under_gallery` lane unchanged (the sidecar differs
+  only in triangle counts, hashes and source).
+  - Rebuilt both caged wall ladders as `roof_safety.py`'s lean kit,
+    appended on `LOD0`–`LOD2`: the kit went from 3554 to 1412 triangles at
+    `LOD0` and from 1368 to 830 at `LOD1`, which now keeps every other rung
+    and hoop.
+  - Cut the bunker bay's 20 windows as recessed openings on `LOD0`/`LOD1`.
+  - Gave the stub stacks aluminium paint grading to soot at the mouth, a
+    modelled cap ring and stiffening rings, a guy collar and a painted caged
+    ladder.
+  - Made the coal dust under the gallery a broad soft stain on a larger
+    panel (3.75 × 3.875 m), dusted the gallery's underside and lower sheet
+    and the coping over it.
+  - Laid an even light soot film on all the brick.
+  - Repacked the atlas for the larger panel: the bushing panel at 48 px/m,
+    the flue stub's sides at 32 px/m, two new regions.
+  - Re-measured the `LOD3` small square windows with their frames.
 - **2026-11-21**: Plant palette pass: `red_brick` and a darker, purple-brown
   `brown_brick` set to the plant's shared constants, dark lettering on
   `yellow_brick`, and the coal bunker bay dropped from the sidecar's storeys.

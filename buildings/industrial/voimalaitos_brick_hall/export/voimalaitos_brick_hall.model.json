@@ -3,7 +3,7 @@
   "version": 1,
   "name": "voimalaitos_brick_hall",
   "path": "buildings/industrial/voimalaitos_brick_hall",
-  "source": {"commit": "3e3e93de0a47297473217212bea0db141eb777b5", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "2094a93a9fba0da277f9f96b47c35fce17d3f5d1", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-18.525, 0.0, -9.625], "max": [18.525, 24.75, 9.625]},
   "footprint": [
@@ -29,22 +29,22 @@
     {"id": "under_gallery", "position": [-16.05, 0.0, 9.625], "forward": [0.0, 0.0, -1.0], "width_m": 4.95, "length_m": 19.25, "clear_height_m": 14.4051, "through": true}
   ],
   "lods": [
-    {"file": "voimalaitos_brick_hall_lod0.glb", "triangles": 5596, "sha256": "597fc07a0ab40e2c88ec4e68d930b1ad4f983fa53e8b1e3bf65f6649e91c7e4a"},
-    {"file": "voimalaitos_brick_hall_lod1.glb", "triangles": 3410, "sha256": "9580dba54d7163e2deec584b8c70b0167bedeb4fbb2d6cc0c9488fd5d472d494"},
-    {"file": "voimalaitos_brick_hall_lod2.glb", "triangles": 1408, "sha256": "5c407122dfe08ca3771eb5a6b8f4ad852bd5f726a6a90bc3b627aa5c253a6919"},
-    {"file": "voimalaitos_brick_hall_lod3.glb", "triangles": 292, "sha256": "0974e50dc4d37ba420a3e07505f835380e356c8ea953ac0d2883e910608b16ac"}
+    {"file": "voimalaitos_brick_hall_lod0.glb", "triangles": 4114, "sha256": "40f26733b97780630adb4d1da22c7c02fc4b964b673c1c407069efbc246e7e79"},
+    {"file": "voimalaitos_brick_hall_lod1.glb", "triangles": 3276, "sha256": "6917456e1a4813f861a87db9378c7bb69a04e47a483e03fb76ca7d440ae278a7"},
+    {"file": "voimalaitos_brick_hall_lod2.glb", "triangles": 1434, "sha256": "f386a77213b6cea1397fddcd9e1692149524c18f6c3b8b71bb87d31089a014d1"},
+    {"file": "voimalaitos_brick_hall_lod3.glb", "triangles": 316, "sha256": "35203e3935b9a1065ce2a5475f7ed2020a9da86b4d1ac2850996f8dc9d4f82f8"}
   ],
   "textures": {
-    "orm": {"file": "voimalaitos_brick_hall_orm.png", "sha256": "ca78b4043260404be3c3a1913c3dc22d0a0e81cc4ec752e745112709cd64ca74"},
-    "normal": {"file": "voimalaitos_brick_hall_normal.png", "sha256": "9218663fb0935f51b4acf021f40533b4ac55a839df1c56276ac41feaf091ddce"},
-    "emission": {"file": "voimalaitos_brick_hall_emission.png", "sha256": "cb1124b393c47681571673a8895bc6c76e66929cdab928f5b1738e4788831e4b"}
+    "orm": {"file": "voimalaitos_brick_hall_orm.png", "sha256": "1d55f8a5f527a71c502f7240909ff94aa29996548c1f12a8a78bd0effbea8999"},
+    "normal": {"file": "voimalaitos_brick_hall_normal.png", "sha256": "3f7481bf5fe10f45336981268b56a5148a95afe158a488d2ada5ce918826dd1a"},
+    "emission": {"file": "voimalaitos_brick_hall_emission.png", "sha256": "9997b18800c2e1c59af18dc904605ffd4c6718c280b8883ca3c92be510c604ed"}
   },
   "variants": [
-    {"id": "red_brick", "albedo": "voimalaitos_brick_hall_albedo_red_brick.png", "sha256": "d064e3944fde55b64ea3f5c6be54e45a59c1329e6aafda87f0af36f44ba2db5e"},
-    {"id": "yellow_brick", "albedo": "voimalaitos_brick_hall_albedo_yellow_brick.png", "sha256": "20381115fc60a770e09281b1ff0a5f4913a2b1ac18b16d7bbdb641c601833f81"},
-    {"id": "brown_brick", "albedo": "voimalaitos_brick_hall_albedo_brown_brick.png", "sha256": "10d723c031c5ec80606719ffc5af1a54b1c297b5eb9577d31655a692aaf52225"}
+    {"id": "red_brick", "albedo": "voimalaitos_brick_hall_albedo_red_brick.png", "sha256": "21c206428ecc4fccf2be05b269727c42d0d5fcf6c4acf502b24d3ce224bbafaa"},
+    {"id": "yellow_brick", "albedo": "voimalaitos_brick_hall_albedo_yellow_brick.png", "sha256": "f76674c32733e5d8178dfcb06487b64a5794b99a75d91736f1eb3a16d804756c"},
+    {"id": "brown_brick", "albedo": "voimalaitos_brick_hall_albedo_brown_brick.png", "sha256": "018e3232b8aae17f213bf3c99c21d9c79654fb05689e0613eb279ec09fffe709"}
   ],
   "default_variant": "red_brick",
-  "preview": {"file": "../preview.png", "sha256": "ec0463b9ac3e826759ec39a2be5780b83b779daf6fe8b138d0a9dd5e91b0d6ac"},
+  "preview": {"file": "../preview.png", "sha256": "a23a632a45cf37d0849355056bbb985eb62052d104c3a0bf205c9146863701e8"},
   "hero": false
 }

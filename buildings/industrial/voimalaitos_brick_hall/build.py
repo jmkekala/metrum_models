@@ -32,12 +32,13 @@ directly: each wall is a rectangle less its openings and panels, cut into
 4 m slabs of brick (facade_atlas.CUTS) whose outlines are traced from a grid
 of cells; every face is then given every vertex that lies on its edges
 (tjunctions()), so neighbours meet on shared vertices. Recessed openings
-add their concrete reveals and the closing plane. On LOD0-LOD2 the shell
+add their concrete reveals and the closing plane. On LOD0-LOD1 the shell
 also carries both roofs' parapets and sunk decks, so it closes with its
-floor alone; on LOD3 two flat lids close it. The copings, the bunker bay,
-the gallery, the stacks, the ventilators, the flue stub, the entrance
-canopy and the wall ladders with their cages are closed solids of their
-own, unioned with Blender's exact boolean.
+floor alone; on LOD2-LOD3 two flat lids close it. The copings, the bunker bay
+(its windows cut to LOD1), the gallery, the stacks (with their rings), the
+ventilators, the flue stub and the entrance canopy are closed solids of
+their own, unioned with Blender's exact boolean. The wall ladders with their
+cages are scripts/roof_safety.py's lean kit, appended after the cleanup.
 
 Every number the mesh and the atlas share is imported from facade_atlas.py.
 """
@@ -219,9 +220,9 @@ def uv_head(fr):
     return lambda co: (fr.s_of(co) * PPM, L.CONC_Y0 + (-fr.out_of(co)) * PPM)
 
 
-def uv_region(fr, rect, s0, z0):
+def uv_region(fr, rect, s0, z0, ppm=PPM):
     x, y, w, h = rect
-    return lambda co: (x + (fr.s_of(co) - s0) * PPM, y + (co.z - z0) * PPM)
+    return lambda co: (x + (fr.s_of(co) - s0) * ppm, y + (co.z - z0) * ppm)
 
 
 def uv_elevation(fr, ename, off, zb):
@@ -481,7 +482,8 @@ def item_polys(fr, item, rect, mode):
     s0, s1, z0, z1 = rect
     if kind in L.FLUSH:
         quad = [fr.P(s0, z0), fr.P(s1, z0), fr.P(s1, z1), fr.P(s0, z1)]
-        fn = uv_conc(fr, z0) if kind == "conc" else uv_region(fr, L.REGION[kind], s0, z0)
+        fn = (uv_conc(fr, z0) if kind == "conc" else
+              uv_region(fr, L.REGION[kind], s0, z0, L.REGION_PPM.get(kind, PPM)))
         return [Poly([quad], fn)]
     return opening_polys(fr, item, rect, mode)
 
@@ -643,15 +645,31 @@ def copings(level):
     co, ci, p = L.CO, L.CO_IN, L.PIN
     out = []
     x0, x1, y0, y1 = L.BH
-    o = [(x0 - co, y0 - co), (x1 + co, y0 - co), (x1 + co, y1 + co), (x0 - co, y1 + co)]
+    # the west face is cut round the gallery: its middle samples the
+    # dusted coping (COPE_DUST), the rest the band, all along one frame
+    ya, yb = L.GAL_Y + L.COPE_DUST_HALF, L.GAL_Y - L.COPE_DUST_HALF
+    o = [(x0 - co, y0 - co), (x1 + co, y0 - co), (x1 + co, y1 + co), (x0 - co, y1 + co),
+         (x0 - co, ya), (x0 - co, yb)]
     zs, zc = L.Z_BS, L.Z_BC
+    west = Frame((x0 - co, y1 + co), (x0 - co, y0 - co))
+    dx, dy = L.COPE_DUST[:2]
+    dust = (lambda co_: (dx + (west.s_of(co_) - L.cope_dust_s0()) * PPM,
+                         dy + (co_.z - zs) * PPM))
+    plain = coping_side(zs)
+
+    def bh_side(li, k, a, b):
+        if li == 0 and k == 4:
+            return dust
+        if li == 0 and k in (3, 5):
+            return uv_cope(west, zs)
+        return plain(li, k, a, b)
     if roof_flat(level):
-        B = prism(Builder(), [o], zs, zc, coping_side(zs),
+        B = prism(Builder(), [o], zs, zc, bh_side,
                   uv_deck(L.DECK_B, L.DECK_B_O), uv_patch("soffit"))
     else:
         i = [(x0 + p + ci, y0 + p + ci), (x0 + p + ci, y1 - p - ci),
              (x1 - p - ci, y1 - p - ci), (x1 - p - ci, y0 + p + ci)]
-        B = prism(Builder(), [o, i], zs, zc, coping_side(zs), uv_patch("cope_top"),
+        B = prism(Builder(), [o, i], zs, zc, bh_side, uv_patch("cope_top"),
                   uv_patch("soffit"))
     out.append((B, "tmp_bh_coping"))
 
@@ -686,34 +704,56 @@ def box(x0, x1, y0, y1, z0, z1, sides, top, bottom):
     return B
 
 
-def bunker():
+def bunker_windows(length):
+    """Where along a bunker bay face of *length* its windows are centred: one
+    in the middle, the rest every BUNKER_PITCH, as the band paints them."""
+    n = int((length / 2.0 - L.SQ / 2.0 - 0.3) // L.BUNKER_PITCH)
+    return [length / 2.0 + L.BUNKER_PITCH * k for k in range(-n, n + 1)]
+
+
+def bunker(level):
     """The raised coal bunker bay: one box on the boiler house's roof, its
     foot buried in the deck, each face four bands: brick, the window row
     (a window centred on the face, the rest every BUNKER_PITCH), brick, the
-    coping."""
+    coping. While openings are cut (LOD0/LOD1) each window is cut into the
+    row with its reveals, the closing plane the small square window's
+    region; from LOD2 the band's painted windows stand flush."""
     x0, x1, y0, y1 = L.BUNKER
     zb = L.Z_BD - 0.2
     w0, w1 = L.BUNKER_WIN
+    cut = opening_mode(level) == "cut"
     bands = ((zb, w0, "brick"), (w0, w1, "band"), (w1, L.BUNKER_COPE, "brick"),
              (L.BUNKER_COPE, L.BUNKER_TOP, "cope"))
     ring = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
-    B = Builder()
+    polys = []
     for k in range(4):
         a, b = ring[k], ring[(k + 1) % 4]
         fr = Frame(a, b)
         half = fr.L / 2.0
         for z0, z1, what in bands:
+            holes = []
             if what == "brick":
                 fn = uv_brick(fr, 0.37 * k, L.SLAB * L.slab_of(z0))
             elif what == "band":
                 fn = (lambda co, fr=fr, half=half: (
                     L.ATLAS + (fr.s_of(co) - half + L.BUNKER_PITCH / 2.0) * PPM,
                     L.BUNK_Y0 + (co.z - w0) * PPM))
+                if cut:
+                    for sc in bunker_windows(fr.L):
+                        rect = (sc - L.SQ / 2.0, sc + L.SQ / 2.0, L.BUNKER_SILL,
+                                L.BUNKER_SILL + L.SQ)
+                        holes.append([fr.P(rect[0], rect[2]), fr.P(rect[0], rect[3]),
+                                      fr.P(rect[1], rect[3]), fr.P(rect[1], rect[2])])
+                        polys += opening_polys(fr, ("sq", sc, rect[2], None), rect, "cut")
             else:
                 fn = uv_cope(fr, z0)
-            B.face([a + (z0,), b + (z0,), b + (z1,), a + (z1,)], fn)
-    B.face([q + (L.BUNKER_TOP,) for q in ring], uv_deck(L.DECK_B, L.DECK_B_O))
-    B.face([q + (zb,) for q in reversed(ring)], uv_patch("blank"))
+            polys.append(Poly([[fr.P(0.0, z0), fr.P(fr.L, z0), fr.P(fr.L, z1),
+                                fr.P(0.0, z1)]] + holes, fn))
+    polys.append(Poly([[q + (L.BUNKER_TOP,) for q in ring]], uv_deck(L.DECK_B, L.DECK_B_O)))
+    polys.append(Poly([[q + (zb,) for q in reversed(ring)]], uv_patch("blank")))
+    B = Builder()
+    for p in polys:
+        emit(B, p)
     return B
 
 
@@ -756,31 +796,63 @@ def gallery():
     return B
 
 
-def stub_stack(cx, cy):
+def stack_rings(level):
+    """The stacks' rings modelled at *level*, (z0, z1, proud): the rolled cap
+    ring, which shapes the mouth's outline, to 70 m; the two stiffening
+    rings to 35 m. Every ring is painted at every tier, so a tier without
+    its geometry keeps it in the texture."""
+    return ((L.STACK_STIFF if level == 0 else ()) + ((L.STACK_CAP,) if level <= 1 else ()))
+
+
+def stub_stack(cx, cy, level):
     """A steel stub stack on the boiler house's deck: an octagon STACK_R to
     its corners, open at the top round a flue sunk STACK_DEPTH and sooted,
-    its foot buried in the deck."""
+    its foot buried in the deck; its rings (stack_rings()) stand proud of
+    the plate. Face STACK_LADDER_FACE samples the ladder's region (STACK_L,
+    turned a quarter), the others the plain face (STACK)."""
     n = 8
     r = L.STACK_R
     ri = r - L.STACK_WALL / math.cos(math.pi / n)
     zb, zt = L.Z_BD - 0.2, L.STACK_TOP
     zf = zt - L.STACK_DEPTH
     ang = [2.0 * math.pi * (k + 0.5) / n for k in range(n)]
-    ring = [(cx + r * math.cos(a), cy + r * math.sin(a)) for a in ang]
-    flue = [(cx + ri * math.cos(a), cy + ri * math.sin(a)) for a in ang]
+    prof = [(zb, r)]
+    rings = stack_rings(level)
+    for z0, z1, d in sorted(rings):
+        rr = r + d / math.cos(math.pi / n)          # d proud across the flats
+        if z1 >= zt - 1e-9:
+            prof += [(z0, r), (z0, rr), (zt, rr)]
+        else:
+            prof += [(z0, r), (z0, rr), (z1, rr), (z1, r)]
+    if prof[-1][0] < zt - 1e-9:
+        prof.append((zt, r))
+    r_top = prof[-1][1]
+
+    def ring_at(rad):
+        return [(cx + rad * math.cos(a), cy + rad * math.sin(a)) for a in ang]
+    base = ring_at(r)
+    flue = ring_at(ri)
+    top = ring_at(r_top)
     sx, sy, sw, sh = L.STACK
+    lx, ly, lw, lh = L.STACK_L
     B = Builder()
     rim, soot = uv_patch("rim"), uv_patch("soot")
     for k in range(n):
-        a, b = ring[k], ring[(k + 1) % n]
-        fr = Frame(a, b)
-        B.face([a + (zb,), b + (zb,), b + (zt,), a + (zt,)],
-               lambda co, fr=fr: (sx + fr.s_of(co) * L.SPPM, sy + (co.z - L.Z_BD) * L.SPPM))
+        fr = Frame(base[k], base[(k + 1) % n])
+        if k == L.STACK_LADDER_FACE:
+            fn = (lambda co, fr=fr: (lx + (co.z - L.Z_BD) * L.SPPM, ly + fr.s_of(co) * L.SPPM))
+        else:
+            fn = (lambda co, fr=fr: (sx + fr.s_of(co) * L.SPPM, sy + (co.z - L.Z_BD) * L.SPPM))
+        for (za, ra), (zc, rc) in zip(prof, prof[1:]):
+            a0, b0 = ring_at(ra)[k], ring_at(ra)[(k + 1) % n]
+            a1, b1 = ring_at(rc)[k], ring_at(rc)[(k + 1) % n]
+            B.face([a0 + (za,), b0 + (za,), b1 + (zc,), a1 + (zc,)], fn)
+        a, b = top[k], top[(k + 1) % n]
         B.face([a + (zt,), b + (zt,), flue[(k + 1) % n] + (zt,), flue[k] + (zt,)], rim)
         fa, fb = flue[(k + 1) % n], flue[k]
         B.face([fa + (zf,), fb + (zf,), fb + (zt,), fa + (zt,)], soot)
     B.face([q + (zf,) for q in flue], soot)
-    B.face([q + (zb,) for q in reversed(ring)], uv_patch("blank"))
+    B.face([q + (zb,) for q in reversed(base)], uv_patch("blank"))
     return B
 
 
@@ -806,7 +878,7 @@ def flue_stub():
         return (fx + (x1 - co.x) * PPM, fy + (co.z - z0) * PPM)
 
     def side(co):
-        return (sx + (co.z - z0) * PPM, sy + max(0.0, co.y - L.BH[3]) * PPM)
+        return (sx + (co.z - z0) * L.FPPM, sy + max(0.0, co.y - L.BH[3]) * L.FPPM)
     return box(x0, x1, y0, y1, z0, z0 + hgt, [uv_patch("blank"), side, end, side],
                uv_patch("conc"), uv_patch("soffit"))
 
@@ -843,46 +915,54 @@ def brackets(eave, foot):
     return [0.6 + (top - 0.6) * k / n for k in range(n + 1)]
 
 
+# The lean kit (scripts/roof_safety.py): rails, rungs, brackets, hoops and
+# straps as separate closed solids that touch nothing, appended after the
+# union and the cleanup on every tier but LOD3, so nothing is cut. The walls
+# are flush (the plinth too) and the copings oversail 0.05 m, 0.12 m inside
+# the rails, so no bracket needs *behind*.
 EAVE1 = RS.Eave(*L.WALLS["th_rear"][:2], L.Z_TS, L.CO, L.Z_TC, 0.0)
-WALL1 = RS.WallLadder(EAVE1, L.wall_s("th_rear", LADDER1_X), brackets=brackets(EAVE1, 0.0))
+WALL1 = RS.WallLadder(EAVE1, L.wall_s("th_rear", LADDER1_X), brackets=brackets(EAVE1, 0.0),
+                      lean=True)
 EAVE2 = RS.Eave(*L.WALLS["step"][:2], L.Z_BS, L.CO, L.Z_BC, 0.0)
 FOOT2 = L.Z_TD + LADDER_HANG
 WALL2 = RS.WallLadder(EAVE2, L.wall_s("step", LADDER2_Y), foot=FOOT2,
-                      brackets=brackets(EAVE2, FOOT2))
-# Rungs: every one to 35 m; every third, without brackets, to 70 m; past
-# that bare rails and the cages' back straps (LOD2, appended after the
-# cleanup); LOD3 has no kit. Cage hoops: every one, then every third.
-LADDER_MODES = ((1, True), (3, False), (None, False), (None, False))
-CAGE_MODES = (1, 3, None, None)
+                      brackets=brackets(EAVE2, FOOT2), lean=True)
+# Rungs and brackets: every one to 35 m, every other one to 70 m; past that
+# bare rails and the cages' back straps (LOD2); LOD3 has no kit. Cage hoops:
+# every one, then every other one, the top one always.
+LADDER_MODES = ((1, True), (2, True), (None, False), (None, False))
+CAGE_MODES = (1, 2, None, None)
 CAGE1 = RS.Cage(WALL1, modes=CAGE_MODES)
 CAGE2 = RS.Cage(WALL2, modes=CAGE_MODES)
-KIT = [WALL1, CAGE1, WALL2, CAGE2]
+# From LOD2 the hall's roof is its coping box, its top 0.875 m over the deck
+# the upper ladder hangs above, so there its bare rails start just on the
+# box (hidden behind the parapet from the ground either way) and its back
+# strap keeps the cage's hoops' heights.
+WALL2_FLAT = RS.WallLadder(EAVE2, L.wall_s("step", LADDER2_Y), foot=L.Z_TC + 0.01,
+                           lean=True)
+CAGE2_FLAT = RS.Cage(WALL2_FLAT, foot=CAGE2.hoops[0], top=CAGE2.hoops[-1],
+                     modes=CAGE_MODES)
 
 
-def ladders(level):
-    return RS.solids(KIT, level, PAINT, modes=LADDER_MODES) if level < 2 else []
-
-
-def ladder_rails(level):
-    return (RS.solids(KIT, level, PAINT, extents=True, modes=LADDER_MODES)
-            if level == 2 else [])
+def kit(level):
+    """The roof safety kit's parts at *level*, for one RS.append()."""
+    upper = [WALL2_FLAT, CAGE2_FLAT] if roof_flat(level) else [WALL2, CAGE2]
+    return [WALL1, CAGE1] + upper
 
 
 # ================================================================ assembly
 def build_lod(level):
     base = to_object(shell(level), "tmp_shell")
     parts = [to_object(B, n) for B, n in copings(level)]
-    parts.append(to_object(bunker(), "tmp_bunker"))
+    parts.append(to_object(bunker(level), "tmp_bunker"))
     parts.append(to_object(gallery(), "tmp_gallery"))
     for i, (px, py) in enumerate(L.STACKS):
-        parts.append(to_object(stub_stack(px, py), "tmp_stack%d" % i))
+        parts.append(to_object(stub_stack(px, py, level), "tmp_stack%d" % i))
     parts.append(to_object(flue_stub(), "tmp_flue"))
     parts.append(to_object(canopy(), "tmp_canopy"))
     if vents_kept(level):
         for i, (px, py) in enumerate(L.VENTS):
             parts.append(to_object(ventilator(px, py), "tmp_vent%d" % i))
-    for M, name in ladders(level):
-        parts.append(to_object(M, name))
     obj = union(base, parts)
     obj.name = "{}_LOD{}".format(ASSET, level)
     obj.data.name = obj.name + "_mesh"
@@ -901,7 +981,9 @@ def build_lod(level):
                           quad_method='BEAUTY', ngon_method='BEAUTY')
     bm.to_mesh(obj.data)
     bm.free()
-    RS.append(obj, ladder_rails(level))
+    if level < 3:
+        RS.append(obj, RS.solids(kit(level), level, PAINT, extents=True, modes=LADDER_MODES),
+                  check=True)
     return obj
 
 

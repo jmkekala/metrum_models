@@ -34,7 +34,9 @@ The atlas is a trim sheet. Five bands run the full width and tile in U:
                              the doors, the flue stub, the cable bushings, the
                              lettering and the coal-dusted wall under the
                              gallery (both brick in the band's own bond), the
-                             gallery's sheeting, the stub stacks, the two
+                             coping over the gallery, the gallery's sheeting,
+                             the stub stacks (a plain face and the ladder's),
+                             the two
                              roof decks (8 px/m), the LOD3 elevations (6 px/m)
                              and flat patches.
 
@@ -72,7 +74,9 @@ LPPM = 6.0              # the LOD3 elevations
 DPPM = 8.0              # the roof decks
 GPPM = 24.0             # the coal gallery's sheeting
 SPPM = 32.0             # the stub stacks
-PAD = 2                 # rows each band paints beyond its own edge
+BPPM = 48.0             # the cable bushing panel
+FPPM = 32.0             # the flue stub's plain concrete sides
+PAD = 2                # rows each band paints beyond its own edge
 
 # ------------------------------------------------------------------ plan
 # Blender build frame, front toward -Y. The boiler house is the west block,
@@ -133,7 +137,7 @@ SIZES = {
     "sq": (SQ, SQ),
     "bushing": (2.5, 1.25),     # flush: painted on the wall at every tier
     "letters": (10.5, 1.25),    # flush: brick with the lettering on it
-    "mouth": (3.25, 2.375),     # flush: brick under the coal gallery, dusted
+    "mouth": (3.75, 3.875),     # flush: brick under the coal gallery, dusted
 }
 REVEAL = {"win": 0.25, "sq": 0.2, "entrance": 0.25, "bigdoor": 0.3,
           "service": 0.25}
@@ -196,7 +200,10 @@ GAL_BURY = 0.2
 GAL_TAN = math.tan(math.radians(GAL_SLOPE))
 GAL_X0 = BH[0]                          # the wall face it leaves
 GAL_X1 = BH[0] - GAL_LEN                # its far end
-MOUTH_Z = 14.125                        # the dusted brick under it, from here
+MOUTH_Z = 12.625                        # the dusted brick under it, from here
+# The west coping over the gallery carries the dust too: its outer face
+# from GAL_Y + COPE_DUST_HALF to GAL_Y - COPE_DUST_HALF has a region of its own.
+COPE_DUST_HALF = 2.0
 
 # Openings: (kind, plan centre along the wall, z of its foot, extra): extra
 # is (cols, rows) for a window, (width, height) for a concrete strip.
@@ -234,11 +241,22 @@ BUNKER_TOP = 24.0
 BUNKER_WIN = (21.0, 22.25)                      # the window row's band
 BUNKER_COPE = BUNKER_TOP - COPING
 BUNKER_PITCH = 2.0       # a window centred on every face, 2 m apart
+BUNKER_SILL = BUNKER_WIN[0] + 0.21875           # its windows' sills (14 px up the band)
 # Two steel stub stacks on the boiler house's deck in front of the bay.
 STACKS = [(-12.5, 0.0), (-10.0, 0.0)]
 STACK_R = 0.78          # octagon, to its corners: 1.44 m across the flats
 STACK_TOP = 24.75
 STACK_WALL, STACK_DEPTH = 0.08, 1.0
+# Each stack is welded plate in aluminium paint: a rolled cap ring at the
+# mouth and two stiffening rings, (z0, z1, how far proud), all painted at
+# every tier and modelled where build.py's stack_rings() says; a guy
+# collar with its lugs; and a painted ladder with hoops up face
+# STACK_LADDER_FACE (octagon face k spans corners k and k + 1, its middle
+# at 45 * (k + 1) degrees: 6 faces the front and the turbine hall).
+STACK_CAP = (STACK_TOP - 0.15, STACK_TOP, 0.035)
+STACK_STIFF = ((Z_BD + 2.25, Z_BD + 2.33, 0.03), (Z_BD + 4.25, Z_BD + 4.33, 0.03))
+STACK_GUY = Z_BD + 5.0          # the guy collar's foot
+STACK_LADDER_FACE = 6
 VENTS = [(5.0, 2.5), (11.0, -2.0)]               # plan centres on the hall roof
 VENT_W, VENT_H = 0.8, 1.2
 
@@ -333,11 +351,14 @@ WINDOW = (236, 536, 136, 200)                   # 2.125 x 3.125 m: 4 x 4 panes
 ENTRANCE = (380, 536, 128, 192)                 # 2.0 x 3.0 m
 SERVICE = (516, 536, 76, 152)                   # 1.1875 x 2.375 m
 STACK = (600, 536, 20, 204)                     # one octagon face, 6.375 m, at SPPM
+# the face with the ladder, turned a quarter: U up the stack, V across it
+STACK_L = (236, 740, 204, 20)
 FLUE_END = (628, 536, 128, 128)                 # 2.0 x 2.0 m
-FLUE_SIDE = (628, 672, 128, 64)                 # 2.0 m (U, up) x 1.0 m (V, out)
-BUSHING = (764, 536, 160, 80)                   # 2.5 x 1.25 m
-SQWIN = (932, 536, 52, 52)                      # 0.8125 m square
-MOUTH = (772, 648, 208, 152)                    # 3.25 x 2.375 m, brick
+FLUE_SIDE = (608, 884, 64, 32)                  # 2.0 m (U, up) x 1.0 m (V, out), FPPM
+BUSHING = (628, 672, 120, 60)                   # 2.5 x 1.25 m at BPPM
+SQWIN = (520, 700, 52, 52)                      # 0.8125 m square
+MOUTH = (772, 552, 240, 248)                    # 3.75 x 3.875 m, brick
+COPE_DUST = (236, 764, 256, 24)                 # 4.0 x 0.375 m of the west coping
 LETTERS = (4, 936, 672, 80)                     # 10.5 x 1.25 m, brick
 DECK_T = (604, 744, 148, 132)                   # 18.5 x 16.5 m at DPPM
 DECK_B = (756, 806, 116, 140)                   # 14.5 x 17.5 m at DPPM
@@ -346,6 +367,8 @@ GAL_TOP = (876, 880, 128, 62)                   # 5.33 x 2.6 m at GPPM
 GAL_END = (684, 946, 62, 67)                    # 2.6 x 2.8 m at GPPM
 REGION = {"entrance": ENTRANCE, "bigdoor": BIGDOOR, "service": SERVICE,
           "sq": SQWIN, "bushing": BUSHING, "letters": LETTERS, "mouth": MOUTH}
+# pixels per metre of each region, where it is not PPM
+REGION_PPM = {"bushing": BPPM}
 # where each deck's region starts on the plan
 DECK_T_O = (-2.55, -8.1)
 DECK_B_O = (-16.1, -8.6)
@@ -407,7 +430,7 @@ SURFACE = {
     ID_DARK: (0.96, 0.0), ID_SEAL: (0.90, 0.0), ID_SOFFIT: (0.86, 0.0),
     ID_FELT: (0.92, 0.0), ID_COPE: (0.82, 0.0), ID_DUCT: (0.62, 0.15),
     ID_SOOT: (0.98, 0.0), ID_PORC: (0.22, 0.0), ID_SHEET: (0.50, 0.05),
-    ID_LETTER: (0.55, 0.0), ID_STACK: (0.70, 0.10), ID_BALLAST: (0.96, 0.0),
+    ID_LETTER: (0.55, 0.0), ID_STACK: (0.60, 0.25), ID_BALLAST: (0.96, 0.0),
     ID_PANEL: (0.74, 0.0),
 }
 
@@ -444,7 +467,7 @@ FIXED = {
     ID_SEAL: (34, 34, 34), ID_SOFFIT: (150, 148, 142), ID_BLANK: (52, 52, 52),
     ID_FELT: (58, 58, 60), ID_COPE: (164, 162, 155), ID_DUCT: (74, 74, 76),
     ID_SOOT: (20, 19, 18), ID_PORC: (104, 58, 38), ID_SHEET: (192, 192, 186),
-    ID_LETTER: (212, 210, 202), ID_STACK: (62, 62, 63), ID_BALLAST: (82, 80, 76),
+    ID_LETTER: (212, 210, 202), ID_STACK: (120, 121, 118), ID_BALLAST: (82, 80, 76),
     ID_PANEL: (54, 56, 58),
 }
 
@@ -552,19 +575,40 @@ def paint_conc_band(c):
         c.lift(x, x + 1, y0, y1, -0.002)
 
 
+def paint_cope_area(c, x0, x1, y0, u0=0.0):
+    """The parapet's coping, 0.375 m, over x0..x1 from row y0: precast
+    concrete units a metre long, a drip groove near the foot whose shadow
+    lies under it, the top arris. *u0* is the band's U at x0, so a region
+    continuing the band keeps its unit joints."""
+    y1 = y0 + COPE_H
+    c.paint(x0, x1, y0 - PAD, y1 + PAD, ID_COPE, 1.0, 1.0, height=0.0)
+    c.bevel(x0, x1, y0, y1, ARRIS_H, 1.2, axes="y")
+    c.mul(x0, x1, y0 - PAD, y0 + 1, 0.80, ao=0.80)                 # the soffit's edge
+    c.mul(x0, x1, y0 + 3, y0 + 4, 0.82, ao=0.82)                   # drip groove
+    c.lift(x0, x1, y0 + 3, y0 + 4, -0.006)
+    first = math.ceil((u0 - 32.0) / 64.0)
+    for i in range(first, first + int((x1 - x0) / 64.0) + 2):     # unit joints
+        x = x0 + i * 64.0 + 32.0 - u0
+        if x0 <= x < x1:
+            c.mul(x, x + 1, y0, y1, 0.84, ao=0.86)
+            c.lift(x, x + 1, y0, y1, -0.003)
+
+
 def paint_cope_band(c):
-    """The parapet's coping, 0.375 m: precast concrete units a metre long,
-    a drip groove near the foot whose shadow lies under it, the top arris."""
-    y0, y1 = COPE_Y0, COPE_Y0 + COPE_H
-    c.paint(0, ATLAS, y0 - PAD, y1 + PAD, ID_COPE, 1.0, 1.0, height=0.0)
-    c.bevel(0, ATLAS, y0, y1, ARRIS_H, 1.2, axes="y")
-    c.mul(0, ATLAS, y0 - PAD, y0 + 1, 0.80, ao=0.80)               # the soffit's edge
-    c.mul(0, ATLAS, y0 + 3, y0 + 4, 0.82, ao=0.82)                 # drip groove
-    c.lift(0, ATLAS, y0 + 3, y0 + 4, -0.006)
-    for i in range(int(ATLAS / 64)):                               # unit joints
-        x = i * 64.0 + 32.0
-        c.mul(x, x + 1, y0, y1, 0.84, ao=0.86)
-        c.lift(x, x + 1, y0, y1, -0.003)
+    paint_cope_area(c, 0, ATLAS, COPE_Y0)
+
+
+def cope_dust_s0():
+    """Where along the boiler house's west coping face (from its north end,
+    the coping's oversail included) the dusted segment starts."""
+    return (BH[3] + CO) - (GAL_Y + COPE_DUST_HALF)
+
+
+def paint_cope_dust(c):
+    """The west coping's face over the gallery: the band's coping, at the U
+    its face samples the band at, for weather() to dust."""
+    x, y, w, h = COPE_DUST
+    paint_cope_area(c, x - PAD, x + w + PAD, y, cope_dust_s0() * PPM - PAD)
 
 
 def paint_pipe_band(c):
@@ -584,7 +628,7 @@ def paint_bunker_band(c):
     y0, y1 = BUNK_Y0, BUNK_Y0 + BUNK_H
     paint_brick_area(c, 0, ATLAS, y0 - PAD, y1 + 2 * PAD)
     p = m(BUNKER_PITCH)
-    wy = y0 + m(0.21875)
+    wy = y0 + m(BUNKER_SILL - BUNKER_WIN[0])
     for k in range(int(round(ATLAS / p))):
         cx = p / 2.0 + k * p
         x0 = cx - m(SQ) / 2.0
@@ -799,11 +843,11 @@ def paint_flue_end(c, x0, y0, ppm, pad=PAD):
 
 
 def paint_flue_side(c):
-    """The flue stub's sides: its concrete casing, U up the side (2 m) and V
-    out from the wall (1 m), arrises on the outer edges."""
+    """The flue stub's sides at FPPM: its plain concrete casing, U up the
+    side (2 m) and V out from the wall (1 m), arrises on the outer edges."""
     x, y, w, h = FLUE_SIDE
     c.paint(x - PAD, x + w + PAD, y - PAD, y + h + PAD, ID_CONC, 1.0, 1.0, height=0.0)
-    c.bevel(x - PAD, x + w + PAD, y - PAD, y + h + PAD, ARRIS_H, 1.5)
+    c.bevel(x - PAD, x + w + PAD, y - PAD, y + h + PAD, ARRIS_H, 1.5 * FPPM / PPM)
 
 
 def paint_bushing(c, x0, y0, ppm, pad=PAD):
@@ -996,19 +1040,90 @@ def paint_gallery(c):
         c.paint(x + f, x + w - f, yy - 0.5, yy + 0.5, ID_DARK, 1.0, 0.7, height=-0.025)
 
 
-def paint_stack(c):
-    """One face of a steel stub stack at SPPM, V up from the deck: painted
-    plate with a flange ring every 2 m, the top sooted."""
-    x, y, w, h = STACK
+def stack_face_w():
+    """An octagon face's width, corner to corner."""
+    return 2.0 * STACK_R * math.sin(math.pi / 8.0)
+
+
+def stack_rect(rect, rot, s0, s1, z0, z1):
+    """Pixel rect (x0, x1, y0, y1) of the face patch s0..s1 across, z0..z1
+    up, in stack region *rect*: V up the stack from the deck, or with *rot*
+    U up it and V across."""
+    x, y, w, h = rect
+    a0, a1 = (z0 - Z_BD) * SPPM, (z1 - Z_BD) * SPPM
+    b0, b1 = s0 * SPPM, s1 * SPPM
+    if rot:
+        return (x + a0, x + a1, y + b0, y + b1)
+    return (x + b0, x + b1, y + a0, y + a1)
+
+
+def stack_sz(rect, rot, Y, X):
+    """(s across the face, z up it) of samples in stack region *rect*."""
+    x, y, w, h = rect
+    if rot:
+        return (Y - y) / SPPM, Z_BD + (X - x) / SPPM
+    return (X - x) / SPPM, Z_BD + (Y - y) / SPPM
+
+
+def paint_stack(c, rect, rot=False, ladder=False):
+    """One face of a steel stub stack at SPPM: welded plate in aluminium
+    paint, a seam every 1.5 m, the rolled cap ring and two stiffening rings
+    (STACK_CAP, STACK_STIFF), the foot flange, the guy collar with a lug on
+    every face but the ladder's, and on the ladder's face (*ladder*) the
+    ladder: two rails, a rung every 0.3 m, and the safety hoops and straps
+    from 2.6 m over the deck."""
+    x, y, w, h = rect
+    W = stack_face_w()
+    edge = "x" if rot else "y"          # the bevels' edges lie across the stack
+    across = (-PAD / SPPM, W + PAD / SPPM)
+
+    def R(s0, s1, z0, z1):
+        return stack_rect(rect, rot, s0, s1, z0, z1)
+
+    def band(z0, z1, mid, shade, hgt, shadow=0.84):
+        c.paint(*R(*across, z0, z1), mid, shade, 1.0, height=0.0)
+        c.bevel(*R(*across, z0, z1), hgt, 0.6, axes=edge)
+        c.mul(*R(*across, z0 - 1.5 / SPPM, z0), shadow, ao=shadow)
+
     c.paint(x - PAD, x + w + PAD, y - PAD, y + h + PAD, ID_STACK, 1.0, 1.0, height=0.0)
-    for zz in (0.25, 2.25, 4.25):
-        yy = y + zz * SPPM
-        c.paint(x - PAD, x + w + PAD, yy, yy + 2.5, ID_STACK, 1.08, 1.0, height=FLANGE_H)
-        c.mul(x - PAD, x + w + PAD, yy - 1.5, yy, 0.84, ao=0.84)
-    top = y + (STACK_TOP - Z_BD) * SPPM
-    c.paint(x - PAD, x + w + PAD, top - 0.18 * SPPM, top + PAD, ID_STACK, 1.06, 1.0,
-            height=FLANGE_H)
-    c.mul(x - PAD, x + w + PAD, top - 0.18 * SPPM - 1.5, top - 0.18 * SPPM, 0.84, ao=0.84)
+    zz = Z_BD + 0.75
+    while zz < STACK_TOP - 0.3:                     # circumferential welds
+        c.mul(*R(*across, zz, zz + 0.6 / SPPM), 0.90, ao=0.92)
+        c.lift(*R(*across, zz, zz + 0.6 / SPPM), 0.002)
+        zz += 1.5
+    band(Z_BD + 0.25, Z_BD + 0.33, ID_STACK, 1.05, FLANGE_H)    # the foot flange
+    for z0, z1, _d in (STACK_CAP,) + STACK_STIFF:
+        band(z0, z1, ID_STACK, 1.06, FLANGE_H, 0.78)
+    band(STACK_GUY, STACK_GUY + 0.10, ID_STACK, 1.03, 0.008)
+    if not ladder:
+        # the guy lug: a plate standing off the collar, its eye dark
+        m0, m1 = W / 2.0 - 0.05, W / 2.0 + 0.05
+        c.paint(*R(m0, m1, STACK_GUY - 0.06, STACK_GUY + 0.16), ID_STACK, 0.96, 0.9,
+                height=0.025)
+        c.paint(*R(W / 2.0 - 0.012, W / 2.0 + 0.012, STACK_GUY + 0.085, STACK_GUY + 0.11),
+                ID_DARK, 1.0, 0.7, height=0.0)
+        c.mul(*R(m0, m1, STACK_GUY - 0.06 - 1.5 / SPPM, STACK_GUY - 0.06), 0.82, ao=0.82)
+        return
+    z_lo, z_hi = Z_BD + 0.2, STACK_TOP - 0.05
+    k = 1.0 / SPPM
+    for side in (-1, 1):                            # the rails, on stand-off clips
+        a = W / 2.0 + side * 0.2
+        c.mul(*R(a - 0.035, a + 0.035, z_lo, z_hi), 0.86, ao=0.80)
+        c.paint(*R(a - 0.02, a + 0.02, z_lo, z_hi), ID_DUCT, 1.0, 0.95, height=0.030)
+    zz = z_lo + 0.3
+    while zz < z_hi - 0.1:                          # rungs
+        c.mul(*R(W / 2.0 - 0.18, W / 2.0 + 0.18, zz - 1.2 * k, zz), 0.86, ao=0.84)
+        c.paint(*R(W / 2.0 - 0.18, W / 2.0 + 0.18, zz, zz + 0.025), ID_DUCT, 1.0, 0.95,
+                height=0.025)
+        zz += 0.3
+    zz = Z_BD + 2.6
+    while zz < z_hi - 0.05:                         # the cage's hoops, across the face
+        c.mul(*R(*across, zz - 1.5 * k, zz), 0.84, ao=0.82)
+        c.paint(*R(*across, zz, zz + 0.03), ID_DUCT, 1.0, 0.95, height=0.03)
+        zz += 0.75
+    for a in (W / 2.0 - 0.27, W / 2.0, W / 2.0 + 0.27):     # its straps
+        c.paint(*R(a - 0.015, a + 0.015, Z_BD + 2.6, z_hi), ID_DUCT, 0.96, 0.92,
+                height=0.035)
 
 
 # ----------------------------------------------------------------- decks
@@ -1187,7 +1302,8 @@ def check_regions():
              "service": SERVICE, "stack": STACK, "flue_end": FLUE_END,
              "flue_side": FLUE_SIDE, "bushing": BUSHING, "sq": SQWIN,
              "mouth": MOUTH, "letters": LETTERS, "deck_t": DECK_T, "deck_b": DECK_B,
-             "gal_side": GAL_SIDE, "gal_top": GAL_TOP, "gal_end": GAL_END}
+             "gal_side": GAL_SIDE, "gal_top": GAL_TOP, "gal_end": GAL_END,
+             "stack_l": STACK_L, "cope_dust": COPE_DUST}
     rects.update({"elev_" + k: v for k, v in ELEV.items()})
     rects.update(PATCHES)
     bands_top = PIPE_Y0 + PIPE_H + PAD
@@ -1209,11 +1325,13 @@ def check_regions():
         problems.append("the window region is not %s x %s m" % (W, H))
     for kind, (w, h) in SIZES.items():
         rx, ry, rw, rh = REGION[kind]
-        if abs(rw - m(w)) > 1.0 or abs(rh - m(h)) > 1.0:
+        k = REGION_PPM.get(kind, PPM)
+        if abs(rw - w * k) > 1.0 or abs(rh - h * k) > 1.0:
             problems.append("%s region is %d x %d px for a %.3f x %.3f m opening"
                             % (kind, rw, rh, w, h))
     if (FLUE_END[2], FLUE_END[3]) != (m(2.0), m(2.0)) or FLUE[1] - FLUE[0] != 2.0 \
-            or FLUE[4] != 2.0 or (FLUE_SIDE[2], FLUE_SIDE[3]) != (m(FLUE[4]), m(FLUE[2])):
+            or FLUE[4] != 2.0 or (FLUE_SIDE[2], FLUE_SIDE[3]) != (FLUE[4] * FPPM,
+                                                                     FLUE[2] * FPPM):
         problems.append("the flue's regions are not its faces")
     if abs(m(BAND_TOP) - BRICK_H) > 1e-6:
         problems.append("the brick band does not hold z 0 .. BAND_TOP")
@@ -1232,15 +1350,20 @@ def check_regions():
         rect = BUNK_Y0 if kind == "bunker" else REGION[kind][1]
         if (rect - _brick_row(z0)) % BOND_ROWS:
             problems.append("the %s region's rows are off the band's bond" % kind)
-        if kind != "bunker" and slab_of(z0) != slab_of(z0 + SIZES[kind][1] - 1e-6):
+        # a panel may cross a slab line: the band's rows a slab apart are a
+        # whole number of bond repeats apart, so its bond meets both slabs'
+        if kind != "bunker" and slab_of(z0) != slab_of(z0 + SIZES[kind][1] - 1e-6) \
+                and m(SLAB) % BOND_ROWS:
             problems.append("the %s panel crosses a slab line" % kind)
     if (BUNK_Y0 + BUNK_H - _brick_row(BUNKER_WIN[1])) % BOND_ROWS:
         problems.append("the bunker band's top is off the bond above it")
     if m(BUNKER_PITCH) * round(ATLAS / m(BUNKER_PITCH)) != ATLAS:
         problems.append("the bunker's window pitch does not divide the band")
-    if STACK[2] < 2 * STACK_R * math.sin(math.pi / 8) * SPPM or \
-            STACK[3] < (STACK_TOP - Z_BD) * SPPM:
-        problems.append("the stack region cannot hold a face")
+    if STACK[2] < stack_face_w() * SPPM or STACK[3] < (STACK_TOP - Z_BD) * SPPM \
+            or STACK_L[3] < stack_face_w() * SPPM or STACK_L[2] < (STACK_TOP - Z_BD) * SPPM:
+        problems.append("a stack region cannot hold a face")
+    if (COPE_DUST[2], COPE_DUST[3]) != (m(2 * COPE_DUST_HALF), COPE_H):
+        problems.append("the dusted coping region is not its face")
     if GAL_SIDE[2] < (GAL_LEN / math.cos(math.radians(GAL_SLOPE))) * GPPM - 1 or \
             GAL_SIDE[3] < GAL_H * GPPM - 1 or GAL_TOP[3] < GAL_W * GPPM - 1 or \
             (GAL_END[2], GAL_END[3]) != (round(GAL_W * GPPM), round(GAL_H * GPPM)):
@@ -1263,15 +1386,50 @@ def check_regions():
 
 
 # ================================================================ weather
+def mouth_dust(s, z):
+    """The coal dust on the west wall at *s* along it and height *z*: a
+    broad soft stain under the gallery's floor, as wide as the gallery and
+    spreading a little as it falls, fading downward over some 4 m, and a
+    little round the mouth beside it; faded to nothing at the dusted
+    panel's edges, so the band's brick runs on round it."""
+    sc = wall_s("bh_west", GAL_Y)
+    pw, ph = SIZES["mouth"]
+    d = (GAL_ZM - GAL_H / 2.0) - z                  # below the floor at the wall
+    dd = np.clip(d, 0.0, None)
+    hw = GAL_W / 2.0 + 0.06 * dd
+    off = np.clip(np.abs(s - sc) - hw, 0.0, None)
+    across = np.exp(-off ** 2 / (2.0 * 0.30 ** 2))
+    vert = np.where(d >= 0.0, 0.5 * np.exp(-dd / 1.6) + 0.5 * np.exp(-dd / 4.0),
+                    np.exp(np.clip(d, None, 0.0) / 0.35))
+    edge = (atlas.smoothstep(sc - pw / 2.0, sc - pw / 2.0 + 0.375, s)
+            * atlas.smoothstep(sc + pw / 2.0, sc + pw / 2.0 - 0.375, s)
+            * atlas.smoothstep(MOUTH_Z, MOUTH_Z + 1.0, z)
+            * atlas.smoothstep(MOUTH_Z + ph, MOUTH_Z + ph - 0.125, z))
+    return 0.95 * across * vert * edge
+
+
+def stack_runs(c, rot):
+    """f(Y, X): rain runs down a stack face, the "runs" noise turned with
+    the region (weathering's own runs down V suit the upright one)."""
+    n = atlas.noise(c, 104 if not rot else 204, 30.0 if rot else 0.8,
+                    0.8 if rot else 30.0, tile_y=TILE_Y)
+    ss = c.ss
+
+    def f(Y, X):
+        return n[(Y * ss).astype(np.int64), (X * ss).astype(np.int64)]
+    return f
+
+
 def weather(c):
     """Where the weather goes; scripts/weathering.py says what it looks like.
 
     Only the brick band's first 1.25 m is height from the ground for every
     wall; above it each 4 m slab samples the same rows again, so nothing
     that follows height goes there, only noise on the slab period (TILE_Y).
-    The plant burns coal: a light film of coal dust lies on the coping and
-    the gallery, heavier on the gallery's roof and on the wall under it, and
-    soot on the stacks, the flue stub and the deck round them.
+    The plant burns coal: a light film of soot and coal dust lies evenly on
+    all the brick and the coping, heavier on the gallery and in a broad
+    stain on the wall and the coping round its mouth, and soot on the
+    stacks, the flue stub and the deck round them.
     """
     brick = (ID_BRICK, ID_BRICK2, ID_MORTAR)
     steel = (ID_GALV, ID_DUCT, ID_DOOR, ID_HANDLE, ID_SHEET, ID_STACK, ID_PANEL)
@@ -1285,6 +1443,13 @@ def weather(c):
              fall=0.14, speck_fall=0.16)
     w.bloom(0, ATLAS, BRICK_Y0 + m(Z_PLINTH), BRICK_Y0 + m(1.2), brick,
             amount=0.10, fade=m(0.5))
+    # a working coal plant's film on every brick surface: even, since the
+    # slabs repeat the band's rows, with faint long soot runs on the slab
+    # period; the same on the regions that continue the band and on the
+    # LOD3 elevations, so no edge or tier shows it
+    w.coal(0, ATLAS, 0, ATLAS, lambda Y, X, nz: 0.10 + 0.04 * nz("big")
+           + 0.06 * atlas.smoothstep(0.6, 2.0, nz("long")), brick, dark=0.25)
+    w.add("D", 0, ATLAS, 0, ATLAS, lambda Y, X, nz: 0.04 + 0.03 * nz("blotch"), brick)
     # the precast concrete: patchy dirt
     w.add("D", 0, ATLAS, CONC_Y0, CONC_Y0 + CONC_H, lambda Y, X, nz: 0.06 * nz("blotch"),
           (ID_CONC,))
@@ -1318,15 +1483,17 @@ def weather(c):
     w.coal(x - PAD, x + rw + PAD, y - PAD, y + rh + PAD, lambda Y, X, nz: (
         0.10 + 0.25 * np.exp(-(y + rh - Y) / 20.0)) * (0.6 + 0.4 * nz("blotch")), (ID_CONC,))
     x, y, rw, rh = FLUE_SIDE
+    k = FPPM / PPM
     w.coal(x - PAD, x + rw + PAD, y - PAD, y + rh + PAD, lambda Y, X, nz: (
-        0.08 + 0.30 * np.exp(-(x + rw - X) / 26.0) * np.exp(-(y + rh - Y) / 40.0))
+        0.08 + 0.30 * np.exp(-(x + rw - X) / (26.0 * k)) * np.exp(-(y + rh - Y) / (40.0 * k)))
         * (0.6 + 0.4 * nz("blotch")), (ID_CONC,))
     # the gallery: a coal-plant's film of fines, thick on its roof, on the
     # sides' floor rail and toward the wall, where the conveyor's dust leaks
     x, y, rw, rh = GAL_SIDE
     w.coal(x - PAD, x + rw + PAD, y - PAD, y + rh + PAD, lambda Y, X, nz: (
-        0.08 + 0.10 * nz("big") + 0.30 * np.exp(-(Y - y) / 6.0)
-        + 0.12 * np.clip((X - x) / rw, 0.0, 1.0)), (ID_SHEET,))
+        0.08 + 0.10 * nz("big") + 0.45 * np.exp(-np.clip(Y - y, 0.0, None) / (0.45 * GPPM))
+        + 0.25 * np.exp(-np.clip(Y - y, 0.0, None) / (1.4 * GPPM))
+        + 0.20 * np.clip((X - x) / rw, 0.0, 1.0) ** 2), (ID_SHEET,))
     w.runs(x - PAD, x + rw + PAD, y - PAD, y + rh + PAD, (ID_SHEET,), 0.18, fall=30.0)
     x, y, rw, rh = GAL_TOP
     w.coal(x - PAD, x + rw + PAD, y - PAD, y + rh + PAD, lambda Y, X, nz: (
@@ -1334,30 +1501,53 @@ def weather(c):
     x, y, rw, rh = GAL_END
     w.coal(x - PAD, x + rw + PAD, y - PAD, y + rh + PAD, lambda Y, X, nz: (
         0.10 + 0.10 * nz("big") + 0.25 * np.exp(-(Y - y) / 8.0)), (ID_SHEET, ID_PANEL))
-    # the wall under the gallery: dust falls from its floor, thickest under
-    # it and fading to nothing at the panel's edges, so the band runs on
+    # the wall under the gallery: a broad soft stain of fines falling from
+    # the gallery's floor, spreading as it falls, faded to nothing at the
+    # panel's edges so the band runs on (mouth_dust())
     x, y, rw, rh = MOUTH
-    g0 = x + (wall_s("bh_west", GAL_Y + GAL_W / 2.0) - (wall_s("bh_west", GAL_Y)
-                                                     - SIZES["mouth"][0] / 2.0)) * PPM
-    g1 = g0 + GAL_W * PPM
-    zg = y + (GAL_ZM - GAL_H / 2.0 - MOUTH_Z) * PPM      # the gallery's floor line
+    s_lo = wall_s("bh_west", GAL_Y) - SIZES["mouth"][0] / 2.0
 
     def mouth(Y, X, nz):
-        across = atlas.smoothstep(g0 - 18.0, g0 + 6.0, X) * atlas.smoothstep(g1 + 18.0, g1 - 6.0, X)
-        edge = (atlas.smoothstep(x, x + 22.0, X) * atlas.smoothstep(x + rw, x + rw - 22.0, X)
-                * atlas.smoothstep(y, y + 30.0, Y))
-        fall = np.exp(-np.clip(zg - Y, 0.0, None) / 80.0)
-        runs = 0.45 + 0.55 * atlas.smoothstep(-0.6, 1.2, nz("runs"))
-        return np.clip(1.25 * across * edge * fall * runs, 0.0, 1.0)
-    w.coal(x - PAD, x + rw + PAD, y - PAD, y + rh + PAD, mouth, brick, dark=0.40)
-    # the stacks: soot down from the mouth, rust under the flanges
-    x, y, rw, rh = STACK
-    top = y + (STACK_TOP - Z_BD) * SPPM
+        v = mouth_dust(s_lo + (X - x) / PPM, MOUTH_Z + (Y - y) / PPM)
+        return v * (0.80 + 0.20 * nz("big") + 0.10 * atlas.smoothstep(
+            0.4, 1.8, nz("wash")))
+    w.coal(x - PAD, x + rw + PAD, y - PAD, y + rh + PAD, mouth, brick, dark=0.30)
+    # the gallery's underside and the coping over its mouth
+    gx, gy, gw, gh = PATCHES["gal_under"]
+    w.coal(gx - 2, gx + gw + 2, gy - 2, gy + gh + 2, 0.80, (ID_SHEET,))
+    x, y, rw, rh = COPE_DUST
+    xc = x + COPE_DUST_HALF * PPM
+    w.runs(x - PAD, x + rw + PAD, y, y + rh, (ID_COPE,), 0.14, fall=14.0)
     w.coal(x - PAD, x + rw + PAD, y - PAD, y + rh + PAD, lambda Y, X, nz: (
-        0.10 + 0.55 * np.exp(-np.clip(top - Y, 0.0, None) / 22.0)
-        * (0.6 + 0.4 * atlas.smoothstep(-0.5, 1.5, nz("runs")))), (ID_STACK,))
-    w.add("R", x - PAD, x + rw + PAD, y - PAD, y + rh + PAD, lambda Y, X, nz: 0.16
-          * atlas.smoothstep(0.3, 1.6, nz("runs")), (ID_STACK,))
+        0.06 + 0.10 * nz("big") + 0.55 * np.exp(-np.clip(np.abs(X - xc) - 0.9 * PPM, 0.0, None)
+                                                ** 2 / (2.0 * (0.45 * PPM) ** 2))
+        * atlas.smoothstep(0.0, 20.0, np.minimum(X - x, x + rw - X))
+        * (0.75 + 0.25 * nz("blotch"))), (ID_COPE,))
+    # the stacks: aluminium paint, sooted from the mouth down and in
+    # streaks, rust running from under the rings, dust on the ladder
+    for rect, rot in ((STACK, False), (STACK_L, True)):
+        x, y, rw, rh = rect
+        runs = stack_runs(c, rot)
+
+        def soot(Y, X, nz, rect=rect, rot=rot, runs=runs):
+            s_, z = stack_sz(rect, rot, Y, X)
+            d = np.clip(STACK_TOP - z, 0.0, None)
+            r = runs(Y, X)
+            return (0.10 + 0.82 * np.exp(-d / 0.9) * (0.75 + 0.25 * atlas.smoothstep(-0.5, 1.5, r))
+                    + 0.28 * atlas.smoothstep(0.5, 1.8, r) * np.exp(-d / 2.4))
+
+        def rust(Y, X, nz, rect=rect, rot=rot, runs=runs):
+            s_, z = stack_sz(rect, rot, Y, X)
+            r = atlas.smoothstep(0.3, 1.6, runs(Y, X))
+            v = 0.05 * nz("blotch")
+            for z0, _z1, _d in STACK_STIFF + ((STACK_GUY, 0, 0),):
+                below = np.clip(z0 - z, 0.0, None)
+                v = v + 0.20 * r * np.exp(-below / 0.45) * (z < z0)
+            return v
+        w.coal(x - PAD, x + rw + PAD, y - PAD, y + rh + PAD, soot, (ID_STACK, ID_DUCT))
+        w.add("R", x - PAD, x + rw + PAD, y - PAD, y + rh + PAD, rust, (ID_STACK, ID_DUCT))
+    rx, ry, rw, rh = PATCHES["rim"]
+    w.coal(rx - 2, rx + rw + 2, ry - 2, ry + rh + 2, 0.70, (ID_STACK,))
     # the decks: dirt in patches, soot round the stacks
     for rect in (DECK_T, DECK_B):
         x, y, rw, rh = rect
@@ -1373,10 +1563,10 @@ def weather(c):
            (ID_FELT, ID_BALLAST, ID_COPE))
     # the LOD3 west elevation: the same dust under the gallery
     ex, ey, ew, eh = ELEV["west"]
-    gx = ex + wall_s("bh_west", GAL_Y + GAL_W / 2.0) * LPPM
-    gz = ey + (GAL_ZM - GAL_H / 2.0) * LPPM
-    w.coal(gx - 1, gx + GAL_W * LPPM + 1, gz - 14, gz, lambda Y, X, nz: 0.7 * np.exp(
-        -(gz - Y) / 4.5), brick)
+    s_lo = wall_s("bh_west", GAL_Y) - SIZES["mouth"][0] / 2.0
+    w.coal(ex + s_lo * LPPM, ex + (s_lo + SIZES["mouth"][0]) * LPPM, ey + MOUTH_Z * LPPM,
+           ey + (MOUTH_Z + SIZES["mouth"][1]) * LPPM, lambda Y, X, nz: mouth_dust(
+               (X - ex) / LPPM, (Y - ey) / LPPM), brick, dark=0.30)
     return w
 
 
@@ -1398,11 +1588,13 @@ def paint(ss=atlas.SS):
     paint_service(c, SERVICE[0], SERVICE[1], PPM)
     paint_flue_end(c, FLUE_END[0], FLUE_END[1], PPM)
     paint_flue_side(c)
-    paint_bushing(c, BUSHING[0], BUSHING[1], PPM)
+    paint_bushing(c, BUSHING[0], BUSHING[1], BPPM)
     paint_letters_region(c)
     paint_mouth(c)
+    paint_cope_dust(c)
     paint_gallery(c)
-    paint_stack(c)
+    paint_stack(c, STACK)
+    paint_stack(c, STACK_L, rot=True, ladder=True)
     paint_decks(c)
     for ename in ELEV:
         paint_elevation(c, ename)
