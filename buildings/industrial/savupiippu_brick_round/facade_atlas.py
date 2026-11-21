@@ -171,12 +171,26 @@ STRAP_W, STRAP_T = 0.05, 0.008
 
 # The lightning down conductor: a copper strap beside the ladder, COND_X
 # east of its axis, COND_OFF off the brickwork on saddles; up the head band
-# to an air terminal level with the rim (the bounds stay at Z_TOP). Down the
-# wash, the coping and the base's rear wall it is paint (COND_*_R).
+# to a clamp block under the air terminal. Down the wash, the coping and the
+# base's rear wall it is paint (COND_*_R).
 COND_X = 0.275
 COND_W, COND_T = 0.025, 0.012
 COND_OFF = 0.04
-COND_TIP = Z_TOP - 0.01
+# The air terminal, on the strap's line: a copper rod ROD_W square at its
+# foot, tapering to ROD_W_TOP at its shoulder and a point ROD_POINT long,
+# its tip a metre over the rim (the stack's height), its inner face COND_OFF
+# off the band. Below it a clamp block joins the strap (CLAMP_Z, CLAMP_W
+# wide, CLAMP_OFF out from the band), and a small bracket under the cap ring
+# holds it to the band (ROD_BRACKET_Z), on LOD0/LOD1. LOD2/LOD3 keep a
+# three-sided spike SPIKE_W wide from ROD_FOOT to the same tip, so every
+# tier has the same height.
+ROD_TIP = Z_TOP + 1.0                   # 47.5
+CLAMP_Z = (46.11, 46.20)
+ROD_FOOT = CLAMP_Z[1] + GAP
+ROD_W, ROD_W_TOP, ROD_POINT = 0.045, 0.026, 0.12
+CLAMP_W, CLAMP_OFF = 0.07, (0.012, 0.095)
+ROD_BRACKET_Z, ROD_BRACKET_W = (46.33, 46.37), 0.03
+SPIKE_W = 0.05
 
 # The obstruction lamps on the head band: east, west and front, the back
 # being the ladder's (degrees from +X, counter-clockwise from above). Each is
@@ -466,17 +480,17 @@ def paint_ladder(c):
         paint_conductor(c, cx - m(COND_X), y_a, y_b, y0)
 
 
-def paint_conductor(c, xc, y0, y1, ref):
+def paint_conductor(c, xc, y0, y1, ref, face=1.0, edge=0.86):
     """The copper strap, a column at *xc* from row y0 to y1: a dull,
-    weathered copper face COND_W wide, raised, a soft shadow either side,
-    and a saddle every metre from row *ref* (a band's V period is four
-    metres, so they tile)."""
+    weathered copper face COND_W wide at shade *face*, raised, a soft
+    shadow *edge* either side, and a saddle every metre from row *ref* (a
+    band's V period is four metres, so they tile)."""
     hw = m(COND_W) / 2.0
-    c.mul(xc - hw - 1.2, xc + hw + 1.2, y0, y1, 0.86, ao=0.85)
-    c.paint(xc - hw, xc + hw, y0, y1, ID_COPPER, 1.0, 0.95, height=0.006)
+    c.mul(xc - hw - 1.2, xc + hw + 1.2, y0, y1, edge, ao=0.85)
+    c.paint(xc - hw, xc + hw, y0, y1, ID_COPPER, face, 0.95, height=0.006)
     for yr in _period_rows(y0, y1, ref, m(1.0), [m(0.5)]):
         c.paint(xc - hw - 0.8, xc + hw + 0.8, max(yr - 0.7, y0), min(yr + 0.7, y1),
-                ID_COPPER, 0.8, 0.85, height=0.009)
+                ID_COPPER, 0.8 * face, 0.85, height=0.009)
 
 
 # ================================================================= the head
@@ -603,11 +617,15 @@ def conductor_strips(c, arrays):
         n = (w + 2 * PAD) * ss
         for A in arrays:
             A[rows, d0:d0 + n] = A[rows, a0:a0 + n]
-        paint_conductor(c, x + w / 2.0, y - PAD, y + h + PAD, PL_Y0)
+        # darker than the shaft's strap and with a deeper shadow, so it
+        # still reads on the base's rear wall in shade
+        paint_conductor(c, x + w / 2.0, y - PAD, y + h + PAD, PL_Y0, face=0.78, edge=0.72)
+    # across the wash, 2 px (0.125 m at the wash's 16 px/m) of dark
+    # weathered copper: a lighter or thinner line reads as a seam
     x, y, w, h = WASH_R
     xc = x + w / 2.0 + COND_X * WASH_PPM
     c.stroke((xc, y + h / 2.0 + (R0 + 0.02) * WASH_PPM), (xc, y + h / 2.0 + BH * WASH_PPM + 1.0),
-             0.9, ID_COPPER, 0.9)
+             2.0, ID_COPPER, 0.6, ao=0.85, height=0.006)
 
 
 def paint_patches(c):

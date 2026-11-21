@@ -8,7 +8,7 @@ separate pieces of the plant (the boiler and turbine hall, coal reception,
 office and transformer yard are other assets). Each stands alone on a lot:
 no ground, no flue duct to the hall.
 
-A round, battered stack of dull red radial brick, 46.5 m tall, about 2.4
+A round, battered stack of dull red radial brick, 46.5 m to its rim, about 2.4
 times the boiler house, 4.1 m across at its foot and 2.4 m at its top (top
 to foot 0.58). It stands on a massive brick base, 6.8 m square on a low cast
 concrete footing, turned to an octagon by sloping brick fillets at its
@@ -19,16 +19,16 @@ third and is heaviest on the head; three thin galvanised flats ring the top
 10 m. A narrow steel service platform with a railing rings the head 1.5 m
 under the rim; an iron ladder in a hooped safety cage climbs the back along
 the batter from 2.5 m above the base to it, with a copper lightning down
-conductor beside it. Three red aviation obstruction lamps on the head band
-glow at night. On the base's front, toward the boiler house, is the closed
+conductor beside it, up to a lightning rod rising a metre over the rim.
+Three red aviation obstruction lamps on the head band glow at night. On the base's front, toward the boiler house, is the closed
 flue inlet under a concrete lintel; low in its east wall a cast iron
 cleanout hatch.
 
 It is the plant's landmark from the play camera: the taper, the base's
-fillets, the head band, the platform's deck and the open top are geometry
-on every tier; the ladder and its cage, the conductor, the railing and the
-platform brackets are geometry close up, and the ladder and conductor
-painted lines beyond 70 m.
+fillets, the head band, the platform's deck, the open top and the
+lightning rod are geometry on every tier; the ladder and its cage, the
+conductor, the railing and the platform brackets are geometry close up,
+and the ladder and conductor painted lines beyond 70 m.
 
 ## Category and secondary use
 
@@ -46,7 +46,7 @@ limit in CLAUDE.md, only triangle ceilings.
 | | Width (X) × depth (Y) × height |
 | --- | --- |
 | Base (the outer wall outline) | 6.80 × 6.80 m, square walls to 4.20 m |
-| Overall | 6.80 × 6.80 × 46.50 m |
+| Overall | 6.80 × 6.80 × 47.50 m (to the lightning rod's tip; the rim at 46.50 m) |
 
 Nothing stands outside the base: the platform reaches 2.0 m from the axis,
 the ladder's cage 2.86 m at its lowest hoop (the base's flat is at 3.40 m),
@@ -60,8 +60,9 @@ from 2.06 m to 1.19 m (a batter of 2.26 %). The head band, 0.06 m proud,
 runs 44.70–46.50 m at radius 1.25 m, its top 0.10 m the painted steel cap
 ring; the rim at 46.50 m. The platform's deck is 44.88–45.00 m, to radius
 2.00 m; its hand rail's top 46.00 m. The lamps stand 46.06–46.27 m. The
-conductor's air terminal ends at 46.49 m, level with the rim, so the
-height stays 46.50 m.
+lightning rod stands 46.20–47.50 m on the back, 0.275 m east of the
+ladder's axis, its tip a metre over the rim: it sets the height, on every
+tier.
 
 The pivot is at ground level on the base's centre, which is also the
 shaft's axis. It is taken from `LOD0` and every tier has the same extents.
@@ -127,9 +128,10 @@ one object of many closed shells, each welded manifold.
   the rim's inner edge; the flue's floor at 45.50 m, inside the band; the
   base's floor on the ground;
 - separate closed solids, each a section swept along a polyline and
-  mitred at its bends (`sweep()`): the three lamps (every tier), the
-  platform's railing, posts and brackets (as far as the tier keeps them),
-  and on `LOD0`/`LOD1` the ladder, its cage and the down conductor.
+  mitred at its bends (`sweep()`), or built directly: the three lamps and
+  the lightning rod (every tier), the platform's railing, posts and
+  brackets (as far as the tier keeps them), and on `LOD0`/`LOD1` the
+  ladder, its cage, the down conductor and the rod's clamp and bracket.
 
 The stack's faces are shaded smooth round the circumference; edges are
 sharp where the profile turns by more than 25° (the band's foot, the rim,
@@ -207,17 +209,33 @@ pixel beyond 70 m, and the back facet is too narrow to hold its width).
 0.275 m east of its axis: on `LOD0`/`LOD1` a strap 25 mm wide and 12 mm
 deep (triangular, flat face in) standing 0.04 m off the brickwork from
 6.23 m to `GAP` under the head band, then 0.04 m off the band from its foot
-to `GAP` under the deck and from `GAP` over it up to its air terminal at
-46.49 m, level with the rim. The bounds were kept at 46.50 m: a terminal
-rising a metre over the rim, as a real one would, would raise the
-sidecar's height to 47.5 m; the cap ring stands for the air-termination
-ring it is bonded to. Down the wash, the rear coping and the base's rear
-wall to the ground the conductor is paint on every tier (a 0.19 m strip
-of the wall, its trapezoid and the coping with their own copy of the
-brick or concrete and the strap painted on, and a line across the wash),
-and on `LOD2`/`LOD3` it is paint on the back facet's strip beside the
-ladder. Below the ladder's foot (6.2–8.7 m) the far tiers have no line:
-that part lift samples the band without a strip.
+to `GAP` under the deck and from `GAP` over it up to `GAP` under the air
+terminal's clamp block at 46.11 m. Down the wash, the rear coping and the
+base's rear wall to the ground the conductor is paint on every tier (a
+0.19 m strip of the wall, its trapezoid and the coping with their own copy
+of the brick or concrete and the strap painted on, and a 2 px line across
+the wash), and on `LOD2`/`LOD3` it is paint on the back facet's strip
+beside the ladder. Below the ladder's foot (6.2–8.7 m) the far tiers have
+no line: that part lift samples the band without a strip.
+
+**Air terminal.** One lightning rod on the strap's line, so the route reads
+rod, strap down the band, under and over the deck, down the shaft and the
+base. On `LOD0`/`LOD1` (`air_terminal()`, 38 triangles): a square copper
+rod, 45 mm at its foot tapering to 26 mm at a shoulder 0.12 m under its
+tip and then to a point, from 46.20 m to 47.50 m, its inner face 0.04 m
+off the band (the strap's stand-off), so it rises 1.0 m over the rim; a
+clamp block 0.07 m wide, 0.09 m tall (46.11–46.20 m), 12 mm to 95 mm out
+from the band, between the strap's top and the rod's foot; and a bracket
+0.03 m square from the band to the rod's inner face at 46.33–46.37 m,
+under the cap ring. Each is its own closed solid, `GAP` clear of the
+strap, of the others and of the band, in `build_lod()`'s clash test. The
+real rod would be 20–25 mm round; at 45 mm it is about 1.5 px at 50 m with
+the review camera. On `LOD2`/`LOD3` a three-sided spike 0.05 m wide at its
+foot (46.20 m) to the same tip (4 triangles), floating 0.04 m off the
+band without clamp: the rod sets the height, so every tier keeps it and
+the bounds are the same on all four. It takes the strap's copper patch.
+The rod stands on the back, where the ladder and the strap are; the
+lamps are at east, west and front.
 
 ### Authored parameters
 
@@ -229,8 +247,10 @@ that part lift samples the band without a strip.
 (`LADDER_HALF`, `RAIL_W`, `RAIL_D`, `STANDOFF`, `RUNG_PITCH`, `RUNG_EVERY`,
 `LADDER_BRACKETS`, `BRACKET_EVERY`), the cage (`CAGE_Z0`, `CAGE_PITCH`,
 `CAGE_N`, `CAGE_EVERY`, `HOOP`, `HOOP_T`, `HOOP_H`, `STRAP_*`), the
-conductor (`COND_X`, `COND_W`, `COND_T`, `COND_OFF`, `COND_TIP`, its strips
-`COND_*_R`), the attachments' clearance `GAP`, the lamps (`LAMP_ANGLES`,
+conductor (`COND_X`, `COND_W`, `COND_T`, `COND_OFF`, its strips
+`COND_*_R`), the air terminal (`ROD_TIP`, `ROD_FOOT`, `ROD_W`, `ROD_W_TOP`,
+`ROD_POINT`, `CLAMP_Z`, `CLAMP_W`, `CLAMP_OFF`, `ROD_BRACKET_Z`,
+`ROD_BRACKET_W`, `SPIKE_W`), the attachments' clearance `GAP`, the lamps (`LAMP_ANGLES`,
 `LAMP_Z`, `LAMP_RAD`, `LAMP_OUT`, `LAMP_ARM`), the inlet, lintel and hatch,
 `SIDES`, and the atlas layout. `check_layout()` asserts:
 
@@ -251,9 +271,11 @@ conductor (`COND_X`, `COND_W`, `COND_T`, `COND_OFF`, `COND_TIP`, its strips
 - the cage starting 2.2–3.0 m above the ladder's foot, hoops no more than
   1.8 m apart, wider than the ladder, under the deck and ending within a
   pitch of it, its furthest reach 0.3 m inside the base's plan;
-- the conductor clear of the brackets and its terminal no higher than the
-  rim; the lamps' heights in order and under the cap ring, their bodies
-  off the band and clear of the railing.
+- the conductor clear of the brackets; the air terminal's tip 0.8–1.2 m
+  over the rim, tapering to a point, its clamp and bracket on the band
+  over the railing and under the cap ring; the lamps' heights in order
+  and under the cap ring, their bodies off the band and clear of the
+  railing.
 
 `build_lod()` then proves the clearances: no two shells' triangles
 intersect, on every tier.
@@ -262,18 +284,20 @@ intersect, on every tier.
 
 | Tier | Sides | Triangles | Kit | Ceiling | What changes |
 | --- | --- | --- | --- | --- | --- |
-| `LOD0` | 24 | 3216 | 2188 | 12,000 | inlet recessed; full railing; ladder with every rung and its brackets; 21 hoops, 3 straps; conductor; six-sided lamps on arms |
-| `LOD1` | 16 | 1550 | 826 | 4,000 | no knee rail; every third rung, no brackets; 8 hoops, 3 straps; four-sided lamps, no arms |
-| `LOD2` | 12 | 766 | 210 | 1,500 | inlet flush; ladder, cage and conductor painted; hand rail, posts, brackets |
-| `LOD3` | 8 | 422 | 42 | 500 | deck alone; lamps kept |
+| `LOD0` | 24 | 3254 | 2226 | 12,000 | inlet recessed; full railing; ladder with every rung and its brackets; 21 hoops, 3 straps; conductor; lightning rod with clamp and bracket; six-sided lamps on arms |
+| `LOD1` | 16 | 1588 | 864 | 4,000 | no knee rail; every third rung, no brackets; 8 hoops, 3 straps; four-sided lamps, no arms |
+| `LOD2` | 12 | 770 | 214 | 1,500 | inlet flush; ladder, cage and conductor painted; the rod a three-sided spike; hand rail, posts, brackets |
+| `LOD3` | 8 | 426 | 46 | 500 | deck alone; lamps and spike kept |
 
 "Kit" is everything outside the stack's own solid (`kit_triangles()` in
 `build.py`). On `LOD0`: the ladder 1,072 (rails 48, 108 rungs at 8
 triangles 864, 20 brackets 160), the cage 570 (21 hoops at 26, three straps
-24), the conductor 24, the platform's railing, posts and brackets 432, the
-lamps 90 (30 each: a six-sided body, its dome and underside, and its arm).
-On `LOD1`: ladder 336, cage 232, conductor 24, railing and steel 192,
-lamps 42.
+24), the conductor 24, the air terminal 38 (rod 14, clamp 12, bracket
+12), the platform's railing, posts and brackets 432, the lamps 90 (30
+each: a six-sided body, its dome and underside, and its arm). On `LOD1`:
+ladder 336, cage 232, conductor 24, air terminal 38, railing and steel
+192, lamps 42. On `LOD2`: railing and steel 168, lamps 42, spike 4; on
+`LOD3` lamps 42 and spike 4.
 
 The stack is about 1,030 triangles at `LOD0` (the shaft's ten lifts 2n
 each, because the texture repeats per lift; the head band in two parts,
@@ -282,8 +306,16 @@ fillets, coping, wash and the conductor strip's splits about 220). The
 previous revision unioned the ladder into the shaft and the rungs into the
 rails (5,134 at `LOD0` without a cage); the kit now cuts nothing, so the
 cage costs only its bars and the whole tier is 37 % lighter. The kit
-(2,188) is under CLAUDE.md's quarter-of-ceiling trim allocation (3,000) on
-`LOD0`; on `LOD1` (826 of 1,000) too. Nothing is padded.
+(2,226) is under CLAUDE.md's quarter-of-ceiling trim allocation (3,000) on
+`LOD0`; on `LOD1` (864 of 1,000) too. Nothing is padded.
+
+### Air terminal: one rod
+
+Two or three rods round the rim joined by a ring conductor on the cap, as
+many stacks carry, would cost about 80 triangles on `LOD0` (a ring of six
+or more triangular chords on the rim, about 36–48, and two more rods at 14
+each), over the 40 allowed for it; the single rod on the strap's line
+reads as the conductor's end on its own, so it is one rod.
 
 ## LOD review
 
@@ -294,7 +326,9 @@ samples with denoising, AgX, exposure 0; close renders at 1280×960, 40–50°
 vertical FOV, 24 samples. Renders are in the local, untracked
 `review/power_plant_polish_2026_11_21/savupiippu_brick_round/`
 (`before/` and `after/`, the same sets; `compare/` the sheets;
-`mipstress/` the filtering renders).
+`mipstress/` the filtering renders), and for the air terminal in
+`review/power_plant_polish_2026_11_21/savupiippu_rod/` (`before/`,
+`after/`, `compare/`).
 
 Pairs compared with identical camera and light (this revision):
 
@@ -308,6 +342,12 @@ Pairs compared with identical camera and light (this revision):
   from 60 m and at night; the base from 20–22 m (front, east, rear); the
   ladder from 30 m behind, its foot and top from 9–10 m, its side from
   8 m; the whole stack at night from 90 m (and `LOD2`).
+
+- the air terminal, before and after: the head from 14 m (front on
+  `LOD0`/`LOD3`, rear on every tier), from 5 m at the rod on every tier,
+  from 60 m front and rear on `LOD0`/`LOD3`; the whole stack at 150 m
+  front, oblique and rear on `LOD0`/`LOD3`; the base's rear from 10 and
+  22 m; the catalog preview.
 
 The previous revision's pairs at 30/40, 65/75 and 115/125 m for the stack
 itself (unchanged here) still stand.
@@ -334,7 +374,18 @@ Findings:
   is not visible. The painted line starts at the same 8.7 m.
 - **The conductor** reads as a thin line beside the ladder at 8–35 m; the
   painted line on the far tiers is about half a pixel from 70 m and does
-  not read, as expected. On the base and wash it is a faint light line.
+  not read, as expected.
+- **The air terminal** reads as a thin tapered spike with a clamp at its
+  foot, continuous with the strap, from 5 m and 14 m, and over the rim
+  from the front at 14 m as a thin line behind the head. From 60 m it is a
+  pixel-wide tick over the rim; at 150 m and in the catalog preview it is
+  under a pixel and does not show. The far tiers' three-sided spike has
+  the same outline from 5 m; past 70 m, where `LOD2` takes over, the
+  clamp it lacks is under a pixel. Its only lasting effect at range is the
+  1.0 m taller bounds, so a fitted camera frames the stack a little
+  smaller.
+- **The conductor on the base** now reads as a dark line on the rear wall
+  in shade and across the wash, no longer a faint light seam.
 - **The inlet** goes flush at `LOD2`: its 0.25 m recess is about 3 px at
   70 m, and the black plate keeps the opening's weight.
 - **The soot** darkens the upper third from 32.7 m to the head; in the
@@ -363,15 +414,16 @@ part of its profile, and nothing runs into it. The only closure faces are
 the base's floor on the ground and the flue's floor, which is exterior
 surface seen from above and lit by the open top.
 
-The validator's hidden-surface test reports 219 of 3,216 triangles (6.8 %)
-on `LOD0`, 83 of 1,550 on `LOD1`, 18 of 766 on `LOD2` and none on `LOD3`,
+The validator's hidden-surface test reports 222 of 3,254 triangles (6.8 %)
+on `LOD0`, 86 of 1,588 on `LOD1`, 18 of 770 on `LOD2` and none on `LOD3`,
 0.1 m² of vertical area at most. Inspected by position, they are the
 attachments' end faces that face what they stop `GAP` (1.5 mm) short of: the
 platform brackets' ends against the shaft (the largest, at 44.2 m) and
 under the deck, the rungs' ends against the rails, the brackets' ends against
 the shaft and the rails, the hoops' ends against the rails, the conductor's
-ends under the band's foot and the deck, the lamp arms' ends against the
-band. They are kept deliberately: each closes its solid, and cutting the
+ends under the band's foot, the deck and the air terminal's clamp (and the
+clamp's and the rod's faces that meet there), the lamp arms' ends against
+the band. They are kept deliberately: each closes its solid, and cutting the
 parts into each other instead is what cost the previous revision about
 3,000 triangles.
 
@@ -386,9 +438,12 @@ parts into each other instead is what cost the previous revision about
 - The galvanised flats, the cap ring, the head band's formwork staves, lift
   joint and tie holes, the hatch and the inlet's closure are texture with
   relief in the normal map.
-- The air terminal ends level with the rim, not above it, to keep the
-  bounds; the conductor's saddles are painted, and on the wash, the coping
-  and the base it is paint only. The far tiers have no conductor below the
+- One air terminal, square and tapered rather than a round rod, about
+  twice a real rod's thickness so it reads; no ring conductor on the cap
+  and no second or third rod (Per-tier triangle counts, *Air terminal: one
+  rod*). On `LOD2`/`LOD3` it is a bare spike off the band, with no clamp.
+  The conductor's saddles are painted, and on the wash, the coping and the
+  base it is paint only. The far tiers have no conductor below the
   ladder's foot or on the head band.
 - The lamps are six-sided (four-sided beyond `LOD0`) bodies with a pointed
   dome, not round.
@@ -459,11 +514,15 @@ conductor's painted run down it has its own strip: the rear wall and its
 trapezoid are split at 0.18–0.37 m east of the axis, and that 12 px (0.19 m)
 column samples a copy of range A's own columns there (copied after
 weathering, every field included), so the brick runs on across the strip's
-edges, with the strap painted down the middle from the ground. The rear
-coping side is split the same way onto a copy of the coping's columns; the
-wash's outer edge and the base's floor carry the strip's corners, so the
-shell stays closed. Across the wash the strap is a line on the wash
-region.
+edges, with the strap painted down the middle from the ground, darker
+than on the shaft's strips (shade 0.78) between deeper shadow edges
+(0.72), so it holds against the brick when the rear wall is in shade. The
+rear coping side is split the same way onto a copy of the coping's
+columns; the wash's outer edge and the base's floor carry the strip's
+corners, so the shell stays closed. Across the wash the strap is a line
+on the wash region, 2 px (0.125 m at the wash's 16 px/m) of dark
+weathered copper (shade 0.6) with 6 mm relief: thinner or lighter, it read
+as a light seam in the concrete.
 
 ### The head band
 
@@ -483,7 +542,7 @@ not tile. The cap ring is distinct dark steel, sRGB (46, 46, 47), roughness
 ### Relief
 
 Brick 6 mm proud of the joint; galvanised flats 8 mm; the painted ladder
-30 mm, the painted conductor 6 mm and its saddles 9 mm; the inlet plate's
+30 mm, the painted conductor 6 mm (on the wash too) and its saddles 9 mm; the inlet plate's
 frame, bolts and stiffener 25–35 mm; the hatch's frame 20 mm and panel
 12 mm; the head band's stave fins 1.8 mm, staves ±0.75 mm, grain 0.5 mm,
 lift joint and tie holes −4 mm, its cap ring 6 mm.
@@ -644,18 +703,22 @@ Checked here, in Blender:
   attachments' end faces (Interior geometry); six 1024² RGB PNGs; the
   red lamp mask reported as coloured fixtures (`MANUAL`), the lens's
   albedo measured by hand (Glazing treatment); the facts sidecar, its
-  bounds (6.8 × 6.8 × 46.5 m) and footprint unchanged from the previous
-  revision. The sidecar's `source.dirty` is true (written from an
+  bounds 6.8 × 6.8 × 47.5 m (the air terminal's tip; plan bounds,
+  footprint and pivot unchanged from the previous revision), the same
+  extents on every tier's GLB. The sidecar's `source.dirty` is true (written from an
   uncommitted tree); it must be rewritten from a committed one
   (`build.py -- facts`).
-- `check_layout()`, `build_lod()`'s no-intersection test on every tier, and
-  the atlas's `check_regions()` and `check_bands()`.
+- `check_layout()`, `build_lod()`'s no-intersection test on every tier
+  (the air terminal's rod, clamp, bracket and spike included), and the
+  atlas's `check_regions()` and `check_bands()`.
 - The six working views at `LOD0` and `LOD3`; close renders of the head
   (front, rear, above, 60 m, night), the base (front, rear, east), the
   ladder (rear at 30 m, its foot, its top, its side) on `LOD0` and `LOD1`;
   rear views at 20, 35 and 70 m on `LOD0`–`LOD2`; `LOD0`/`LOD3` at 150 and
   300 m; night at 90 m on `LOD0` and `LOD2`.
-- Before/after sheets against the previous revision, the same sets.
+- Before/after sheets against the previous revision, the same sets; for
+  the air terminal and the base's conductor, the head, rod, base and
+  150 m sets (LOD review).
 - Mip stress renders at 70, 125 and 250 m (Texture set, *Filtering*).
 - The three variants, day and night, in `variants.png`.
 - Mean plain-shaft albedo of `red_brick` (MID's period): R − G = 28 sRGB
@@ -680,6 +743,18 @@ The MCP addon was not used. Texture generation used the system Python 3
 with numpy, scipy and Pillow.
 
 ## Revision log
+
+- **2026-11-21:** air terminal. A lightning rod on the strap's line,
+  rising 1.0 m over the rim to 47.5 m: a tapered square copper rod on a
+  clamp block, with a bracket under the cap ring, on `LOD0`/`LOD1`; a
+  three-sided spike to the same tip on `LOD2`/`LOD3`, so every tier sets
+  the same height. The strap now ends under the clamp. One rod, no ring
+  conductor (its cost). The conductor's line across the wash widened to
+  2 px of dark copper, and its strap on the base's rear wall and coping
+  darkened between deeper shadow edges. Triangles 3,254 / 1,588 / 770 /
+  426; height 46.5 to 47.5 m; plan bounds, footprint and pivot unchanged.
+  Not remeasured: the filtering renders (Texture set, *Filtering*); the
+  change to the atlas is the base's conductor strips and the wash line.
 
 - **2026-11-21:** polish pass. A hooped safety cage (21 hoops, three
   straps) on the ladder; the ladder, rungs, brackets, railing, platform

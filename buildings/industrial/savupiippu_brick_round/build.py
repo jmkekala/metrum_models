@@ -24,17 +24,18 @@ in the base's front (-Y), a cast iron cleanout hatch low in its east wall.
 A steel service platform rings the head 1.5 m under the rim, with a
 railing; an iron ladder in a hooped safety cage climbs the back (+Y) along
 the batter from 2.5 m above the base to the platform, a copper down
-conductor beside it; three obstruction lamps sit on the head band, their
-lenses the emission map's only lit regions, painted red.
+conductor beside it up to a lightning rod rising a metre over the rim;
+three obstruction lamps sit on the head band, their lenses the emission
+map's only lit regions, painted red.
 
 The stack is one closed solid built directly: the base's walls (the inlet
 cut into the front at LOD0/1), the trapezoids and fillets above them, the
 octagon's coping, the wash holed by the shaft's foot, and a surface of
 revolution for the shaft, the head band, the platform's deck, the rim and
 the flue's lining, closed by the flue's floor. The railing, ladder, cage,
-conductor and lamps are separate closed solids, each held GAP clear of the
-stack and of each other, so no boolean cuts any face; build_lod() checks
-that no two intersect.
+conductor, air terminal and lamps are separate closed solids, each held GAP
+clear of the stack and of each other, so no boolean cuts any face;
+build_lod() checks that no two intersect.
 
 Every number the mesh and the atlas share is imported from facade_atlas.py.
 """
@@ -766,18 +767,81 @@ def conductor_line(rfun, n, z0, z1):
 def conductor(B, level):
     """The lightning down conductor beside the ladder: a copper strap from
     the shaft's foot to under the head band, then up the band, under and
-    over the deck, to its air terminal level with the rim."""
+    over the deck, to GAP under the air terminal's clamp block."""
     copper = uv_patch("copper")
     n = sides(level)
     zl, zd = L.Z_DECK - L.DECK_T, L.Z_DECK
     runs = ((L.r_shaft, L.Z_SHAFT0 + 0.03, L.Z_HEAD0 - GAP),
             (lambda z: L.R_HEAD, L.Z_HEAD0 + GAP, zl - GAP),
-            (lambda z: L.R_HEAD, zd + GAP, L.COND_TIP))
+            (lambda z: L.R_HEAD, zd + GAP, L.CLAMP_Z[0] - GAP))
     for rfun, z0, z1 in runs:
         a, b = conductor_line(rfun, n, z0, z1)
         # the flat face toward the shaft (up is -Y here), the apex out
         sweep(B, [a, b], [(-L.COND_W / 2.0, 0.0), (0.0, -L.COND_T), (L.COND_W / 2.0, 0.0)],
               copper, side_hint=X_AXIS)
+
+
+def off_band(x, corners, n, clear):
+    """The y at which a vertical part centred at *x*, its plan *corners*
+    (dx, dy) about its centre, stands *clear* off the n-sided head band on
+    its +Y side: every corner on or outside the band offset by *clear*
+    (each facet's plane moved out by *clear*, as back_y)."""
+    ap = apothem(L.R_HEAD, n)
+    return max(min((ap + clear - (x + dx) * f.x) / f.y for f in facet_normals(n) if f.y > 0.2)
+               - dy for dx, dy in corners)
+
+
+def box(B, x0, x1, y0, y1, z0, z1, uvfn):
+    """A closed axis-aligned block."""
+    lo = [(x0, y0, z0), (x1, y0, z0), (x1, y1, z0), (x0, y1, z0)]
+    hi = [(x, y, z1) for x, y, _ in lo]
+    quads = [lo[::-1], hi] + [[lo[i], lo[(i + 1) % 4], hi[(i + 1) % 4], hi[i]] for i in range(4)]
+    for q in quads:
+        B.face(q, [uvfn(c) for c in q])
+
+
+def air_terminal(B, level):
+    """The lightning rod on the strap's line, its tip ROD_TIP on every tier
+    (the stack's height). LOD0/LOD1: a square copper rod tapering from ROD_W
+    at its foot to ROD_W_TOP at its shoulder and a point, a clamp block
+    under it continuing the strap, and a bracket under the cap ring from the
+    band to the rod, each GAP clear of the others and of the band. LOD2/LOD3:
+    a three-sided spike from ROD_FOOT to the tip."""
+    copper = uv_patch("copper")
+    n = sides(level)
+    x = L.COND_X
+    if ladder_mode(level) == "paint":
+        h = L.SPIKE_W / 2.0
+        ht = L.SPIKE_W * math.sqrt(3.0) / 2.0
+        y0 = off_band(x, [(-h, 0.0), (h, 0.0)], n, L.COND_OFF)
+        foot = [(x - h, y0, L.ROD_FOOT), (x, y0 + ht, L.ROD_FOOT), (x + h, y0, L.ROD_FOOT)]
+        tip = (x, y0 + ht / 3.0, L.ROD_TIP)
+        B.face(foot, [copper(c) for c in foot])
+        for i in range(3):
+            tri_ = [foot[(i + 1) % 3], foot[i], tip]
+            B.face(tri_, [copper(c) for c in tri_])
+        return
+    h = L.ROD_W / 2.0
+    yc = off_band(x, [(-h, -h), (h, -h)], n, L.COND_OFF) + h
+    zs = L.ROD_TIP - L.ROD_POINT
+
+    def ring(hw, z):
+        return [(x - hw, yc - hw, z), (x + hw, yc - hw, z), (x + hw, yc + hw, z), (x - hw, yc + hw, z)]
+    foot, shoulder, tip = ring(h, L.ROD_FOOT), ring(L.ROD_W_TOP / 2.0, zs), (x, yc, L.ROD_TIP)
+    B.face(foot[::-1], [copper(c) for c in foot])
+    for i in range(4):
+        k = (i + 1) % 4
+        for q in ([foot[i], foot[k], shoulder[k], shoulder[i]], [shoulder[i], shoulder[k], tip]):
+            B.face(q, [copper(c) for c in q])
+    # the clamp block joining the strap to the rod's foot
+    cw = L.CLAMP_W / 2.0
+    y0 = off_band(x, [(-cw, 0.0), (cw, 0.0)], n, L.CLAMP_OFF[0])
+    y1 = off_band(x, [(0.0, 0.0)], n, 0.0) + L.CLAMP_OFF[1]
+    box(B, x - cw, x + cw, y0, max(y1, yc + h + 0.01), L.CLAMP_Z[0], L.CLAMP_Z[1], copper)
+    # the bracket from the band to the rod's inner face, under the cap ring
+    bw = L.ROD_BRACKET_W / 2.0
+    b0 = off_band(x, [(-bw, 0.0), (bw, 0.0)], n, GAP)
+    box(B, x - bw, x + bw, b0, yc - h - GAP, *L.ROD_BRACKET_Z, copper)
 
 
 def ring_rail(B, rc, zc, n, uvfn):
@@ -906,7 +970,8 @@ def build_lod(level):
     base(B, level, foot)
     stack(B, level)
     parts = [(0, len(B.bm.faces))]
-    adders = [lambda B: lamps(B, level), lambda B: platform(B, level)]
+    adders = [lambda B: lamps(B, level), lambda B: platform(B, level),
+              lambda B: air_terminal(B, level)]
     if ladder_mode(level) == "solid":
         adders += [lambda B: ladder(B, level), lambda B: cage(B, level),
                    lambda B: conductor(B, level)]
@@ -964,7 +1029,7 @@ def _shells(bm, first):
 def kit_triangles(level):
     """Triangles of everything but the stack, for notes.md."""
     B = Builder()
-    adders = [lamps, platform] + ([ladder, cage, conductor]
+    adders = [lamps, platform, air_terminal] + ([ladder, cage, conductor]
                                   if ladder_mode(level) == "solid" else [])
     out = {}
     for add in adders:
@@ -1064,12 +1129,18 @@ def check_layout():
         bad.append("the cage reaches outside the base's plan (%.2f m)" % reach)
     if L.HOOP[0][0] < L.LADDER_HALF + 0.1:
         bad.append("the hoops are no wider than the ladder")
-    # the conductor: beside the ladder, clear of its brackets, its terminal
-    # no higher than the rim (the bounds)
+    # the conductor: beside the ladder, clear of its brackets; its air
+    # terminal about a metre over the rim, its foot, clamp and bracket on
+    # the band under the cap ring, over the deck and the railing
     if L.COND_X - L.COND_W / 2 < L.LADDER_HALF + L.BRACKET_W / 2 + 0.01:
         bad.append("the conductor runs into the ladder's brackets")
-    if L.COND_TIP > L.Z_TOP:
-        bad.append("the air terminal stands over the rim")
+    if not 0.8 <= L.ROD_TIP - L.Z_TOP <= 1.2:
+        bad.append("the air terminal does not rise about a metre over the rim")
+    if not (L.RAIL_Z[0] < L.CLAMP_Z[0] < L.CLAMP_Z[1] < L.ROD_FOOT
+            < L.ROD_BRACKET_Z[0] < L.ROD_BRACKET_Z[1] < L.Z_TOP - L.CAP_RING):
+        bad.append("the air terminal's clamp and bracket are not on the band under the cap ring")
+    if L.ROD_W_TOP >= L.ROD_W or L.ROD_POINT > 0.3:
+        bad.append("the air terminal does not taper to a point")
     return bad
 
 
