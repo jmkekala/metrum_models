@@ -251,10 +251,15 @@ class Asset:
     export writes the glTF emission factor as zero either way. camera_location
     pins the preview camera instead of fitting it: the first asset's preview
     was framed by hand, and keeping its camera keeps its preview unchanged.
+
+    night_lit=False is for a building with no glazing and so no emission map
+    (a windowless shed, a chimney stack; CLAUDE.md, Output Contract): the
+    material has no emission mask wired in, the export leaves out the lit
+    state and the factor rewrite, and there is no day/night variants.png.
     """
 
     def __init__(self, name, here, variants, default_variant, tint=None,
-                 levels=LEVELS, camera_location=None):
+                 levels=LEVELS, camera_location=None, night_lit=True):
         self.name, self.here = name, here
         self.export_dir = os.path.join(here, "export")
         self.variants = list(variants)
@@ -262,6 +267,7 @@ class Asset:
         self.tint = LIT_FACTOR if tint is None else tuple(tint)
         self.levels = tuple(levels)
         self.camera_location = camera_location
+        self.night_lit = bool(night_lit)
         self.pivot = None               # set by build_all(): LOD0's pivot offset
 
     def lod(self, level):
@@ -295,7 +301,8 @@ class Asset:
         The normal map goes through a tangent-space Normal Map node at
         strength 1, written as normalTexture at scale 1; tangents are left to
         the consumer's MikkTSpace, as glTF specifies when none are exported.
-        The emission mask is attached default-off (window_emission).
+        The emission mask is attached default-off (window_emission) when the
+        asset is night-lit.
         """
         variant = variant or self.default_variant
         mat = bpy.data.materials.get(self.name) or bpy.data.materials.new(self.name)
@@ -332,7 +339,8 @@ class Asset:
         gnode = nt.nodes.new("ShaderNodeGroup"); gnode.location = (300, -380)
         gnode.node_tree = grp
         nt.links.new(sep.outputs["Red"], gnode.inputs["Occlusion"])
-        attach(mat, self.export_dir, self.name, self.tint)
+        if self.night_lit:
+            attach(mat, self.export_dir, self.name, self.tint)
         mat.use_backface_culling = True               # closed opaque shell
         return mat
 
@@ -405,17 +413,21 @@ class Asset:
 
         The material is exported lit (strength 1), because the exporter drops
         an emissive texture whose factor is zero, and each file's glTF factor
-        is then rewritten to zero so the asset ships with its lights off.
+        is then rewritten to zero so the asset ships with its lights off; an
+        asset that is not night-lit has no emission to set or rewrite.
         strip_embedded_images() removes the placeholder bufferView that
         keep-originals leaves beside each image's uri.
         """
-        mat = bpy.data.materials[self.name]
-        bsdf = next(n for n in mat.node_tree.nodes if n.type == 'BSDF_PRINCIPLED')
-        saved = (bsdf.inputs['Emission Strength'].default_value,
-                 tuple(mat.node_tree.nodes['Window emission tint'].inputs[2].default_value[:3]))
+        mat, saved = bpy.data.materials[self.name], None
+        if self.night_lit:
+            bsdf = next(n for n in mat.node_tree.nodes if n.type == 'BSDF_PRINCIPLED')
+            saved = (bsdf.inputs['Emission Strength'].default_value,
+                     tuple(mat.node_tree.nodes['Window emission tint']
+                           .inputs[2].default_value[:3]))
         written = []
         try:
-            set_state(mat, 1.0, self.tint)
+            if saved is not None:
+                set_state(mat, 1.0, self.tint)
             for level in self.levels:
                 obj = self.lod(level)
                 for other in bpy.data.objects:
@@ -430,10 +442,12 @@ class Asset:
                     export_cameras=False, export_lights=False)
                 obj.select_set(False)
                 strip_embedded_images(path)
-                rewrite_glb_emission(path, (0, 0, 0))
+                if saved is not None:
+                    rewrite_glb_emission(path, (0, 0, 0))
                 written.append(os.path.basename(path))
         finally:
-            set_state(mat, *saved)
+            if saved is not None:
+                set_state(mat, *saved)
         self.show_only(0)
         return written
 
@@ -498,7 +512,8 @@ class Asset:
         self.preview_studio()
         self.show_only(0)
         mat = self.material(self.default_variant)
-        set_state(mat, 0.0, self.tint)
+        if self.night_lit:
+            set_state(mat, 0.0, self.tint)
         path = os.path.join(self.here, "preview.png")
         bpy.context.scene.render.filepath = path
         bpy.ops.render.render(write_still=True)
@@ -506,6 +521,8 @@ class Asset:
 
     def render_variants(self, tile_w=640):
         """variants.png: day above night, one column per colour."""
+        if not self.night_lit:
+            return "no variants.png: not night-lit"
         return render_sheet(self.name, self.here, self.variants, self.material,
                             self.preview_studio, self.show_only, tile_w, self.tint)
 

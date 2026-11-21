@@ -29,8 +29,10 @@ A build.py declares:
         }
 
 Every door names its kind, one of DOOR_KINDS, and exactly one door, an
-entrance, is main. A building with a drivable lane through it lists it under
-passages; without one, it leaves the key out, and so does the sidecar.
+entrance, is main. A structure with no door (a chimney stack) lists none and
+so has no main door; one with no occupied floor lists no storeys. A building
+with a drivable lane through it lists it under passages; without one, it
+leaves the key out, and so does the sidecar.
 asset_build.Asset.write_facts() adds everything that is
 read from the build and the exported files. Triangle counts and bounds are
 read from the .glb files themselves, so the sidecar describes what ships.
@@ -313,7 +315,8 @@ def compose(name, here, variants, default_variant, levels, pivot, facts, blender
 
 
 def dumps(doc):
-    """The file's text: one key per line, short arrays on one line."""
+    """The file's text: one key per line, short arrays on one line, and an
+    empty list (no doors, no storeys) as [] on its key's line."""
     def flat(v):
         return json.dumps(v, ensure_ascii=False)
 
@@ -321,7 +324,7 @@ def dumps(doc):
     items = list(doc.items())
     for i, (k, v) in enumerate(items):
         comma = "," if i + 1 < len(items) else ""
-        if k in ("footprint", "storeys", "doors", "passages", "lods", "variants"):
+        if k in ("footprint", "storeys", "doors", "passages", "lods", "variants") and v:
             out.append("  %s: [" % flat(k))
             out += ["    %s%s" % (flat(e), "," if j + 1 < len(v) else "")
                     for j, e in enumerate(v)]
@@ -383,8 +386,9 @@ def check(doc, export_dir):
 
     Covers what a reader relies on: the schema's keys and nothing else, each
     hash against its file, triangle counts and bounds against the tiers, one
-    simple footprint inside the bounds, exactly one main door and that one an
-    entrance, and every door of a DOOR_KINDS kind, on a footprint edge
+    simple footprint inside the bounds, storeys (if any) lowest first, exactly
+    one main door and that one an entrance where there are doors at all, and
+    every door of a DOOR_KINDS kind, on a footprint edge
     (within DOOR_TOL) or inside the outline, facing out along a unit
     horizontal normal. Passages, when present, are checked by _passages().
     """
@@ -484,15 +488,15 @@ def check(doc, export_dir):
                 problems.append("door %r is %.3f m outside the footprint" % (d["id"], near))
 
     floors = [s["floor_y_m"] for s in doc["storeys"]]
-    if not floors or floors != sorted(floors) or any(s["area_m2"] <= 0 for s in doc["storeys"]):
-        problems.append("storeys must be one or more, lowest first, each with an area")
+    if floors != sorted(floors) or any(s["area_m2"] <= 0 for s in doc["storeys"]):
+        problems.append("storeys must be lowest first, each with an area")
     if doc["dwellings"] < 0:
         problems.append("dwellings is negative")
 
     door_ids = [d["id"] for d in doc["doors"]]
     if len(set(door_ids)) != len(door_ids):
         problems.append("door ids repeat: %s" % door_ids)
-    if sum(1 for d in doc["doors"] if d["main"]) != 1:
+    if doc["doors"] and sum(1 for d in doc["doors"] if d["main"]) != 1:
         problems.append("exactly one door must be main, not %d"
                         % sum(1 for d in doc["doors"] if d["main"]))
     for d in doc["doors"]:

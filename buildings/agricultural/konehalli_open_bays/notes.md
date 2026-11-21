@@ -473,23 +473,13 @@ no emission map. No lit signs or lamps were asked for. Consequences:
   The three colours were reviewed in day renders from the catalog camera,
   kept in the local review folder.
 
-The shared `scripts/asset_build.Asset` always wires the window mask. Its
-`material()` loads the emission PNG, its `export_all()` reads the material's
-"Window emission tint" node and rewrites the glTF emission factor (and fails
-when no `emissiveTexture` exists), and its `render_variants()` renders a
-night row.
+`build.py` builds through the shared `scripts/asset_build.Asset` with
+`night_lit=False`, which leaves out only the window wiring:
 
-`build.py`'s `UnlitAsset` subclass keeps everything else shared and leaves
-out only those three things:
-
-- `material()` runs the shared material with `attach()` disabled;
-- `export_all()` is the shared export without the emission state and
-  rewrite;
+- `material()` wires no emission mask;
+- `export_all()` sets no lit state and rewrites no emission factor;
 - `render_preview()` has no emission state to set;
 - `render_variants()` renders nothing.
-
-This should become an option in `scripts/asset_build.py` once a second unlit
-asset needs it.
 
 ## Export
 
@@ -503,8 +493,7 @@ it. A first build from a factory scene is
 `blender --background --python build.py`, which creates `source.blend`.
 `facade_atlas.py` is the single source of the numbers both scripts share.
 
-Export settings, as `UnlitAsset.export_all()` passes them (the same flags as
-`asset_build`):
+Export settings, as `asset_build`'s `export_all()` passes them:
 
 - `export_format='GLB'`, `use_selection=True`, `export_yup=True`;
 - `export_apply=True`, `export_keep_originals=True`;

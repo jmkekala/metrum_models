@@ -38,7 +38,7 @@ eave is painted on the roof's lowest strip, which maps onto its own rows of
 the atlas (facade_atlas.py).
 
 The shed has no glazing and so no emission map (CLAUDE.md, Output Contract);
-UnlitAsset below is asset_build.Asset without the window wiring.
+BUILD below is asset_build.Asset with night_lit=False.
 """
 
 import importlib
@@ -64,67 +64,11 @@ import asset_build  # noqa: E402
 import downpipes as DP  # noqa: E402
 import model_facts  # noqa: E402
 from asset_build import bounds as _bounds, pivot_offset, to_object, union  # noqa: E402,F401
-from glb_images import strip_embedded_images  # noqa: E402
 
 asset_build.check_toolchain()
 
 
-class UnlitAsset(asset_build.Asset):
-    """asset_build.Asset for a building with no glazing, hence no emission map.
-
-    The shared Asset always wires a window-emission mask into the material,
-    exports every tier lit and rewrites the factor to zero, and renders a
-    day/night variants.png; all three need the emission PNG this shed does
-    not have (CLAUDE.md allows a windowless shed to ship none). This keeps
-    the shared material, previews and bookkeeping and leaves out only the
-    window wiring: material() builds the shared material with attach()
-    disabled, export_all() is the shared export without the emission
-    rewrite, and there is no day/night sheet to render. It belongs in
-    scripts/asset_build.py as an option once a second unlit asset needs it.
-    """
-
-    def material(self, variant=None):
-        attach = asset_build.attach
-        asset_build.attach = lambda *args, **kwargs: None
-        try:
-            return super().material(variant)
-        finally:
-            asset_build.attach = attach
-
-    def export_all(self):
-        written = []
-        for level in self.levels:
-            obj = self.lod(level)
-            for other in bpy.data.objects:
-                other.select_set(False)
-            obj.hide_set(False)
-            obj.select_set(True)
-            bpy.context.view_layer.objects.active = obj
-            path = os.path.join(self.export_dir, "{}_lod{}.glb".format(self.name, level))
-            bpy.ops.export_scene.gltf(
-                filepath=path, export_format='GLB', use_selection=True,
-                export_yup=True, export_apply=True, export_keep_originals=True,
-                export_cameras=False, export_lights=False)
-            obj.select_set(False)
-            strip_embedded_images(path)
-            written.append(os.path.basename(path))
-        self.show_only(0)
-        return written
-
-    def render_preview(self):
-        self.preview_studio()
-        self.show_only(0)
-        self.material(self.default_variant)
-        path = os.path.join(self.here, "preview.png")
-        bpy.context.scene.render.filepath = path
-        bpy.ops.render.render(write_still=True)
-        return path
-
-    def render_variants(self, tile_w=640):
-        return "no variants.png: not night-lit (no glazing)"
-
-
-BUILD = UnlitAsset(ASSET, HERE, L.VARIANTS, L.DEFAULT_VARIANT)
+BUILD = asset_build.Asset(ASSET, HERE, L.VARIANTS, L.DEFAULT_VARIANT, night_lit=False)
 get_material, export_all = BUILD.material, BUILD.export_all
 _show_only, preview_studio = BUILD.show_only, BUILD.preview_studio
 render_preview = BUILD.render_preview
