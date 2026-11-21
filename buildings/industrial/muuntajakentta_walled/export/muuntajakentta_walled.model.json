@@ -1,0 +1,40 @@
+{
+  "schema": "metrum-model-facts",
+  "version": 1,
+  "name": "muuntajakentta_walled",
+  "path": "buildings/industrial/muuntajakentta_walled",
+  "source": {"commit": "9aa0427a93f29266ba7e1d5d430ad02997354370", "dirty": true, "blender": "5.3.0"},
+  "license": "CC-BY-4.0",
+  "bounds": {"min": [-8.0, 0.0, -6.0], "max": [8.0, 7.45, 6.0]},
+  "footprint": [
+    [2.94, 1.94],
+    [7.94, 1.94],
+    [7.94, 5.94],
+    [2.94, 5.94]
+  ],
+  "storeys": [
+    {"floor_y_m": 0.0, "area_m2": 15.91}
+  ],
+  "dwellings": 0,
+  "doors": [
+    {"id": "switchgear", "kind": "entrance", "position": [4.24, 0.0, 5.94], "facing": [0.0, 0.0, 1.0], "width_m": 1.0, "height_m": 2.1, "main": true}
+  ],
+  "lods": [
+    {"file": "muuntajakentta_walled_lod0.glb", "triangles": 3580, "sha256": "f1ea051eed14b3555af22ce4206da56f6c0c84267f269b8fd9c10c48450cfa93"},
+    {"file": "muuntajakentta_walled_lod1.glb", "triangles": 2290, "sha256": "d75b57d5f5df285bdc166306bfb014f7fbf303d1cf26f5a308bf78f4b25dbe33"},
+    {"file": "muuntajakentta_walled_lod2.glb", "triangles": 1416, "sha256": "83785a4a7a2f322d3da66270de828124913e7056ce9e443ad1dadd5190f2c5aa"},
+    {"file": "muuntajakentta_walled_lod3.glb", "triangles": 492, "sha256": "59a2c50211a0b271b3325b9497cb37d9ce7512f672fb85adffcd4783019f4273"}
+  ],
+  "textures": {
+    "orm": {"file": "muuntajakentta_walled_orm.png", "sha256": "bf8c6e3fff1b82c4a9106ee9433677eb9722e23382eee090e06693a607cb2f10"},
+    "normal": {"file": "muuntajakentta_walled_normal.png", "sha256": "546fb57d0ecaa396830ef831b585262ed4fd8af021bfd7c043c7d59c521801a9"}
+  },
+  "variants": [
+    {"id": "red_brick", "albedo": "muuntajakentta_walled_albedo_red_brick.png", "sha256": "008112a312979477e3e07dec4ba0edec1dabc5d22f054f00ab6ac10e50140573"},
+    {"id": "yellow_brick", "albedo": "muuntajakentta_walled_albedo_yellow_brick.png", "sha256": "32a9966112e395294d08ab096d586a3102cced9f5bd8d817a2633ac291d29494"},
+    {"id": "brown_brick", "albedo": "muuntajakentta_walled_albedo_brown_brick.png", "sha256": "32bc870c5fdb182ea5554d5a850c92e2a37b640cf11bcd99454227499e9d98cf"}
+  ],
+  "default_variant": "red_brick",
+  "preview": {"file": "../preview.png", "sha256": "67cf1ea7cc13bb11962e1f3360d88b2f91d421a37f05527d840a11d6f1cd78fe"},
+  "hero": false
+}

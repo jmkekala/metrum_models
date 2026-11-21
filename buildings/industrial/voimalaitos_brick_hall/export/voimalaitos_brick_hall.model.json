@@ -1,0 +1,47 @@
+{
+  "schema": "metrum-model-facts",
+  "version": 1,
+  "name": "voimalaitos_brick_hall",
+  "path": "buildings/industrial/voimalaitos_brick_hall",
+  "source": {"commit": "9aa0427a93f29266ba7e1d5d430ad02997354370", "dirty": true, "blender": "5.3.0"},
+  "license": "CC-BY-4.0",
+  "bounds": {"min": [-16.25, 0.0, -9.625], "max": [16.25, 20.625, 9.625]},
+  "footprint": [
+    [-16.0, -8.625],
+    [-2.0, -8.625],
+    [-2.0, -8.125],
+    [16.0, -8.125],
+    [16.0, 7.875],
+    [-2.0, 7.875],
+    [-2.0, 8.375],
+    [-16.0, 8.375]
+  ],
+  "storeys": [
+    {"floor_y_m": 0.0, "area_m2": 526.0}
+  ],
+  "dwellings": 0,
+  "doors": [
+    {"id": "entrance", "kind": "entrance", "position": [-9.0, 0.0, 8.375], "facing": [0.0, 0.0, 1.0], "width_m": 1.8125, "height_m": 2.3, "main": true},
+    {"id": "machinery", "kind": "vehicle", "position": [13.5, 0.0, 7.875], "facing": [0.0, 0.0, 1.0], "width_m": 3.3125, "height_m": 3.9062, "main": false},
+    {"id": "service", "kind": "service", "position": [0.0, 0.0, -8.125], "facing": [0.0, 0.0, -1.0], "width_m": 1.0, "height_m": 2.1, "main": false}
+  ],
+  "lods": [
+    {"file": "voimalaitos_brick_hall_lod0.glb", "triangles": 3874, "sha256": "4d97b05c5e8ea6d734f8b366601614b7687dac0027a1e8f51a7eb178d6b95c3a"},
+    {"file": "voimalaitos_brick_hall_lod1.glb", "triangles": 3038, "sha256": "011ae2499370513e2a6ab5f0af84edc8348d644352048ebc75469877399aaeba"},
+    {"file": "voimalaitos_brick_hall_lod2.glb", "triangles": 1288, "sha256": "952b777f0e14760484f194247469a4a2140eca914f03b7b48424b2add19443d3"},
+    {"file": "voimalaitos_brick_hall_lod3.glb", "triangles": 204, "sha256": "6a6d64251fd272babb1777bc66968b81b56aa4b3cd260f21df840eaf1b50af17"}
+  ],
+  "textures": {
+    "orm": {"file": "voimalaitos_brick_hall_orm.png", "sha256": "269e6eeff67c178e3853ec0539020fb503b83d514fc15b73871a4104df76d3d7"},
+    "normal": {"file": "voimalaitos_brick_hall_normal.png", "sha256": "d5ed806d9b5cb613ace08fa1fc46273e86fc3934faedf2048ef15d6523043112"},
+    "emission": {"file": "voimalaitos_brick_hall_emission.png", "sha256": "d49068aeb2d8a1d545687d2c77b817884b0fdd0084e8757e5fa49d6364752ce4"}
+  },
+  "variants": [
+    {"id": "red_brick", "albedo": "voimalaitos_brick_hall_albedo_red_brick.png", "sha256": "a2b618b313d40470679c20a6e626118d99fec878b8ecce235a1ae1717c8b45a9"},
+    {"id": "yellow_brick", "albedo": "voimalaitos_brick_hall_albedo_yellow_brick.png", "sha256": "b587947c899b8cf72c553072965da00e77676954c8d850a1165e19949a80840d"},
+    {"id": "brown_brick", "albedo": "voimalaitos_brick_hall_albedo_brown_brick.png", "sha256": "888f1b02c22967ce99be9f572f092b974c70fe5b33e0d3e26197345eeb2d5da5"}
+  ],
+  "default_variant": "red_brick",
+  "preview": {"file": "../preview.png", "sha256": "27ef7fe1c04bd4f41a47a838f1f87a90a7c8569b34efc48626251b43aa27dbd0"},
+  "hero": false
+}

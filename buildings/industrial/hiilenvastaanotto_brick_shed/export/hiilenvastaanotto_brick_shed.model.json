@@ -1,0 +1,53 @@
+{
+  "schema": "metrum-model-facts",
+  "version": 1,
+  "name": "hiilenvastaanotto_brick_shed",
+  "path": "buildings/industrial/hiilenvastaanotto_brick_shed",
+  "source": {"commit": "9aa0427a93f29266ba7e1d5d430ad02997354370", "dirty": true, "blender": "5.3.0"},
+  "license": "CC-BY-4.0",
+  "bounds": {"min": [-7.3, 0.0, -5.525], "max": [7.3, 13.5, 5.525]},
+  "footprint": [
+    [-7.0, -1.275],
+    [-4.5, -1.275],
+    [-4.5, -4.875],
+    [-1.7, -4.875],
+    [-1.7, -5.275],
+    [1.7, -5.275],
+    [1.7, -4.875],
+    [4.7, -4.875],
+    [4.7, -1.275],
+    [7.0, -1.275],
+    [7.0, 5.125],
+    [-7.0, 5.125]
+  ],
+  "storeys": [
+    {"floor_y_m": 0.0, "area_m2": 29.5}
+  ],
+  "dwellings": 0,
+  "doors": [
+    {"id": "attendant", "kind": "entrance", "position": [4.7, 0.0, -2.275], "facing": [1.0, 0.0, 0.0], "width_m": 0.95, "height_m": 2.1, "main": true},
+    {"id": "elevator", "kind": "service", "position": [0.0, 0.0, -5.275], "facing": [0.0, 0.0, -1.0], "width_m": 0.95, "height_m": 2.1, "main": false}
+  ],
+  "passages": [
+    {"id": "truck_lane", "position": [-7.0, 0.0, 1.925], "forward": [1.0, 0.0, 0.0], "width_m": 5.6, "length_m": 14.0, "clear_height_m": 5.98, "through": true}
+  ],
+  "lods": [
+    {"file": "hiilenvastaanotto_brick_shed_lod0.glb", "triangles": 1176, "sha256": "bc6c9c68ac8a1beda41ee64d5211fc0b41d8a40488c7600490857b344cd7b207"},
+    {"file": "hiilenvastaanotto_brick_shed_lod1.glb", "triangles": 936, "sha256": "1f18e07ee72318c9d3ace0250c30704a0646f9b018e88a407a4c7073c4750d1f"},
+    {"file": "hiilenvastaanotto_brick_shed_lod2.glb", "triangles": 504, "sha256": "222691a854542fb90521660bc666acc5011cbcb4b8cb8a8fae5e47b6658b183f"},
+    {"file": "hiilenvastaanotto_brick_shed_lod3.glb", "triangles": 480, "sha256": "31dcfd0247e2245c28331588bc8d4d1ac7f8aafb73ee03f678a6aa18ba6416c0"}
+  ],
+  "textures": {
+    "orm": {"file": "hiilenvastaanotto_brick_shed_orm.png", "sha256": "bf857648cdfebd5402d6a1af07c51f7ce55c672d5dd30f336442a02e6755ef44"},
+    "normal": {"file": "hiilenvastaanotto_brick_shed_normal.png", "sha256": "1a2f36319c0df27ecc0b6f18ed4f8e355978b9e248294199eabb83e42c24f288"},
+    "emission": {"file": "hiilenvastaanotto_brick_shed_emission.png", "sha256": "1d1033cc9ce5fdeba8932a948f16b4b25ac92916e39056fcbbe62ccd693fcccc"}
+  },
+  "variants": [
+    {"id": "red_brick", "albedo": "hiilenvastaanotto_brick_shed_albedo_red_brick.png", "sha256": "43e27746f96c991955286752b761cf56db83b15084b22295b3757ede22b338de"},
+    {"id": "yellow_brick", "albedo": "hiilenvastaanotto_brick_shed_albedo_yellow_brick.png", "sha256": "005285e0c793c52d13815c1d56f954674667bb5c65a5af0e1141610a14c5e8bb"},
+    {"id": "brown_brick", "albedo": "hiilenvastaanotto_brick_shed_albedo_brown_brick.png", "sha256": "9a4c03d9c4c8bd7c6579ba0a1861767833cd99a7b118488f0d36df38fce938dc"}
+  ],
+  "default_variant": "red_brick",
+  "preview": {"file": "../preview.png", "sha256": "121f5ee0fac1f92f3710171c66f42efc653c0b10d6f4a223a8021e0bdaaffbf5"},
+  "hero": false
+}

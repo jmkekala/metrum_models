@@ -1,0 +1,36 @@
+{
+  "schema": "metrum-model-facts",
+  "version": 1,
+  "name": "savupiippu_brick_round",
+  "path": "buildings/industrial/savupiippu_brick_round",
+  "source": {"commit": "9aa0427a93f29266ba7e1d5d430ad02997354370", "dirty": true, "blender": "5.3.0"},
+  "license": "CC-BY-4.0",
+  "bounds": {"min": [-2.8, 0.0, -2.8], "max": [2.8, 46.5, 2.8]},
+  "footprint": [
+    [-2.8, -2.8],
+    [2.8, -2.8],
+    [2.8, 2.8],
+    [-2.8, 2.8]
+  ],
+  "storeys": [],
+  "dwellings": 0,
+  "doors": [],
+  "lods": [
+    {"file": "savupiippu_brick_round_lod0.glb", "triangles": 1100, "sha256": "de366773a35097f80f092477a59ab61c7f56cfcf831aa12eea96133787377d1e"},
+    {"file": "savupiippu_brick_round_lod1.glb", "triangles": 748, "sha256": "7f85d88cba0ebe8cb42b95d3f9da9e7aa8a28d11b40a746a74300df5c20765d5"},
+    {"file": "savupiippu_brick_round_lod2.glb", "triangles": 468, "sha256": "e40a2568b790a91db13e7837d15b576a4fda483a67ee121e3d5368d712f0b361"},
+    {"file": "savupiippu_brick_round_lod3.glb", "triangles": 324, "sha256": "99dde9ac13dd4e7e71ee11e49d999cf1bd9587290d60191f79a83e9e1c24e459"}
+  ],
+  "textures": {
+    "orm": {"file": "savupiippu_brick_round_orm.png", "sha256": "e5c5c5e95a05bb0d39bc4f07e90e23a9a4cd5def13b20760ec7dfad81ec42ab2"},
+    "normal": {"file": "savupiippu_brick_round_normal.png", "sha256": "13577850fc7de231e553bf0bc2fa14de69edade9dc62daf8aa9734a17fa56cf1"}
+  },
+  "variants": [
+    {"id": "red_brick", "albedo": "savupiippu_brick_round_albedo_red_brick.png", "sha256": "e04ab9b9064b856f71245283f7e35b44edb0c12d2521307e1091ad8f164f2232"},
+    {"id": "yellow_brick", "albedo": "savupiippu_brick_round_albedo_yellow_brick.png", "sha256": "b284eb0f83b5a01832716addb8e035a9d6dba4bedfa236017fe21a179778b94a"},
+    {"id": "brown_brick", "albedo": "savupiippu_brick_round_albedo_brown_brick.png", "sha256": "be342de001af2939e79c97df604dabbed4fc7f40c99d54a5c38dfb3a0fa19308"}
+  ],
+  "default_variant": "red_brick",
+  "preview": {"file": "../preview.png", "sha256": "2606e7c617b6ad90c66e1c0e64df9ec0d721def880fda0f14dbaeb375cd60ad0"},
+  "hero": false
+}
