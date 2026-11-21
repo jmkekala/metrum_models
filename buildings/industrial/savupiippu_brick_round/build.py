@@ -22,16 +22,19 @@ turned to an octagon by sloping brick fillets at its corners and to the
 round by a concrete wash. A closed flue inlet, toward the boiler house, is
 in the base's front (-Y), a cast iron cleanout hatch low in its east wall.
 A steel service platform rings the head 1.5 m under the rim, with a
-railing; an iron ladder climbs the back (+Y) along the batter from 2.5 m
-above the base to the platform; three obstruction lamps sit on the head
-band, their lenses the emission map's only lit regions.
+railing; an iron ladder in a hooped safety cage climbs the back (+Y) along
+the batter from 2.5 m above the base to the platform, a copper down
+conductor beside it; three obstruction lamps sit on the head band, their
+lenses the emission map's only lit regions, painted red.
 
 The stack is one closed solid built directly: the base's walls (the inlet
 cut into the front at LOD0/1), the trapezoids and fillets above them, the
 octagon's coping, the wash holed by the shaft's foot, and a surface of
-revolution for the shaft, the head band, the rim and the flue's lining,
-closed by the flue's floor. The platform, ladder and lamps are closed
-solids unioned into it (asset_build.union).
+revolution for the shaft, the head band, the platform's deck, the rim and
+the flue's lining, closed by the flue's floor. The railing, ladder, cage,
+conductor and lamps are separate closed solids, each held GAP clear of the
+stack and of each other, so no boolean cuts any face; build_lod() checks
+that no two intersect.
 
 Every number the mesh and the atlas share is imported from facade_atlas.py.
 """
@@ -55,7 +58,7 @@ ASSET = L.ASSET
 EXPORT_DIR = os.path.join(HERE, "export")
 sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "scripts"))
 import asset_build  # noqa: E402
-from asset_build import to_object, union  # noqa: E402
+from asset_build import to_object  # noqa: E402
 
 asset_build.check_toolchain()
 
@@ -88,13 +91,13 @@ def ladder_mode(level):
     return "solid" if level < 2 else "paint"
 
 
-# What of the platform each tier keeps: the deck is the head's silhouette,
-# kept on every tier; the hand rail, posts and brackets through LOD2; the
-# knee rail through LOD1.
-PLATFORM = ({"deck", "rail", "knee", "posts", "struts"},
-            {"deck", "rail", "knee", "posts", "struts"},
-            {"deck", "rail", "posts", "struts"},
-            {"deck"})
+# What of the platform's steel each tier keeps (the deck is the lathe's, the
+# head's silhouette on every tier): the hand rail, posts and brackets
+# through LOD2, the knee rail on LOD0 alone.
+PLATFORM = ({"rail", "knee", "posts", "struts"},
+            {"rail", "posts", "struts"},
+            {"rail", "posts", "struts"},
+            set())
 
 
 # ============================================================== mesh builder
@@ -264,29 +267,74 @@ def vertex_angles(n):
     return [math.pi / 2 - math.pi / n + 2 * math.pi * j / n for j in range(n)]
 
 
+def strip_x():
+    """The conductor's painted strip down the base's rear: its x range."""
+    s0 = L.COND_S0
+    return BH - s0 - L.COND_SW / PPM, BH - s0
+
+
 def outer_loop(n):
     """The octagon's top edge as the wash meets it: a point where each ray
-    to a shaft vertex leaves it, and its eight corners, counter-clockwise.
+    to a shaft vertex leaves it, its eight corners, and the conductor strip's
+    two edges on the rear flat, counter-clockwise from the first ray.
     Returns [(x, y, corner index or None)] and, per shaft vertex, its point's
     index in the loop."""
-    corners = [(math.atan2(y, x) % (2 * math.pi), k) for k, (x, y) in enumerate(OCTAGON)]
+    tau = 2 * math.pi
     th = vertex_angles(n)
-    loop, ray_idx = [], []
+    a0 = th[0] % tau
+    corners = [(math.atan2(y, x) % tau, k) for k, (x, y) in enumerate(OCTAGON)]
+    pts = []
     for j in range(n):
-        a0 = th[j] % (2 * math.pi)
+        a = th[j] % tau
         hit = next((k for ang, k in corners
-                    if abs((ang - a0 + math.pi) % (2 * math.pi) - math.pi) < 1e-9), None)
-        ray_idx.append(len(loop))
-        if hit is not None:
-            loop.append(OCTAGON[hit] + (hit,))
-        else:
-            loop.append(ray_octagon(th[j]) + (None,))
-        span = (2 * math.pi / n)
-        inside = sorted(((ang - a0) % (2 * math.pi), k) for ang, k in corners
-                        if 1e-9 < (ang - a0) % (2 * math.pi) < span - 1e-9)
-        for _d, k in inside:
-            loop.append(OCTAGON[k] + (k,))
+                    if abs((ang - a + math.pi) % tau - math.pi) < 1e-9), None)
+        pt = OCTAGON[hit] + (hit,) if hit is not None else ray_octagon(th[j]) + (None,)
+        pts.append(((a - a0) % tau, pt, j))
+    for ang, k in corners:
+        if all(abs(p[1][0] - OCTAGON[k][0]) + abs(p[1][1] - OCTAGON[k][1]) > 1e-9 for p in pts):
+            pts.append(((ang - a0) % tau, OCTAGON[k] + (k,), None))
+    for x in strip_x():
+        if all(abs(p[1][0] - x) + abs(p[1][1] - BH) > 1e-6 for p in pts):
+            pts.append(((math.atan2(BH, x) - a0) % tau, (x, BH, None), None))
+    pts.sort(key=lambda p: p[0])
+    loop = [p[1] for p in pts]
+    ray_idx = [0] * n
+    for i, p in enumerate(pts):
+        if p[2] is not None:
+            ray_idx[p[2]] = i
     return loop, ray_idx
+
+
+def clip_s(poly, a, b):
+    """The part of a convex polygon in (s, z) with a <= s <= b."""
+    def cut(pts, keep, edge):
+        out = []
+        for i, p in enumerate(pts):
+            q = pts[(i + 1) % len(pts)]
+            if keep(p):
+                out.append(p)
+            if keep(p) != keep(q):
+                t = (edge - p[0]) / (q[0] - p[0])
+                out.append((edge, p[1] + t * (q[1] - p[1])))
+        return out
+    pts = cut(list(poly), lambda p: p[0] >= a - 1e-6, a) if a is not None else list(poly)
+    pts = cut(pts, lambda p: p[0] <= b + 1e-6, b) if b is not None and pts else pts
+    clean = []
+    for p in pts:
+        if not clean or abs(p[0] - clean[-1][0]) + abs(p[1] - clean[-1][1]) > 1e-6:
+            clean.append(p)
+    if len(clean) > 1 and abs(clean[0][0] - clean[-1][0]) + abs(clean[0][1] - clean[-1][1]) < 1e-6:
+        clean.pop()
+    return clean
+
+
+def fill_split(B, outline, to3d, uvfn, s0, s1, uv_strip):
+    """fill_planar a convex outline in three pieces split at s0 and s1, the
+    middle one mapped by *uv_strip*."""
+    for a, b, fn in ((None, s0, uvfn), (s0, s1, uv_strip), (s1, None, uvfn)):
+        piece = clip_s(outline, a, b)
+        if len(piece) >= 3:
+            fill_planar(B, piece, [], to3d, fn)
 
 
 def base(B, level, foot):
@@ -302,12 +350,22 @@ def base(B, level, foot):
         if wall == "east":
             holes.append(opening(B, fr, wall, L.HATCH, L.HATCH_R, 0.0))
         outline = [(0.0, 0.0), (fr.L, 0.0), (fr.L, L.Z_SQ), (0.0, L.Z_SQ)]
-        fill_planar(B, outline, holes, fr.P, uv_wall(fr, wall))
         # the wall runs on up as a trapezoid between the corner fillets; it
         # samples range A, lower, where the brick is plain
-        cos = [fr.P(0.0, L.Z_SQ), fr.P(fr.L, L.Z_SQ), fr.P(BH + A, L.Z_OCT),
-               fr.P(BH - A, L.Z_OCT)]
+        trap = [(0.0, L.Z_SQ), (fr.L, L.Z_SQ), (BH + A, L.Z_OCT), (BH - A, L.Z_OCT)]
         f = uv_wall(fr, "east", L.FILLET_SHIFT)
+        if wall == "rear":
+            # the conductor's strip: the wall and the trapezoid over it
+            # sample their own copy of the brick with the strap painted on
+            s0, s1 = L.COND_S0, L.COND_S0 + L.COND_SW / PPM
+            cx, cy = L.COND_BASE_R[:2]
+            fill_split(B, outline, fr.P, uv_wall(fr, wall), s0, s1,
+                       uv_region(fr, (cx, cy, 0, 0), s0, 0.0))
+            fill_split(B, trap, fr.P, f, s0, s1,
+                       uv_region(fr, (cx, cy, 0, 0), s0, L.FILLET_SHIFT))
+            continue
+        fill_planar(B, outline, holes, fr.P, uv_wall(fr, wall))
+        cos = [fr.P(s, z) for s, z in trap]
         B.face(cos, [f(c) for c in cos])
     # the fillets: a sloping brick triangle at each corner, its coursing
     # level, U along its head
@@ -353,6 +411,16 @@ def base(B, level, foot):
         def uvc(co, p0=p0, t=t):
             s = (Vector((co[0], co[1], 0.0)) - p0).dot(t)
             return (cx + s * PPM, cy + (co[2] - L.Z_OCT) * PPM)
+        if k == 4:
+            # the rear side, from (A, BH) running west: the conductor's strip
+            sc = A - strip_x()[1]
+            qx, qy = L.COND_COPING_R[:2]
+
+            def uvs(co, p0=p0, t=t, sc=sc):
+                s = (Vector((co[0], co[1], 0.0)) - p0).dot(t)
+                return (qx + (s - sc) * PPM, qy + (co[2] - L.Z_OCT) * PPM)
+            fill_split(B, outline, to3d, uvc, sc, sc + L.COND_SW / PPM, uvs)
+            continue
         fill_planar(B, outline, [], to3d, uvc)
     # the wash: from the coping's head up to the shaft's foot, mapped from
     # above
@@ -366,15 +434,19 @@ def base(B, level, foot):
         i1 = ray_idx[(j + 1) % n]
         between = [P[i] for i in range(i0 + 1, i1 if i1 > i0 else len(P))]
         a, b = foot[j], foot[(j + 1) % n]
-        o0, o1 = P[i0], P[i1]
-        if between:
-            c = between[0]
-            for tri in ((o0, c, a), (c, b, a), (c, o1, b)):
-                B.face(list(tri), [uvw(p) for p in tri], smooth=True)
-        else:
-            for tri in ((o0, o1, b), (o0, b, a)):
-                B.face(list(tri), [uvw(p) for p in tri], smooth=True)
-    floor = [(-BH, -BH, 0.0), (-BH, BH, 0.0), (BH, BH, 0.0), (BH, -BH, 0.0)]
+        chain = [P[i0]] + between + [P[i1]]
+        # a fan from the foot's first vertex over the chain's first half, from
+        # its second over the rest
+        mid = (len(chain) - 1) // 2
+        tris = [(chain[i], chain[i + 1], a) for i in range(mid)]
+        tris.append((chain[mid], b, a))
+        tris += [(chain[i], chain[i + 1], b) for i in range(mid, len(chain) - 1)]
+        for tri in tris:
+            B.face(list(tri), [uvw(p) for p in tri], smooth=True)
+    # the rear wall's foot carries the conductor strip's two corners
+    xs = strip_x()
+    floor = [(-BH, -BH, 0.0), (-BH, BH, 0.0), (xs[0], BH, 0.0), (xs[1], BH, 0.0),
+             (BH, BH, 0.0), (BH, -BH, 0.0)]
     B.face(floor, [uv_patch("blank")(c) for c in floor])
 
 
@@ -384,17 +456,6 @@ def ring_points(r, z, n):
     centred on +Y and the facets running counter-clockwise from above."""
     rv = r * L.k_sides(n)
     return [(rv * math.cos(a), rv * math.sin(a), z) for a in vertex_angles(n)]
-
-
-def poly_radius(theta, r, n):
-    """The n-gon's radius at angle *theta*: its apothem over the cosine of
-    the angle from the nearest facet centre (facet centres at 90 + 360 j / n
-    degrees)."""
-    ap = r * L.k_sides(n) * math.cos(math.pi / n)
-    step = 2 * math.pi / n
-    d = (theta - math.pi / 2) % step
-    d = min(d, step - d)
-    return ap / math.cos(d)
 
 
 def band(B, lo, hi, n, patch):
@@ -433,21 +494,28 @@ def lift(B, z0, z1, name, v0, v1, ladder, level):
 
 
 def stack(B, level):
-    """The shaft's lifts, the head band's foot, the band, the rim, the
-    flue's lining and floor."""
+    """The shaft's lifts, the head band's foot, the band in two parts round
+    the platform's deck (its underside, outer edge and top are the profile's
+    own), the rim, the flue's lining and floor."""
     n = sides(level)
     for z0, z1, name, v0, v1, ladder in L.LIFTS:
         lift(B, z0, z1, name, v0, v1, ladder, level)
     band(B, (L.Z_HEAD0, L.R1), (L.Z_HEAD0, L.R_HEAD), n, "under")
     hx, hy, hw, hh = L.HEAD_R
     w = L.chord(L.R_HEAD, n) * PPM
-    p0 = ring_points(L.R_HEAD, L.Z_HEAD0, n)
-    p1 = ring_points(L.R_HEAD, L.Z_TOP, n)
-    for j in range(n):
-        k = (j + 1) % n
-        u = hx + j * w
-        B.face([p0[j], p0[k], p1[k], p1[j]],
-               [(u, hy), (u + w, hy), (u + w, hy + hh), (u, hy + hh)], smooth=True)
+    zl, zd = L.Z_DECK - L.DECK_T, L.Z_DECK
+    for z0, z1 in ((L.Z_HEAD0, zl), (zd, L.Z_TOP)):
+        p0 = ring_points(L.R_HEAD, z0, n)
+        p1 = ring_points(L.R_HEAD, z1, n)
+        v0, v1 = hy + (z0 - L.Z_HEAD0) * PPM, hy + (z1 - L.Z_HEAD0) * PPM
+        for j in range(n):
+            k = (j + 1) % n
+            u = hx + j * w
+            B.face([p0[j], p0[k], p1[k], p1[j]],
+                   [(u, v0), (u + w, v0), (u + w, v1), (u, v1)], smooth=True)
+    band(B, (zl, L.R_HEAD), (zl, L.R_DECK), n, "deck")
+    band(B, (zl, L.R_DECK), (zd, L.R_DECK), n, "deck")
+    band(B, (zd, L.R_DECK), (zd, L.R_HEAD), n, "deck")
     band(B, (L.Z_TOP, L.R_HEAD), (L.Z_TOP, L.R_FLUE), n, "rim")
     zt, zf = L.Z_TOP, L.Z_TOP - L.FLUE_DEPTH
     band(B, (zt, L.R_FLUE), (zf, L.R_FLUE), n, "soot")
@@ -456,53 +524,119 @@ def stack(B, level):
 
 
 # ========================================================= the attachments
-def box(B, c, ax, ay, az, h, uvfn):
-    """A closed box centred on *c*, axes ax, ay, az, half sizes *h*."""
-    c = Vector(c)
-
-    def P(i, j, k):
-        q = c + ax * (i * h[0]) + ay * (j * h[1]) + az * (k * h[2])
-        return (q.x, q.y, q.z)
-    quads = []
-    for s in (-1, 1):
-        quads.append([P(s, -1, -1), P(s, 1, -1), P(s, 1, 1), P(s, -1, 1)])
-        quads.append([P(-1, s, -1), P(1, s, -1), P(1, s, 1), P(-1, s, 1)])
-        quads.append([P(-1, -1, s), P(1, -1, s), P(1, 1, s), P(-1, 1, s)])
-    for q in quads:
-        B.face(q, [uvfn(co) for co in q])
-    return B
+# Every attachment is a closed solid of its own, held GAP off the stack and
+# off every other part, so no boolean cuts the shaft's faces or the rails'
+# and the whole kit costs only its own triangles. A part is a section swept
+# along a polyline (sweep): a rung, a rail, a hoop, a ring rail.
+GAP = L.GAP
+X_AXIS, Z_AXIS = Vector((1.0, 0.0, 0.0)), Vector((0.0, 0.0, 1.0))
 
 
-def seg_box(p0, p1, side, w, d, uvfn):
-    """A bar of section w (along *side*) by d from p0 to p1, as a Builder."""
-    p0, p1 = Vector(p0), Vector(p1)
-    az = (p1 - p0)
-    length = az.length
-    az.normalize()
-    ax = Vector(side)
-    ax = (ax - az * ax.dot(az)).normalized()
-    ay = az.cross(ax).normalized()
-    return box(Builder(), (p0 + p1) / 2.0, ax, ay, az, (w / 2.0, d / 2.0, length / 2.0), uvfn)
+def plane_hit(c, d, plane):
+    """Where the line through *c* along *d* meets *plane* (point, normal)."""
+    q, nrm = plane
+    return c + d * ((q - c).dot(nrm) / d.dot(nrm))
 
 
-def ring_prism(r_in, r_out, z0, z1, n, uvfn):
-    """An n-sided annular prism, as a Builder: a deck, a ring rail."""
-    B = Builder()
-    i0, i1 = ring_points(r_in, z0, n), ring_points(r_in, z1, n)
-    o0, o1 = ring_points(r_out, z0, n), ring_points(r_out, z1, n)
-    for j in range(n):
-        k = (j + 1) % n
-        for q in ([o0[j], o0[k], o1[k], o1[j]], [i0[k], i0[j], i1[j], i1[k]],
-                  [i1[j], o1[j], o1[k], i1[k]], [i0[k], o0[k], o0[j], i0[j]]):
+def sweep(B, pts, section, uvfn, side_hint=None, closed=False, ends=(None, None)):
+    """A closed solid: *section*, a polygon of (side, up) offsets, swept
+    along the polyline *pts* and mitred at its bends, its ends square or cut
+    by the planes in *ends*, or a closed ring. side is *side_hint* made
+    square to each segment, or the segment's right in plan (outward round a
+    loop walked counter-clockwise); up is side x direction."""
+    P = [Vector(p) for p in pts]
+    m = len(P)
+    segs = m if closed else m - 1
+    D = [(P[(i + 1) % m] - P[i]).normalized() for i in range(segs)]
+
+    def frame(d):
+        if side_hint is None:
+            sv = d.cross(Z_AXIS)
+        else:
+            h = Vector(side_hint)
+            sv = h - d * h.dot(d)
+        sv.normalize()
+        return sv, sv.cross(d)
+    F = [frame(d) for d in D]
+    rings = []
+    for k in range(m):
+        if closed:
+            fa, fb = F[k - 1], F[k]
+        else:
+            fa, fb = F[max(k - 1, 0)], F[min(k, segs - 1)]
+        S = (fa[0] + fb[0]) / (1.0 + fa[0].dot(fb[0]))
+        U = (fa[1] + fb[1]) / (1.0 + fa[1].dot(fb[1]))
+        rings.append([P[k] + S * a + U * b for a, b in section])
+    if not closed:
+        for idx, d, plane in ((0, D[0], ends[0]), (-1, D[-1], ends[1])):
+            if plane is not None:
+                rings[idx] = [plane_hit(c, d, plane) for c in rings[idx]]
+    ns = len(section)
+    for i in range(segs):
+        r0, r1 = rings[i], rings[(i + 1) % m]
+        for j in range(ns):
+            q = [r0[j], r0[(j + 1) % ns], r1[(j + 1) % ns], r1[j]]
             B.face(q, [uvfn(co) for co in q])
+    if not closed:
+        for r in (rings[0], rings[-1]):
+            B.face(r, [uvfn(co) for co in r])
     return B
+
+
+def tri(w, d):
+    """A triangular section w wide (along side) with its flat face at
+    up = 0 and its apex d out along -up."""
+    return [(-w / 2.0, 0.0), (w / 2.0, 0.0), (0.0, -d)]
+
+
+def rect(w, d):
+    return [(-w / 2.0, -d / 2.0), (w / 2.0, -d / 2.0), (w / 2.0, d / 2.0), (-w / 2.0, d / 2.0)]
+
+
+def facet_normals(n):
+    """The outward normals of an n-sided ring's facets, in plan."""
+    return [Vector((math.cos(a), math.sin(a), 0.0))
+            for a in (math.pi / 2 + 2 * math.pi * j / n for j in range(n))]
+
+
+def apothem(r, n):
+    return r * L.k_sides(n) * math.cos(math.pi / n)
+
+
+def back_y(x, r, n):
+    """Where the line at *x* (parallel to y) leaves the n-sided ring of
+    radius *r* on its +Y side."""
+    ap = apothem(r, n)
+    return min((ap - x * f.x) / f.y for f in facet_normals(n) if f.y > 0.2)
+
+
+def facet_plane(theta, rfun, n, za, zb):
+    """The facet of the battered n-sided surface of radius rfun(z) at angle
+    *theta*, as (point, outward normal), between heights za and zb."""
+    step = 2 * math.pi / n
+    th0 = vertex_angles(n)[0]
+    j = int(math.floor(((theta - th0) % (2 * math.pi)) / step))
+    a0, a1 = th0 + j * step, th0 + (j + 1) * step
+    k = L.k_sides(n)
+
+    def p(a, z):
+        return Vector((rfun(z) * k * math.cos(a), rfun(z) * k * math.sin(a), z))
+    A, Bv, C = p(a0, za), p(a1, za), p(a0, zb)
+    nrm = (Bv - A).cross(C - A).normalized()
+    mid = (a0 + a1) / 2.0
+    if nrm.dot(Vector((math.cos(mid), math.sin(mid), 0.0))) < 0:
+        nrm = -nrm
+    return A, nrm
+
+
+def offset(plane, d):
+    return plane[0] + plane[1] * d, plane[1]
 
 
 def flat_back(z):
     """The back facet's distance from the axis at height *z*, on LOD0's 24
-    sides (LOD1's is 10 mm less at the foot; the brackets reach 50 mm in)."""
-    n = L.SIDES[0]
-    return L.r_shaft(z) * L.k_sides(n) * math.cos(math.pi / n)
+    sides: the ladder's line is the same on every tier."""
+    return apothem(L.r_shaft(z), L.SIDES[0])
 
 
 def rail_y(z):
@@ -511,97 +645,280 @@ def rail_y(z):
     return flat_back(z) + L.STANDOFF
 
 
-def ladder(level):
+def rail_frame():
+    """A rail's direction, and its section's up (toward the shaft)."""
+    d = Vector((0.0, rail_y(L.Z_DECK) - rail_y(L.Z_LADDER0), L.Z_DECK - L.Z_LADDER0)).normalized()
+    return d, X_AXIS.cross(d)
+
+
+def rail_point(x, z):
+    return Vector((x, rail_y(z), z))
+
+
+def ladder(B, level):
     """The iron ladder up the back: two rails along the batter from the
-    ladder's foot to grab handles over the deck, a rung every third of a
-    metre (every third rung on LOD1), the rails held off the shaft on
-    brackets."""
+    ladder's foot to under the deck and on above it as grab handles, a rung
+    every third of a metre (every third rung on LOD1) between them, each a
+    triangular bar stopping GAP short of the rails, and pairs of brackets
+    from the shaft to the rails' inner faces, stopping GAP short of both."""
     steel = uv_patch("steel")
-    parts = []
+    n = sides(level)
     za, zb = L.Z_LADDER0, L.Z_LADDER1
+    zl, zd = L.Z_DECK - L.DECK_T, L.Z_DECK
+    d, up = rail_frame()
     for x in (-L.LADDER_HALF, L.LADDER_HALF):
-        parts.append(seg_box((x, rail_y(za), za), (x, rail_y(zb), zb), (1, 0, 0),
-                             L.RAIL_W, L.RAIL_D, steel))
+        for z0, z1 in ((za, zl - GAP), (zd + GAP, zb)):
+            sweep(B, [rail_point(x, za), rail_point(x, zb)], rect(L.RAIL_W, L.RAIL_D), steel,
+                  side_hint=X_AXIS, ends=((Vector((0, 0, z0)), Z_AXIS), (Vector((0, 0, z1)), Z_AXIS)))
+    inner = L.LADDER_HALF - L.RAIL_W / 2.0 - GAP
     every = L.RUNG_EVERY[level]
     i = 0
     while True:
         z = za + L.RUNG_PITCH * (i + 0.5)
-        if z > L.Z_DECK - L.DECK_T - 0.1:
+        if z > zl - 0.1:
             break
         if i % every == every // 2:
-            y = rail_y(z)
-            dz = (rail_y(z + 0.5) - rail_y(z - 0.5))
-            az = Vector((0.0, dz, 1.0)).normalized()
-            ay = az.cross(Vector((1.0, 0.0, 0.0))).normalized()
-            parts.append(box(Builder(), (0.0, y, z), Vector((1.0, 0.0, 0.0)), ay, az,
-                             (L.LADDER_HALF + 0.01, L.RUNG / 2.0, L.RUNG / 2.0), steel))
+            # a flat top, the apex under it
+            c = rail_point(0.0, z) + Vector((0.0, 0.0, L.RUNG / 3.0))
+            sweep(B, [c - X_AXIS * inner, c + X_AXIS * inner],
+                  [(-L.RUNG / 2.0, 0.0), (L.RUNG / 2.0, 0.0), (0.0, -L.RUNG * 0.85)],
+                  steel, side_hint=Vector((0.0, 1.0, 0.0)))
         i += 1
-    for z in L.LADDER_BRACKETS:
+    for i, z in enumerate(L.LADDER_BRACKETS):
+        if L.BRACKET_EVERY[level] is None or i % L.BRACKET_EVERY[level]:
+            continue
         for x in (-L.LADDER_HALF, L.LADDER_HALF):
-            y0, y1 = flat_back(z) - 0.05, rail_y(z)
-            parts.append(box(Builder(), (x, (y0 + y1) / 2.0, z), Vector((1.0, 0.0, 0.0)),
-                             Vector((0.0, 1.0, 0.0)), Vector((0.0, 0.0, 1.0)),
-                             (L.BRACKET_W / 2.0, (y1 - y0) / 2.0, L.BRACKET_W / 2.0), steel))
-    return parts
+            ax = abs(x) - L.BRACKET_W / 2.0
+            y_end = back_y(ax, L.r_shaft(z - L.BRACKET_W), n) + GAP
+            face = rail_point(x, z) + up * (L.RAIL_D / 2.0 + GAP)
+            c = Vector((x, y_end, z))
+            sweep(B, [c, Vector((x, rail_y(z), z))], tri(L.BRACKET_W, L.BRACKET_W * 0.8), steel,
+                  side_hint=X_AXIS,
+                  ends=((Vector((0.0, y_end, 0.0)), Vector((0.0, 1.0, 0.0))), (face, up)))
 
 
-def platform(level):
-    """The service platform: a steel deck ringing the head band, a ring hand
-    rail and knee rail on six posts, six brackets from the shaft under it,
-    as far as PLATFORM keeps them for the tier."""
+def hoop_plan():
+    """A hoop's polyline in plan, (x, out from the rails' centre line), from
+    the east rail round behind the ladder to the west one; its two ends lie
+    inside the rails and are cut GAP off their outer faces."""
+    (bx, by), (cx, cy) = L.HOOP
+    e = L.LADDER_HALF + 0.02
+    return [(e, 0.0), (bx, by), (cx, cy), (-bx, by), (-e, 0.0)]
+
+
+def cage_levels(level):
+    every = L.CAGE_EVERY[level]
+    ks = [k for k in range(L.CAGE_N) if k % every == 0]
+    if ks[-1] != L.CAGE_N - 1:
+        ks.append(L.CAGE_N - 1)
+    return [L.CAGE_Z0 + k * L.CAGE_PITCH for k in ks]
+
+
+def cage(B, level):
+    """The safety cage: level flat-bar hoops along the batter, each a
+    triangular bar of four chords, its broad face outward, cut GAP off the
+    rails' outer faces; three straps outside them, at the hoops' corners
+    and their back, GAP off the hoops' outer arrises."""
+    steel = uv_patch("steel")
+    plan = hoop_plan()
+    outer = L.LADDER_HALF + L.RAIL_W / 2.0 + GAP
+    # broad face outward, the apex in
+    section = [(L.HOOP_T / 2.0, -L.HOOP_H / 2.0), (L.HOOP_T / 2.0, L.HOOP_H / 2.0),
+               (-L.HOOP_T / 2.0, 0.0)]
+    zs = cage_levels(level)
+    for z in zs:
+        y0 = rail_y(z)
+        pts = [(x, y0 + o, z) for x, o in plan]
+        sweep(B, pts, section, steel,
+              ends=((Vector((outer, 0, 0)), X_AXIS), (Vector((-outer, 0, 0)), X_AXIS)))
+    # the straps: at each corner, along the bisector of the hoop's turn
+    d, _up = rail_frame()
+    for i in (1, 2, 3):
+        p = Vector((plan[i][0], plan[i][1], 0.0))
+        a = (p - Vector((plan[i - 1][0], plan[i - 1][1], 0.0))).normalized()
+        b = (Vector((plan[i + 1][0], plan[i + 1][1], 0.0)) - p).normalized()
+        sa, sb = a.cross(Z_AXIS), b.cross(Z_AXIS)
+        nb = (sa + sb).normalized()
+        reach = (L.HOOP_T / 2.0) / math.cos(sa.angle(sb) / 2.0) + 2 * GAP
+        base = p + nb * reach
+        z0, z1 = zs[0] - 0.04, zs[-1] + 0.04
+        c0 = Vector((base.x, rail_y(z0) + base.y, z0))
+        c1 = Vector((base.x, rail_y(z1) + base.y, z1))
+        # the flat face against the hoops, the apex out
+        sweep(B, [c0, c1], [(0.0, -L.STRAP_W / 2.0), (L.STRAP_T, 0.0), (0.0, L.STRAP_W / 2.0)],
+              steel, side_hint=nb)
+
+
+def conductor_line(rfun, n, z0, z1):
+    """The conductor's inner face line at COND_X, COND_OFF off the n-sided
+    surface of radius rfun(z) between z0 and z1: straight, raised wherever
+    the surface between its ends would come closer (a facet's edge)."""
+    xa = L.COND_X - L.COND_W / 2.0
+
+    def need(z):
+        return back_y(xa, rfun(z), n) + L.COND_OFF
+    ya, yb = need(z0), need(z1)
+    lift = max(need(z0 + (z1 - z0) * t / 64.0) - (ya + (yb - ya) * t / 64.0)
+               for t in range(65))
+    return (Vector((L.COND_X, ya + lift, z0)), Vector((L.COND_X, yb + lift, z1)))
+
+
+def conductor(B, level):
+    """The lightning down conductor beside the ladder: a copper strap from
+    the shaft's foot to under the head band, then up the band, under and
+    over the deck, to its air terminal level with the rim."""
+    copper = uv_patch("copper")
+    n = sides(level)
+    zl, zd = L.Z_DECK - L.DECK_T, L.Z_DECK
+    runs = ((L.r_shaft, L.Z_SHAFT0 + 0.03, L.Z_HEAD0 - GAP),
+            (lambda z: L.R_HEAD, L.Z_HEAD0 + GAP, zl - GAP),
+            (lambda z: L.R_HEAD, zd + GAP, L.COND_TIP))
+    for rfun, z0, z1 in runs:
+        a, b = conductor_line(rfun, n, z0, z1)
+        # the flat face toward the shaft (up is -Y here), the apex out
+        sweep(B, [a, b], [(-L.COND_W / 2.0, 0.0), (0.0, -L.COND_T), (L.COND_W / 2.0, 0.0)],
+              copper, side_hint=X_AXIS)
+
+
+def ring_rail(B, rc, zc, n, uvfn):
+    """A railing's ring rail: a triangular bar round a polygon of radius rc,
+    its flat underside at zc - 0.0125, apex up."""
+    pts = ring_points(rc, zc, n)
+    sweep(B, pts, [(-0.022, -0.0125), (0.022, -0.0125), (0.0, 0.025)], uvfn, closed=True)
+    return apothem(rc, n) - 0.022
+
+
+def platform(B, level):
+    """The service platform's steel: a ring hand rail and knee rail, six
+    posts just inside them from GAP over the deck, and six brackets from the
+    shaft to GAP under the deck, as far as PLATFORM keeps them."""
     n = sides(level)
     keep = PLATFORM[level]
-    steel, deck = uv_patch("steel"), uv_patch("deck")
-    parts = [ring_prism(L.R_HEAD - 0.04, L.R_DECK, L.Z_DECK - L.DECK_T, L.Z_DECK, n, deck)]
+    steel = uv_patch("steel")
+    # square posts and brackets close up, triangular bars beyond
+    bar = rect if level == 0 else (lambda w, d: [(-w / 2.0, d / 2.0), (w / 2.0, d / 2.0),
+                                                  (0.0, -d / 2.0)])
+    rc = (L.RAIL_R[0] + L.RAIL_R[1]) / 2.0
+    inner = None
     for zt, part in zip(L.RAIL_Z, ("rail", "knee")):
         if part in keep:
-            parts.append(ring_prism(L.RAIL_R[0], L.RAIL_R[1], zt - L.RAIL_H, zt, n, steel))
-    rm = (L.RAIL_R[0] + L.RAIL_R[1]) / 2.0
-    for deg in (L.POSTS if "posts" in keep else ()):
+            inner = ring_rail(B, rc, zt - 0.025, n, steel)
+    zl, zd = L.Z_DECK - L.DECK_T, L.Z_DECK
+    for deg in L.POSTS:
         th = math.radians(deg)
         radial = Vector((math.cos(th), math.sin(th), 0.0))
         tang = Vector((-math.sin(th), math.cos(th), 0.0))
-        rp = poly_radius(th, rm, n)
-        z0, z1 = L.Z_DECK - 0.02, L.RAIL_Z[0] - 0.01
-        parts.append(box(Builder(), radial * rp + Vector((0, 0, (z0 + z1) / 2.0)),
-                         radial, tang, Vector((0.0, 0.0, 1.0)),
-                         (0.02, L.POST_W / 2.0, (z1 - z0) / 2.0), steel))
-        rs = poly_radius(th, L.r_shaft(L.STRUT_Z), n) - 0.05
-        p0 = radial * rs + Vector((0.0, 0.0, L.STRUT_Z))
-        p1 = radial * L.STRUT_R + Vector((0.0, 0.0, L.Z_DECK - L.DECK_T + 0.03))
-        parts.append(seg_box(p0, p1, tang, L.STRUT_W, L.STRUT_W, steel))
-    return parts
+        if "posts" in keep and inner is not None:
+            # the post's outer corners GAP inside every facet of the rings
+            hw, pd = L.POST_W / 2.0, 0.04
+            rp = min((inner - GAP - abs(hw * tang.dot(f))) / radial.dot(f)
+                     for f in facet_normals(n) if radial.dot(f) > 0.3) - pd / 2.0
+            c = radial * rp
+            sweep(B, [c + Vector((0, 0, zd + GAP)), c + Vector((0, 0, L.RAIL_Z[0]))],
+                  bar(L.POST_W, pd), steel, side_hint=tang)
+        if "struts" in keep:
+            p0 = radial * (L.r_shaft(L.STRUT_Z) - 0.1) + Vector((0.0, 0.0, L.STRUT_Z))
+            p1 = radial * L.STRUT_R + Vector((0.0, 0.0, zl))
+            shaft = offset(facet_plane(th, L.r_shaft, n, L.STRUT_Z - 0.1, L.STRUT_Z + 0.1), GAP)
+            sweep(B, [p0, p1], bar(L.STRUT_W, L.STRUT_W), steel, side_hint=tang,
+                  ends=(shaft, (Vector((0, 0, zl - GAP)), Z_AXIS)))
 
 
-def lamps(level):
-    """Three obstruction lamps on the head band: a box of housing and lens,
-    sampling the lamp region by height, on every tier."""
+def lamps(B, level):
+    """Three obstruction lamps on the head band: a body of nb sides (six on
+    LOD0, four after), its foot the cast housing and its upper part the red
+    lens, under a low pointed dome, on an arm from the band (LOD0). The
+    body's faces sample LAMP_R by height."""
     n = sides(level)
+    nb = 6 if level == 0 else 4
     lx, ly, lw, lh = L.LAMP_R
-    parts = []
+    z0, zl, z1, zt = L.LAMP_Z
+    steel = uv_patch("steel")
     for deg in L.LAMP_ANGLES:
         th = math.radians(deg)
         radial = Vector((math.cos(th), math.sin(th), 0.0))
         tang = Vector((-math.sin(th), math.cos(th), 0.0))
-        rh = poly_radius(th, L.R_HEAD, n)
-        r0, r1 = rh - 0.03, rh + L.LAMP_OUT
-        z0, z1 = L.LAMP_Z[0], L.LAMP_Z[2]
-        c = radial * ((r0 + r1) / 2.0) + Vector((0.0, 0.0, (z0 + z1) / 2.0))
-
-        def uvl(co, c=c, tang=tang):
-            t = (Vector(co) - c).dot(tang)
-            return (lx + lw / 2.0 + t * PPM, ly + (co[2] - z0) * PPM)
-        parts.append(box(Builder(), c, radial, tang, Vector((0.0, 0.0, 1.0)),
-                         ((r1 - r0) / 2.0, L.LAMP_HALF, (z1 - z0) / 2.0), uvl))
-    return parts
+        face = apothem(L.R_HEAD, n)                 # lamps stand on facet centres
+        axis = radial * (face + L.LAMP_OUT)
+        ring = []
+        for i in range(nb):
+            a = 2 * math.pi * (i + 0.5) / nb
+            ring.append(axis + (radial * math.cos(a) + tang * math.sin(a)) * L.LAMP_RAD)
+        side = (ring[1] - ring[0]).length
+        foot = [Vector((p.x, p.y, z0)) for p in ring]
+        head = [Vector((p.x, p.y, z1)) for p in ring]
+        cu = lx + lw / 2.0
+        for i in range(nb):
+            k = (i + 1) % nb
+            B.face([foot[i], foot[k], head[k], head[i]],
+                   [(cu - side / 2 * PPM, ly), (cu + side / 2 * PPM, ly),
+                    (cu + side / 2 * PPM, ly + lh), (cu - side / 2 * PPM, ly + lh)])
+        tip = Vector((axis.x, axis.y, zt))
+        for i in range(nb):
+            k = (i + 1) % nb
+            B.face([head[i], head[k], tip],
+                   [(cu - side / 2 * PPM, ly + lh - 1.5), (cu + side / 2 * PPM, ly + lh - 1.5),
+                    (cu, ly + lh - 0.5)])
+        B.face(list(reversed(foot)), [(cu, ly + 1.0)] * nb)
+        if level == 0:
+            aw, ad = L.LAMP_ARM
+            band = offset(facet_plane(th, lambda z: L.R_HEAD, n, z0 - 0.1, z0), GAP)
+            ztop = z0 - GAP
+            sweep(B, [radial * (face - 0.05) + Vector((0, 0, ztop)),
+                      axis + Vector((0, 0, ztop))],
+                  [(-aw / 2.0, 0.0), (aw / 2.0, 0.0), (0.0, ad)], steel, side_hint=tang,
+                  ends=(band, None))
 
 
 # ================================================================ assembly
+def overlaps(bm, parts):
+    """Pairs of parts (face index ranges of *bm*) whose triangles intersect;
+    part 0 is the stack."""
+    from mathutils.bvhtree import BVHTree
+    bm.faces.ensure_lookup_table()
+    trees, boxes = [], []
+    for f0, f1 in parts:
+        faces = [bm.faces[i] for i in range(f0, f1)]
+        remap = {}
+        for f in faces:
+            for v in f.verts:
+                remap.setdefault(v, len(remap))
+        co = [v.co.copy() for v in remap]
+        trees.append(BVHTree.FromPolygons(co, [[remap[v] for v in f.verts] for f in faces]))
+        boxes.append((Vector([min(c[i] for c in co) for i in range(3)]),
+                      Vector([max(c[i] for c in co) for i in range(3)])))
+    bad = []
+    for i in range(len(parts)):
+        for j in range(i + 1, len(parts)):
+            (a0, a1), (b0, b1) = boxes[i], boxes[j]
+            if any(a1[k] < b0[k] - 1e-4 or b1[k] < a0[k] - 1e-4 for k in range(3)):
+                continue
+            if trees[i].overlap(trees[j]):
+                bad.append((i, j))
+    return bad
+
+
 def build_lod(level):
+    """The stack and every attachment in one bmesh, each a separate closed
+    shell: no boolean, so the kit's triangles are its own."""
     B = Builder()
     foot = ring_points(L.r_shaft(L.Z_SHAFT0), L.Z_SHAFT0, sides(level))
     base(B, level, foot)
     stack(B, level)
+    parts = [(0, len(B.bm.faces))]
+    adders = [lambda B: lamps(B, level), lambda B: platform(B, level)]
+    if ladder_mode(level) == "solid":
+        adders += [lambda B: ladder(B, level), lambda B: cage(B, level),
+                   lambda B: conductor(B, level)]
+    for add in adders:
+        # one range per closed shell, so overlaps() can test each
+        before = len(B.bm.faces)
+        add(B)
+        parts.extend(_shells(B.bm, before))
+    bad = overlaps(B.bm, parts)
+    if bad:
+        raise ValueError("LOD%d: %d intersecting part pairs, e.g. faces %s and %s"
+                         % (level, len(bad), parts[bad[0][0]], parts[bad[0][1]]))
     bm = B.bm
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
     # smooth round the stack, sharp where its profile turns
@@ -614,23 +931,48 @@ def build_lod(level):
         a, b = e.verts
         if abs(a.co.z - b.co.z) < 1e-6 and fa.normal.angle(fb.normal, 0.0) > math.radians(25):
             e.smooth = False
-    obj = to_object(B, "tmp_stack_LOD%d" % level)
-    parts = lamps(level) + platform(level)
-    if ladder_mode(level) == "solid":
-        parts += ladder(level)
-    obj = union(obj, [to_object(P, "tmp_part_%d_%d" % (level, i))
-                      for i, P in enumerate(parts)])
-    obj.name = "{}_LOD{}".format(ASSET, level)
-    obj.data.name = obj.name + "_mesh"
-    bm = bmesh.new()
-    bm.from_mesh(obj.data)
-    bmesh.ops.remove_doubles(bm, verts=bm.verts[:], dist=1e-5)
-    bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
     bmesh.ops.triangulate(bm, faces=[f for f in bm.faces if len(f.verts) > 4],
                           quad_method='BEAUTY', ngon_method='BEAUTY')
-    bm.to_mesh(obj.data)
-    bm.free()
+    obj = to_object(B, "{}_LOD{}".format(ASSET, level))
+    obj.data.name = obj.name + "_mesh"
     return obj
+
+
+def _shells(bm, first):
+    """Face index ranges of the connected shells among faces from *first* on
+    (each part's faces are added together, so a shell is a contiguous
+    range)."""
+    bm.faces.ensure_lookup_table()
+    if first >= len(bm.faces):
+        return []
+    out, start = [], first
+    verts = set()
+    for i in range(first, len(bm.faces)):
+        f = bm.faces[i]
+        fv = set(f.verts)
+        if i > start and not (fv & verts):
+            # a face sharing nothing with the current shell starts a new one,
+            # unless it joins it later; parts are swept ring by ring, so a
+            # face of the same part always shares a vertex with an earlier one
+            out.append((start, i))
+            start, verts = i, set()
+        verts |= fv
+    out.append((start, len(bm.faces)))
+    return out
+
+
+def kit_triangles(level):
+    """Triangles of everything but the stack, for notes.md."""
+    B = Builder()
+    adders = [lamps, platform] + ([ladder, cage, conductor]
+                                  if ladder_mode(level) == "solid" else [])
+    out = {}
+    for add in adders:
+        b0 = sum(len(f.verts) - 2 for f in B.bm.faces)
+        add(B, level)
+        out[add.__name__] = sum(len(f.verts) - 2 for f in B.bm.faces) - b0
+    B.bm.free()
+    return out
 
 
 # ================================================================== checks
@@ -675,15 +1017,19 @@ def check_layout():
         bad.append("the rim is under 0.25 m wide")
     if L.Z_TOP - L.FLUE_DEPTH < L.Z_HEAD0 + 0.2:
         bad.append("the flue's floor is below the head band")
-    if L.LAMP_Z[2] > L.Z_TOP - L.CAP_RING - 0.05:
+    if L.LAMP_Z[3] > L.Z_TOP - L.CAP_RING - 0.05:
         bad.append("the lamps reach the cap ring")
+    if not (L.LAMP_Z[0] < L.LAMP_Z[1] < L.LAMP_Z[2] < L.LAMP_Z[3]):
+        bad.append("the lamps' heights are out of order")
     # the platform: under the rim, its railing outside the lamps and ladder
     if L.RAIL_Z[0] > L.Z_TOP - 0.3:
         bad.append("the railing crowds the rim")
     if abs(L.Z_TOP - L.Z_DECK - 1.5) > 0.2:
         bad.append("the deck is not about 1.5 m under the rim")
-    if L.R_HEAD * 1.05 + L.LAMP_OUT > L.RAIL_R[0] - 0.15:
+    if L.R_HEAD * 1.05 + L.LAMP_OUT + L.LAMP_RAD > L.RAIL_R[0] - 0.15:
         bad.append("the lamps crowd the railing")
+    if L.LAMP_OUT - L.LAMP_RAD < 0.04:
+        bad.append("a lamp's body touches the band")
     for deg in L.POSTS:
         if abs((deg - 90.0 + 180.0) % 360.0 - 180.0) < 20.0:
             bad.append("a railing post stands at the ladder")
@@ -702,6 +1048,28 @@ def check_layout():
         bad.append("a ladder bracket is off the shaft")
     if L.Z_LADDER1 > L.RAIL_Z[0] + 0.05:
         bad.append("the ladder's grab handles stand over the railing")
+    # the cage: from about 2.5 m over the ladder's foot to under the deck,
+    # hoops no further apart than 1.8 m, inside the base's plan
+    zs = cage_levels(0)
+    if not 2.2 <= L.CAGE_Z0 - L.Z_LADDER0 <= 3.0:
+        bad.append("the cage does not start about 2.5 m above the ladder's foot")
+    if L.CAGE_PITCH > 1.8:
+        bad.append("the hoops are more than 1.8 m apart")
+    if zs[-1] + L.HOOP_H / 2 + 0.04 > L.Z_DECK - L.DECK_T - 0.1:
+        bad.append("the cage runs into the deck")
+    if L.Z_DECK - L.DECK_T - zs[-1] > L.CAGE_PITCH + 0.2:
+        bad.append("the cage stops short of the deck")
+    reach = rail_y(zs[0]) + L.HOOP[1][1] + L.HOOP_T + 2 * GAP + L.STRAP_T
+    if reach > BH - 0.3:
+        bad.append("the cage reaches outside the base's plan (%.2f m)" % reach)
+    if L.HOOP[0][0] < L.LADDER_HALF + 0.1:
+        bad.append("the hoops are no wider than the ladder")
+    # the conductor: beside the ladder, clear of its brackets, its terminal
+    # no higher than the rim (the bounds)
+    if L.COND_X - L.COND_W / 2 < L.LADDER_HALF + L.BRACKET_W / 2 + 0.01:
+        bad.append("the conductor runs into the ladder's brackets")
+    if L.COND_TIP > L.Z_TOP:
+        bad.append("the air terminal stands over the rim")
     return bad
 
 
@@ -712,7 +1080,7 @@ def build_all():
 # =================================================================== facts
 def facts():
     """The base's square is the footprint; nothing stands outside it (the
-    platform reaches 2.0 m from the axis, the ladder 1.6 m). A chimney has no
+    platform reaches 2.0 m from the axis, the ladder's cage 2.9 m). A chimney has no
     door (the hatch and the inlet are not doors) and no occupied storey, so
     it lists neither, and the sidecar has no main door."""
     return {

@@ -3,7 +3,7 @@
   "version": 1,
   "name": "savupiippu_brick_round",
   "path": "buildings/industrial/savupiippu_brick_round",
-  "source": {"commit": "3e3e93de0a47297473217212bea0db141eb777b5", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "8909fdaa55f1c1e0396ffa3da7f28f8909170840", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-3.4, 0.0, -3.4], "max": [3.4, 46.5, 3.4]},
   "footprint": [
@@ -16,22 +16,22 @@
   "dwellings": 0,
   "doors": [],
   "lods": [
-    {"file": "savupiippu_brick_round_lod0.glb", "triangles": 5134, "sha256": "318bde30945cd18083fda57afcc18b591520a3c4525c53283d0aade49059e242"},
-    {"file": "savupiippu_brick_round_lod1.glb", "triangles": 2784, "sha256": "ed6761dc5a1ecd3ef833296344837b2b71342cf79d0a6786eddaca890b510dcd"},
-    {"file": "savupiippu_brick_round_lod2.glb", "triangles": 924, "sha256": "f526cb821bba4a8d9316b7ffa3194fcfd94ee9350d0f17f31c7136d9cd0cdf77"},
-    {"file": "savupiippu_brick_round_lod3.glb", "triangles": 412, "sha256": "8225289a00afdf213ec85ec1bf860d156789280b3eeab9f935ec324c3fc9f24a"}
+    {"file": "savupiippu_brick_round_lod0.glb", "triangles": 3216, "sha256": "463e152410584eac054f60c8df998030ccf65a39b127b821a16d47deb8a3e6f1"},
+    {"file": "savupiippu_brick_round_lod1.glb", "triangles": 1550, "sha256": "b70d076b5cab0d1f58308565210a5926798462c3bd6601c32d795a9af30817b3"},
+    {"file": "savupiippu_brick_round_lod2.glb", "triangles": 766, "sha256": "dba1797601cd49d3a81328cd10193ed230ccf7878723b0845d5d2049dbcfd873"},
+    {"file": "savupiippu_brick_round_lod3.glb", "triangles": 422, "sha256": "55591f04134f708be58ec54a5c56a7799c351bdf0c5e3b55a28c7fc6642400bd"}
   ],
   "textures": {
-    "orm": {"file": "savupiippu_brick_round_orm.png", "sha256": "2dfbf8296e350d13c5f1cdafae9966433209beceed90b14f2c8a92372b5a3ea7"},
-    "normal": {"file": "savupiippu_brick_round_normal.png", "sha256": "e83077012e88f12c4c6c8c50438418d4e3b8a322dd5374d411e79ca7cb11adab"},
-    "emission": {"file": "savupiippu_brick_round_emission.png", "sha256": "e8091f72abf4c62535360f682756a83f573e2ec82c707e7c7f8c0b6e68a527ca"}
+    "orm": {"file": "savupiippu_brick_round_orm.png", "sha256": "36bb5a973052466c494b226b2426b3a3be39f707c80384a52a1f2344a93e394c"},
+    "normal": {"file": "savupiippu_brick_round_normal.png", "sha256": "fad0ebd2d52d5969eaa758d9a876fc115a51ce757db018fc3bdd26f9ff3e3992"},
+    "emission": {"file": "savupiippu_brick_round_emission.png", "sha256": "d5e3b01bb18caf703f1faa851e06497747bc757077adbc5916d9838305c650d2"}
   },
   "variants": [
-    {"id": "red_brick", "albedo": "savupiippu_brick_round_albedo_red_brick.png", "sha256": "ba0b04b159a449836a4759db6252cab9d3b5d73bd495c7fbd0f961df4456f665"},
-    {"id": "yellow_brick", "albedo": "savupiippu_brick_round_albedo_yellow_brick.png", "sha256": "8b7c10a4dca40ce02528c922cf1ee0e155a0f0235f979092ced012d97ac6488b"},
-    {"id": "brown_brick", "albedo": "savupiippu_brick_round_albedo_brown_brick.png", "sha256": "506eb354a2b1474c7680cb10d2d5c59cbd3ee4bffd646766e4d0c6b97867f41a"}
+    {"id": "red_brick", "albedo": "savupiippu_brick_round_albedo_red_brick.png", "sha256": "209da9e2cd6e8c4a3fa7eca0ab61c7ca1b932035ac649139d2aab5d15918658f"},
+    {"id": "yellow_brick", "albedo": "savupiippu_brick_round_albedo_yellow_brick.png", "sha256": "8d9dc1fdbabbceeae8d472dc6d737e2bc36c8fc6e9938e121e1990713228155d"},
+    {"id": "brown_brick", "albedo": "savupiippu_brick_round_albedo_brown_brick.png", "sha256": "c0e9a6a20eb62ffa7bdd5761e247cc68ef4ec734aab4958c9ff6f2d8b10e99fa"}
   ],
   "default_variant": "red_brick",
-  "preview": {"file": "../preview.png", "sha256": "0a86bb9e174b7a1a2b2ddd4b2e222298e083fc81dc3bb6f51b0a5ab12210a274"},
+  "preview": {"file": "../preview.png", "sha256": "ac53c2d4a9ab5054bf1f67ab754c6e129d05f55055c00ccae475260d7c655e91"},
   "hero": false
 }

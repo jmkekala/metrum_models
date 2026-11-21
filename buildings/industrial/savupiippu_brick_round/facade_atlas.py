@@ -151,13 +151,42 @@ RUNG_EVERY = (1, 3, None, None)         # LOD0 every rung, LOD1 every third
 LADDER_BRACKETS = tuple([Z_LADDER0 + 0.2] + [Z_LADDER0 + SEG * i for i in range(1, NLIFT)]
                         + [Z_HEAD0 - 0.4])
 BRACKET_W = 0.04
+BRACKET_EVERY = (1, None, None, None)   # LOD0 every pair; none beyond (under a pixel)
+
+# Every attachment is its own closed solid, held this far off whatever it
+# would touch (the shaft, a rail, the deck), so nothing is boolean-cut.
+GAP = 0.0015
+
+# The safety cage: flat-bar hoops from 2.5 m above the ladder's foot to under
+# the deck, every CAGE_PITCH along the batter, and three vertical straps
+# outside them. A hoop is four chords in plan, (x, out from the rails' centre
+# line) from one rail's outer face round behind the climber to the other's.
+CAGE_Z0 = Z_LADDER0 + 2.5               # 11.2
+CAGE_PITCH = 1.65
+CAGE_N = 21                             # the top hoop at 44.2
+CAGE_EVERY = (1, 3, None, None)         # LOD1 every third hoop, and the top one
+HOOP = ((0.35, 0.38), (0.0, 0.70))      # the corner and the back, x >= 0
+HOOP_T, HOOP_H = 0.008, 0.05            # the flat bar's thickness and depth
+STRAP_W, STRAP_T = 0.05, 0.008
+
+# The lightning down conductor: a copper strap beside the ladder, COND_X
+# east of its axis, COND_OFF off the brickwork on saddles; up the head band
+# to an air terminal level with the rim (the bounds stay at Z_TOP). Down the
+# wash, the coping and the base's rear wall it is paint (COND_*_R).
+COND_X = 0.275
+COND_W, COND_T = 0.025, 0.012
+COND_OFF = 0.04
+COND_TIP = Z_TOP - 0.01
 
 # The obstruction lamps on the head band: east, west and front, the back
-# being the ladder's (degrees from +X, counter-clockwise from above).
+# being the ladder's (degrees from +X, counter-clockwise from above). Each is
+# a hexagonal body, a cast housing under a red lens with a domed top, on a
+# short arm from the band.
 LAMP_ANGLES = (0.0, 180.0, 270.0)
-LAMP_Z = (46.02, 46.10, 46.30)          # foot, housing's head / lens's foot, top
-LAMP_HALF = 0.09
-LAMP_OUT = 0.20
+LAMP_Z = (46.06, 46.11, 46.22, 46.27)   # foot, housing's head / lens's foot, lens's top, dome
+LAMP_RAD = 0.065                        # the body's corner radius
+LAMP_OUT = 0.13                         # its axis off the band
+LAMP_ARM = (0.03, 0.025)                # the arm's width and depth
 
 # ------------------------------------------------------------- the atlas
 SHAFT_P = 256           # px: every shaft band's period round the stack (4 m)
@@ -191,10 +220,17 @@ INLET_R = (880, 6, 104, 128)            # 1.625 x 2.0 m
 WASH_PPM = 16.0                         # the wash, seen from above
 WASH_R = (880, 146, 112, 112)           # 7.0 x 7.0 m at 16 px/m
 HATCH_R = (940, 556, 45, 58)            # 0.703 x 0.906 m
-LAMP_R = (940, 626, 16, 18)             # 0.25 x 0.28 m: housing, then lens
+LAMP_R = (940, 626, 16, 10)             # 0.25 x 0.16 m: housing, then lens
 HEAD_R = (4, 816, 516, m(Z_TOP - Z_HEAD0))
 COPING_R = (532, 816, m(2 * OCT_A), m(Z_CAP - Z_OCT))
-PATCH_NAMES = ("blank", "soot", "conc", "under", "rim", "steel", "deck")
+# The conductor's painted run down the base: the rear wall's strip, 12 px of
+# range A's brick with the strap on it (the rear wall and its trapezoid
+# sample it), and the rear coping side's strip, likewise
+COND_S0 = BH - COND_X - 6 / PPM         # the strip's start along the rear wall
+COND_SW = 12
+COND_BASE_R = (998, 0, COND_SW, BASE_TOP_PX)
+COND_COPING_R = (724, 816, COND_SW, m(Z_CAP - Z_OCT))
+PATCH_NAMES = ("blank", "soot", "conc", "under", "rim", "steel", "deck", "copper")
 PATCHES = {n: (940 + 24 * (i % 3), 660 + 24 * (i // 3), 16, 16)
            for i, n in enumerate(PATCH_NAMES)}
 
@@ -217,14 +253,15 @@ BAND_W = 0.05
 ID_BLANK, ID_CONC, ID_BRICK, ID_BRICK2, ID_MORTAR = 0, 1, 2, 3, 4
 ID_GALV, ID_LADDER, ID_HATCH, ID_PLATE, ID_SOOT = 5, 6, 7, 8, 9
 ID_HEADC, ID_LAMP, ID_LENS, ID_DARK, ID_STEEL, ID_DECK = 10, 11, 12, 13, 14, 15
+ID_COPPER, ID_CAP = 16, 17
 
 SURFACE = {
     ID_BLANK: (0.95, 0.0), ID_CONC: (0.90, 0.0), ID_BRICK: (0.84, 0.0),
     ID_BRICK2: (0.80, 0.0), ID_MORTAR: (0.94, 0.0), ID_GALV: (0.55, 0.45),
     ID_LADDER: (0.62, 0.20), ID_HATCH: (0.58, 0.0), ID_PLATE: (0.74, 0.10),
-    ID_SOOT: (0.97, 0.0), ID_HEADC: (0.88, 0.0), ID_LAMP: (0.50, 0.0),
-    ID_LENS: (0.08, 0.0), ID_DARK: (0.96, 0.0), ID_STEEL: (0.60, 0.35),
-    ID_DECK: (0.70, 0.20),
+    ID_SOOT: (0.97, 0.0), ID_HEADC: (0.95, 0.0), ID_LAMP: (0.50, 0.0),
+    ID_LENS: (0.06, 0.0), ID_DARK: (0.96, 0.0), ID_STEEL: (0.60, 0.35),
+    ID_DECK: (0.70, 0.20), ID_COPPER: (0.58, 0.30), ID_CAP: (0.66, 0.25),
 }
 
 # One brick per instance, the same three as the plant's other brick
@@ -247,9 +284,9 @@ DEFAULT_VARIANT = "red_brick"
 FIXED = {
     ID_BLANK: (52, 52, 52), ID_CONC: (156, 154, 147), ID_GALV: (104, 105, 102),
     ID_LADDER: (40, 40, 41), ID_HATCH: (58, 66, 62), ID_PLATE: (44, 43, 42),
-    ID_SOOT: (22, 21, 20), ID_HEADC: (166, 164, 158), ID_LAMP: (92, 94, 96),
+    ID_SOOT: (22, 21, 20), ID_HEADC: (158, 155, 148), ID_LAMP: (92, 94, 96),
     ID_LENS: (112, 30, 26), ID_DARK: (24, 24, 24), ID_STEEL: (70, 71, 70),
-    ID_DECK: (58, 58, 58),
+    ID_DECK: (58, 58, 58), ID_COPPER: (96, 110, 90), ID_CAP: (46, 46, 47),
 }
 
 BRICK_IDS = (ID_BRICK, ID_BRICK2, ID_MORTAR)
@@ -424,28 +461,76 @@ def paint_ladder(c):
         for yr in _period_rows(y_a, y_b, y0, pitch, [pitch * 0.5]):
             c.paint(cx - hw, cx + hw, max(yr, y_a), min(yr + 1.8, y_b), ID_LADDER, 1.0,
                     0.9, height=LADDER_RELIEF)
+        # the down conductor, COND_X east of the ladder's axis (U runs west
+        # across the back facet), the far tiers' only trace of it
+        paint_conductor(c, cx - m(COND_X), y_a, y_b, y0)
+
+
+def paint_conductor(c, xc, y0, y1, ref):
+    """The copper strap, a column at *xc* from row y0 to y1: a dull,
+    weathered copper face COND_W wide, raised, a soft shadow either side,
+    and a saddle every metre from row *ref* (a band's V period is four
+    metres, so they tile)."""
+    hw = m(COND_W) / 2.0
+    c.mul(xc - hw - 1.2, xc + hw + 1.2, y0, y1, 0.86, ao=0.85)
+    c.paint(xc - hw, xc + hw, y0, y1, ID_COPPER, 1.0, 0.95, height=0.006)
+    for yr in _period_rows(y0, y1, ref, m(1.0), [m(0.5)]):
+        c.paint(xc - hw - 0.8, xc + hw + 0.8, max(yr - 0.7, y0), min(yr + 0.7, y1),
+                ID_COPPER, 0.8, 0.85, height=0.009)
 
 
 # ================================================================= the head
+HEAD_BOARDS = 80        # formwork staves round the head band (~0.1 m)
+HEAD_LIFT = 0.9         # the lift joint, above the band's foot
+
+
 def paint_head(c):
-    """The head band: pale cast concrete in three lifts of formwork, its
-    joints faint grooves, and the steel cap ring over its top 0.1 m."""
+    """The head band: cast concrete in two lifts against narrow vertical
+    staves, so its face carries the boards' marks: each stave its own tone
+    and a millimetre or two proud or back, a fin at every joint, the grain
+    of the wood, and a row of form-tie holes in each lift. The lift joint
+    is a dark groove with the upper lift's staves offset half a board. The
+    top 0.1 m is the cap ring, distinct dark steel with a drip shadow."""
     x, y, w, h = HEAD_R
     c.paint(x - PAD, x + w + PAD, y - PAD, y + h + PAD, ID_HEADC, 1.0, 1.0, height=0.0)
-    for k in (1, 2):
-        yj = y + h * k / 3.0
-        c.paint(x - PAD, x + w + PAD, yj - 0.6, yj + 0.6, ID_HEADC, 0.9, 0.9, height=-0.003)
+    bw = w / HEAD_BOARDS
+    yj = y + m(HEAD_LIFT)
+    sy, sx, Y, X = c.field(x - PAD, x + w + PAD, y - PAD, y + h + PAD)
+    upper = Y >= yj
+    off = np.where(upper, 0.5 * bw, 0.0)
+    b = np.floor((X - x - off) / bw).astype(np.int64) % HEAD_BOARDS
+    lift = upper.astype(np.int64)
+    fin = ((X - x - off) % bw) < 0.45
+    tone = 0.95 + 0.10 * atlas.hash_unit(b, lift, 71)
+    proud = 0.0015 * (atlas.hash_unit(b, lift, 73) - 0.5)
+    c.shade[sy, sx] = tone * np.where(upper, 0.97, 1.0)
+    c.height[sy, sx] = np.where(fin, 0.0018, proud)
+    c.ao[sy, sx] = np.where(fin, 0.92, 1.0)
+    # the grain: long streaks along the staves, in height and tone
+    grain = atlas.noise(c, 41, 0.5, 14.0)[sy, sx]
+    c.height[sy, sx] += 0.0005 * grain
+    c.shade[sy, sx] *= 1.0 + 0.025 * grain
+    # the lift joint
+    c.paint(x - PAD, x + w + PAD, yj - 0.5, yj + 0.5, ID_HEADC, 0.72, 0.7, height=-0.004)
+    c.mul(x - PAD, x + w + PAD, yj - 2.0, yj - 0.5, 0.92)
+    # form-tie holes, a row in each lift, every fourth stave
+    for zt in (0.40, HEAD_LIFT + 0.45):
+        for k in range(HEAD_BOARDS // 4):
+            cx = x + (4 * k + 2 + (0.5 if zt > HEAD_LIFT else 0.0)) * bw
+            c.disc(cx, y + m(zt), 0.9, ID_HEADC, 0.55, 0.6, height=-0.004)
+    # the cap ring
     yc = y + h - m(CAP_RING)
-    c.paint(x - PAD, x + w + PAD, yc, y + h + PAD, ID_GALV, 0.92, 1.0, height=0.0)
+    c.paint(x - PAD, x + w + PAD, yc, y + h + PAD, ID_CAP, 1.0, 1.0, height=0.0)
     c.bevel(x - PAD, x + w + PAD, yc, y + h + PAD, 0.006, 1.0, axes="y")
-    c.mul(x - PAD, x + w + PAD, yc - 2, yc, 0.86, ao=0.80)
+    c.mul(x - PAD, x + w + PAD, yc - 2.5, yc, 0.78, ao=0.72)
     # the band stands 0.06 proud: its foot's arris
     c.paint(x - PAD, x + w + PAD, y - PAD, y + 1.5, ID_HEADC, 0.92, 0.9, height=0.0)
 
 
 def paint_lamp(c):
-    """An obstruction lamp's sides: a grey cast housing 0.08 m tall, then the
-    red glass lens. Its top samples the lens, its foot the housing."""
+    """An obstruction lamp's sides: the grey cast housing, then the red
+    glass lens. The body's faces sample it by height; the dome samples the
+    lens's top rows, the underside the housing."""
     x, y, w, h = LAMP_R
     yl = y + m(LAMP_Z[1] - LAMP_Z[0])
     c.paint(x - PAD, x + w + PAD, y - PAD, yl, ID_LAMP, 1.0, 0.95, height=0.0)
@@ -503,11 +588,33 @@ def paint_hatch(c):
             0.9, 0.9, height=0.03)
 
 
+def conductor_strips(c, arrays):
+    """The conductor's run down the base, painted: range A's columns under
+    the rear wall's strip and the coping's under its rear side's copied, for
+    each array in *arrays*, into their own regions, so the brick and the
+    concrete run on across the strip's edges, and the strap painted down
+    the middle of each; and the strap across the wash, seen from above."""
+    ss = c.ss
+    s_cop = OCT_A - COND_X - (COND_SW / 2.0) / PPM      # the rear coping side runs west
+    for (x, y, w, h), u0 in ((COND_BASE_R, m(U_OFF["rear"] + COND_S0)),
+                             (COND_COPING_R, COPING_R[0] + m(s_cop))):
+        rows = slice(c._idx(y - PAD), c._idx(y + h + PAD))
+        a0, d0 = int(round((u0 - PAD) * ss)), int(round((x - PAD) * ss))
+        n = (w + 2 * PAD) * ss
+        for A in arrays:
+            A[rows, d0:d0 + n] = A[rows, a0:a0 + n]
+        paint_conductor(c, x + w / 2.0, y - PAD, y + h + PAD, PL_Y0)
+    x, y, w, h = WASH_R
+    xc = x + w / 2.0 + COND_X * WASH_PPM
+    c.stroke((xc, y + h / 2.0 + (R0 + 0.02) * WASH_PPM), (xc, y + h / 2.0 + BH * WASH_PPM + 1.0),
+             0.9, ID_COPPER, 0.9)
+
+
 def paint_patches(c):
     spec = {"blank": (ID_BLANK, 1.0, 1.0), "soot": (ID_SOOT, 0.9, 0.5),
             "conc": (ID_CONC, 0.92, 0.9), "under": (ID_HEADC, 0.55, 0.6),
             "rim": (ID_SOOT, 1.25, 0.8), "steel": (ID_STEEL, 1.0, 1.0),
-            "deck": (ID_DECK, 1.0, 0.9)}
+            "deck": (ID_DECK, 1.0, 0.9), "copper": (ID_COPPER, 0.9, 1.0)}
     for name, (mid, sh, ao) in spec.items():
         x, y, w, h = PATCHES[name]
         c.paint(x - 2, x + w + 2, y - 2, y + h + 2, mid, sh, ao, height=0.0)
@@ -516,7 +623,8 @@ def paint_patches(c):
 # ------------------------------------------------------------------ checks
 def _rects():
     out = {"inlet": INLET_R, "wash": WASH_R, "hatch": HATCH_R, "lamp": LAMP_R,
-           "head": HEAD_R, "coping": COPING_R,
+           "head": HEAD_R, "coping": COPING_R, "cond_base": COND_BASE_R,
+           "cond_coping": COND_COPING_R,
            "base": (0, PL_Y0, m(4 * BH), BASE_TOP_PX)}
     for name, (x0, y0, ov, sx, sw) in BANDS.items():
         out[name] = (x0 - SHAFT_ML, y0 - 2, SHAFT_ML + SHAFT_P + ov, BAND_H + 4)
@@ -555,8 +663,12 @@ def check_regions():
     if Z_LINTEL[1] + 0.2 > Z_SQ:
         problems.append("the lintel crowds the square walls' head")
     lamp_px = m(LAMP_Z[2] - LAMP_Z[0])
-    if abs(lamp_px - LAMP_R[3]) > 1.0 or LAMP_R[2] < m(2 * LAMP_HALF):
+    if abs(lamp_px - LAMP_R[3]) > 1.0 or LAMP_R[2] < m(LAMP_RAD) + 2:
         problems.append("the lamp region does not match the lamp")
+    if abs(m(COND_S0) - round(m(COND_S0))) > 1e-6 or COND_BASE_R[3] != BASE_TOP_PX:
+        problems.append("the conductor's wall strip is not whole columns of the base band")
+    if abs(COND_COPING_R[3] - COPING_R[3]) > 1e-6 or COND_COPING_R[1] != COPING_R[1]:
+        problems.append("the conductor's coping strip does not match the coping")
     if problems:
         raise ValueError("atlas layout: " + "; ".join(problems))
 
@@ -592,17 +704,54 @@ STREAK = _streak(31, SHAFT_P)
 
 
 def soot_shaft(z):
-    """The shaft's soot by height: none below Z_SOOT0, then thickening up
-    the stack's upper third to the head."""
+    """The shaft's soot by height: none below Z_SOOT0, then thickening
+    almost linearly over the shaft's upper third, from its first trace at
+    32.7 m to heaviest under the head. MID repeats under every lift below
+    Z_SOOT0, so the grade cannot start lower without a fifth band."""
     t = np.clip((z - Z_SOOT0) / (Z_HEAD0 - Z_SOOT0), 0.0, None)
-    return 0.95 * t ** 1.3
+    return 0.98 * t ** 1.05
 
 
 def soot_head(z):
-    """The head band's: from the shaft's level at its foot to heavy at the
-    cap ring."""
-    t = np.clip((z - Z_HEAD0) / (Z_TOP - Z_HEAD0), 0.0, 1.0)
-    return 0.50 + 0.50 * t ** 1.5
+    """The head band's, before its runs: a moderate film at its foot
+    grading to heavy under the cap ring."""
+    t = np.clip((z - Z_HEAD0) / (Z_TOP - Z_HEAD0 - CAP_RING), 0.0, 1.0)
+    return 0.34 + 0.52 * t ** 1.3
+
+
+# The head band is the stack's one surface unwrapped once round (it does not
+# tile), so its soot can favour one side: the leeward, taken as east (+X).
+LEE = 0.0
+
+
+def head_angle(U):
+    """The angle round the stack, degrees, of head-band column *U* on LOD0
+    (24 sides, the unwrap starting at facet 0's first corner); the coarser
+    tiers' unwraps differ by a few columns."""
+    n = SIDES[0]
+    w = chord(R_HEAD, n) * PPM * n
+    return 90.0 - 180.0 / n + 360.0 * (U - HEAD_R[0]) / w
+
+
+def head_runs(seed=53, count=90):
+    """Soot runs hanging from the cap ring: narrow streaks of random width,
+    length and weight, periodic round the band's width. Returns f(Y, X)."""
+    x, y, w, h = HEAD_R
+    top = y + h - m(CAP_RING)
+    rs = np.random.RandomState(seed)
+    xs = rs.uniform(0, w, count)
+    wid = rs.uniform(0.7, 2.6, count)
+    length = m(rs.uniform(0.15, 1.5, count))
+    amp = rs.uniform(0.2, 0.65, count)
+
+    def f(Y, X):
+        out = np.zeros_like(X)
+        d = np.clip(top - Y, 0.0, None)
+        for xk, wk, lk, ak in zip(xs, wid, length, amp):
+            dx = (X - x - xk + w / 2.0) % w - w / 2.0
+            out += ak * np.exp(-(dx / wk) ** 2) * np.clip(1.0 - d / lk, 0.0, 1.0) ** 1.5
+        return out
+    return f
 
 
 def paint_soot(c):
@@ -619,9 +768,16 @@ def paint_soot(c):
     for a, b in band_extent("U3"):
         c.mul(a, b, y0 + BAND_H - 2.5, y0 + BAND_H + 4, 0.80, ao=0.75)
     x, y, w, h = HEAD_R
-    soot(c, x - PAD, x + w + PAD, y - PAD, y + h + PAD,
-         lambda Y, X: np.clip(soot_head(Z_HEAD0 + (Y - y) / PPM)
-                              * _streak(37, w, 0.45)(X - x), 0.0, 1.0))
+    runs, streak = head_runs(), _streak(37, w, 0.18)
+
+    def head(Y, X):
+        side = 1.0 + 0.22 * np.cos(np.radians(head_angle(X) - LEE))
+        s = soot_head(Z_HEAD0 + (Y - y) / PPM) * streak(X - x) + runs(Y, X)
+        return np.clip(s * side, 0.0, 1.0)
+    soot(c, x - PAD, x + w + PAD, y - PAD, y + h - m(CAP_RING), head)
+    # the cap ring itself: sooted steel, a little more on the lee
+    soot(c, x - PAD, x + w + PAD, y + h - m(CAP_RING), y + h + PAD,
+         lambda Y, X: 0.35 + 0.1 * np.cos(np.radians(head_angle(X) - LEE)))
 
 
 def weather(c):
@@ -633,7 +789,8 @@ def weather(c):
     after (paint_soot). The head gets rain runs down from the cap ring.
     """
     brick = BRICK_IDS
-    steel = (ID_GALV, ID_LADDER, ID_HATCH, ID_PLATE, ID_LAMP, ID_STEEL, ID_DECK)
+    steel = (ID_GALV, ID_LADDER, ID_HATCH, ID_PLATE, ID_LAMP, ID_STEEL, ID_DECK, ID_CAP,
+             ID_COPPER)
     w = weathering.Weather(c, clean=(ID_LENS,), steel=steel, tile_y=ATLAS // BAND_H)
     w.grime()
     w.fade((ID_HATCH, ID_LAMP))
@@ -658,7 +815,7 @@ def weather(c):
     w.runs(x - PAD, x + hw + PAD, y, y + hh - m(CAP_RING), (ID_HEADC,), 0.22,
            fall=40.0, noise="long")
     w.add("R", x - PAD, x + hw + PAD, y + hh - m(CAP_RING), y + hh + PAD,
-          lambda Y, X, nz: 0.12 + 0.15 * nz("blotch"), (ID_GALV,))
+          lambda Y, X, nz: 0.10 + 0.14 * nz("blotch"), (ID_CAP,))
     # the coping and the wash
     x, y, cw, ch = COPING_R
     w.add("D", x - PAD, x + cw + PAD, y - PAD, y + ch + PAD,
@@ -707,6 +864,7 @@ def paint(ss=atlas.SS):
     c.height[mineral] += 0.0006 * pores[mineral]
     w = weather(c)
     tile_shaft(c, [c.mid, c.shade, c.ao, c.height] + list(w.f.values()))
+    conductor_strips(c, [c.mid, c.shade, c.ao, c.height] + list(w.f.values()))
     paint_galv(c)
     paint_ladder(c)
     paint_soot(c)
@@ -725,10 +883,17 @@ def lut(variant):
     return t
 
 
+# The lenses' emission colour. An obstruction lamp is red by definition, so
+# unlike a window pane (neutral grey, its colour the consumer's) the mask is
+# painted saturated red: the consumer's tint and intensity multiply a red
+# source (notes.md, Night lighting).
+LAMP_GLOW = (255, 26, 14)
+
+
 def lamp_emission(c):
     """The emission map: the lamps' lenses and nothing else, each lens a
-    soft bright core falling to about 0.6 at its rim, neutral grey so the
-    consumer's factor sets its colour (notes.md, Night lighting)."""
+    soft bright core falling to about 0.6 at its rim, in LAMP_GLOW's red,
+    blended in linear light."""
     cov = atlas.coverage(c, ID_LENS)
     Y, X = np.mgrid[0:ATLAS, 0:ATLAS].astype(np.float32) + 0.5
     x, y, w, h = LAMP_R
@@ -736,8 +901,9 @@ def lamp_emission(c):
     cx, cy = x + w / 2.0, (yl + y + h) / 2.0
     glow = 0.6 + 0.4 * np.exp(-((X - cx) ** 2 + (Y - cy) ** 2) / (2 * 5.0 ** 2))
     near = (np.abs(X - cx) < w / 2 + 2 * PAD) & (Y > yl - 2) & (Y < y + h + 2 * PAD)
-    v = np.where(near, cov * glow, 0.0) * 255.0
-    return np.repeat(v[..., None], 3, axis=-1)
+    v = np.where(near, cov * glow, 0.0)
+    red = atlas.srgb_to_linear(np.array(LAMP_GLOW, np.float32))
+    return atlas.linear_to_srgb(v[..., None] * red[None, None, :])
 
 
 def export(out_dir, ss=atlas.SS):
