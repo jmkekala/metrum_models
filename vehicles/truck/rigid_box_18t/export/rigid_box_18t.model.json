@@ -4,7 +4,7 @@
   "kind": "vehicle",
   "name": "rigid_box_18t",
   "path": "vehicles/truck/rigid_box_18t",
-  "source": {"commit": "05e6604cd592f96fc123960f1bfe1f80a1eb9adf", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "db1af2b244807bac18148757d6a1b209bee48889", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-1.493, 0.0, -3.95], "max": [1.493, 3.7, 3.95]},
   "body": {
