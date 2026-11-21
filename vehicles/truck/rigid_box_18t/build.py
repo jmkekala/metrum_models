@@ -7,21 +7,26 @@
 
 Stations, the atlas layout and the UV mappings are truck_atlas.py's (L).
 
-LOD0/LOD1: the cab is a loft of rounded rings (rounded vertical corners and
-roof edge, raked screen) with its arches, step wells, screen, door glass,
-grille and side repeaters cut in by exact booleans; each lamp and pane is
-the floor of the cutter that makes its recess, so it carries its own id and
-UVs. A bumper loft with the headlamp units and the front plate, the step
-carriers, the roof deflector and its side flaps, the box (panels set in
-behind aluminium rails, corner posts and a rear frame round an inset roller
-door, marker lamps in the rails), the chassis rails, subframe and cross
-bearers, the fuel tank, battery box and tanks, side guards on brackets,
-mudguards with flaps, axle housings, the rear under-run bar with the lamp
-housings and plate are unioned into one closed body. Mirrors are separate
-closed solids a few millimetres off the cab; wheels are revolved closed
-solids, the rear twins one part a side. LOD2: plain massing with lamp cells
-on flat faces, the wheels as hexagonal prisms in the body. LOD3: one
-extruded side profile.
+LOD0/LOD1: the cab and the dark lower module under it (bumper, corner and
+step fairings) are one loft of plan rings: a front bowed in plan, rounded
+corners, a set-back chin and a ledge at the bumper's top, sides leaning in
+above the belt, a raked screen panel and a rounded roof edge. Exact
+booleans cut the arches, the screen inside its rounded outline, the door
+glass with its dropped front corner, the grille, the step wells, the
+headlamp units, the front plate and the recess between the lamp pods;
+each lamp and pane is the floor of the cutter that makes its recess, so it
+carries its own id and UVs. The roof fairing (a second loft, its nose a
+convex curve), a bowed sun visor and the black fender lips are unioned in.
+Corner blades, cab side collars, the front mudguards' rear quarters, the
+box (panels set in behind aluminium rails, corner posts and a rear frame
+round an inset roller door, marker lamps in the rails), the chassis rails,
+subframe and cross bearers, the fuel tank, battery box and tanks, side
+guards on brackets, mudguards with flaps, axle housings, the rear
+under-run bar with the lamp housings and plate are closed solids that
+touch nothing. Mirrors are closed solids a few millimetres apart and off
+the cab; wheels are revolved closed solids, the rear twins one part a
+side. LOD2: plain massing with lamp cells on flat faces, the wheels as
+hexagonal prisms in the body. LOD3: two extruded side profiles.
 """
 
 import importlib
@@ -113,12 +118,6 @@ def uv_cab_roof(co):
     return L.at("cab_roof", x + L.CAB_HW, s - 0.30)
 
 
-def uv_bumper_front(co):
-    x, _s, z = sw(co)
-    v = float(np.interp(z, [r[0] for r in L.BUMPER_RINGS], L.BUMPER_V))
-    return L.at("bumper", abs(x), v)
-
-
 def uv_lod3_side(co):
     _x, s, z = sw(co)
     return L.at("lod3_side", s, z, ppm=L.LOD3_PPM)
@@ -135,9 +134,10 @@ def uv_lod3_rear(co):
 
 
 PAINT_CAB = K("cabpaint", paint=True) if "cabpaint" in L.REG else None
-DARK, LINER, ALU, ALU_LOW, TANK, GUARD, RUBBER, PLASTIC, STEP, HOUSING, SEAL, MBODY, MGLASS = (
-    K(n) for n in ("dark", "liner", "alu", "alu_low", "tank", "guard", "rubber", "plastic",
-                   "step", "housing", "seal", "mirror_body", "mirror"))
+(DARK, LINER, ALU, TANK, GUARD, RUBBER, PLASTIC, STEP, HOUSING, SEAL, MBODY, MGLASS, BEZEL,
+ MESH) = (
+    K(n) for n in ("dark", "liner", "alu", "tank", "guard", "rubber", "plastic", "step",
+                   "housing", "seal", "mirror_body", "mirror", "bezel", "mesh"))
 
 
 def lamp(lid, colour=None):
@@ -179,11 +179,6 @@ def box(B, x0, x1, s0, s1, z0, z1, k):
 def xbox(x0, x1, s0, s1, z0, z1, k):
     """box() as its own object."""
     return obj(box(new(), min(x0, x1), max(x0, x1), s0, s1, z0, z1, k))
-
-
-def mirrored(fn):
-    """[fn(+1), fn(-1)]: a part and its mirror image."""
-    return [fn(1), fn(-1)]
 
 
 def prism(B, pts, axis, a0, a1, kside, kcap, smooth=False):
@@ -241,7 +236,7 @@ def unit(v):
     return v / np.linalg.norm(v)
 
 
-def loft(B, rings, band_kind, top=None, bottom=None, smooth=True):
+def loft_faces(B, rings, band_kind, top=None, bottom=None, smooth=True):
     """Quads between closed rings [[(xyz, uv), ...], ...] of equal length;
     band_kind(i, j) -> (surface, paint) for the quad from ring i, point j.
     *top* and *bottom* (K) close the last and first rings."""
@@ -268,78 +263,211 @@ def full_ring(half):
     return half + [(-q[0],) + tuple(q[1:]) for q in reversed(half[1:-1])]
 
 
-# ================================================================ cab
-def front_station(x, z):
-    """The cab front's station at (x, z): the corner station from the
-    rings, the bow across."""
-    zs = [r[0] for r in L.CAB_RINGS]
-    sf = float(np.interp(z, zs, [r[1] for r in L.CAB_RINGS]))
-    xe = L.CAB_HW - L.CAB_RINGS[0][3]
-    return L.bowed(x, sf, xe, L.CAB_BOW)
+# ================================================================ shell
+def poly_pocket(c, U, V_, N, pts, depth, floor, wall, out=0.10):
+    """A cutter prism on a host face: outline *pts* [(a, b)] in the face's
+    axes U, V_ round *c*, its floor (one face, kind *floor*) *depth* under
+    the surface, its lid *out* above it."""
+    c, U, V_, N = (np.asarray(v, float) for v in (c, U, V_, N))
+
+    def p(a, b, t):
+        return P(*(c + U * a + V_ * b + N * t))
+    B = new()
+    put(B, [p(a, b, -depth) for a, b in pts], floor, False)
+    put(B, [p(a, b, out) for a, b in reversed(pts)], wall, False)
+    n = len(pts)
+    for i in range(n):
+        (a0, b0), (a1, b1) = pts[i], pts[(i + 1) % n]
+        put(B, [p(a0, b0, -depth), p(a1, b1, -depth), p(a1, b1, out), p(a0, b0, out)], wall,
+            False)
+    return obj(B, "pocket")
 
 
-def bowed_cutter(z0, z1, hw, depth, nseg, rect, surface, wall):
-    """A recess cut into the bowed front between z0 and z1, |x| <= hw: its
-    floor follows the bow *depth* behind the surface in strips, each mapped
-    across *rect* by x and z, tagged *surface*; walls *wall*."""
-    xs = [-hw + 2 * hw * k / (2 * nseg) for k in range(2 * nseg + 1)]
+def split_quads(B):
+    """Split every quad of *B* that is not flat into two triangles, the
+    diagonal mirrored about x = 0. A twisted quad left whole is cut one way
+    by one boolean and the other way by the next, and the cuts made in it
+    then stand a fraction of a millimetre off the surface as fins."""
+    for method, sign in (('FIXED', 1.0), ('ALTERNATE', -1.0)):
+        quads = []
+        for f in B.bm.faces:
+            if len(f.verts) != 4 or f.calc_center_median().x * sign < 0.0:
+                continue
+            p = [v.co for v in f.verts]
+            n = (p[1] - p[0]).cross(p[2] - p[0])
+            if n.length > 0.0 and abs((p[3] - p[0]).dot(n.normalized())) > 1e-7:
+                quads.append(f)
+        if quads:
+            bmesh.ops.triangulate(B.bm, faces=quads, quad_method=method)
+    return B
+
+
+def join(objs, name="joined"):
+    """Several closed solids that touch nothing, as one object."""
+    bm = bmesh.new()
+    for o in objs:
+        bm.from_mesh(o.data)
+    me = bpy.data.meshes.new(name)
+    bm.to_mesh(me)
+    bm.free()
+    for o in objs:
+        d = o.data
+        bpy.data.objects.remove(o, do_unlink=True)
+        bpy.data.meshes.remove(d)
+    return bpy.data.objects.new(name, me)
+
+
+def level_shell(level):
+    """A tier's shell: its loft, the (bow, front arc, rear arc) segments,
+    the kind of each band between rings and the ring range of the cab's
+    screen panel."""
+    R, V = L.SHELL.rings, L.SHELL.v
+    if level == 0:
+        kinds = ["low"] * (L.N_LOWER - 1) + ["ledge", "foot", "cab", "cab", "screen", "cab",
+                                             "cab", "cab"]
+        return L.SHELL, (3, 4, 2), kinds, (L.I_SCR0, L.I_SCR1)
+    face = R[L.I_FACE[0]]
+    foot = (L.Z_FOOT,) + face[1:]           # no chin, no tucked valance
+    top = (R[L.I_TOP][0],) + face[1:]       # no rolled top edge
+    if level == 1:
+        idx = (L.I_LEDGE, L.I_SCR0, L.I_SCR1, L.I_ROOF)
+        kinds = ["low", "ledge", "cab", "screen", "cab"]
+    else:                                   # the ledge too is the texture's
+        idx = (L.I_SCR0, L.I_SCR1, L.I_ROOF)
+        kinds = ["low", "cab", "screen", "cab"]
+    rings = [foot, top] + [R[i] for i in idx]
+    vs = [V[0], V[L.I_TOP]] + [V[i] for i in idx]
+    n = len(rings)
+    return L.Loft(rings, "cab_band", vs), ((1, 2, 1) if level == 1 else (1, 1, 0)), kinds, \
+        (n - 3, n - 2)
+
+
+def shell(level):
+    loft, (nbow, nf, nb), kinds, _scr = level_shell(level)
+    rings = []
+    for r, v in zip(loft.rings, loft.v):
+        rings.append([(P(x, s, r[0]), loft.px(u, v)) for x, s, u in
+                      full_ring(L.plan_half(r, nbow, nf, nb))])
+    n = len(rings[0])
+
+    def kind(i, j):
+        k = kinds[i]
+        if level == 2 and k == "screen" and (j < nbow or j >= n - nbow):
+            return K("glass_ws", surface=32)   # LOD2: the screen is the whole front face
+        if k in ("low", "ledge"):
+            return 0, False
+        if k == "foot":                        # painted round the front, plastic on the sides
+            return 0, j < nbow + nf or j >= n - nbow - nf
+        return 0, True
+    B = new()
+    loft_faces(B, rings, kind, top=K(uv=uv_cab_roof, paint=True), bottom=DARK)
+    return obj(split_quads(B), "cab")
+
+
+def front_cutter(loft, part, half, depth, floor, wall, cuts=(0.5,), lid=0.10):
+    """A recess cut into the bowed front inside a symmetric outline, *half*
+    its x >= 0 side [(x, z)] from the foot's centre round to the head's.
+    The floor follows the front's parabola *depth* behind it in strips
+    (floor a K), the lid stands *lid* in front. The strips break at the
+    outline's own corners, at the centre line and at *cuts*, which are kept
+    away from the shell's facet edges: a strip edge that crossed the
+    outline a millimetre from a facet edge would leave a sliver."""
+    lo, hi = part
+    xmax = max(q[0] for q in half)
+    first = next(i for i, q in enumerate(half) if q[0] >= xmax - 1e-9)
+    last = max(i for i, q in enumerate(half) if q[0] >= xmax - 1e-9)
+    low, upp = half[:first + 1], half[last:][::-1]
+
+    def zlo(x):
+        return float(np.interp(abs(x), [q[0] for q in low], [q[1] for q in low]))
+
+    def zhi(x):
+        return float(np.interp(abs(x), [q[0] for q in upp], [q[1] for q in upp]))
+    xs = {round(q[0], 5) for q in half} | {round(c, 5) for c in cuts} | {0.0}
+    xs = sorted(x for x in xs if x <= xmax + 1e-9)
+    xs = [-x for x in reversed(xs) if x > 0] + xs
+
+    def F(x, z):
+        return P(x, loft.front(x, z, lo, hi) + depth, z)
+
+    def O(x, z):
+        return P(x, loft.front(x, z, lo, hi) - lid, z)
+
+    def ring(a, b, fn):
+        pts = [fn(a, zlo(a)), fn(b, zlo(b)), fn(b, zhi(b)), fn(a, zhi(a))]
+        return [q for k, q in enumerate(pts) if q != pts[k - 1]]
+    B = new()
+    for a, b in zip(xs, xs[1:]):
+        put(B, ring(a, b, F), floor, False)
+        put(B, ring(a, b, O)[::-1], wall, False)
+        put(B, [F(a, zlo(a)), O(a, zlo(a)), O(b, zlo(b)), F(b, zlo(b))], wall, False)
+        put(B, [F(a, zhi(a)), F(b, zhi(b)), O(b, zhi(b)), O(a, zhi(a))], wall, False)
+    for x in (xs[0], xs[-1]):
+        if zhi(x) - zlo(x) > 1e-6:
+            put(B, [F(x, zlo(x)), F(x, zhi(x)), O(x, zhi(x)), O(x, zlo(x))], wall, False)
+    return obj(split_quads(B), "frontcut")
+
+
+def region_floor(rect, hw, z0, z1, surface=0):
+    """A floor kind mapped across atlas patch *rect* by x and z."""
     fx, fy, fw, fh = VB.patch_uv(L.REG[rect])
 
     def uv(co):
         x, _s, z = sw(co)
         return (fx + fw * (x + hw) / (2 * hw), fy + fh * (z - z0) / (z1 - z0))
-    floor = K(uv=uv, surface=surface)
-    B = new()
-
-    def F(x, z):
-        return P(x, front_station(x, z) + depth, z)
-
-    def O(x, z):
-        return P(x, front_station(x, z) - 0.10, z)
-    for a, b in zip(xs, xs[1:]):
-        put(B, [F(a, z0), F(b, z0), F(b, z1), F(a, z1)], floor, False)
-        put(B, [O(a, z0), O(a, z1), O(b, z1), O(b, z0)], wall, False)
-    for x in (-hw, hw):
-        put(B, [F(x, z0), F(x, z1), O(x, z1), O(x, z0)], wall, False)
-    for z in (z0, z1):
-        put(B, [F(x, z) for x in xs] + [O(x, z) for x in reversed(xs)], wall, False)
-    return obj(B, "bowcut")
+    return K(uv=uv, surface=surface)
 
 
-def cab_rings(level):
-    """Rings, front arc segments, rear arc segments, bowed front segments."""
-    if level == 0:
-        return L.CAB_RINGS, 4, 2, 3
-    if level == 1:
-        keep = (0.80, 1.10, 1.60, 2.55, 2.75)
-        return [r for r in L.CAB_RINGS if r[0] in keep], 2, 1, 1
-    keep = (0.80, 1.60, 2.55, 2.75)
-    return [r for r in L.CAB_RINGS if r[0] in keep], 1, 0, 1
+def lamp_frame(sgn):
+    """The headlamp unit's place on the lower module's bowed face, the
+    same on every tier (LOD0's): centre (x, s, z) on the chord across the
+    unit, axes outward along the face, up, and out of it."""
+    xc, zc, hu, _hv = L.HEADLAMP
+    f0 = L.SHELL.front(xc - hu, zc, *L.I_FACE, nbow=3)
+    f1 = L.SHELL.front(xc + hu, zc, *L.I_FACE, nbow=3)
+    m = (f1 - f0) / (2 * hu)
+    k = math.hypot(1.0, m)
+    return (sgn * xc, (f0 + f1) / 2, zc), (sgn / k, m / k, 0.0), (0.0, 0.0, 1.0), \
+        (sgn * m / k, -1.0 / k, 0.0)
 
 
-def cab_shell(level):
-    rings_p, nf, nb, nbow = cab_rings(level)
-    rings = []
-    for r in rings_p:
-        z = r[0]
-        v = L.cab_v(z)
-        rings.append([(P(x, s, z), L.cab_band_px(u, v)) for x, s, u in
-                      full_ring(L.ring_half(r, nf, nb, nbow))])
-    zs = [r[0] for r in rings_p]
+def headlamp_cells(sgn, grid=True):
+    """Cells of one headlamp unit in its own (a, b): a outward from the
+    unit's centre, b up from its middle. The amber indicator at the outer
+    end, the low and high beam reflectors, the daytime strip under them.
+    Each lens is mapped whole onto its patch. With *grid* the six cells
+    share every corner, so the unit's floor stays closed however the
+    boolean's grid rounds its turned corners. The light bezel is the
+    recess's walls."""
+    _xc, _zc, hu, hv = L.HEADLAMP
+    a_ind, a_split, b_drl = L.LAMP_SPLIT
+    c, U, V_, _N = (np.asarray(v, float) for v in lamp_frame(sgn))
 
-    def kind(i, j):
-        if level == 2 and zs[i] == 1.60 and (j < nbow or j >= len(rings[0]) - nbow):
-            return K("glass_ws", surface=32)   # LOD2: the screen is the whole front face
-        n = len(rings[0])
-        front = max(rings[i][j][0][1], rings[i][(j + 1) % n][0][1]) + L.HL < 0.30
-        return 0, zs[i] >= L.Z_DOOR or level == 2 or front
-    B = new()
-    loft(B, rings, kind, top=K(uv=uv_cab_roof, paint=True), bottom=DARK)
-    return obj(B, "cab")
+    def lens(lid, a0, a1, b0, b1):
+        fx, fy, fw, fh = VB.patch_uv(L.REG[L.lens_kind(lid)])
+
+        def uv(co):
+            d = np.asarray(sw(co)) - c
+            return (fx + fw * (float(d @ U) - a0) / (a1 - a0),
+                    fy + fh * (float(d @ V_) - b0) / (b1 - b0))
+        return K(uv=uv, surface=lid)
+    ind = lens(4 if sgn > 0 else 5, a_ind, hu, -hv, hv)
+    low, high = lens(7, a_split, a_ind, b_drl, hv), lens(8, -hu, a_split, b_drl, hv)
+    drl = lens(9, -hu, a_ind, -hv, b_drl)
+    if not grid:
+        return [(a_ind, hu, -hv, hv, ind), (a_split, a_ind, b_drl, hv, low),
+                (-hu, a_split, b_drl, hv, high), (-hu, a_ind, -hv, b_drl, drl)]
+    return [
+        (a_ind, hu, b_drl, hv, ind), (a_ind, hu, -hv, b_drl, ind),
+        (a_split, a_ind, b_drl, hv, low), (-hu, a_split, b_drl, hv, high),
+        (-hu, a_split, -hv, b_drl, drl), (a_split, a_ind, -hv, b_drl, drl),
+    ]
 
 
-def cab_cutters(level):
-    """Arches, step wells, screen, door glass, grille and repeaters."""
+def shell_cutters(level):
+    """Arches, screen, door glass, repeaters and headlamp units; at LOD0
+    also the grille, the step wells, the front plate and the centre step."""
+    loft, _seg, _kinds, scr = level_shell(level)
     out = []
     sc, zc, ra, xin = L.ARCH
     n = 12 if level == 0 else 4
@@ -351,32 +479,60 @@ def cab_cutters(level):
         a0, a1 = sorted((sgn * xin, sgn * 1.40))
         prism(B, prof, "x", a0, a1, LINER, LINER)
         out.append(obj(B, "arch"))
-    # screen and grille, recessed into the bowed front
-    nseg = 3 if level == 0 else 1
-    wh, wz0, wz1 = L.WSCREEN
-    out.append(bowed_cutter(wz0, wz1, wh, 0.03, nseg, "glass_ws", 32, SEAL))
-    if level == 0:          # LOD1 keeps the grille and cowl in the band's texture
-        gh, gz0, gz1 = L.GRILLE
-        out.append(bowed_cutter(gz0, gz1, gh, 0.035, nseg, "grille", 0, PLASTIC))
-        ch, cz0, cz1, cd = L.COWL
-        out.append(bowed_cutter(cz0, cz1, ch, cd, nseg, "plastic", 0, PLASTIC))
-    g0, g1, gz0_, gz1_ = L.DOOR_GLASS
+    # the screen, recessed into the bowed front inside its rounded outline
+    w = L.WSCREEN
+    if level == 0:
+        half, cuts = L.rounded_outline(w, 2), (0.5,)
+    else:                   # LOD1: the corners sharp, the dark surround still round them
+        half, cuts = [(0.0, w[1]), (w[0], w[1]), (w[2], w[3]), (0.0, w[3])], ()
+    out.append(front_cutter(loft, scr, half, 0.03,
+                            region_floor("glass_ws", w[0], w[1], w[3], 32), SEAL, cuts=cuts))
+    if level == 0:          # LOD1 keeps the grille in the band's texture
+        g = L.GRILLE
+        out.append(front_cutter(L.SHELL, (L.I_LEDGE, L.I_BELT), L.rounded_outline(g, 1), 0.04,
+                                region_floor("grille", g[0], g[1], g[3]), PLASTIC, cuts=(0.45,)))
+    # door glass on the leaning side, side repeaters
+    (z0, z1) = L.Z_SCREEN
+    w0, w1 = L.SHELL.rings[L.I_SCR0][3], L.SHELL.rings[L.I_SCR1][3]
+    dxdz = (w1 - w0) / (z1 - z0)
+    kk = math.hypot(1.0, dxdz)
+    glass = L.DOOR_GLASS if level == 0 else L.DOOR_GLASS_LOD1
+    gs = [q[0] for q in L.DOOR_GLASS]
+    gz = [q[1] for q in L.DOOR_GLASS]
+    s_c, z_c = (min(gs) + max(gs)) / 2, (min(gz) + max(gz)) / 2
+    pts = [(q[0] - s_c, (q[1] - z_c) * kk) for q in glass]
     r0, r1, rz0, rz1 = L.REPEATER
     for sgn in (1, -1):
-        c = (sgn * L.CAB_HW, (g0 + g1) / 2, (gz0_ + gz1_) / 2)
-        hu, hv_ = (g1 - g0) / 2, (gz1_ - gz0_) / 2
-        out.append(pocket(c, (0, 1, 0), (0, 0, 1), (sgn, 0, 0), hu, hv_, 0.02,
-                          [(-hu, hu, -hv_, hv_, K("glass_side", surface=33))], SEAL))
+        c = (sgn * (w0 + dxdz * (z_c - z0)), s_c, z_c)
+        out.append(poly_pocket(c, (0, 1, 0), (sgn * dxdz / kk, 0, 1 / kk),
+                               (sgn / kk, 0, -dxdz / kk), pts, 0.022,
+                               K("glass_side", surface=33), SEAL))
         c = (sgn * L.CAB_HW, (r0 + r1) / 2, (rz0 + rz1) / 2)
         hu, hv_ = (r1 - r0) / 2, (rz1 - rz0) / 2
         out.append(pocket(c, (0, 1, 0), (0, 0, 1), (sgn, 0, 0), hu, hv_, 0.012,
                           [(-hu, hu, -hv_, hv_, lamp(4 if sgn > 0 else 5))], HOUSING))
+        # the headlamp unit, its floor square to the bowed face
+        c, U, V_, N = lamp_frame(sgn)
+        _xc, _zc, hu, hv_ = L.HEADLAMP
+        out.append(obj(obox(new(), c, U, V_, N, hu, hv_, 0.030, 0.14, headlamp_cells(sgn),
+                            BEZEL), "lamp"))
         if level == 0:
-            s0, s1, z0, z1, d = L.STEP_UP
-            c = (sgn * L.CAB_HW, (s0 + s1) / 2, (z0 + z1) / 2)
-            hu, hv_ = (s1 - s0) / 2, (z1 - z0) / 2
-            out.append(pocket(c, (0, 1, 0), (0, 0, 1), (sgn, 0, 0), hu, hv_, d,
-                              [(-hu, hu, -hv_, hv_, PLASTIC)], [STEP, LINER, LINER, LINER]))
+            for (s0, s1, sz0, sz1, d), floor in ((L.STEP_UP, PLASTIC), (L.STEP_LO, PLASTIC)):
+                c = (sgn * L.LOW_HW, (s0 + s1) / 2, (sz0 + sz1) / 2)
+                hu, hv_ = (s1 - s0) / 2, (sz1 - sz0) / 2
+                out.append(pocket(c, (0, 1, 0), (0, 0, 1), (sgn, 0, 0), hu, hv_, d,
+                                  [(-hu, hu, -hv_, hv_, floor)], [STEP, LINER, LINER, LINER]))
+    if level == 0:
+        ph, pz0, pz1 = L.PLATE_F
+        hv_ = (pz1 - pz0) / 2
+        sf = L.SHELL.rings[L.I_CHIN[0]][1]
+        out.append(pocket((0.0, sf, (pz0 + pz1) / 2), (1, 0, 0), (0, 0, 1), (0, -1, 0), ph, hv_,
+                          0.014, [(-ph, ph, -hv_, hv_, K("plate"))], PLASTIC))
+        ch, cz0, cz1, cd = L.CSTEP
+        sf = L.SHELL.rings[L.I_FACE[0]][1]
+        hv_ = (cz1 - cz0) / 2
+        out.append(pocket((0.0, sf, (cz0 + cz1) / 2), (1, 0, 0), (0, 0, 1), (0, -1, 0), ch, hv_,
+                          cd, [(-ch, ch, -hv_, hv_, MESH)], [STEP, PLASTIC, PLASTIC, PLASTIC]))
     return out
 
 
@@ -422,160 +578,156 @@ def tiled_box(x0, x1, s0, s1, z0, z1, front=(), rear=(), base=DARK, front_base=N
     return obj(B, "tiled")
 
 
-# ================================================================ bumper
-def headlamp_cells(sgn):
-    """Cells of one headlamp unit in its pocket's (a, b): a outward from
-    the unit's centre, b up from its middle. A dark housing frame 20 mm
-    wide round the indicator, the low and high beam reflectors and the
-    daytime strip under them."""
-    xi, xo, z0, z1 = L.HEADLAMP
-    xc, zc = (xi + xo) / 2, (z0 + z1) / 2
-    ind = 4 if sgn > 0 else 5
-    b = 0.012                       # a thin dark frame
-    zd = 0.645
-    A = lambda x: x - xc            # noqa: E731
-    Z = lambda z: z - zc            # noqa: E731
-    return xc, zc, (xo - xi) / 2, (z1 - z0) / 2, [
-        (A(0.90), A(xo - b), Z(z0 + b), Z(z1 - b), lamp(ind)),
-        (A(0.76), A(0.90), Z(zd), Z(z1 - b), lamp(7)),
-        (A(xi + b), A(0.76), Z(zd), Z(z1 - b), lamp(8)),
-        (A(xi + b), A(0.90), Z(z0 + b), Z(zd), lamp(9)),
-        (A(xi), A(xo), Z(z0), Z(z0 + b), HOUSING),
-        (A(xi), A(xo), Z(z1 - b), Z(z1), HOUSING),
-        (A(xi), A(xi + b), Z(z0 + b), Z(z1 - b), HOUSING),
-        (A(xo - b), A(xo), Z(z0 + b), Z(z1 - b), HOUSING),
-    ]
-
-
-def bumper_front_cells(drl=True):
-    """(x0, x1, z0, z1, K) cells on the bumper's front face, both lamps."""
-    out = []
-    for sgn in (1, -1):
-        xc, zc, hu, hv, cells = headlamp_cells(sgn)
-        for a0, a1, b0, b1, k in cells:
-            if k.surface == 0 or (not drl and k.surface == 9):
-                continue
-            xs = sorted((sgn * (xc + a0), sgn * (xc + a1)))
-            out.append((xs[0], xs[1], zc + b0, zc + b1, k))
-    return out
-
-
-def bumper(level):
-    z1 = L.BUMPER_RINGS[-1][0]
-    if level >= 1:
-        cells = bumper_front_cells(drl=True)
-        if level == 1:
-            ph, pz0, pz1 = L.PLATE_F
-            cells.append((-ph, ph, pz0, pz1, K("plate")))
-        return tiled_box(-L.BUMPER_HW, L.BUMPER_HW, 0.0, L.BUMPER_D, 0.40, z1, front=cells,
-                         base=PLASTIC, front_base=K(uv=uv_bumper_front))
-    rings = []
-    for z, sf in L.BUMPER_RINGS:
-        v = float(np.interp(z, [r[0] for r in L.BUMPER_RINGS], L.BUMPER_V))
-        rings.append([(P(x, s, z), L.at("bumper", u, v)) for x, s, u in
-                      full_ring(L.bumper_half(sf, 3))])
-    B = new()
-    loft(B, rings, lambda i, j: (0, False), top=PLASTIC, bottom=PLASTIC)
-    cut = []
-    for sgn in (1, -1):
-        xc, zc, hu, hv, cells = headlamp_cells(sgn)
-        sc = L.bowed(xc, L.BUMPER_RINGS[1][1], L.BUMPER_HW - L.BUMPER_R, L.BUMPER_BOW)
-        cut.append(pocket((sgn * xc, sc, zc), (sgn, 0, 0), (0, 0, 1), (0, -1, 0), hu, hv,
-                          0.026, cells, HOUSING))
-    ph, pz0, pz1 = L.PLATE_F
-    hv = (pz1 - pz0) / 2
-    cut.append(pocket((0.0, 0.0, (pz0 + pz1) / 2), (1, 0, 0), (0, 0, 1), (0, -1, 0), ph, hv,
-                      0.006, [(-ph, ph, -hv, hv, K("plate"))], PLASTIC))
-    return asset_build.difference(obj(B, "bumper"), cut, snap=asset_build.SNAP)
-
-
-def carriers(level):
-    s0, s1, x0, x1, z0, z1 = L.CARRIER
-    out = []
-    for sgn in (1, -1):
-        o = xbox(sgn * x0, sgn * x1, s0, s1, z0, z1, PLASTIC)
-        if level == 0:
-            a0, a1, b0, b1, d = L.STEP_LO
-            c = (sgn * x1, (a0 + a1) / 2, (b0 + b1) / 2)
-            hu, hv = (a1 - a0) / 2, (b1 - b0) / 2
-            o = asset_build.difference(o, [pocket(c, (0, 1, 0), (0, 0, 1), (sgn, 0, 0), hu, hv,
-                                                  d, [(-hu, hu, -hv, hv, STEP)], STEP)],
-                                       snap=asset_build.SNAP)
-        out.append(o)
-    return out
-
-
 # ================================================================ deflector
 def deflector(level):
-    if level == 2:
-        st, vs = [L.DEFL[0], L.DEFL[-1]], [L.DEFL_V[0], L.DEFL_V[-1]]
-        rings = []
-        for (s, h, wb, wt), v in zip(st, vs):
-            half = [(0.0, h, 0.0), (wt, h, wt), (wb, L.DEFL_Z0, wt + h - L.DEFL_Z0),
-                    (0.0, L.DEFL_Z0, wt + wb + h - L.DEFL_Z0)]
-            rings.append([(P(x, s, z), L.at("defl", u, v)) for x, z, u in full_ring(half)])
-        B = new()
-        loft(B, rings, lambda i, j: (0, True), top=PAINT_CAB, bottom=PAINT_CAB)
-        return [obj(B, "defl")]
-    st = L.DEFL if level == 0 else [L.DEFL[0], L.DEFL[2], L.DEFL[4]]
-    nc = 3 if level == 0 else 1
-    vs = L.DEFL_V if level == 0 else [L.DEFL_V[0], L.DEFL_V[2], L.DEFL_V[4]]
+    """The roof fairing: a loft of plan rings up a convex nose, painted."""
+    R, V = L.DEFL.rings, L.DEFL.v
+    idx, (nbow, nf) = {0: (range(len(R)), (2, 3)), 1: ((0, 3, 5), (1, 1)),
+                       2: ((0, 5), (0, 0))}[level]
     rings = []
-    for (s, h, wb, wt), v in zip(st, vs):
-        half = L.defl_half((s, h, wb, wt), nc)
-        rings.append([(P(x, s, z), L.at("defl", u, v)) for x, z, u in full_ring(half)])
+    for i in idx:
+        if level == 2:      # a wedge: nose, shoulders, back
+            _z, sc, _bow, wf, _rf, sb, wb, _rb = R[i]
+            se = float(L.plan_frame(*R[i][1:])[5])
+            half = [(0.0, sc, 0.0), (wf, se, wf), (wb, sb, wf + sb - se), (0.0, sb, 9.0)]
+        else:
+            half = L.plan_half(R[i], nbow, nf, 0)
+        rings.append([(P(x, s, R[i][0]), L.DEFL.px(u, V[i])) for x, s, u in full_ring(half)])
+    m = len(half)                            # points in a half ring
+
+    def kind(i, j):
+        return PAINT_CAB if j in (m - 2, m - 1) else (0, True)   # the back wall: a plain patch
     B = new()
-    loft(B, rings, lambda i, j: (0, True), top=PAINT_CAB, bottom=PAINT_CAB)
-    out = [obj(B, "defl")]
-    s0, s1, x0, x1, z0, z1 = L.EXT
-    for sgn in (1, -1):
-        out.append(xbox(sgn * x0, sgn * x1, s0, s1, z0, z1, PAINT_CAB))
-    return out
+    loft_faces(B, rings, kind, top=PAINT_CAB, bottom=PAINT_CAB)
+    return obj(split_quads(B), "defl")
 
 
 def cab_group(level):
-    cab = asset_build.difference(cab_shell(level), cab_cutters(level), snap=asset_build.SNAP)
-    return asset_build.union(cab, deflector(level) + cab_addons(level), snap=asset_build.SNAP)
+    cab = asset_build.difference(shell(level), shell_cutters(level), snap=asset_build.SNAP)
+    # No snap here: the fairing, visor and fender lips share no wall with the
+    # cab, and moving the difference's cut points onto the grid would fold
+    # the slivers beside them.
+    return asset_build.union(cab, [deflector(level)] + cab_addons(level))
+
+
+VISOR = [(0.37, 2.645), (0.09, 2.535), (0.09, 2.505), (0.37, 2.605)]   # (s, z) on the centre line
+
+
+def visor(xs, bow=True, prof=None):
+    """The sun visor over the screen: a plank swept across the cab, bowed
+    with the front (LOD2: a straight wedge)."""
+    prof = prof or VISOR
+    xe = L.SHELL.xe(L.Z_SCREEN[1])
+    n = len(prof)
+    B = new()
+    secs = [[P(x, sv + (L.BOW * (x / xe) ** 2 if bow else L.BOW * 0.35), z) for sv, z in prof]
+            for x in xs]
+    for a, b in zip(secs, secs[1:]):
+        for k in range(n):
+            put(B, [a[k], a[(k + 1) % n], b[(k + 1) % n], b[k]], PLASTIC, False)
+    put(B, secs[0], PLASTIC, False)
+    put(B, secs[-1][::-1], PLASTIC, False)
+    return obj(B, "visor")
+
+
+def arc_prism(sgn, r0, r1, x0, x1, a0, a1, n, kind, smooth=True):
+    """A band round the front axle from angle a0 to a1 (degrees, 0 at the
+    front, 90 over the top), radii r0..r1, across |x| x0..x1."""
+    sc, zc = L.FRONT_AXLE, L.R_WHEEL
+    ang = [math.radians(a0 + (a1 - a0) * k / n) for k in range(n + 1)]
+    outer = [(sc - r1 * math.cos(a), zc + r1 * math.sin(a)) for a in ang]
+    inner = [(sc - r0 * math.cos(a), zc + r0 * math.sin(a)) for a in reversed(ang)]
+    B = new()
+    xa, xb = sorted((sgn * x0, sgn * x1))
+    prism(B, outer + inner, "x", xa, xb, kind, kind, smooth=smooth)
+    return obj(B, "arc")
 
 
 def cab_addons(level):
     """The sun visor over the screen; at LOD0 the black fender lips round
     the front arches."""
-    out = []
-    B = new()
-    prism(B, [(0.34, 2.665), (0.07, 2.59), (0.07, 2.56), (0.34, 2.635)], "x", -1.0, 1.0,
-          PLASTIC, PLASTIC)
-    out.append(obj(B, "visor"))
+    out = [visor((-1.0, -0.5, 0.0, 0.5, 1.0) if level == 0 else (-1.0, 0.0, 1.0))]
     if level == 0:
-        sc, zc, ra, _xin = L.ARCH
-        r0, r1, n = 0.615, 0.71, 8
-        t0, t1 = math.radians(25.0), math.radians(122.0)
-        ang = [t0 + (t1 - t0) * k / n for k in range(n + 1)]
-        outer = [(sc - r1 * math.cos(a), zc + r1 * math.sin(a)) for a in ang]
-        inner = [(sc - r0 * math.cos(a), zc + r0 * math.sin(a)) for a in reversed(ang)]
-        for sgn in (1, -1):
-            B = new()
-            a0, a1 = sorted((sgn * 1.12, sgn * 1.175))
-            prism(B, outer + inner, "x", a0, a1, PLASTIC, PLASTIC, smooth=True)
-            out.append(obj(B, "flare"))
+        r0, r1, x0, x1, a0, a1 = L.FLARE
+        out += [arc_prism(sgn, r0, r1, x0, x1, a0, a1, 6, PLASTIC) for sgn in (1, -1)]
+    return out
+
+
+def blades():
+    """The corner air deflectors (LOD0): a dark blade standing off each
+    front corner of the cab, a closed solid that touches nothing. LOD1 and
+    LOD2 show the dark slot painted behind it."""
+    f0, f1, z0, z1, off, t = L.BLADE
+    ring = L.SHELL.ring_at((z0 + z1) / 2, L.I_DOOR, L.I_BELT)
+    xe, th0, tau, cx, cs, _se, _ls = (float(v) for v in L.plan_frame(*ring[1:]))
+    rf = ring[4]
+    th1 = math.pi / 2 - tau
+    ang = [th0 + (th1 - th0) * (f0 + (f1 - f0) * k / 3) for k in range(4)]
+    out = []
+    for sgn in (1, -1):
+        outer = [(sgn * (cx + (rf + off + t) * math.sin(a)), cs - (rf + off + t) * math.cos(a))
+                 for a in ang]
+        inner = [(sgn * (cx + (rf + off) * math.sin(a)), cs - (rf + off) * math.cos(a))
+                 for a in reversed(ang)]
+        B = new()
+        prism(B, outer + inner, "z", z0, z1, PLASTIC, PLASTIC, smooth=True)
+        out.append(obj(B, "blade"))
+    return out
+
+
+def collars():
+    """The cab's side collars: a painted flap from each rear edge of the
+    cab out to the box's corner, closing the gap in side view. Closed
+    solids that touch nothing: the foot follows the cab's leaning side 4 mm
+    off it, the outer edge stands upright by the box corner."""
+    s0, s1, x1, z0, z1, t = L.COLLAR
+    out = []
+    for sgn in (1, -1):
+        secs = []
+        for z in (z0, z1):
+            x0 = L.SHELL.side(min(z, L.Z_SCREEN[1]), L.I_BELT, L.I_SCR1)[0] + 0.004
+            d = unit((x1 - x0, s1 - s0, 0.0))
+            n = np.array((-d[1], d[0], 0.0)) * t
+            a, b = np.array((x0, s0, z)), np.array((x1, s1, z))
+            secs.append([P(sgn * q[0], q[1], q[2]) for q in (a, b, b + n, a + n)])
+        B = new()
+        lo, hi = secs
+        for k in range(4):
+            put(B, [lo[k], lo[(k + 1) % 4], hi[(k + 1) % 4], hi[k]], PAINT_CAB, False)
+        put(B, lo, PAINT_CAB, False)
+        put(B, hi[::-1], PAINT_CAB, False)
+        out.append(obj(split_quads(B), "collar"))
+    return out
+
+
+def wings(level):
+    """The front mudguards' rear quarters behind the cab, with their
+    flaps: closed solids that touch nothing."""
+    r0, r1, x0, x1, a0, a1 = L.WING
+    out = []
+    for sgn in (1, -1):
+        s1 = L.FRONT_AXLE + r1
+        out.append(arc_prism(sgn, r0, r1, x0, x1, a0, a1, 4, PLASTIC))
+        out.append(xbox(sgn * x0, sgn * x1, s1 - 0.025, s1, L.WING_FLAP,
+                        L.R_WHEEL - r1 * math.sin(math.radians(a1 - 180.0)) - G, RUBBER))
     return out
 
 
 def wipers():
-    """Two parked wiper arms lying 2 mm off the recessed, bowed screen
-    (LOD0): straight bars along a chord of the bow, set forward by its
-    sagitta."""
-    nrm = unit((0.0, -(L.CAB_RINGS[4][0] - L.CAB_RINGS[3][0]),
-                L.CAB_RINGS[4][1] - L.CAB_RINGS[3][1]))
-    xe = L.CAB_HW - L.CAB_RINGS[0][3]
+    """Two parked wiper arms lying a few millimetres off the recessed,
+    bowed screen (LOD0): straight bars along a chord of the bow, set forward
+    by its sagitta."""
+    r3, r4 = L.SHELL.rings[L.I_SCR0], L.SHELL.rings[L.I_SCR1]
+    nrm = unit((0.0, -(r4[0] - r3[0]), r4[1] - r3[1]))
+    xe = L.SHELL.xe(1.75)
     out = []
-    for a0, a1, z0, z1 in ((-0.84, -0.12, 1.70, 1.76), (0.04, 0.76, 1.70, 1.76)):
-        f0 = np.array((a0, front_station(a0, z0) + 0.03, z0))
-        f1 = np.array((a1, front_station(a1, z1) + 0.03, z1))
-        sag = L.CAB_BOW / xe ** 2 * ((a1 - a0) / 2) ** 2
+    for a0, a1, z0, z1 in ((-0.86, -0.14, 1.71, 1.78), (0.04, 0.76, 1.71, 1.78)):
+        f0 = np.array((a0, L.SHELL.front(a0, z0, L.I_SCR0, L.I_SCR1) + 0.03, z0))
+        f1 = np.array((a1, L.SHELL.front(a1, z1, L.I_SCR0, L.I_SCR1) + 0.03, z1))
+        sag = L.BOW / xe ** 2 * ((a1 - a0) / 2) ** 2
         U = unit(f1 - f0)
         V_ = unit(np.cross(nrm, U))
-        ctr = (f0 + f1) / 2 + np.asarray(nrm) * (sag + 0.008)
+        ctr = (f0 + f1) / 2 + np.asarray(nrm) * (sag + 0.010)
         hu = float(np.linalg.norm(f1 - f0)) / 2
         B = new()
         obox(B, ctr, U, V_, nrm, hu, 0.011, 0.006, 0.006, [(-hu, hu, -0.011, 0.011, MBODY)],
@@ -655,11 +807,9 @@ def chassis(level):
             continue
         out.append(xbox(sgn * rx0, sgn * rx1, 1.83, 7.80, *L.RAIL_Z, DARK))
         out.append(xbox(sgn * L.SUB_X[0], sgn * L.SUB_X[1], 1.92, 7.80, zt + G, 1.072, DARK))
-    out.append(xbox(-0.34, 0.34, 0.40, 2.40, 0.48, 0.80 - 0.005, DARK))     # engine, gearbox
+    out.append(xbox(-0.30, 0.30, L.CAB_BACK + G, 2.40, 0.48, 0.80 - 0.005, DARK))   # gearbox
     if level == 0:
-        out.append(xbox(-0.72, 0.72, 1.36, 1.44, 0.40, 0.47, DARK))         # front axle beam
-    if level == 0:
-        for s in (2.45, 3.15, 3.85, 4.55, 5.05, 6.75, 7.40):
+        for s in (2.45, 3.30, 4.15, 5.05, 6.75, 7.40):
             out.append(xbox(-1.20, 1.20, s - 0.03, s + 0.03, 1.075, L.BOX_Z0 - G, DARK))
     # fuel tank, left, on straps from the rail
     s0, s1, xc, zc, r = L.TANK
@@ -667,24 +817,18 @@ def chassis(level):
     B = new()
     prism(B, polygon(xc, zc, r, n, math.pi / n), "s", s0, s1, TANK, TANK)
     out.append(obj(B, "tank"))
-    flat = xc - r * math.cos(math.pi / n)
-    for a, b in ((2.20, 2.27), (2.73, 2.80)) if level == 0 else ((2.45, 2.55),):
-        out.append(xbox(rx1 + G, flat - G, a, b, 0.78, 0.90, DARK))
     # battery box, right
     s0, s1, x0, x1, z0, z1 = L.BATTERY
     out.append(xbox(-x1, -x0, s0, s1, z0, z1, {"all": DARK, "z1": PLASTIC}))
-    out.append(xbox(-(x0 - G), -(rx1 + G), 2.30, 2.40, 0.80, 0.90, DARK))
     if level == 0:
         # AdBlue tank left; an air tank and a silencer right
-        out.append(xbox(0.48, 0.82, 3.05, 3.40, 0.55, 0.92, PLASTIC))
-        out.append(xbox(rx1 + G, 0.48 - G, 3.18, 3.26, 0.80, 0.90, DARK))
+        # each hangs 2 mm off the rail's side, so none needs a bracket
+        out.append(xbox(rx1 + G, 0.82, 3.16, 3.51, 0.55, 0.92, PLASTIC))
         B = new()
-        prism(B, polygon(-0.62, 0.80, 0.11, 6, math.pi / 6), "s", 3.00, 3.90, DARK, DARK)
+        xa = rx1 + G + 0.11 * math.cos(math.pi / 6)
+        prism(B, polygon(-xa, 0.80, 0.11, 6, math.pi / 6), "s", 3.00, 3.90, DARK, DARK)
         out.append(obj(B, "air"))
-        out.append(xbox(-(0.62 - 0.11 * math.cos(math.pi / 6) - G), -(rx1 + G), 3.40, 3.46,
-                        0.76, 0.84, DARK))
-        out.append(xbox(-0.95, -0.50, 4.10, 4.75, 0.62, 0.92, DARK))
-        out.append(xbox(-(0.50 - G), -(rx1 + G), 4.40, 4.48, 0.82, 0.90, DARK))
+        out.append(xbox(-0.95, -(rx1 + G), 4.10, 4.75, 0.62, 0.92, DARK))
     # side guards on brackets
     g0, g1 = L.GUARD_S
     gx0, gx1 = L.GUARD_X
@@ -726,8 +870,6 @@ def chassis(level):
         prism(B, prof, "x", a0, a1, PLASTIC, PLASTIC)
         out.append(obj(B, "mudguard"))
         out.append(xbox(sgn * 0.62, sgn * 1.24, m1 + G, m1 + 0.02, 0.25, 0.62, RUBBER))
-        out.append(xbox(sgn * (L.SUB_X[1] + G), sgn * (mx0 - G), 5.88, 5.94, 1.075, 1.105,
-                        DARK))
     # rear axle housings and differential
     zc = L.R_WHEEL
     if level == 0:
@@ -770,51 +912,78 @@ def rear_lamp(sgn, level):
 
 
 # ================================================================ mirrors
+MIRROR_POST = (1.385, 0.445)              # the post's |x| and station
+MIRROR_ARMS = ((2.40, 0.545), (1.735, 0.45))   # arm heights and their stations on the cab
+
+
+def tube(p0, p1, r, n, kind=None):
+    """A closed tube of n sides from p0 to p1, points in (x, s, z)."""
+    kind = kind or MBODY
+    p0, p1 = np.asarray(p0, float), np.asarray(p1, float)
+    ax = unit(p1 - p0)
+    u = unit(np.cross(ax, (0.0, 0.0, 1.0) if abs(ax[2]) < 0.9 else (1.0, 0.0, 0.0)))
+    v = np.cross(ax, u)
+    ring = [u * math.cos(2 * math.pi * k / n) + v * math.sin(2 * math.pi * k / n)
+            for k in range(n)]
+    B = new()
+    a = [P(*(p0 + q * r)) for q in ring]
+    b = [P(*(p1 + q * r)) for q in ring]
+    for k in range(n):
+        put(B, [a[k], a[(k + 1) % n], b[(k + 1) % n], b[k]], kind, True)
+    put(B, a[::-1], kind, False)
+    put(B, b, kind, False)
+    return obj(B, "tube")
+
+
 def mirror(sgn, level):
-    """A mirror per side: at LOD0 two shaped heads (the tall main mirror and
-    the squarer wide-angle one under it) on a tube post, the post on two
-    tube arms from the cab side; at LOD1 one arm and one block holding both
-    glasses."""
-    def X(a, b):
-        return sorted((sgn * a, sgn * b))
-    parts = []
+    """A mirror per side, as closed solids a few millimetres apart: at LOD0
+    two rounded heads (the tall main mirror and the squarer wide-angle one
+    under it) behind a tube post, the post between two tube arms from the
+    door frame; at LOD1 one arm and one block holding both glasses."""
+    px, ps = MIRROR_POST
+    (zu, su), (zl, sl) = MIRROR_ARMS
+
+    def root(z, s_):
+        return (sgn * (L.SHELL.side(z, L.I_DOOR, L.I_SCR1)[0] + 0.003), s_, z)
     if level >= 1:
-        a, b = X(1.153, 1.385)
-        parts.append(xbox(a, b, 0.40, 0.43, 2.385, 2.415, MBODY))
-        a, b = X(1.30, 1.48)
-        parts.append(xbox(a, b, 0.425, 0.495, 1.80, 2.36, {"all": MBODY, "s1": MGLASS}))
-        return asset_build.union(parts[0], parts[1:], snap=asset_build.SNAP)
-    r = 0.013
-    for z in (2.40, 1.845):                        # arms, tubes along x
-        B = new()
-        a, b = X(1.153, 1.395)
-        prism(B, polygon(0.415, z, r, 6, math.pi / 6), "x", a, b, MBODY, MBODY, smooth=True)
-        parts.append(obj(B, "arm"))
-    B = new()                                      # the post, a tube along z
-    prism(B, polygon(sgn * 1.385, 0.415, r + 0.002, 6), "z", 1.83, 2.415, MBODY, MBODY,
-          smooth=True)
-    parts.append(obj(B, "post"))
-    parts.append(head(sgn, 1.39, 0.10, 0.425, 0.50, 2.17, 0.19, 0.20))      # main
-    parts.append(head(sgn, 1.39, 0.08, 0.425, 0.49, 1.875, 0.075, 0.16))    # wide angle
-    return asset_build.union(parts[0], parts[1:], snap=asset_build.SNAP)
+        a = tube(root(zu, su), (sgn * (px + 0.01), ps, zu), 0.016, 4)
+        x0, x1 = sorted((sgn * 1.30, sgn * 1.49))
+        b = xbox(x0, x1, ps + 0.018, ps + 0.10, 1.78, 2.35, {"all": MBODY, "s1": MGLASS})
+        return join([a, b], "mirror")
+    r = 0.014
+    parts = [tube(root(zu, su), (sgn * (px + 0.015), ps, zu), r, 5),
+             tube(root(zl, sl), (sgn * (px + 0.015), ps, zl), r, 5),
+             tube((sgn * px, ps, zl + r + 0.002), (sgn * px, ps, zu - r - 0.002), r + 0.002, 5),
+             head(sgn, 1.395, 0.098, ps + 0.018, ps + 0.125, 2.14, 0.205, 3),       # main
+             head(sgn, 1.395, 0.088, ps + 0.018, ps + 0.105, 1.84, 0.082, 2)]      # wide angle
+    return join(parts, "mirror")
 
 
-def head(sgn, xc, hx, s0, s1, zc, hz, taper, c=0.03):
+def head(sgn, xc, hx, s0, s1, zc, hz, bands):
     """A mirror head round (xc, zc), half sizes hx across and hz up: a
-    chamfered housing tapering toward the front (s0) by *taper*, rounded
-    over its middle, the dark glass on its rear face (s1)."""
+    housing with a rounded back, small at its front (s0) and swelling to
+    its full outline at the rear face (s1), which is the dark glass. The
+    tall main head (three bands) has its corners rounded in two steps, the
+    small one in one."""
+    nc = 2 if bands == 3 else 1
+
     def ring(s, k):
-        ax, az = hx * k, hz * k
-        cc = min(c, ax * 0.45, az * 0.45)
-        pts = [(ax - cc, az), (ax, az - cc), (ax, -az + cc), (ax - cc, -az),
-               (-ax + cc, -az), (-ax, -az + cc), (-ax, az - cc), (-ax + cc, az)]
+        ax, az = hx * k, hz * k + (hz - hx) * (1.0 - k) * 0.6
+        r = min(ax, az) * 0.62
+        pts = []
+        for qx, qz, a0 in ((1, 1, 0.0), (1, -1, 0.5), (-1, -1, 1.0), (-1, 1, 1.5)):
+            for i in range(nc + 1):
+                a = math.pi * (a0 + 0.5 * i / nc)
+                pts.append((qx * (ax - r) + r * math.sin(a), qz * (az - r) + r * math.cos(a)))
         return [P(sgn * xc + px, s, zc + pz) for px, pz in pts]
-    rings = [ring(s0, 1.0 - taper), ring(s0 + 0.45 * (s1 - s0), 1.0 - taper * 0.25),
-             ring(s1, 1.0)]
+    d = s1 - s0
+    rings = ([ring(s0, 0.50), ring(s0 + 0.22 * d, 0.84), ring(s0 + 0.60 * d, 1.0), ring(s1, 1.0)]
+             if bands == 3 else [ring(s0, 0.55), ring(s0 + 0.40 * d, 0.96), ring(s1, 1.0)])
+    n = len(rings[0])
     B = new()
     for r0, r1 in zip(rings, rings[1:]):
-        for k in range(8):
-            put(B, [r0[k], r0[(k + 1) % 8], r1[(k + 1) % 8], r1[k]], MBODY, True)
+        for k in range(n):
+            put(B, [r0[k], r0[(k + 1) % n], r1[(k + 1) % n], r1[k]], MBODY, True)
     put(B, list(reversed(rings[0])), MBODY, False)
     put(B, rings[-1], MGLASS, False)
     return obj(B, "head")
@@ -828,9 +997,10 @@ def wheel(level, front, outward, half=None):
     R = L.R_WHEEL
     if level == 0:
         sides = 20
+        # the rear pair's inner sidewall, which nothing shows, has no shoulder
         prof = ([(-0.15, 0.49), (-0.12, R), (0.12, R), (0.15, 0.49), (0.15, 0.30),
                  (0.125, 0.285), (0.125, 0.15), (0.15, 0.10)] if front else
-                [(-0.32, 0.49), (-0.29, R), (-0.025, R), (0.0, 0.49), (0.025, R), (0.29, R),
+                [(-0.32, R), (-0.025, R), (0.0, 0.49), (0.025, R), (0.29, R),
                  (0.32, 0.49), (0.32, 0.30), (0.25, 0.285), (0.25, 0.15), (0.30, 0.11)])
     elif level == 1:
         sides = 10
@@ -931,8 +1101,10 @@ def box_lod2():
     B = new()
     rail, panel = K(uv=uv_rail), K(uv=uv_box_side, paint=True)
     for sgn in (1, -1):
+        # the top rail too is unpainted aluminium, as LOD0's: under a dark
+        # paint the box keeps its light frame lines
         tile_face(B, lambda u, v, sgn=sgn: P(sgn * hw, u, v), s0, s1, z0, z1,
-                  [(s0, s1, z0, L.RAIL_LO[1], rail)], panel)
+                  [(s0, s1, z0, L.RAIL_LO[1], rail), (s0, s1, L.RAIL_HI[0], z1, ALU)], panel)
     x0, x1 = L.MARK_END
     rz = L.MARK_REAR_Z
     put(B, [P(-hw, s0, z0), P(-hw, s0, z1), P(hw, s0, z1), P(hw, s0, z0)],
@@ -947,10 +1119,15 @@ def box_lod2():
 
 
 def lod2_parts():
-    B = new()
-    prism(B, [(0.34, 2.665), (0.07, 2.59), (0.07, 2.56), (0.34, 2.635)], "x", -1.0, 1.0,
-          PLASTIC, PLASTIC)
-    parts = [cab_shell(2), bumper(2), obj(B, "visor")] + deflector(2) + [box_lod2()]
+    parts = [shell(2), visor((-0.96, 0.96), bow=False, prof=[VISOR[0], (0.09, 2.52), VISOR[3]]),
+             deflector(2), box_lod2()]
+    # the headlamp units: plaques in LOD0's lens planes, a few millimetres
+    # proud of this tier's flatter face, the lenses their outer faces
+    _xc, _zc, hu, hv = L.HEADLAMP
+    for sgn in (1, -1):
+        c, U, V_, N = lamp_frame(sgn)
+        parts.append(obj(obox(new(), c, U, V_, tuple(-v for v in N), hu, hv, 0.008,
+                              0.0, headlamp_cells(sgn, grid=False), BEZEL), "lamp"))
     parts.append(xbox(-0.95, 0.95, 1.83, 7.64, 0.48, L.BOX_Z0 - G,
                       {"all": DARK, "x0": K(uv=uv_lod3_side), "x1": K(uv=uv_lod3_side)}))
     # the under-run bar and the two lamp housings above its ends
@@ -976,21 +1153,19 @@ def lod2_parts():
 
 
 def body_lod3():
-    """Two extruded side profiles: the painted cab and box (a chamfered
-    nose, the deflector and box front as one slope, the roof) and, a little
-    narrower, the dark unpainted under-body on four wheel feet. 28 + 32
-    triangles."""
+    """Two extruded side profiles: the painted cab and box (the raked nose,
+    the deflector and box front as one slope, the roof) and, a little
+    narrower, the dark unpainted lower module and under-body on four wheel
+    feet. 24 + 36 triangles."""
     hw = L.BOX_HW
-    upper = [(0.0, 0.80), (0.05, 2.45), (0.30, 2.75), (0.75, 2.75), (1.90, 3.70),
-             (7.90, 3.70), (7.90, 1.15), (1.90, 1.15)]
-    lower = [(0.0, 0.79), (1.05, 0.0), (1.75, 0.0), (1.95, 0.45), (5.30, 0.45),
-             (5.50, 0.0), (6.30, 0.0), (7.84, 0.45), (7.84, 1.13)]
+    upper, lower = L.LOD3_UPPER, L.LOD3_LOWER
     out = []
     for prof, w, kinds, side in (
-            (upper, hw, [K(uv=uv_lod3_front, paint=True)] * 4
+            (upper, hw, [K(uv=uv_lod3_front, paint=True)] * 3
              + [K(uv=uv_box_roof), K(uv=uv_lod3_rear), DARK, DARK],
              K(uv=uv_lod3_side, paint=True)),
-            (lower, 1.24, [DARK] * len(lower), K(uv=uv_lod3_side))):
+            (lower, 1.24, [K(uv=uv_lod3_front)] + [DARK] * (len(lower) - 1),
+             K(uv=uv_lod3_side))):
         B = new()
         n = len(prof)
         for i in range(n):
@@ -1005,8 +1180,8 @@ def body_lod3():
 def build_lod(level):
     ang = (40.0, 50.0, 30.0, 30.0)[level]
     if level <= 1:
-        bodies = [cab_group(level), bumper(level)] + carriers(level) + [box_shell(level)] \
-            + chassis(level) + (wipers() if level == 0 else [])
+        bodies = [cab_group(level), box_shell(level)] + chassis(level) \
+            + collars() + (wipers() + wings(level) + blades() if level == 0 else [])
         pieces = [VB.Piece("body", finish(o, ang)) for o in bodies]
         for sgn in (1, -1):
             pieces.append(VB.Piece("mirror", finish(mirror(sgn, level), ang)))
@@ -1038,6 +1213,30 @@ def check_layout():
         problems.append("side marker spacing outside UN R48")
     if L.MUDGUARD[0] < L.GUARD_S[1]:
         problems.append("side guard runs into the mudguard")
+    # the front wing behind the cab: clear of a turned wheel, the cab's back,
+    # the tank, the battery box and the side guards
+    r0, r1, _x0, wx1, a0, _a1 = L.WING
+    if r0 < math.hypot(L.R_WHEEL, hw) + 0.02:
+        problems.append("front wing too near a turned wheel")
+    if L.FRONT_AXLE - r0 * math.cos(math.radians(a0)) < L.CAB_BACK + 0.002:
+        problems.append("front wing runs into the cab's back")
+    back = L.FRONT_AXLE + r1
+    if min(L.TANK[0], L.BATTERY[0]) < back + 0.02 or (L.GUARD_S[0] < back + 0.02
+                                                      and L.GUARD_X[0] < wx1 + 0.002):
+        problems.append("front wing runs into the tank, the battery box or a side guard")
+    # the headlamp unit inside the bumper face's bowed part, over the chin
+    xc, zc, hu, hv = L.HEADLAMP
+    if xc + hu > L.SHELL.xe(zc, *L.I_FACE) - 0.02 or zc - hv < L.Z_CHIN + 0.02 \
+            or zc + hv > L.SHELL.rings[L.I_FACE[1]][0] - 0.02:
+        problems.append("headlamp unit leaves the bumper's face")
+    # screen and grille inside the bowed front, clear of the corner arcs
+    for name, t, part in (("screen", L.WSCREEN, (L.I_SCR0, L.I_SCR1)),
+                          ("grille", L.GRILLE, (L.I_LEDGE, L.I_BELT))):
+        for hw_, z in ((t[0], t[1]), (t[2], t[3])):
+            if hw_ > L.SHELL.xe(z, *part) - 0.02:
+                problems.append("%s reaches the corner arc at z %.2f" % (name, z))
+    if L.COLLAR[2] > L.BOX_HW or L.COLLAR[1] > L.BOX_S0 - 0.01:
+        problems.append("cab collar reaches past the box's side or into its front")
     return problems
 
 

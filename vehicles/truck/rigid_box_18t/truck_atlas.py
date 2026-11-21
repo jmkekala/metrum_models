@@ -76,50 +76,85 @@ WHEELS = [  # part, x, s, width, steer, twin
     (4, -REAR_X, REAR_AXLE, REAR_W, False, True),
 ]
 
-# cab: rings (z, front station, half width, front corner radius, back
-# station, rear corner radius), bottom to roof
-CAB_HW = 1.15
+# The shell: the dark lower module (bumper, corner and step fairings) and the
+# cab on it, one loft of plan rings (z, sc, bow, wf, rf, sb, wb, rb): sc the
+# front station on the centre line, the front a parabola in plan that falls
+# back by *bow* to the corner radius rf, wf the half width where the side
+# starts, sb the back station, wb the half width there, rb the rear radius.
+CAB_HW = 1.15                         # the cab at the belt
+LOW_HW = 1.19                         # the lower module's sides, 40 mm proud
 CAB_BACK = 1.80
-CAB_RINGS = [   # front station at the corners; the centre is CAB_BOW proud of it
-    (0.80, 0.110, 1.150, 0.18, 1.800, 0.06),    # tucked back to the bumper
-    (1.10, 0.09875, 1.150, 0.18, 1.800, 0.06),
-    (1.55, 0.126875, 1.150, 0.18, 1.800, 0.06),
-    (1.60, 0.130, 1.150, 0.18, 1.800, 0.06),
-    (2.55, 0.272, 1.150, 0.18, 1.800, 0.06),    # the screen raked 8.5 degrees
-    (2.66, 0.307, 1.140, 0.17, 1.790, 0.055),
-    (2.725, 0.362, 1.115, 0.15, 1.775, 0.05),
-    (2.75, 0.432, 1.080, 0.12, 1.755, 0.04),
+BOW = 0.11
+Z_FOOT = 0.38                         # the valance's lower edge
+Z_CHIN = 0.585                        # the bumper face's foot, over the set-back chin
+Z_LEDGE = 1.00                        # the bumper's top, the painted cab's foot
+Z_DOOR = 1.10                         # painted cab side above, dark plastic below
+Z_BELT = 1.54
+Z_SCREEN = (1.62, 2.52)               # the screen panel, raked 10 degrees
+SHELL_RINGS = [
+    (Z_FOOT, 0.085, BOW, 1.165, 0.22, 1.80, 1.165, 0.05),   # valance, tucked back
+    (0.43, 0.035, BOW, 1.180, 0.22, 1.80, 1.180, 0.05),     # the chin, 35 mm behind the face
+    (Z_CHIN - 0.03, 0.035, BOW, 1.180, 0.22, 1.80, 1.180, 0.05),
+    (Z_CHIN, 0.000, BOW, LOW_HW, 0.22, 1.80, LOW_HW, 0.05),  # the face carrying the lamps
+    (0.955, 0.000, BOW, LOW_HW, 0.22, 1.80, LOW_HW, 0.05),
+    (0.995, 0.030, BOW, 1.175, 0.22, 1.80, 1.175, 0.05),    # the bumper's top edge
+    (Z_LEDGE, 0.085, BOW, CAB_HW, 0.24, 1.80, CAB_HW, 0.07),  # the cab's foot, a ledge back
+    (Z_DOOR, 0.087, BOW, CAB_HW, 0.24, 1.80, CAB_HW, 0.07),
+    (Z_BELT, 0.095, BOW, CAB_HW, 0.22, 1.80, CAB_HW, 0.07),
+    (Z_SCREEN[0], 0.115, BOW, 1.148, 0.15, 1.80, 1.148, 0.07),   # shoulder: the pillar's tighter corner
+    (Z_SCREEN[1], 0.275, BOW, 1.095, 0.13, 1.80, 1.095, 0.07),   # sides lean in 3.4 degrees
+    (2.64, 0.305, BOW, 1.080, 0.13, 1.795, 1.080, 0.06),
+    (2.715, 0.365, 0.10, 1.045, 0.12, 1.78, 1.045, 0.05),
+    (2.75, 0.460, 0.09, 0.985, 0.10, 1.755, 0.985, 0.04),
 ]
-CAB_BOW = 0.06                        # the front panel bowed in plan, centre proud
-Z_DOOR = 1.10                         # painted cab above, dark plastic below
-GRILLE = (0.70, 1.17, 1.49)           # half width, z0, z1 (front plane)
-WSCREEN = (0.92, 1.64, 2.51)          # half width, z0, z1 (front plane)
-DOOR = (0.46, 1.25)                   # door shut lines, s
-DOOR_TOP = 2.70                       # the door's top shut line, in the roof's rounding
-DOOR_GLASS = (0.51, 1.20, 1.72, 2.40)  # s0, s1, z0, z1 on the cab side
-COWL = (0.92, 1.565, 1.64, 0.02)      # recessed cowl up to the screen: |x|, z0, z1, depth
-FLAP = (0.86, 1.13, 1.575, 0.07)      # front service flap round the grille: |x|, z0, z1, r
-CORNER_X = 0.93                       # the corner panels' shut line on the front
-REPEATER = (0.37, 0.44, 1.22, 1.28)   # s0, s1, z0, z1 on the cab side
-STEP_UP = (0.33, 0.73, 0.86, 1.06, 0.20)    # s0, s1, z0, z1, depth
+N_LOWER = 6                           # rings 0..5 are the lower module
+I_CHIN, I_FACE, I_TOP = (1, 2), (3, 4), 5   # the chin's and the face's rings, the rolled top
+I_LEDGE, I_DOOR, I_BELT, I_SCR0, I_SCR1, I_ROOF = 6, 7, 8, 9, 10, 13
+
+# openings on the front (|x|, z): the screen a trapezoid with rounded corners,
+# the grille a trapezoid wider at its foot
+WSCREEN = (0.995, 1.665, 0.955, 2.495, 0.09)   # half width at foot, z0, at head, z1, corner radius
+GRILLE = (0.76, 1.045, 0.64, 1.42, 0.045)
+COWL_Z = 1.58                         # dark wiper cowl from here up to the screen
+CORNER_X = 0.90                       # the corner panels' shut line on the front
+HOOD_Z = 1.47                         # the front flap's lower shut line, over the grille
+BLADE = (0.30, 0.82, 1.03, 1.53, 0.034, 0.014)   # corner blade: fractions, z0, z1, stand-off, thickness
+# the side (s, z)
+DOOR = (0.445, 1.40)                  # door shut lines, s, below the belt
+DOOR_TOP = 2.49
+PILLAR = 0.156                        # the A-pillar's rake, s per z, above Z_SCREEN[0]
+DOOR_GLASS = [(0.47, 1.56), (0.82, 1.56), (0.92, 1.70), (1.30, 1.70), (1.34, 1.74),
+              (1.34, 2.37), (1.29, 2.42), (0.60, 2.42)]   # dropped front corner
+DOOR_GLASS_LOD1 = [DOOR_GLASS[k] for k in (0, 1, 2, 4, 6, 7)]
+REPEATER = (0.47, 0.54, 1.24, 1.30)   # s0, s1, z0, z1 on the cab side
+HANDLE = (1.20, 1.36, 1.50)           # s0, s1, z
+VENT = (1.50, 1.70, 1.76, 2.06)       # quarter panel intake: s0, s1, z0, z1
+STEP_UP = (0.40, 0.80, 0.80, 0.94, 0.20)    # s0, s1, z0, z1, depth (lower module side)
+STEP_LO = (0.40, 0.72, 0.46, 0.64, 0.20)
 ARCH = (FRONT_AXLE, R_WHEEL, 0.64, 0.58)  # s, centre z, radius, inner |x|
+FLARE = (0.615, 0.705, 1.14, 1.21, 32.0, 124.0)   # r0, r1, |x|0, |x|1, from, to (degrees)
+WING = (0.645, 0.685, 0.90, 1.19, 130.0, 181.0)   # the mudguard's rear quarter, behind the cab
+WING_FLAP = 0.26                      # its flap's lower edge
+COLLAR = (1.775, 1.878, 1.238, 1.55, 2.62, 0.022)   # cab side collar: s at the cab, s and |x| at its
+#                                     outer edge by the box corner, z0, z1, thickness
 
-# bumper: plan half width, corner radius, depth; rings (z, front station)
-BUMPER_HW, BUMPER_R, BUMPER_D = 1.17, 0.15, 0.32
-# rings (z, station at the corners): a chamfered lower edge, a vertical face
-# carrying the lamps, a small chamfer back at the top, 2 mm under the cab
-BUMPER_RINGS = [(0.40, 0.09), (0.47, 0.02), (0.775, 0.02), (0.798, 0.045)]
-BUMPER_BOW = 0.02
-HEADLAMP = (0.60, 0.98, 0.585, 0.765)  # |x| inner, outer, z0, z1 (bumper face)
-PLATE_F = (0.26, 0.47, 0.58)          # half width, z0, z1
-CARRIER = (0.322, 0.74, 0.92, 1.14, 0.40, 0.798)  # s0, s1, |x|0, |x|1, z0, z1
-STEP_LO = (0.36, 0.70, 0.47, 0.67, 0.18)
+# the lower module's front (|x|, z)
+HEADLAMP = (0.775, 0.735, 0.215, 0.125)  # centre |x|, z, half width, half height
+LAMP_SPLIT = (0.11, -0.035, -0.070)   # indicator from here out; low | high at; DRL below
+PLATE_F = (0.26, 0.443, 0.543)        # half width, z0, z1 (on the chin)
+CSTEP = (0.44, 0.66, 0.925, 0.08)     # centre recess between the lamp pods: half width, z0, z1, depth
+INTAKE = (0.34, 0.86, 0.465, 0.535)   # the chin's intake slots: |x|0, |x|1, z0, z1
 
-# deflector: stations (s, top z, half width at the base, at the top)
+# deflector: a moulded roof fairing, plan rings as the shell's, its nose a
+# convex curve in side view
 DEFL_Z0 = 2.70
-DEFL = [(0.82, 2.80, 0.98, 0.92), (1.06, 3.10, 1.03, 0.98), (1.31, 3.33, 1.07, 1.03),
-        (1.56, 3.48, 1.10, 1.07), (1.82, 3.55, 1.12, 1.10)]
-EXT = (1.70, 1.87, 1.115, 1.145, 1.90, 3.50)   # deflector extenders: s0, s1, |x|0, |x|1, z0, z1
+DEFL_TOP = 3.50
+DEFL_BACK = 1.84
+DEFL_NOSE = ((0.70, 2.745), (1.12, 3.33), (DEFL_BACK, DEFL_TOP))   # quadratic Bezier (s, z)
+DEFL_Z = (DEFL_Z0, 2.94, 3.16, 3.33, 3.44, 3.485)
+DEFL_W = (1.05, 1.16)                 # half width at the back, at the base and from 60 % up
+DEFL_CROWN = 0.09                     # the half width lost toward the top, a rounded shoulder
+DEFL_TAPER = 0.10                     # the sides close in toward the nose, x per s
 
 # box
 BOX_S0, BOX_S1 = 1.90, 7.90
@@ -143,12 +178,12 @@ MARK_REAR_Z = (3.56, 3.64)
 RAIL_X = (0.345, 0.425)
 RAIL_Z = (0.70, 0.97)
 SUB_X = (0.35, 0.43)
-TANK = (2.05, 2.95, 0.73, 0.70, 0.27)  # s0, s1, |x| centre, z centre, radius (left)
-BATTERY = (2.10, 2.75, 0.47, 0.98, 0.52, 0.92)  # right
-GUARD_S = (2.10, 5.20)
+TANK = (2.17, 3.07, 0.70, 0.70, 0.27)  # s0, s1, |x| centre, z centre, radius (left)
+BATTERY = (2.17, 2.82, 0.427, 0.98, 0.52, 0.92)  # right
+GUARD_S = (2.14, 5.20)
 GUARD_X = (1.195, 1.225)
 GUARD_Z = ((0.46, 0.56), (0.76, 0.86))
-GUARD_BRACKETS = (2.20, 3.65, 5.12)
+GUARD_BRACKETS = (2.24, 3.65, 5.12)
 BAR = (7.66, 7.80, 1.18, 0.40, 0.55)   # s0, s1, half width, z0, z1
 REAR_LAMP = (7.70, 7.84, 0.78, 1.16, 0.55, 0.73)   # s0, s1, |x|0, |x|1, z0, z1
 REAR_LENS_Z = (0.585, 0.705)
@@ -164,15 +199,14 @@ MARKER = 15
 # ================================================================ atlas
 REG = {
     "box_side": (4, 4, 388, 166), "box_rear": (400, 4, 166, 166),
-    "box_front": (20, 640, 166, 166), "cab_band": (752, 4, 268, 140),
+    "box_front": (20, 640, 166, 166), "cab_band": (752, 4, 268, 178),
     "box_roof": (4, 178, 388, 166), "cab_roof": (400, 178, 152, 104),
-    "defl": (560, 178, 140, 96), "bumper": (708, 178, 180, 36),
-    "grille": (896, 178, 110, 32),
+    "defl": (708, 192, 164, 112), "grille": (584, 192, 108, 32),
     "tread_f": (4, 352, 216, 24), "tread_r": (4, 382, 216, 46),
     "wheel_f": (228, 352, 76, 76), "wheel_r": (312, 352, 76, 76),
-    "glass_ws": (396, 352, 128, 64), "glass_side": (532, 352, 56, 48),
-    "lod3_side": (596, 352, 132, 64), "lod3_front": (736, 352, 46, 64),
-    "lod3_rear": (790, 352, 46, 64),
+    "glass_ws": (396, 352, 136, 60), "glass_side": (540, 352, 62, 60),
+    "lod3_side": (612, 352, 132, 64), "lod3_front": (752, 352, 46, 64),
+    "lod3_rear": (806, 352, 46, 64),
     "rail": (4, 448, 388, 16),
     "plate": (4 + 64 * 10, 578, 40, 12),
 }
@@ -180,13 +214,18 @@ REG = {
 # mips down to level 5 (32 x 32 blocks, beyond 400 m) average one colour:
 # a red marker lens no longer bleeds into the black visor's patch.
 PATCHES = ("dark", "liner", "alu", "alu_low", "tank", "guard", "rubber", "plastic",
-           "step", "housing", "mirror", "seal", "mirror_body", "roof_edge", "hub", "cabpaint")
+           "step", "housing", "mirror", "seal", "mirror_body", "bezel", "mesh", "cabpaint")
 for _k, _n in enumerate(PATCHES):
     REG[_n] = (2 + 64 * _k, 514, 28, 28)
 LENS_KINDS = ("low", "high", "drl", "ind", "tail_brake", "reverse", "fog", "mark_white",
               "mark_amber", "mark_red")
 for _k, _n in enumerate(LENS_KINDS):
-    REG["lens_" + _n] = (8 + 64 * _k, 578, 18, 12)
+    REG["lens_" + _n] = (4 + 64 * _k, 578, 24, 24)
+# The headlamp unit's lenses are mapped whole, at about 240 texels per metre,
+# in the open field right of the box front: the white ones together, the
+# amber indicator a block away.
+REG.update({"lens_high": (260, 660, 48, 52), "lens_low": (324, 660, 40, 52),
+            "lens_drl": (260, 728, 84, 18), "lens_ind": (452, 660, 30, 66)})
 PAD = 2.0                              # region origin to the first mapped texel
 LOD3_PPM = 16.0
 
@@ -199,144 +238,159 @@ def lens_kind(lamp, colour=None):
                       6: "reverse", 11: "fog"}[lamp]
 
 
-# ----------------------------------------------------------- cab mapping
-def ring_v():
-    """Profile length up the front centre line at each cab ring."""
-    v = [0.0]
-    for a, b in zip(CAB_RINGS, CAB_RINGS[1:]):
-        v.append(v[-1] + math.hypot(b[1] - a[1], b[0] - a[0]))
-    return v
-
-
-RING_V = ring_v()
-
-
-def bowed(x, sf, xe, bow):
-    """Station of a front bowed in plan: sf at the corners (x = xe), the
-    centre *bow* proud, a parabola between."""
-    return sf - bow * (1.0 - (x / xe) ** 2)
-
-
-def ring_half(ring, nf=4, nb=2, nbow=2):
-    """The x >= 0 half of one cab ring from the front centre to the back
-    centre: [(x, s, U)], U the perimeter parameter in metres (true arc
-    length on the arcs, whatever their segments; x across the bowed
-    front)."""
-    _z, sf, w, rf, sb, rb = ring
-    xe = w - rf
-    out = [(xe * k / nbow, bowed(xe * k / nbow, sf, xe, CAB_BOW), xe * k / nbow)
-           for k in range(nbow + 1)]
-    for k in range(1, nf):
-        t = 0.5 * math.pi * k / nf
-        out.append((w - rf + rf * math.sin(t), sf + rf - rf * math.cos(t), w - rf + rf * t))
-    u2 = w - rf + rf * math.pi / 2
-    out.append((w, sf + rf, u2))
-    u3 = u2 + (sb - rb - sf - rf)
-    if nb == 0:
-        out.append((w, sb, u3 + rb))
-        out.append((0.0, sb, u3 + rb + w))
-        return out
-    out.append((w, sb - rb, u3))
-    for k in range(1, nb):
-        t = 0.5 * math.pi * k / nb
-        out.append((w - rb + rb * math.cos(t), sb - rb + rb * math.sin(t), u3 + rb * t))
-    u4 = u3 + rb * math.pi / 2
-    out.append((w - rb, sb, u4))
-    out.append((0.0, sb, u4 + w - rb))
-    return out
-
-
-def cab_band_px(U, V):
-    x, y, _w, _h = REG["cab_band"]
-    return (x + PAD + U * PPM, y + PAD + V * PPM)
-
-
-def cab_v(z):
-    return float(np.interp(z, [r[0] for r in CAB_RINGS], RING_V))
-
-
-def band_world(U, V):
-    """Cab band (U, V) in metres to world (x, s, z) and the segment (0
-    front, 1 front arc, 2 side, 3 rear arc, 4 back), elementwise."""
-    zs = np.array([r[0] for r in CAB_RINGS])
-    z = np.interp(V, RING_V, zs)
-    sf, w, rf, sb, rb = (np.interp(z, zs, [r[k] for r in CAB_RINGS]) for k in range(1, 6))
-    u1 = w - rf
-    u2 = u1 + rf * np.pi / 2
-    u3 = u2 + (sb - rb - sf - rf)
-    u4 = u3 + rb * np.pi / 2
-    seg = np.select([U < u1, U < u2, U < u3, U < u4], [0, 1, 2, 3], 4)
-    th1 = np.clip((U - u1) / rf, 0, np.pi / 2)
-    th3 = np.clip((U - u3) / np.maximum(rb, 1e-6), 0, np.pi / 2)
-    x = np.select([seg == 0, seg == 1, seg == 2, seg == 3],
-                  [U, u1 + rf * np.sin(th1), w, w - rb + rb * np.cos(th3)],
-                  np.maximum(w - rb - (U - u4), 0))
-    s = np.select([seg == 0, seg == 1, seg == 2, seg == 3],
-                  [sf - CAB_BOW * (1 - (U / u1) ** 2), sf + rf - rf * np.cos(th1), sf + rf + (U - u2),
-                   sb - rb + rb * np.sin(th3)], sb)
-    return x, s, z, seg
-
-
-def defl_half(st, nc=3):
-    """Half cross-section of a deflector station, from the top centre down
-    to the base centre: [(x, z, U)]."""
-    _s, h, wb, wt = st
-    d = min(0.12, (h - DEFL_Z0) * 0.6)
-    pts = [(0.0, h)]
-    cx, cz = wt - d, h - d
-    for k in range(nc + 1):
-        t = 0.5 * math.pi * k / nc
-        pts.append((cx + d * math.sin(t), cz + d * math.cos(t)))
-    pts += [(wb, DEFL_Z0), (0.0, DEFL_Z0)]
-    out, u = [], 0.0
-    for i, (x, z) in enumerate(pts):
-        if i:
-            u += math.hypot(x - pts[i - 1][0], z - pts[i - 1][1])
-        out.append((x, z, u))
-    return out
-
-
-def defl_v():
-    v = [0.0]
-    for a, b in zip(DEFL, DEFL[1:]):
-        v.append(v[-1] + math.hypot(b[0] - a[0], b[1] - a[1]))
-    return v
-
-
-DEFL_V = defl_v()
-
-
-def bumper_half(z_ring, nf=3, nbow=2):
-    """Half bumper ring at a ring's corner station: [(x, s, U)]."""
-    sf = z_ring
-    w, r = BUMPER_HW, BUMPER_R
-    out = [((w - r) * k / nbow, bowed((w - r) * k / nbow, sf, w - r, BUMPER_BOW),
-            (w - r) * k / nbow) for k in range(nbow + 1)]
-    for k in range(1, nf):
-        t = 0.5 * math.pi * k / nf
-        out.append((w - r + r * math.sin(t), sf + r - r * math.cos(t), w - r + r * t))
-    u2 = w - r + r * math.pi / 2
-    out.append((w, sf + r, u2))
-    u3 = u2 + BUMPER_D - sf - r
-    out.append((w, BUMPER_D, u3))
-    out.append((0.0, BUMPER_D, u3 + w))
-    return out
-
-
-def bumper_v():
-    v = [0.0]
-    for a, b in zip(BUMPER_RINGS, BUMPER_RINGS[1:]):
-        v.append(v[-1] + math.hypot(b[0] - a[0], b[1] - a[1]))
-    return v
-
-
-BUMPER_V = bumper_v()
-
-
 def at(reg, u_m, v_m, ppm=PPM):
     """Atlas pixels of a point u_m, v_m metres into region *reg*."""
     x, y, _w, _h = REG[reg]
     return (x + PAD + u_m * ppm, y + PAD + v_m * ppm)
+
+
+# ----------------------------------------------------------- plan rings
+def plan_frame(sc, bow, wf, rf, sb, wb, rb):
+    """Where a plan ring's pieces meet (numpy-friendly): xe, the bowed
+    front's half width; th0, the front's tangent angle there; tau, the
+    side's taper angle; (cx, cs), the corner arc's centre; se, the station
+    where the side starts; ls, the side's length."""
+    xe = wf - rf
+    tau = np.zeros_like(xe, dtype=float) if isinstance(xe, np.ndarray) else 0.0
+    for _ in range(10):
+        th0 = np.arctan2(2.0 * bow, xe)
+        xe = wf - rf * (np.cos(tau) - np.sin(th0))
+        se = sc + bow + rf * (np.cos(th0) - np.sin(tau))
+        tau = np.arctan2(wb - wf, sb - rb - se)
+    th0 = np.arctan2(2.0 * bow, xe)
+    cx, cs = xe - rf * np.sin(th0), sc + bow + rf * np.cos(th0)
+    se = cs - rf * np.sin(tau)
+    ls = np.hypot(wb - wf, sb - rb - se)
+    return xe, th0, tau, cx, cs, se, ls
+
+
+def plan_half(ring, nbow=3, nf=4, nb=2):
+    """The x >= 0 half of one plan ring from the front centre to the back
+    centre: [(x, s, U)], U the perimeter parameter in metres (x across the
+    bowed front, true length on the arcs and the side)."""
+    _z, sc, bow, wf, rf, sb, wb, rb = ring
+    xe, th0, tau, cx, cs, se, ls = (float(v) for v in plan_frame(sc, bow, wf, rf, sb, wb, rb))
+    out = [(xe * k / nbow, sc + bow * (k / nbow) ** 2, xe * k / nbow) for k in range(nbow + 1)]
+    th1 = math.pi / 2 - tau
+    for k in range(1, nf + 1):
+        th = th0 + (th1 - th0) * k / nf
+        out.append((cx + rf * math.sin(th), cs - rf * math.cos(th), xe + rf * (th - th0)))
+    u2 = xe + rf * (th1 - th0)
+    if nb == 0:
+        ll = math.hypot(wb - wf, sb - se)
+        return out + [(wb, sb, u2 + ll), (0.0, sb, u2 + ll + wb)]
+    u3 = u2 + ls
+    out.append((wb, sb - rb, u3))
+    for k in range(1, nb):
+        t = 0.5 * math.pi * k / nb
+        out.append((wb - rb + rb * math.cos(t), sb - rb + rb * math.sin(t), u3 + rb * t))
+    u4 = u3 + rb * math.pi / 2
+    out.append((wb - rb, sb, u4))
+    out.append((0.0, sb, u4 + wb - rb))
+    return out
+
+
+class Loft:
+    """A stack of plan rings and its band of the atlas: U round the
+    perimeter from the front centre, V the profile length up the front
+    centre line (so a ledge between two rings at one height has its own
+    rows)."""
+
+    def __init__(self, rings, reg, v=None):
+        self.rings = [tuple(float(c) for c in r) for r in rings]
+        self.reg = reg
+        if v is None:
+            v = [0.0]
+            for a, b in zip(self.rings, self.rings[1:]):
+                v.append(v[-1] + math.hypot(b[1] - a[1], b[0] - a[0]))
+        self.v = [float(c) for c in v]
+
+    def px(self, U, V):
+        return at(self.reg, U, V)
+
+    def ring_at(self, z, lo=0, hi=None):
+        """The ring at height z, between rings lo..hi."""
+        hi = len(self.rings) - 1 if hi is None else hi
+        zs = [self.rings[i][0] for i in range(lo, hi + 1)]
+        return (float(z),) + tuple(
+            float(np.interp(z, zs, [self.rings[i][k] for i in range(lo, hi + 1)]))
+            for k in range(1, 8))
+
+    def v_at(self, z, lo=0, hi=None):
+        hi = len(self.rings) - 1 if hi is None else hi
+        return float(np.interp(z, [self.rings[i][0] for i in range(lo, hi + 1)],
+                               self.v[lo:hi + 1]))
+
+    def front(self, x, z, lo=0, hi=None, nbow=None):
+        """Station of the bowed front at (x, z); with *nbow* the chords a
+        mesh of that many segments a side makes of it."""
+        r = self.ring_at(z, lo, hi)
+        xe = float(plan_frame(*r[1:])[0])
+        t = min(abs(x) / xe, 1.0)
+        if nbow:
+            k = min(int(t * nbow), nbow - 1)
+            t0, t1 = k / nbow, (k + 1) / nbow
+            return r[1] + r[2] * (t0 ** 2 + (t1 ** 2 - t0 ** 2) * (t - t0) / (t1 - t0))
+        return r[1] + r[2] * t * t
+
+    def xe(self, z, lo=0, hi=None):
+        return float(plan_frame(*self.ring_at(z, lo, hi)[1:])[0])
+
+    def side(self, z, lo=0, hi=None):
+        """(half width, station) where the side starts at height z."""
+        r = self.ring_at(z, lo, hi)
+        return r[3], float(plan_frame(*r[1:])[5])
+
+    def world(self, U, V):
+        """Band (U, V) in metres to world (x, s, z), the segment (0 front,
+        1 front arc, 2 side, 3 rear arc, 4 back) and the arc fraction,
+        elementwise."""
+        cols = [np.interp(V, self.v, [r[k] for r in self.rings]) for k in range(8)]
+        z, sc, bow, wf, rf, sb, wb, rb = cols
+        xe, th0, tau, cx, cs, se, ls = plan_frame(sc, bow, wf, rf, sb, wb, rb)
+        th1 = np.pi / 2 - tau
+        u1 = xe
+        u2 = u1 + rf * (th1 - th0)
+        u3 = u2 + ls
+        u4 = u3 + rb * np.pi / 2
+        seg = np.select([U < u1, U < u2, U < u3, U < u4], [0, 1, 2, 3], 4)
+        th = np.clip(th0 + (U - u1) / rf, th0, th1)
+        t = np.clip((U - u2) / np.maximum(ls, 1e-6), 0, 1)
+        ph = np.clip((U - u3) / np.maximum(rb, 1e-6), 0, np.pi / 2)
+        x = np.select([seg == 0, seg == 1, seg == 2, seg == 3],
+                      [U, cx + rf * np.sin(th), wf + (wb - wf) * t, wb - rb + rb * np.cos(ph)],
+                      np.maximum(wb - rb - (U - u4), 0))
+        s = np.select([seg == 0, seg == 1, seg == 2, seg == 3],
+                      [sc + bow * (U / xe) ** 2, cs - rf * np.cos(th),
+                       se + (sb - rb - se) * t, sb - rb + rb * np.sin(ph)], sb)
+        frac = np.clip((U - u1) / (u2 - u1), 0, 1)
+        return x, s, z, seg, frac
+
+
+SHELL = Loft(SHELL_RINGS, "cab_band")
+
+
+def _defl_rings():
+    (s0, z0), (s1, z1), (s2, z2) = DEFL_NOSE
+    out = []
+    for z in DEFL_Z:
+        # the nose's station at this height: solve the Bezier's z(t) = z
+        a, b, c = z0 - 2 * z1 + z2, 2 * (z1 - z0), z0 - max(z, z0)
+        t = (-b + math.sqrt(b * b - 4 * a * c)) / (2 * a) if abs(a) > 1e-9 else -c / b
+        sc = (1 - t) ** 2 * s0 + 2 * t * (1 - t) * s1 + t * t * s2
+        k = (z - DEFL_Z0) / (DEFL_TOP - DEFL_Z0)
+        k = min(1.0, k * 1.6)                        # full width from 60 % up
+        wb = DEFL_W[0] + (DEFL_W[1] - DEFL_W[0]) * k
+        f = (z - DEFL_Z0) / (DEFL_TOP - DEFL_Z0)
+        wb -= DEFL_CROWN * max(0.0, (f - 0.75) / 0.25) ** 2      # the top edge rounded over
+        depth = DEFL_BACK - sc
+        wf = wb - DEFL_TAPER * depth
+        out.append((z, sc, min(0.10, depth * 0.25), wf, min(0.22, depth * 0.45), DEFL_BACK,
+                    wb, 0.0))
+    return out
+
+
+DEFL = Loft(_defl_rings(), "defl")
 
 
 # ================================================================ materials
@@ -344,6 +398,7 @@ def at(reg, u_m, v_m, ppm=PPM):
  M_TYRE, M_RIM, M_HUB, M_GLASS, M_MIRROR, M_PLATE, M_PLATE_EDGE, M_HOUSING, M_GRILLE,
  M_GRILLE_HOLE, M_DOOR, M_STEP, M_SEAL, M_TAPE, M_TAPE_RED, M_PIC_LAMP, M_PIC_TAIL,
  M_HANDLE, M_ALU_DARK) = range(1, 30)
+M_BEZEL = 32                    # the headlamp units' light reflector walls
 # The LOD3 pictures' own paint: the whole far side and front are one or two
 # painted faces, so their windows, grille and lower plastic sit inside the
 # painted mean; a lighter far field keeps the tier as bright as LOD0 under
@@ -372,11 +427,11 @@ BASE = {
     M_GRILLE: (40, 41, 42), M_GRILLE_HOLE: (16, 16, 17), M_DOOR: (196, 198, 198),
     M_STEP: (44, 44, 45), M_SEAL: (24, 24, 25), M_TAPE: (214, 170, 40),
     M_TAPE_RED: (170, 40, 34), M_PIC_LAMP: (150, 152, 150), M_PIC_TAIL: (110, 28, 24),
-    M_HANDLE: (30, 30, 31), M_ALU_DARK: (120, 122, 123),
+    M_HANDLE: (30, 30, 31), M_ALU_DARK: (120, 122, 123), M_BEZEL: (186, 188, 190),
     M_CAB_FAR: (0, 0, 0), M_BOX_FAR: (0, 0, 0),         # set below from FAR_GREY
 }
-LENS_UNLIT = {"low": (206, 209, 211), "high": (200, 203, 206), "drl": (214, 216, 217),
-              "ind": (176, 104, 30), "tail_brake": (124, 26, 24), "reverse": (178, 180, 180),
+LENS_UNLIT = {"low": (206, 209, 212), "high": (200, 203, 207), "drl": (222, 224, 226),
+              "ind": (196, 118, 32), "tail_brake": (124, 26, 24), "reverse": (178, 180, 180),
               "fog": (112, 24, 22), "mark_white": (180, 182, 182), "mark_amber": (184, 110, 30),
               "mark_red": (128, 26, 24)}
 for _n, _m in M_LENS.items():
@@ -397,6 +452,7 @@ SURFACE = {  # roughness, metallic
     M_STEP: (0.75, 0.0), M_SEAL: (0.80, 0.0), M_TAPE: (0.30, 0.0), M_TAPE_RED: (0.30, 0.0),
     M_PIC_LAMP: (0.2, 0.0), M_PIC_TAIL: (0.2, 0.0), M_HANDLE: (0.5, 0.0),
     M_ALU_DARK: (0.5, 0.8), M_CAB_FAR: (0.32, 0.0), M_BOX_FAR: (0.40, 0.0),
+    M_BEZEL: (0.28, 0.0),
 }
 for _m in M_LENS.values():
     SURFACE[_m] = (0.12, 0.0)
@@ -495,7 +551,6 @@ def paint(ss=atlas.SS):
     P = Painter(c)
     paint_box(P)
     paint_cab(P)
-    paint_front(P)
     paint_wheels(P)
     paint_patches(P)
     paint_lod3(P)
@@ -538,8 +593,19 @@ def paint_box(P):
     P.where("box_rear", door, mid=M_DOOR)
     P.where("box_rear", lambda u, v: door(u, v) & (np.mod(v + BOX_Z0 - SILL_Z, 0.115) < 0.016),
             add_h=-0.004, shade=0.78, ao=0.8)
-    P.where("box_rear", lambda u, v: door(u, v) & (np.abs(u - BOX_HW) < 0.09)
-            & (np.abs(v + BOX_Z0 - 1.36) < 0.02), mid=M_HANDLE, add_h=0.01)
+    # the door's guide tracks, its bottom rail and rubber seal, a lock and a
+    # pull strap
+    P.where("box_rear", lambda u, v: door(u, v) & (np.abs(u - BOX_HW) > REAR_POST_HW - 0.035),
+            mid=M_ALU_DARK, add_h=0.003)
+    P.where("box_rear", lambda u, v: door(u, v) & (v + BOX_Z0 < SILL_Z + 0.11), mid=M_ALU,
+            height=0.004)
+    P.where("box_rear", lambda u, v: door(u, v) & (v + BOX_Z0 < SILL_Z + 0.024), mid=M_RUBBER,
+            height=0.0)
+    P.where("box_rear", lambda u, v: (np.abs(u - BOX_HW) < 0.075)
+            & (np.abs(v + BOX_Z0 - SILL_Z - 0.066) < 0.032), mid=M_HANDLE, add_h=0.012)
+    P.where("box_rear", lambda u, v: (np.abs(u - BOX_HW - 0.42) < 0.014)
+            & (v + BOX_Z0 > SILL_Z + 0.11) & (v + BOX_Z0 < SILL_Z + 0.36), mid=M_RUBBER,
+            add_h=0.003)
     # yellow contour marking on the rear frame: the posts' outer edge and
     # the header, broken in short lengths
     def tape(u, v):
@@ -558,24 +624,76 @@ def paint_box(P):
 
 
 # ---------------------------------------------------------------- cab
+def inside(poly, a, b):
+    """Even-odd point-in-polygon test of arrays a, b against [(a, b), ...]."""
+    m = np.zeros(np.shape(a), bool)
+    n = len(poly)
+    for i in range(n):
+        (a0, b0), (a1, b1) = poly[i], poly[(i + 1) % n]
+        if b0 == b1:
+            continue
+        hit = ((b0 > b) != (b1 > b)) & (a < a0 + (a1 - a0) * (b - b0) / (b1 - b0))
+        m ^= hit
+    return m
+
+
+def trapezoid_hw(t, z):
+    """Half width at height z of a trapezoid (hw0, z0, hw1, z1, ...)."""
+    hw0, z0, hw1, z1 = t[:4]
+    return hw0 + (hw1 - hw0) * np.clip((z - z0) / (z1 - z0), 0, 1)
+
+
+def rounded_outline(t, nseg=2):
+    """The x >= 0 half of a symmetric trapezoid with rounded corners (hw0,
+    z0, hw1, z1, r), from the foot's centre round to the head's centre:
+    [(x, z)], nseg segments a corner."""
+    hw0, z0, hw1, z1, r = t
+    lean = math.atan2(hw0 - hw1, z1 - z0)         # the side's lean inward
+    out = [(0.0, z0)]
+    # foot corner: turns from +x to the side's direction, through 90 + lean degrees
+    a_end = math.pi / 2 + lean
+    k = math.tan(a_end / 2)                       # tangent length factor
+    cx, cz = hw0 - r * k, z0 + r
+    for i in range(nseg + 1):
+        a = a_end * i / nseg
+        out.append((cx + r * math.sin(a), cz - r * math.cos(a)))
+    b_end = math.pi / 2 - lean
+    k = math.tan(b_end / 2)
+    cx, cz = hw1 - r * k, z1 - r
+    for i in range(nseg + 1):
+        a = a_end + b_end * i / nseg
+        out.append((cx + r * math.sin(a), cz - r * math.cos(a)))
+    out.append((0.0, z1))
+    return out
+
+
+def door_front(z):
+    """The door's front shut line: straight up to the screen's foot, then
+    up the A-pillar."""
+    return DOOR[0] + PILLAR * np.clip(z - Z_SCREEN[0], 0, None)
+
+
 def paint_cab(P):
     c = P.c
     x0, y0, w, h = REG["cab_band"]
     sy, sx, Y_, X_ = c.field(x0, x0 + w, y0, y0 + h)
     U = (X_ - x0 - PAD) / PPM
     V = (Y_ - y0 - PAD) / PPM
-    x, s, z, seg = band_world(U, V)
+    x, s, z, seg, frac = SHELL.world(U, V)
+    tx = 1.0 / PPM
+    rv = SHELL.v
     mid = np.full(U.shape, M_CAB, np.uint8)
     hgt = np.zeros(U.shape, np.float32)
     shade = np.ones(U.shape, np.float32)
     ao = np.ones(U.shape, np.float32)
-    side, front = seg == 2, seg == 0
-    mid[(z < Z_DOOR) & (seg >= 2)] = M_PLASTIC
-    # the painted lower front: a seam, and a slot of a lower air intake
-    low = (z < Z_DOOR) & (seg <= 1)
-    mid[low & (x < 0.70) & (np.abs(z - 0.90) < 0.03)] = M_GRILLE_HOLE
-    # a soft shadow line where the painted cab meets the plastic
-    shade[(z >= Z_DOOR) & (z < Z_DOOR + 0.02)] *= 0.8
+    side, front, arc = seg == 2, seg == 0, seg == 1
+    # Dark plastic: the lower module with its ledge, and the cab's sides and
+    # back below the door line. Each runs a texel past its faces' outline,
+    # so no unpainted face samples the paint.
+    lower = V < rv[I_LEDGE] + tx
+    lowside = (V < rv[I_DOOR] + tx) & ((seg >= 2) | (frac > 0.94))
+    mid[lower | lowside] = M_PLASTIC
+    cab = ~lower
 
     def groove(m, d=0.002, sh=0.6):
         hgt[m] -= d
@@ -586,104 +704,127 @@ def paint_cab(P):
 
     def gap(m):
         """A panel shut line: a dark gap two texels wide, grooved."""
-        hgt[m] -= 0.003
-        shade[m] *= 0.42
-        ao[m] = np.minimum(ao[m], 0.55)
-    sw = 0.010                                    # fine seam width
-    corner = np.interp(z, [r[0] for r in CAB_RINGS], [r[1] + r[3] for r in CAB_RINGS])
-    # the door: a shut line all round, from the step up into the roof's
-    # rounding, with a dark recessed handle
+        hgt[m] -= 0.004
+        shade[m] *= 0.34
+        ao[m] = np.minimum(ao[m], 0.5)
+
+    # ------------------------------------------------------------ the side
     d0, d1 = DOOR
-    gap(side & (np.abs(s - d0) < gw / 2) & (z > 0.86) & (z < DOOR_TOP))
-    gap(side & (np.abs(s - d1) < gw / 2) & (z > 1.17) & (z < DOOR_TOP))
-    gap(side & (np.abs(z - DOOR_TOP) < gw / 2) & (s > d0) & (s < d1))
-    gap(side & (np.abs(z - Z_DOOR - 0.012) < gw / 2) & (s > d0) & (s < d1))
-    # door glass: the opening dark, for LOD2
-    g0, g1, gz0, gz1 = DOOR_GLASS
-    win = side & (s > g0) & (s < g1) & (z > gz0) & (z < gz1)
+    df = door_front(z)
+    arch_top = R_WHEEL + FLARE[1]
+    gap(cab & side & (np.abs(s - df) < gw / 2) & (z > Z_DOOR) & (z < DOOR_TOP))
+    gap(cab & side & (np.abs(s - d1) < gw / 2) & (z > arch_top) & (z < DOOR_TOP))
+    gap(cab & side & (np.abs(z - DOOR_TOP) < gw / 2) & (s > df) & (s < d1))
+    gap(cab & side & (np.abs(z - Z_DOOR - 0.014) < gw / 2) & (s > d0) & (s < 1.14))
+    # the arch's black lip, drawn where LOD0's fender lip stands, so LOD1 and
+    # LOD2 keep it
+    ra = np.hypot(s - FRONT_AXLE, z - R_WHEEL)
+    ang = np.degrees(np.arctan2(z - R_WHEEL, FRONT_AXLE - s))
+    mid[cab & side & (ra < FLARE[1] - 0.004) & (ang > FLARE[4] + 1.0) & (ang < FLARE[5] - 1.0)] \
+        = M_PLASTIC
+    # door glass: the opening dark, for LOD2 and round the recess
+    win = cab & side & inside(DOOR_GLASS, s, z)
     mid[win] = M_SEAL
-    hdl = side & (s > 1.05) & (s < 1.21) & (np.abs(z - 1.52) < 0.035)
+    h0, h1, hz = HANDLE
+    hdl = cab & side & (s > h0) & (s < h1) & (np.abs(z - hz) < 0.035)
     mid[hdl] = M_HANDLE
     hgt[hdl] -= 0.010
     ao[hdl] = 0.6
-    bar = side & (s > 1.08) & (s < 1.18) & (np.abs(z - 1.52) < 0.010)
+    bar = cab & side & (s > h0 + 0.03) & (s < h1 - 0.03) & (np.abs(z - hz) < 0.010)
     hgt[bar] += 0.006
     shade[bar] *= 1.6
-    # the step area under the door: dark plastic with tread lines
-    stp = side & (s > corner + 0.02) & (s < 0.80) & (z < Z_DOOR - 0.01)
-    hgt[stp & (np.mod(z, 0.035) < 0.012)] += 0.002
-    shade[stp & (np.mod(z, 0.035) < 0.012)] *= 1.25
     # the quarter panel behind the door: an intake grille
-    vent = side & (s > 1.44) & (s < 1.66) & (z > 1.74) & (z < 2.06)
+    v0, v1, vz0, vz1 = VENT
+    vent = cab & side & (s > v0) & (s < v1) & (z > vz0) & (z < vz1)
     mid[vent] = M_GRILLE
-    slots = vent & (np.mod(z - 1.74, 0.032) < 0.014)
+    slots = vent & (np.mod(z - vz0, 0.032) < 0.014)
     mid[slots] = M_GRILLE_HOLE
     hgt[vent & ~slots] += 0.004
-    # the corner panels: shut lines just round the corner on the side (up
-    # the A-pillar to the roof) and on the front either side, below the screen
-    gap(side & (np.abs(s - corner - 0.06) < gw / 2) & (z > 0.82) & (z < DOOR_TOP))
-    gap(front & (np.abs(x - CORNER_X) < gw / 2) & (z > 0.82) & (z < COWL[1]))
-    # the break between the upper panels and the lower corner panels
-    gap((seg <= 1) & (np.abs(z - Z_DOOR - 0.012) < gw / 2))
-    gap(side & (np.abs(z - Z_DOOR - 0.012) < gw / 2) & (s < d0))
-    # the front service flap round the grille, rounded corners
-    fh, fz0, fz1, fr = FLAP
-    zc, hh = (fz0 + fz1) / 2, (fz1 - fz0) / 2
-    dx, dz = x - (fh - fr), np.abs(z - zc) - (hh - fr)
-    dist = np.hypot(np.maximum(dx, 0), np.maximum(dz, 0)) + np.minimum(np.maximum(dx, dz), 0) - fr
-    gap(front & (np.abs(dist) < gw / 2))
-    gh, gz0_, gz1_ = GRILLE
-    gr = front & (x < gh) & (z > gz0_) & (z < gz1_)
+    # the step fairing under the door: the wells dark, tread lines (the
+    # LOD0 wells are cut; LOD1 and LOD2 show these)
+    for a0, a1, b0, b1, _d in (STEP_UP, STEP_LO):
+        well = lower & side & (s > a0) & (s < a1) & (z > b0) & (z < b1)
+        mid[well] = M_STEP
+        shade[well] *= 0.70
+        tread = well & (z < b0 + 0.035)
+        shade[tread] *= 1.9
+        hgt[well] -= 0.004
+    # the bumper's parting line under its rolled top edge, all round
+    groove((V > rv[I_FACE[1]] - 0.022) & (V < rv[I_FACE[1]] - 0.010) & (seg <= 2), d=0.002,
+           sh=0.72)
+
+    # ----------------------------------------------------------- the front
+    # the screen's dark surround: seal round the pane, the wiper cowl under it
+    wz0, wz1 = WSCREEN[1], WSCREEN[3]
+    whw = trapezoid_hw(WSCREEN, z)
+    sur = cab & (seg <= 1) & (x < whw + 0.032) & (z > COWL_Z) & (z < wz1 + 0.026)
+    mid[sur] = M_SEAL
+    cowl = cab & (seg <= 1) & (x < whw + 0.032) & (z > COWL_Z) & (z < wz0)
+    hgt[cowl & (np.mod(x, 0.05) < 0.02) & (z > COWL_Z + 0.02) & (z < wz0 - 0.02)] -= 0.004
+    # the grille: dark slats over darkness, its frame a little proud
+    gz0, gz1 = GRILLE[1], GRILLE[3]
+    ghw = trapezoid_hw(GRILLE, z)
+    gr = cab & front & (x < ghw) & (z > gz0) & (z < gz1)
     mid[gr] = M_GRILLE
-    holes = front & (x < gh - 0.02) & (z > gz0_ + 0.02) & (z < gz1_ - 0.02) \
-        & (np.mod(z - gz0_, 0.067) > 0.024)
+    holes = gr & (x < ghw - 0.03) & (z > gz0 + 0.025) & (z < gz1 - 0.025) \
+        & (np.mod(z - gz0 - 0.025, 0.066) > 0.026)
     mid[holes] = M_GRILLE_HOLE
     hgt[gr & ~holes] += 0.008
-    # the recessed cowl under the screen, dark plastic (a recess at LOD0)
-    ch, cz0, cz1, _cd = COWL
-    mid[front & (x < ch) & (z > cz0) & (z < cz1)] = M_PLASTIC
-    # windscreen rubber, for the screen's edges and LOD2
-    wh, wz0, wz1 = WSCREEN
-    ws = front & (x < wh) & (z > wz0) & (z < wz1)
-    mid[ws] = M_SEAL
+    # shut lines: the corner panels, the front flap over the grille
+    gap(cab & front & (np.abs(x - CORNER_X) < gw / 2) & (z > Z_LEDGE + 0.03) & (z < COWL_Z))
+    gap(cab & front & (np.abs(z - HOOD_Z) < gw / 2) & (x < CORNER_X))
+    # the corner air deflectors: the dark shape of LOD0's blade drawn on the
+    # corner panel behind it, so LOD1 and LOD2 keep it
+    f0, f1, sz0, sz1 = BLADE[:4]
+    slot = cab & arc & (frac > f0) & (frac < f1) & (z > sz0) & (z < sz1)
+    mid[slot] = M_PLASTIC
+    hgt[slot] += 0.004
+
+    # ---------------------------------------------------- the lower module
+    lf = lower & front & (V < rv[I_TOP])
+    ph, pz0, pz1 = PLATE_F
+    pl = lf & (x < ph) & (z > pz0) & (z < pz1)
+    mid[pl] = M_PLATE
+    mid[pl & ((x > ph - 0.012) | (z < pz0 + 0.012) | (z > pz1 - 0.012))] = M_PLATE_EDGE
+    i0, i1, iz0, iz1 = INTAKE
+    hz_ = (iz1 - iz0) / 2
+    dist = np.hypot(np.maximum(np.abs(x - (i0 + i1) / 2) - ((i1 - i0) / 2 - hz_), 0),
+                    z - (iz0 + iz1) / 2)
+    intake = lf & (dist < hz_)
+    mid[intake] = M_GRILLE_HOLE
+    hgt[intake] -= 0.010
+    ao[intake] = 0.6
+    bar = intake & (np.abs(z - (iz0 + iz1) / 2) < 0.008)
+    mid[bar] = M_GRILLE
+    hgt[bar] += 0.008
+    ch, cz0, cz1, _cd = CSTEP
+    cs_ = lf & (x < ch) & (z > cz0) & (z < cz1)
+    mid[cs_] = M_GRILLE
+    mid[cs_ & (np.mod(z - cz0, 0.04) > 0.016) & (z > cz0 + 0.03)] = M_GRILLE_HOLE
+    shade[cs_] *= 0.8                             # a recess at LOD0, drawn dark here
+    shade[cs_ & (z < cz0 + 0.03)] *= 1.8          # the tread's edge
+    lx, lz, lhu, lhv = HEADLAMP
+    lamp = lf & (np.abs(x - lx) < lhu + 0.02) & (np.abs(z - lz) < lhv + 0.02)
+    mid[lamp] = M_HOUSING
+    # the valance's lower edge, shaded
+    shade[lower & (V < rv[1])] *= 0.85
     # back wall: a horizontal seam
-    groove((seg == 4) & (np.abs(z - 1.30) < sw / 2))
+    groove(cab & (seg == 4) & (np.abs(z - 1.30) < 0.005))
     c.mid[sy, sx] = mid
     c.shade[sy, sx] = shade
     c.height[sy, sx] = hgt
     c.ao[sy, sx] = ao
     # roof: u = x + 1.15, v = s - 0.30; a hatch outline
     P.fill("cab_roof", M_CAB)
-    for a, b in ((0.50, 0.50),):
-        seam(P, "cab_roof", lambda u, v: (
-            (np.abs(np.abs(u - CAB_HW) - 0.38) < 0.006) & (np.abs(v + 0.30 - 0.95) < 0.30)) | (
-            (np.abs(np.abs(v + 0.30 - 0.95) - 0.30) < 0.006) & (np.abs(u - CAB_HW) < 0.38)))
-    # deflector: u round the section from the top centre, v along the top
+    seam(P, "cab_roof", lambda u, v: (
+        (np.abs(np.abs(u - CAB_HW) - 0.38) < 0.006) & (np.abs(v + 0.30 - 1.10) < 0.26)) | (
+        (np.abs(np.abs(v + 0.30 - 1.10) - 0.26) < 0.006) & (np.abs(u - CAB_HW) < 0.38)))
+    # deflector: U round each plan ring from the nose, V up the nose's profile
     P.fill("defl", M_CAB)
-    seam(P, "defl", lambda u, v: line(v, DEFL_V[-1] - 0.06, 0.012), depth=0.0015)
-    # side flap faces share the deflector region's lower rows
-    # bumper: u round from the front centre, v up the profile from z 0.40
-    P.fill("bumper", M_PLASTIC)
-    zb = lambda v: np.interp(v, BUMPER_V, [r[0] for r in BUMPER_RINGS])  # noqa: E731
-    P.where("bumper", lambda u, v: np.abs(zb(v) - 0.585) < 0.006, add_h=-0.003, shade=0.7)
-    P.where("bumper", lambda u, v: zb(v) < 0.46, shade=0.82)
-    ph, pz0, pz1 = PLATE_F
-    P.where("bumper", lambda u, v: (u < ph) & (zb(v) > pz0) & (zb(v) < pz1), mid=M_PLATE)
-    P.where("bumper", lambda u, v: (u < ph) & (zb(v) > pz0) & (zb(v) < pz1) & (
-        (u > ph - 0.012) | (zb(v) < pz0 + 0.012) | (zb(v) > pz1 - 0.012)), mid=M_PLATE_EDGE)
-    hx0, hx1, hz0, hz1 = HEADLAMP
-    P.where("bumper", lambda u, v: (u > hx0 - 0.02) & (u < hx1 + 0.02)
-            & (zb(v) > hz0 - 0.02) & (zb(v) < hz1 + 0.02), mid=M_HOUSING)
-    # tow pin slot
-    P.where("bumper", lambda u, v: (u < 0.06) & (np.abs(zb(v) - 0.64) < 0.03),
-            mid=M_GRILLE_HOLE, add_h=-0.01)
-    # grille: horizontal slats over darkness
+    # grille: horizontal slats over darkness (the LOD0 recess's floor)
     P.fill("grille", M_GRILLE_HOLE)
-    P.where("grille", lambda u, v: np.mod(v, 0.067) > 0.030, mid=M_GRILLE, height=0.010)
-
-
-def paint_front(P):
-    pass
+    P.where("grille", lambda u, v: np.mod(v - 0.025, 0.066) < 0.026, mid=M_GRILLE,
+            height=0.010)
 
 
 # ---------------------------------------------------------------- wheels
@@ -738,8 +879,8 @@ def paint_patches(P):
                       ("alu_low", M_ALU), ("tank", M_TANK), ("guard", M_GUARD),
                       ("rubber", M_RUBBER), ("plastic", M_PLASTIC), ("step", M_STEP),
                       ("housing", M_HOUSING), ("mirror", M_MIRROR), ("seal", M_SEAL),
-                      ("mirror_body", M_PLASTIC), ("roof_edge", M_ALU), ("hub", M_HUB),
-                      ("cabpaint", M_CAB)):
+                      ("mirror_body", M_PLASTIC), ("bezel", M_BEZEL),
+                      ("mesh", M_GRILLE_HOLE), ("cabpaint", M_CAB)):
         P.fill(name, mid)
     P.where("step", lambda u, v: np.mod(v, 0.035) < 0.012, add_h=0.002, shade=1.3)
     P.where("tank", lambda u, v: np.mod(v, 0.12) < 0.02, add_h=0.003)
@@ -753,15 +894,41 @@ def paint_patches(P):
     P.c.paint(x + w - 1.6, x + w, y, y + h, mid=M_PLATE_EDGE)
     for name in LENS_KINDS:
         P.fill("lens_" + name, M_LENS[name])
-    for name in ("low", "high"):
-        # a soft reflector bowl: a little lighter at its heart, a little
-        # darker toward its rim, no dark ring
+    P.where("mesh", lambda u, v: (np.mod(u + v, 0.06) < 0.012) | (np.mod(u - v, 0.06) < 0.012),
+            mid=M_GRILLE, add_h=0.004)
+    for name in ("low", "high", "drl", "ind"):
+        # Each headlamp lens is mapped whole onto its patch (inner edge to
+        # outer, foot to head): a bright reflector with soft flutes behind
+        # clear glass, a shade darker toward its rounded edge, where a mid
+        # grey rim parts it from its neighbours. No dark rings, no glints.
         x, y, w, h = REG["lens_" + name]
         sy, sx, Y_, X_ = P.c.field(x, x + w, y, y + h)
-        r = np.hypot(X_ - (x + w / 2), (Y_ - (y + h / 2)) * 1.1) / (h * 0.48)
-        P.c.shade[sy, sx] *= np.clip(1.06 - 0.20 * r ** 2, 0.86, 1.06)
-        P.c.height[sy, sx] -= 0.003 * np.clip(1.0 - r, 0, 1)
-    for name in ("tail_brake", "ind", "reverse", "fog"):
+        u, v = (X_ - x - 1.5) / (w - 3.0), (Y_ - y - 1.5) / (h - 3.0)
+        asp = {"low": 0.145 / 0.195, "high": 0.180 / 0.195, "drl": 0.325 / 0.055,
+               "ind": 0.105 / 0.250}[name]
+        # distance in from the cell's edge, in units of its short side
+        du, dv = np.minimum(u, 1 - u), np.minimum(v, 1 - v)
+        du, dv = (du * asp, dv) if asp < 1 else (du, dv / asp)
+        r = 0.16
+        d = r - np.hypot(np.maximum(r - du, 0), np.maximum(r - dv, 0))   # rounded inset
+        rim = np.clip((0.045 - d) / 0.012, 0.0, 1.0)                  # 1 on the rim, 0 inside
+        if name in ("low", "high"):
+            # crisp vertical flutes under a cut-off shelf, a smooth bowl over it
+            nfl = 7.0 if name == "low" else 9.0
+            lower_ = v < (0.46 if name == "low" else 1.01)
+            flute = np.where(lower_ & (np.mod(u * nfl, 1.0) < 0.34), 0.80, 1.0)
+            shelf = np.where(np.abs(v - 0.46) < 0.025, 0.74, 1.0) if name == "low" else 1.0
+            rr = np.hypot((u - 0.5) * 2.0, (v - 0.60) * 2.0)
+            bowl = np.clip(1.06 - 0.16 * rr ** 2, 0.86, 1.06)
+            body = flute * shelf * bowl
+            P.c.height[sy, sx] -= 0.004 * np.clip(1.0 - rr, 0, 1)
+        elif name == "drl":
+            body = np.where(np.mod(u * 9.0, 1.0) < 0.16, 0.80, 1.0)
+        else:
+            body = np.where(np.mod(v * 11.0, 1.0) < 0.30, 0.84, 1.0) \
+                * np.clip(1.06 - 0.25 * np.abs(u - 0.5), 0.9, 1.06)
+        P.c.shade[sy, sx] *= body * (1.0 - 0.62 * rim)
+    for name in ("tail_brake", "reverse", "fog"):
         x, y, w, h = REG["lens_" + name]
         sy, sx, Y_, X_ = P.c.field(x, x + w, y, y + h)
         rib = np.mod(Y_ - y, 2.0) < 0.7
@@ -772,12 +939,15 @@ def paint_patches(P):
 
 
 # ---------------------------------------------------------------- LOD3
+LOD3_UPPER = [(0.09, Z_LEDGE), (0.27, 2.50), (0.50, 2.75), (1.88, 3.70), (7.90, 3.70),
+              (7.90, 1.15), (1.90, 1.15)]
+LOD3_LOWER = [(0.0, 0.99), (0.0, 0.46), (1.00, 0.0), (1.75, 0.0), (1.95, 0.45), (5.30, 0.45),
+              (5.50, 0.0), (6.30, 0.0), (7.84, 0.45), (7.84, 1.13)]
+
+
 def paint_lod3(P):
     """Pictures for the 60-triangle LOD3: a side elevation, the front and
     the rear, at 16 texels per metre."""
-    def side(u, v):
-        s, z = u, v
-        return s, z
     reg = "lod3_side"
     P.fill(reg, M_DARK)
     pp = LOD3_PPM
@@ -787,11 +957,10 @@ def paint_lod3(P):
     W(lambda s, z: (s > BOX_S0) & (z > BOX_Z0), M_BOX_FAR)
     W(lambda s, z: (s > BOX_S0) & (np.abs(z - 1.23) < 0.08), M_ALU)
     W(lambda s, z: (s < CAB_BACK) & (z > Z_DOOR), M_CAB_FAR)
-    W(lambda s, z: (s < CAB_BACK) & (z > 0.80) & (z <= Z_DOOR), M_PLASTIC)
-    W(lambda s, z: (s > 0.75) & (s < 1.82) & (z > 2.75), M_CAB_FAR)    # deflector
-    W(lambda s, z: (s > DOOR_GLASS[0]) & (s < DOOR_GLASS[1]) & (z > DOOR_GLASS[2])
-      & (z < DOOR_GLASS[3]), M_GLASS)
-    W(lambda s, z: (s < 0.32) & (z > 0.40) & (z < 0.80), M_PLASTIC)
+    W(lambda s, z: (s < CAB_BACK) & (z > Z_FOOT) & (z <= Z_DOOR), M_PLASTIC)
+    nose = [(r[1], r[0]) for r in DEFL.rings] + [(DEFL_BACK, DEFL_TOP), (DEFL_BACK, 2.70)]
+    W(lambda s, z: (z > 2.74) & (s < 1.89) & (inside(nose, s, z) | (s > 1.80)), M_CAB_FAR)
+    W(lambda s, z: inside(DOOR_GLASS, s, z), M_GLASS)
     # the under-body solid's sides are unpainted: its guards, tank and rims
     # in their own colours, light under dark paint as LOD0's are
     W(lambda s, z: (s > GUARD_S[0]) & (s < GUARD_S[1]) & (
@@ -803,20 +972,18 @@ def paint_lod3(P):
         W(lambda s, z, sc=sc: np.hypot(s - sc, z - R_WHEEL) < 0.32, M_RIM)
     reg = "lod3_front"
     P.fill(reg, M_DARK)
-    # the cab front, painted down to its foot as LOD0's (the lower intake slot
-    # drawn), across the extrusion's full width
-    W(lambda u, z: z > 0.80, M_CAB_FAR)
-    W(lambda u, z: (np.abs(u - BOX_HW) < 0.70) & (np.abs(z - 0.90) < 0.03), M_GRILLE_HOLE)
+    # the cab front from the bumper's top, across the extrusion's full width
+    W(lambda u, z: z > Z_LEDGE, M_CAB_FAR)
     W(lambda u, z: (z > 2.75), M_BOX_FAR)
-    W(lambda u, z: (z > 2.75) & (z < 3.55) & (np.abs(u - BOX_HW) < 1.08), M_CAB_FAR)
-    W(lambda u, z: (np.abs(u - BOX_HW) < WSCREEN[0]) & (z > WSCREEN[1]) & (z < WSCREEN[2]),
-      M_GLASS)
-    W(lambda u, z: (np.abs(u - BOX_HW) < GRILLE[0]) & (z > GRILLE[1]) & (z < GRILLE[2]),
-      M_GRILLE)
-    W(lambda u, z: (z > 0.40) & (z < 0.80) & (np.abs(u - BOX_HW) < BUMPER_HW), M_PLASTIC)
-    W(lambda u, z: (np.abs(np.abs(u - BOX_HW) - 0.79) < 0.19) & (z > 0.60) & (z < 0.76),
-      M_PIC_LAMP)
-    W(lambda u, z: (z < 0.40) & (np.abs(np.abs(u - BOX_HW) - FRONT_X) < 0.15), M_TYRE)
+    W(lambda u, z: (z > 2.75) & (z < DEFL_TOP) & (np.abs(u - BOX_HW) < DEFL_W[1]), M_CAB_FAR)
+    W(lambda u, z: (np.abs(u - BOX_HW) < trapezoid_hw(WSCREEN, z) + 0.03) & (z > COWL_Z)
+      & (z < WSCREEN[3] + 0.02), M_GLASS)
+    W(lambda u, z: (np.abs(u - BOX_HW) < trapezoid_hw(GRILLE, z)) & (z > GRILLE[1])
+      & (z < GRILLE[3]), M_GRILLE)
+    W(lambda u, z: (z > Z_FOOT) & (z < Z_LEDGE) & (np.abs(u - BOX_HW) < LOW_HW), M_PLASTIC)
+    W(lambda u, z: (np.abs(np.abs(u - BOX_HW) - HEADLAMP[0]) < HEADLAMP[2])
+      & (np.abs(z - HEADLAMP[1]) < HEADLAMP[3]), M_PIC_LAMP)
+    W(lambda u, z: (z < Z_FOOT) & (np.abs(np.abs(u - BOX_HW) - FRONT_X) < 0.15), M_TYRE)
     reg = "lod3_rear"
     P.fill(reg, M_DARK)
     W(lambda u, z: z > BOX_Z0, M_ALU)
@@ -864,7 +1031,7 @@ def weather(c):
     # cab band: spray behind the arch, a film over the lower panels
     x, y, wd, h = REG["cab_band"]
     w.add("D", x, x + wd, y, y + h, lambda Y_, X_, nz: 0.08 * np.exp(
-        -np.clip((Y_ - y - PAD) / PPM - (cab_v(Z_DOOR)), 0, None) / 0.25)
+        -np.clip((Y_ - y - PAD) / PPM - SHELL.v[I_DOOR], 0, None) / 0.25)
         * (0.6 + 0.4 * nz("blotch")), (M_CAB,))
     w.add("D", x, x + wd, y, y + h, lambda Y_, X_, nz: 0.14 * (0.5 + 0.5 * nz("blotch")),
           (M_PLASTIC,))
@@ -873,8 +1040,8 @@ def weather(c):
     w.add("D", x, x + wd, y, y + h, lambda Y_, X_, nz: 0.07 * np.exp(
         -((Y_ - y - PAD) / PPM) / 0.25) * (0.5 + 0.5 * nz("blotch"))
         + 0.06 * nz("speck") * np.exp(-((Y_ - y - PAD) / PPM) / 0.4), (M_CAB,))
-    # bumper and steps, the chassis, mudflaps, guards: road dirt
-    for reg, amt in (("bumper", 0.12), ("step", 0.20), ("dark", 0.22), ("liner", 0.35),
+    # steps, the chassis, mudflaps, guards: road dirt
+    for reg, amt in (("step", 0.20), ("dark", 0.22), ("liner", 0.35),
                      ("rubber", 0.30), ("guard", 0.18), ("alu_low", 0.30), ("tank", 0.12),
                      ("rail", 0.18), ("plastic", 0.10), ("tread_f", 0.25),
                      ("tread_r", 0.25), ("housing", 0.10)):

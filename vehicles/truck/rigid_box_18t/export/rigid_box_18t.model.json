@@ -4,14 +4,14 @@
   "kind": "vehicle",
   "name": "rigid_box_18t",
   "path": "vehicles/truck/rigid_box_18t",
-  "source": {"commit": "65714311db2b8c1438092ce23c0fe3c603fa0c5d", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "05e6604cd592f96fc123960f1bfe1f80a1eb9adf", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
-  "bounds": {"min": [-1.49, 0.0, -3.95], "max": [1.49, 3.7, 3.95]},
+  "bounds": {"min": [-1.493, 0.0, -3.95], "max": [1.493, 3.7, 3.95]},
   "body": {
     "class": "truck",
     "length_m": 7.9,
     "width_m": 2.53,
-    "width_mirrors_m": 2.98,
+    "width_mirrors_m": 2.986,
     "height_m": 3.7,
     "wheelbase_m": 4.5,
     "front_overhang_m": 1.4,
@@ -32,20 +32,20 @@
   "lamps": [
     {"group": "tail_brake", "lamp": 3, "side": "left", "position": "rear", "colour": "red", "centre": [1.02, 0.645, -3.87], "facing": [0.0, 0.0, -1.0], "width_m": 0.12, "height_m": 0.12},
     {"group": "tail_brake", "lamp": 3, "side": "right", "position": "rear", "colour": "red", "centre": [-1.02, 0.645, -3.87], "facing": [0.0, 0.0, -1.0], "width_m": 0.12, "height_m": 0.12},
-    {"group": "indicator_left", "lamp": 4, "side": "left", "position": "front", "colour": "amber", "centre": [0.934, 0.675, 3.912], "facing": [0.0, 0.0, 1.0], "width_m": 0.068, "height_m": 0.156},
+    {"group": "indicator_left", "lamp": 4, "side": "left", "position": "front", "colour": "amber", "centre": [0.9307, 0.735, 3.8239], "facing": [0.1591, 0.0, 0.9873], "width_m": 0.1049, "height_m": 0.25},
     {"group": "indicator_left", "lamp": 4, "side": "left", "position": "rear", "colour": "amber", "centre": [1.12, 0.645, -3.87], "facing": [0.0, 0.0, -1.0], "width_m": 0.08, "height_m": 0.12},
-    {"group": "indicator_left", "lamp": 4, "side": "left", "position": "side", "colour": "amber", "centre": [1.138, 1.25, 3.545], "facing": [1.0, 0.0, 0.0], "width_m": 0.07, "height_m": 0.06},
-    {"group": "indicator_right", "lamp": 5, "side": "right", "position": "front", "colour": "amber", "centre": [-0.934, 0.675, 3.912], "facing": [0.0, 0.0, 1.0], "width_m": 0.068, "height_m": 0.156},
+    {"group": "indicator_left", "lamp": 4, "side": "left", "position": "side", "colour": "amber", "centre": [1.138, 1.27, 3.445], "facing": [1.0, 0.0, 0.0], "width_m": 0.07, "height_m": 0.06},
+    {"group": "indicator_right", "lamp": 5, "side": "right", "position": "front", "colour": "amber", "centre": [-0.9307, 0.735, 3.8239], "facing": [-0.1591, 0.0, 0.9873], "width_m": 0.1049, "height_m": 0.25},
     {"group": "indicator_right", "lamp": 5, "side": "right", "position": "rear", "colour": "amber", "centre": [-1.12, 0.645, -3.87], "facing": [0.0, 0.0, -1.0], "width_m": 0.08, "height_m": 0.12},
-    {"group": "indicator_right", "lamp": 5, "side": "right", "position": "side", "colour": "amber", "centre": [-1.138, 1.25, 3.545], "facing": [-1.0, 0.0, 0.0], "width_m": 0.07, "height_m": 0.06},
+    {"group": "indicator_right", "lamp": 5, "side": "right", "position": "side", "colour": "amber", "centre": [-1.138, 1.27, 3.445], "facing": [-1.0, 0.0, 0.0], "width_m": 0.07, "height_m": 0.06},
     {"group": "reverse", "lamp": 6, "side": "left", "position": "rear", "colour": "white", "centre": [0.825, 0.645, -3.87], "facing": [0.0, 0.0, -1.0], "width_m": 0.09, "height_m": 0.12},
     {"group": "reverse", "lamp": 6, "side": "right", "position": "rear", "colour": "white", "centre": [-0.825, 0.645, -3.87], "facing": [0.0, 0.0, -1.0], "width_m": 0.09, "height_m": 0.12},
-    {"group": "low_beam", "lamp": 7, "side": "left", "position": "front", "colour": "white", "centre": [0.83, 0.699, 3.912], "facing": [0.0, 0.0, 1.0], "width_m": 0.14, "height_m": 0.108},
-    {"group": "low_beam", "lamp": 7, "side": "right", "position": "front", "colour": "white", "centre": [-0.83, 0.699, 3.912], "facing": [0.0, 0.0, 1.0], "width_m": 0.14, "height_m": 0.108},
-    {"group": "high_beam", "lamp": 8, "side": "left", "position": "front", "colour": "white", "centre": [0.686, 0.699, 3.912], "facing": [0.0, 0.0, 1.0], "width_m": 0.148, "height_m": 0.108},
-    {"group": "high_beam", "lamp": 8, "side": "right", "position": "front", "colour": "white", "centre": [-0.686, 0.699, 3.912], "facing": [0.0, 0.0, 1.0], "width_m": 0.148, "height_m": 0.108},
-    {"group": "daytime", "lamp": 9, "side": "left", "position": "front", "colour": "white", "centre": [0.756, 0.621, 3.912], "facing": [0.0, 0.0, 1.0], "width_m": 0.288, "height_m": 0.048},
-    {"group": "daytime", "lamp": 9, "side": "right", "position": "front", "colour": "white", "centre": [-0.756, 0.621, 3.912], "facing": [0.0, 0.0, 1.0], "width_m": 0.288, "height_m": 0.048},
+    {"group": "low_beam", "lamp": 7, "side": "left", "position": "front", "colour": "white", "centre": [0.8073, 0.7625, 3.8438], "facing": [0.1579, 0.0, 0.9875], "width_m": 0.145, "height_m": 0.195},
+    {"group": "low_beam", "lamp": 7, "side": "right", "position": "front", "colour": "white", "centre": [-0.8073, 0.7625, 3.8438], "facing": [-0.1579, 0.0, 0.9875], "width_m": 0.145, "height_m": 0.195},
+    {"group": "high_beam", "lamp": 8, "side": "left", "position": "front", "colour": "white", "centre": [0.6469, 0.7625, 3.8695], "facing": [0.1589, 0.0, 0.9873], "width_m": 0.18, "height_m": 0.195},
+    {"group": "high_beam", "lamp": 8, "side": "right", "position": "front", "colour": "white", "centre": [-0.6469, 0.7625, 3.8695], "facing": [-0.1589, 0.0, 0.9873], "width_m": 0.18, "height_m": 0.195},
+    {"group": "daytime", "lamp": 9, "side": "left", "position": "front", "colour": "white", "centre": [0.7184, 0.6375, 3.858], "facing": [0.1585, 0.0, 0.9874], "width_m": 0.325, "height_m": 0.055},
+    {"group": "daytime", "lamp": 9, "side": "right", "position": "front", "colour": "white", "centre": [-0.7184, 0.6375, 3.858], "facing": [-0.1585, 0.0, 0.9874], "width_m": 0.325, "height_m": 0.055},
     {"group": "fog_rear", "lamp": 11, "side": "left", "position": "rear", "colour": "red", "centre": [0.915, 0.645, -3.87], "facing": [0.0, 0.0, -1.0], "width_m": 0.09, "height_m": 0.12},
     {"group": "marker", "lamp": 15, "side": "left", "position": "front", "colour": "white", "centre": [1.11, 3.63, 2.05], "facing": [0.0, 0.0, 1.0], "width_m": 0.1, "height_m": 0.06},
     {"group": "marker", "lamp": 15, "side": "right", "position": "front", "colour": "white", "centre": [-1.11, 3.63, 2.05], "facing": [0.0, 0.0, 1.0], "width_m": 0.1, "height_m": 0.06},
@@ -59,27 +59,27 @@
     {"group": "marker", "lamp": 15, "side": "right", "position": "side", "colour": "amber", "centre": [-1.265, 1.235, -2.95], "facing": [-1.0, 0.0, 0.0], "width_m": 0.1, "height_m": 0.06}
   ],
   "glass": [
-    {"group": "glass_windscreen", "id": 32, "area_m2": 1.622},
-    {"group": "glass_front_side", "id": 33, "area_m2": 0.938}
+    {"group": "glass_windscreen", "id": 32, "area_m2": 1.646},
+    {"group": "glass_front_side", "id": 33, "area_m2": 1.251}
   ],
   "cargo": {"min": [-1.22, 1.25, -3.85], "max": [1.22, 3.45, 2.0], "door": "rear"},
   "coupling": null,
   "interior": null,
   "lods": [
-    {"file": "rigid_box_18t_lod0.glb", "triangles": 4316, "sha256": "ed53ae137c3fa6ce250b7ffd012087c5dba084e5f9cedc15f425092c1ae68cf4", "wheel_parts": true, "lamp_ids": true, "glass_ids": true},
-    {"file": "rigid_box_18t_lod1.glb", "triangles": 1380, "sha256": "683ed68bf78a997e06f141c5e65fb7cf425acceec9eeff5e3a5730839f7b75cf", "wheel_parts": true, "lamp_ids": true, "glass_ids": true},
-    {"file": "rigid_box_18t_lod2.glb", "triangles": 348, "sha256": "07f4ec877c298bc408f0f959724c7c10f95f2f23fac2657b9add47fc917f4510", "wheel_parts": false, "lamp_ids": true, "glass_ids": true},
-    {"file": "rigid_box_18t_lod3.glb", "triangles": 60, "sha256": "c7e60cede0964294e029fbd029022db8e0aa3140999ec2d2eb6b13a3772adb9e", "wheel_parts": false, "lamp_ids": false, "glass_ids": false}
+    {"file": "rigid_box_18t_lod0.glb", "triangles": 4492, "sha256": "9af7aa084aaaebb6c1eb42185899fecb797afaa2b4a00807dd17176ab17a7c26", "wheel_parts": true, "lamp_ids": true, "glass_ids": true},
+    {"file": "rigid_box_18t_lod1.glb", "triangles": 1374, "sha256": "d404b9d2a0500ef5cca899d07f0f86a4251a43e4f627c0291b93050afb84e9da", "wheel_parts": true, "lamp_ids": true, "glass_ids": true},
+    {"file": "rigid_box_18t_lod2.glb", "triangles": 348, "sha256": "e9dfb5fa48e41d00a2635432bf784567d8d0e934eac7c2dd67bf39de6b7f9c1d", "wheel_parts": false, "lamp_ids": true, "glass_ids": true},
+    {"file": "rigid_box_18t_lod3.glb", "triangles": 60, "sha256": "0e7647188d3f8dd8b21bf3dcc975a29ecbec4dca3663f3a0f6bbfbb58c3baa18", "wheel_parts": false, "lamp_ids": false, "glass_ids": false}
   ],
   "textures": {
-    "orm": {"file": "rigid_box_18t_orm.png", "sha256": "f452427f243c38b200e2bbf9ed02ead3fa5ab9b128a8f4c41ee5113b09243ddf"},
-    "emission": {"file": "rigid_box_18t_emission.png", "sha256": "59452e5899fb3736b8c5955edaa56fa5bfeeea4a2493df311f460896703cf5a7"},
-    "normal": {"file": "rigid_box_18t_normal.png", "sha256": "b24f859605ecbb1fa8bd54f852b1036fe2ae8549aba97f8073a4e3c3a961c21d"}
+    "orm": {"file": "rigid_box_18t_orm.png", "sha256": "a3d03b064b3ac6a912ed63dce1c957b915d5b8485b1648274564dbe911385c9c"},
+    "emission": {"file": "rigid_box_18t_emission.png", "sha256": "e6ca3528bc910611147198470bb7335c2d4a7690a357f9dc407b48afb4feda82"},
+    "normal": {"file": "rigid_box_18t_normal.png", "sha256": "a84965470a1eefa982da750227a196aa61d1b82f3f858a0acd2eb3a91f124233"}
   },
   "variants": [
-    {"name": "plain", "albedo": {"file": "rigid_box_18t_albedo_plain.png", "sha256": "65e9b2cbe7c0e3d4db5d542f9a31cb2f8406bd4bab13b65aba7e7049058581cd"}, "paint": true},
-    {"name": "haulier", "albedo": {"file": "rigid_box_18t_albedo_haulier.png", "sha256": "b1129b650f3bcb3a261ae396d9c158259cb4a936069f88d0ddd955ed9b509149"}, "paint": false}
+    {"name": "plain", "albedo": {"file": "rigid_box_18t_albedo_plain.png", "sha256": "d0ba8e412be3f8e9d507b2242b884f556c66f45ef777fa726f83d55576a107ed"}, "paint": true},
+    {"name": "haulier", "albedo": {"file": "rigid_box_18t_albedo_haulier.png", "sha256": "18d2b79c33214a6dce7e718a873765f738f086f5372ada065a48cb94142a1d28"}, "paint": false}
   ],
   "default_variant": "plain",
-  "preview": {"file": "preview.png", "sha256": "82252e1662f14084923ea1cdccac77da88d75f088ca2e46692b0ad6814080191"}
+  "preview": {"file": "preview.png", "sha256": "329b6427674c7a12dfee21e6ce2d4fdae1527db4ac7becdedea75e9970d95312"}
 }
