@@ -228,12 +228,12 @@ and its `facts()` and hands the rest to one `asset_build.Asset`.
 | Script | Role |
 | --- | --- |
 | `atlas.py` | Rasterises every atlas: a supersampled `Canvas` with id, shade, AO and height channels, rect, bevel and shape primitives (stroke, disc, rounded rect), and `pad()`; periodic `noise()`; `cavity()`; and resolvers for albedo, ORM, normal map and emission (Texture Requirements). |
-| `weathering.py` | Weathering as per-sample fields (dirt, algae, rust, faded paint, rain runs) that the canvas carries through `pad()` and `atlas.albedo()`/`orm()` resolve per variant, with helpers for a plinth, splash-back, a sheltered eave, runs under a drip, a roof band, a window and a door. Each atlas's `weather()` places them. |
-| `asset_build.py` | The shared half of every `build.py`: `check_toolchain()`, the catalog preview constants, `open_stack()` (a chimney or stack open at the top round a sooted flue), `union()` (the exact boolean, which triangulates any keyhole face it returns round a hole before the build's weld can fold it), and an `Asset` (`night_lit=False` for one without glazing) with `material()`, `build_all()`, `export_all()`, `render_preview()`, `render_variants()`, `write_facts()` and `main()`. Runs inside Blender only. |
+| `weathering.py` | Weathering as per-sample fields (dirt, algae, rust, faded paint, rain runs, coal dust) that the canvas carries through `pad()` and `atlas.albedo()`/`orm()` resolve per variant, with helpers for a plinth, splash-back, a sheltered eave, runs under a drip, a roof band, a window and a door. Each atlas's `weather()` places them. |
+| `asset_build.py` | The shared half of every `build.py`: `check_toolchain()`, the catalog preview constants, `open_stack()` (a chimney or stack open at the top round a sooted flue), `union()` (the exact boolean, which triangulates any keyhole face it returns round a hole before the build's weld can fold it) and `difference()`, its subtracting twin, and an `Asset` (`night_lit=False` for one without glazing) with `material()`, `build_all()`, `export_all()`, `render_preview()`, `render_variants()`, `write_facts()` and `main()`. Runs inside Blender only. |
 | `model_facts.py` | The facts sidecar `export/<asset_name>.model.json`: its schema, the build-frame to glTF conversion, `wall_door()`, `lane_passage()` and `roof_clear_width()` for a `build.py`'s `facts()`, `compose()`/`write()`, and `check()`, which `validate_asset.py` runs on the file. Pure Python. |
 | `glazing.py` | Paints glass as the room behind it: `rooms()` on the finished albedo by day, `night_rooms()` on the emission mask by night. Called by texture generators. |
 | `downpipes.py` | Downpipes as swept, mitred closed solids for `build.py` to union: a `Pipe` placed on a wall, swan-neck and shoe, UVs on the atlas's painted gutter (`PIPE_STRIP`), per-tier `MODES`, and `problems()` for `check_layout()`. Runs inside Blender only. |
-| `roof_safety.py` | Roof safety equipment as closed solids for `build.py` to union: the wall ladder, the roof ladder and the walkway, UVs on the painted gutter (`PIPE_STRIP`) or a fixed patch, per-tier `MODES`, and `problems()` for `check_layout()`. Runs inside Blender only. |
+| `roof_safety.py` | Roof safety equipment as closed solids for `build.py` to union: the wall ladder and its safety cage, the roof ladder and the walkway, UVs on the painted gutter (`PIPE_STRIP`) or a fixed patch, per-tier `MODES`, and `problems()` for `check_layout()`. Runs inside Blender only. |
 | `handrails.py` | Handrails on entrance flights as closed solids for `build.py` to union: one rail on posts, on the right going up (`side="left"` where that is blocked), level along the landing and down the nosing line, UVs on `PIPE_STRIP` through `roof_safety.Paint`, per-tier `MODES`, and `problems()` for `check_layout()`. Runs inside Blender only. |
 | `window_emission.py` | Wires the emission mask into the material (`attach`, `set_state`), rewrites an exported GLB's emission factor (`rewrite_glb_emission`, which `asset_build` uses to ship it default-off), holds the reference `LIT_FACTOR`. |
 | `glb_images.py` | `strip_embedded_images()`: removes the `bufferView` the exporter leaves beside each image `uri`; `asset_build`'s export runs it on every tier (Texture Requirements). |
@@ -470,6 +470,8 @@ triangle cost and the tiers that keep it.
     about 1 m above the roof edge. Where no eave wall has such a run (a
     terrace's bays), a blank gable next to its rear corner, passing outside
     the rake.
+    - A wall ladder taller than about 6 m carries a safety cage from about
+      2.5 m up, thinned by tier before it goes.
   - A **roof ladder** from the eave up the slope above the wall ladder, on
     brackets clear of the sheet, to the height of what it serves.
   - A **walkway**: a level plank along the slope, on posts, from the roof

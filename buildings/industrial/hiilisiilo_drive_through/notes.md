@@ -413,12 +413,14 @@ runs under the flashings and the gutter.
 
 - **Coal dust instead of soil.** Dirt resolves to the module's neutral dust
   colour on every id (the `steel` list). That dust is a mid-grey, lighter
-  than the dark steel it settles on, so coal has its own field: the local
-  `Weather` subclass in `facade_atlas.py` adds a coal field `K`, carried by
-  `pad()` with the module's fields, which lerps the weathered colour toward
-  `COAL_DUST` (sRGB 46/45/44, clipped at 0.9), adds 0.22 roughness and
-  strips the metallic. `coal()` writes it, and deepens the shade by 0.30
-  of it where it lies thick.
+  than the dark steel it settles on, so coal has its own field:
+  `scripts/weathering.py`'s coal field `K`, carried by `pad()` with the
+  other fields, which lerps the weathered colour toward the atlas's
+  `COAL_DUST` (sRGB 46/45/44, passed as the `Weather`'s `coal_dust`;
+  clipped at 0.9), adds 0.22 roughness and strips the metallic.
+  `Weather.coal()` writes it, and deepens the shade by 0.30 of it where it
+  lies thick. The atlas's own `Weather` subclass only makes the named
+  noise periodic on the cladding band.
 - **Where the coal dust goes, and how much (`K`):**
   - the legs' and walls' feet: `FOOT_COAL` 1.0 at the ground, falling by
     1/e every 1.50 m (`FOOT_FALL`), blotched. S1's V is height from the

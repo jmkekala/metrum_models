@@ -119,8 +119,9 @@ point at 7.10 m, 1.1 m above the lintels (Construction).
 
 `build.py` builds the shed as one hand-built closed box: four walls to a lid
 inside the roof slab, a floor cap, and the lid cut along the ridge. The lane
-is then cut out of it with an exact boolean **difference**. Everything else
-is unioned in with Blender's Exact boolean (`asset_build.union`):
+is then cut out of it with an exact boolean **difference**
+(`asset_build.difference`). Everything else is unioned in with Blender's
+Exact boolean (`asset_build.union`):
 
 - the lean-to and tower, one hand-built solid;
 - the gable roof slab, the lean-to slab and the tower slab;
@@ -389,11 +390,11 @@ painted steel and frames, wash on brick, plinth soil and algae, splash-back,
 light efflorescence to 1.4 m, roof dirt toward the eave, and runs under the
 band and the gutters.
 
-Coal dust has its own field. The `Weather` subclass in `facade_atlas.py`
-adds a coal field `K`, carried by `pad()`, which lerps the weathered colour
-toward `COAL_DUST` (sRGB 44/43/42, clipped at 0.9), adds 0.22 roughness and
-strips the metallic. It is copied from `hiilisiilo_drive_through`'s atlas;
-the two copies are a candidate for `scripts/`. Where the dust lies:
+Coal dust has its own field: `scripts/weathering.py`'s coal field `K`,
+laid by `Weather.coal()` and carried by `pad()`, which lerps the weathered
+colour toward the atlas's `COAL_DUST` (sRGB 44/43/42, passed as the
+`Weather`'s `coal_dust`; clipped at 0.9), adds 0.22 roughness, strips the
+metallic and deepens the shade by 0.30 of it. Where the dust lies:
 
 - **every wall's foot:** 1.0 at the ground, falling by 1/e every 0.60 m and
   gone by 1.9 m, plus 0.25–0.40 over the plinth, all on rows whose V is

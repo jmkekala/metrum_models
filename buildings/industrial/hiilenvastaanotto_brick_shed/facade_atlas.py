@@ -11,9 +11,8 @@ build.py imports this module for every number the mesh and the atlas share
 (plan, heights, opening sizes, band rows, region rectangles), so a change
 here cannot leave the UVs pointing at the wrong artwork. Importing it only
 defines those constants; the painting runs when paint() is called.
-Rasterising is scripts/atlas.py's; dirt, algae, rust and faded paint are
-scripts/weathering.py's fields, placed by weather() below, with one local
-field for coal dust.
+Rasterising is scripts/atlas.py's; dirt, algae, rust, faded paint and coal
+dust are scripts/weathering.py's fields, placed by weather() below.
 
 A trim sheet. Rows from the bottom:
 
@@ -279,7 +278,7 @@ SIDE_SHADE, SIDE_AO = 0.62, 0.48
 CEIL_SHADE, CEIL_AO = 0.50, 0.38
 FLOOR_SHADE, FLOOR_AO = 0.70, 0.55
 
-# Coal dust (the local Weather's K field)
+# Coal dust: weathering.py's K field, laid by Weather.coal()
 COAL_DUST = (44, 43, 42)    # sRGB: settled coal fines
 FOOT_COAL = 1.00            # at the walls' foot ...
 FOOT_FALL = 0.60            # ... falling by 1/e every this many metres ...
@@ -290,54 +289,6 @@ LANE_COAL = 0.30
 def m(v):
     """Metres -> pixels at 64 px/m."""
     return v * PPM
-
-
-# ============================================================ coal weather
-class Weather(weathering.Weather):
-    """weathering.Weather with one more field, K, coal dust: copied from
-    hiilisiilo_drive_through's atlas, where it was first written.
-    weathering.py's dirt resolves to a mid-grey dust, lighter than dark
-    steel; coal dust is darker than anything it settles on. K lerps the
-    weathered colour toward COAL_DUST, roughens it and strips the metallic,
-    as dirt does; pad() carries it with the other fields."""
-
-    def __init__(self, c, **kw):
-        super().__init__(c, **kw)
-        n = c.size * c.ss
-        self.k = np.zeros((n, n), np.float32)
-
-    def carry(self, iy, ix):
-        super().carry(iy, ix)
-        self.k[...] = self.k[iy, ix]
-
-    def albedo(self, base, shade):
-        shade = super().albedo(base, shade)
-        k = np.clip(self.k, 0.0, 0.9)
-        k[np.isin(self.c.mid, self.clean)] = 0.0
-        coal = atlas.srgb_to_linear(COAL_DUST).astype(np.float32)
-        base += (coal - base) * k[..., None]
-        return shade
-
-    def orm(self, rough, metal):
-        rough, metal = super().orm(rough, metal)
-        k = np.clip(self.k, 0.0, 1.0)
-        k[np.isin(self.c.mid, self.clean)] = 0.0
-        return rough + 0.22 * k, metal * (1.0 - k)
-
-
-def coal(c, x0, x1, y0, y1, value, ids=None, dark=0.30):
-    """Coal dust of *value* (0..1, a number or value(Y, X)) over a rect: the
-    Weather's K field, and the shade a little deeper where it lies thick.
-    Called after the Weather exists, before pad()."""
-    sy, sx, Y, X = c.field(x0, x1, y0, y1)
-    if Y.size == 0:
-        return
-    v = value(Y, X) if callable(value) else np.full(Y.shape, value, np.float32)
-    v = np.clip(v, 0.0, 1.0).astype(np.float32)
-    if ids is not None:
-        v = np.where(np.isin(c.mid[sy, sx], ids), v, 0.0)
-    c.shade[sy, sx] *= 1.0 - dark * v
-    c.weather.k[sy, sx] += v
 
 
 # ================================================================== bands
@@ -835,13 +786,13 @@ def weather(c):
     The brick band's V is height from the ground, so splash-back, the
     plinth's soil and the coal the trucks throw up land the same on every
     wall; all of it is gone by FOOT_TOP, under the rows the walls above the
-    band sample again (SAMPLE_LO), so no shift shows a seam. Coal dust is the
-    local K field: heavy in the lane, on its floor round the grate and at the
-    mouths' jambs, at the walls' feet; light and patchy everywhere above, a
-    working plant's dust, not neglect."""
+    band sample again (SAMPLE_LO), so no shift shows a seam. Coal dust is
+    weathering's K field (w.coal()): heavy in the lane, on its floor round
+    the grate and at the mouths' jambs, at the walls' feet; light and patchy
+    everywhere above, a working plant's dust, not neglect."""
     brick = (ID_BRICK, ID_BRICK2, ID_MORTAR)
     steel = (ID_ROOF, ID_FLASH, ID_GUTTER, ID_DOOR, ID_HANDLE, ID_STEEL, ID_SHEET)
-    w = Weather(c, clean=(ID_GLASS,), steel=steel)
+    w = weathering.Weather(c, clean=(ID_GLASS,), steel=steel, coal_dust=COAL_DUST)
     w.grime()
     w.fade((ID_FRAME, ID_DOOR, ID_FLASH))
     w.wash(brick)
@@ -857,26 +808,21 @@ def weather(c):
     w.runs(0, xb1, BRICK_Y0 + m(SAMPLE_HI + 0.02), b0, brick, 0.10, fall=3.0)
     w.add("D", 0, xb1, b0, b1, lambda Y, X, nz: 0.05 * nz("big"), (ID_CONC,))
     # coal the trucks throw up, at every wall's foot; gone by FOOT_TOP
-    s1 = c.sl(0, xb1, BRICK_Y0, band_top)
-
-    def foot(Y, X):
+    def foot(Y, X, nz):
         z = np.clip((Y - BRICK_Y0) / PPM, 0.0, None)
-        return (FOOT_COAL * np.exp(-z / FOOT_FALL) * (0.6 + 0.4 * w.noise("blotch")[s1])
+        return (FOOT_COAL * np.exp(-z / FOOT_FALL) * (0.6 + 0.4 * nz("blotch"))
                 * atlas.smoothstep(FOOT_TOP, FOOT_TOP - 0.6, z)
-                + 0.05 + 0.04 * w.noise("big")[s1]
-                + 0.08 * atlas.smoothstep(0.4, 1.8, w.noise("runs")[s1]))
-    coal(c, 0, xb1, BRICK_Y0, band_top, foot,
-         (ID_PLINTH, ID_CONC) + brick)
+                + 0.05 + 0.04 * nz("big")
+                + 0.08 * atlas.smoothstep(0.4, 1.8, nz("runs")))
+    w.coal(0, xb1, BRICK_Y0, band_top, foot, (ID_PLINTH, ID_CONC) + brick)
     # the plinth: a dull grey-black film all along, the dust it catches
-    s0 = c.sl(0, xb1, BRICK_Y0 - PAD, BRICK_Y0 + m(Z_PLINTH))
-    coal(c, 0, xb1, BRICK_Y0 - PAD, BRICK_Y0 + m(Z_PLINTH), lambda Y, X: 0.25
-         + 0.15 * w.noise("blotch")[s0], (ID_PLINTH,))
+    w.coal(0, xb1, BRICK_Y0 - PAD, BRICK_Y0 + m(Z_PLINTH), lambda Y, X, nz: 0.25
+           + 0.15 * nz("blotch"), (ID_PLINTH,))
     # the roof, its ridge, snow guard, fascia and gutter
     roof = (ID_ROOF,)
     w.roof(0, ATLAS, ROOF_Y0, ROOF_H, ROOF_LEN, roof)
-    rr = c.sl(0, ATLAS, ROOF_Y0 - PAD, ROOF_Y0 + ROOF_H + PAD)
-    coal(c, 0, ATLAS, ROOF_Y0 - PAD, ROOF_Y0 + ROOF_H + PAD, lambda Y, X: 0.05
-         + 0.08 * w.noise("blotch")[rr], roof + (ID_FLASH,))
+    w.coal(0, ATLAS, ROOF_Y0 - PAD, ROOF_Y0 + ROOF_H + PAD, lambda Y, X, nz: 0.05
+           + 0.08 * nz("blotch"), roof + (ID_FLASH,))
     g = ROOF_Y0 + round(SNOW_GUARD * ROOF_RPM)
     w.add("D", 0, ATLAS, g + 4.5, g + 12.0, lambda Y, X, nz: 0.20 * nz("blotch")
           * (1.0 - (Y - g - 4.5) / 7.5), roof)
@@ -891,32 +837,28 @@ def weather(c):
     # the lane's side walls: dusted all over, heavy at the foot and at the
     # mouths' jambs, where every truck's spray and draught passes
     x0, y0, lw, lh = LANE_SIDE
-    ls = c.sl(x0 - PAD, x0 + lw + PAD, y0 - PAD, y0 + lh + PAD)
     w.add("D", x0 - PAD, x0 + lw + PAD, y0 - PAD, y0 + lh + PAD,
           lambda Y, X, nz: 0.08 + 0.08 * nz("blotch"))
 
-    def side(Y, X):
+    def side(Y, X, nz):
         z = np.clip((Y - y0) / LPM, 0, None)
         u = (X - x0) / LPM
         jamb = np.clip(1.0 - (np.minimum(u, 2 * HX - u) - WALL_T) / 0.8, 0, 1)
-        return (LANE_COAL + 0.10 * w.noise("blotch")[ls]
+        return (LANE_COAL + 0.10 * nz("blotch")
                 + 0.55 * np.exp(-z / 0.9) + 0.30 * jamb * np.exp(-z / 3.0))
-    coal(c, x0 - PAD, x0 + lw + PAD, y0 - PAD, y0 + lh + PAD, side)
+    w.coal(x0 - PAD, x0 + lw + PAD, y0 - PAD, y0 + lh + PAD, side)
     # the ceiling: dust thickest over the grate, where it rises when a load
     # is tipped
     x0, y0, cw, ch = LANE_CEIL
-    lc = c.sl(x0 - PAD, x0 + cw + PAD, y0 - PAD, y0 + ch + PAD)
     w.add("D", x0 - PAD, x0 + cw + PAD, y0 - PAD, y0 + ch + PAD,
           lambda Y, X, nz: 0.10 + 0.10 * nz("blotch"))
-    coal(c, x0 - PAD, x0 + cw + PAD, y0 - PAD, y0 + ch + PAD, lambda Y, X: LANE_COAL
-         + 0.08 * w.noise("blotch")[lc]
-         + 0.35 * np.exp(-np.abs((X - x0) / LPM - HX) / 3.0))
+    w.coal(x0 - PAD, x0 + cw + PAD, y0 - PAD, y0 + ch + PAD, lambda Y, X, nz: LANE_COAL
+           + 0.08 * nz("blotch")
+           + 0.35 * np.exp(-np.abs((X - x0) / LPM - HX) / 3.0))
     # the floor: spill round the grate, along the tracks and the walls;
     # rain keeps the mouths cleaner
     x0, y0, fw, fh = LANE_FLOOR
-    lf = c.sl(x0 - PAD, x0 + fw + PAD, y0 - PAD, y0 + fh + PAD)
-
-    def floor(Y, X):
+    def floor(Y, X, nz):
         u = (X - x0) / LPM
         v = (Y - y0) / LPM
         e = np.minimum(u, 2 * HX - u)
@@ -926,39 +868,39 @@ def weather(c):
         tracks = sum(np.exp(-((v - t) / 0.40) ** 2) for t in (vc - 0.95, vc + 0.95))
         return ((0.22 + 0.12 * tracks + 0.65 * np.exp(-d / 1.1)
                  + 0.30 * np.exp(-dw / 0.5)) * (0.55 + 0.45 * lane_fall(e, 0.0, 3.0))
-                + 0.10 * w.noise("blotch")[lf])
+                + 0.10 * nz("blotch"))
     w.add("D", x0 - PAD, x0 + fw + PAD, y0 - PAD, y0 + fh + PAD,
           lambda Y, X, nz: 0.10 + 0.10 * nz("blotch"), (ID_FLOOR, ID_STEEL))
-    coal(c, x0 - PAD, x0 + fw + PAD, y0 - PAD, y0 + fh + PAD, floor,
-         (ID_FLOOR, ID_STEEL))
+    w.coal(x0 - PAD, x0 + fw + PAD, y0 - PAD, y0 + fh + PAD, floor,
+           (ID_FLOOR, ID_STEEL))
     # the windows: dirt standing on the bottom rail
     for kind in ("win", "win_b", "win_s", "win_s_b"):
         x, y, rw, rh = REGION[kind]
         w.add("D", x, x + rw, y - PAD, y + 7, lambda Y, X, nz: 0.12
               + 0.12 * atlas.smoothstep(0.2, 1.4, nz("short")), (ID_FRAME,))
-        coal(c, x, x + rw, y - PAD, y + rh + PAD, 0.10, (ID_FRAME,))
+        w.coal(x, x + rw, y - PAD, y + rh + PAD, 0.10, (ID_FRAME,))
     # the door: kicked-up dirt and coal at the foot, grime round the handle
     x, y, rw, rh = REGION["door"]
     f = m(DOOR_FRAME)
     w.door(x + f, x + rw - f, y, y + m(LEAF_H), (ID_DOOR,),
            handle=(x + rw - f - m(0.09), y + m(1.02)))
-    coal(c, x - PAD, x + rw + PAD, y - PAD, y + m(0.8),
-         lambda Y, X: 0.40 * np.exp(-np.clip(Y - y, 0, None) / m(0.35)))
+    w.coal(x - PAD, x + rw + PAD, y - PAD, y + m(0.8),
+           lambda Y, X, nz: 0.40 * np.exp(-np.clip(Y - y, 0, None) / m(0.35)))
     # the hatch: coal dust where the chute's spill blows out of its seals,
     # rust at the hinges; the louvre: runs down its blades
     x, y, rw, rh = REGION["hatch"]
-    coal(c, x - PAD, x + rw + PAD, y - PAD, y + rh + PAD, lambda Y, X: 0.15
-         + 0.25 * np.exp(-np.clip(Y - y, 0, None) / m(0.3)))
+    w.coal(x - PAD, x + rw + PAD, y - PAD, y + rh + PAD, lambda Y, X, nz: 0.15
+           + 0.25 * np.exp(-np.clip(Y - y, 0, None) / m(0.3)))
     w.add("R", x, x + rw, y + rh - m(0.4), y + rh, lambda Y, X, nz: 0.12 * nz("blotch"),
           (ID_STEEL, ID_DOOR))
     x, y, rw, rh = REGION["louvre"]
     w.runs(x, x + rw, y, y + rh, (ID_FRAME, ID_CONC), 0.16, fall=rh / 2.0)
-    coal(c, x, x + rw, y, y + rh, 0.20, (ID_FRAME,))
+    w.coal(x, x + rw, y, y + rh, 0.20, (ID_FRAME,))
     # patches
     for name, k in (("lintel", 0.35), ("beam", 0.35), ("felt", 0.15),
                     ("sill", 0.10), ("reveal", 0.25), ("soffit", 0.10)):
         px, py, pw, ph = PATCHES[name]
-        coal(c, px - 2, px + pw + 2, py - 2, py + ph + 2, k)
+        w.coal(px - 2, px + pw + 2, py - 2, py + ph + 2, k)
     return w
 
 

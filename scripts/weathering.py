@@ -15,10 +15,15 @@ amounts, not colours, and are resolved against each variant's own palette:
     F  fade   lerp toward the surface's own chalky grey: paint chalking, and
               on brick the pale bloom of efflorescence
     W  wash   a shade offset: faint rain runs down a wall
+    K  coal   lerp toward settled coal fines (coal_dust), where a plant
+              handles coal: dirt resolves to a mid-grey dust that reads
+              lighter than dark steel, coal dust is darker than anything it
+              settles on. Laid only by coal(), which also deepens the shade
+              where it lies thick; an atlas that never calls it carries no K.
 
-Dirt, algae and rust roughen the ORM and strip the metallic; fade roughens a
-little. None of them touches height or the normal map, and clean ids (glass)
-never weather: glazing.rooms() owns every pane.
+Dirt, algae, rust and coal roughen the ORM and strip the metallic; fade
+roughens a little. None of them touches height or the normal map, and clean
+ids (glass) never weather: glazing.rooms() owns every pane.
 
 The tiling bands map height (a wall band) or slope (a roof band) to V and wrap
 in U. Weather that follows height -- ground splash, a sheltered eave, dirt
@@ -33,6 +38,10 @@ in a shared band; it stays inside the openings' own regions.
     w = weathering.Weather(c, clean=(ID_GLASS,), steel=(ID_ROOF, ID_METAL))
     w.grime()
     w.plinth(0, ATLAS, S1_Y0, S1_Y0 + m(Z_FLOOR), (ID_PLINTH,))
+    ...
+    # a coal plant's atlas: Weather(..., coal_dust=COAL_DUST), then
+    w.coal(0, ATLAS, S1_Y0, S1_TOP, lambda Y, X, nz: 0.06 + 0.08 * nz("big"),
+           (ID_CONC,))
     ...
     c.pad()                          # carries the fields with the channels
     cav = atlas.cavity(c, ...)
@@ -52,7 +61,8 @@ DIRT = (98, 88, 74)        # sRGB: road dust and soil
 STEEL_DIRT = (86, 84, 78)  # dust on sheet steel and felt
 ALGAE = (70, 78, 60)
 RUST = (100, 60, 40)
-FIELDS = "DGRFW"
+COAL_DUST = (46, 45, 44)   # settled coal fines, a matte blue-black grey
+FIELDS = "DGRFW"           # always present; K only once coal() lays it
 
 # name -> (seed, sigma x, sigma y, kind); see noise()
 NOISE = {
@@ -68,15 +78,17 @@ NOISE = {
 
 
 class Weather:
-    def __init__(self, c, clean=(), steel=(), tile_y=1):
+    def __init__(self, c, clean=(), steel=(), tile_y=1, coal_dust=COAL_DUST):
         """Attach empty fields to canvas *c*: c.pad() carries them and
         atlas.albedo()/orm() resolve them. tile_y > 1 makes every noise
         repeat that many times up the canvas, for an atlas with a band that
-        wraps in V (atlas.noise)."""
+        wraps in V (atlas.noise). *coal_dust* is the sRGB colour coal() lays,
+        resolved for every variant alike."""
         n = c.size * c.ss
         self.c = c
         self.tile_y = tile_y
         self.clean, self.steel = tuple(clean), tuple(steel)
+        self.coal_dust = tuple(coal_dust)
         self.f = {k: np.zeros((n, n), np.float32) for k in FIELDS}
         self._noise = {}
         c.weather = self
@@ -113,8 +125,8 @@ class Weather:
 
     def carry(self, iy, ix):
         """Canvas.pad()'s nearest-sample fill, applied to every field."""
-        for k in FIELDS:
-            self.f[k][...] = self.f[k][iy, ix]
+        for a in self.f.values():
+            a[...] = a[iy, ix]
         self._noise.clear()
 
     # -------------------------------------------------------- the weather
@@ -237,6 +249,30 @@ class Weather:
         c.pad(), with the cavity() the export computes."""
         self.f["D"] += amount * cav * np.isin(self.c.mid, ids)
 
+    def coal(self, x0, x1, y0, y1, value, ids=None, dark=0.30):
+        """Coal dust over a rect, on *ids* only if given: the K field, which
+        resolves toward coal_dust and turns the surface matte, and the shade
+        *dark* deeper where it lies thick. *value* is 0..1, a number or
+        value(Y, X, nz) as for add(), clipped to 0..1 per call. Heavy (up to
+        1) at the foot of walls a truck passes, in a coal lane, round chutes;
+        0.05-0.15 for a working plant's light film on everything above. Call
+        before c.pad()."""
+        c = self.c
+        sy, sx, Y, X = c.field(x0, x1, y0, y1)
+        if Y.size == 0:
+            return
+        if callable(value):
+            v = value(Y, X, lambda name: self.noise(name)[sy, sx])
+        else:
+            v = np.full(Y.shape, value, np.float32)
+        v = np.clip(v, 0.0, 1.0).astype(np.float32)
+        if ids is not None:
+            v = np.where(np.isin(c.mid[sy, sx], ids), v, 0.0)
+        c.shade[sy, sx] *= 1.0 - dark * v
+        if "K" not in self.f:
+            self.f["K"] = np.zeros_like(self.f["D"])
+        self.f["K"][sy, sx] += v
+
     # ---------------------------------------------------------- resolving
     def _field(self, k, hi=None):
         """A field ready to apply: clipped to 0 .. hi when given, and zero on
@@ -260,6 +296,10 @@ class Weather:
         for k, col in (("G", ALGAE), ("R", RUST)):
             lin = atlas.srgb_to_linear(col).astype(np.float32)
             base += (lin - base) * self._field(k, 0.8)[..., None]
+        if "K" in self.f:
+            # last, over the other weather: coal dust lies on top of it
+            coal = atlas.srgb_to_linear(self.coal_dust).astype(np.float32)
+            base += (coal - base) * self._field("K", 0.9)[..., None]
         return shade * (1.0 + self._field("W"))
 
     def orm(self, rough, metal):
@@ -267,4 +307,7 @@ class Weather:
         D, G, R, F = (self._field(k, 1.0) for k in "DGRF")
         rough = rough + 0.20 * D + 0.20 * G + 0.25 * R + 0.10 * F
         metal = metal * (1.0 - np.clip(D + R, 0.0, 1.0))
+        if "K" in self.f:
+            K = self._field("K", 1.0)
+            rough, metal = rough + 0.22 * K, metal * (1.0 - K)
         return rough, metal

@@ -36,8 +36,9 @@ and 13.5 m tall under a flat concrete slab, a closed steel outlet hatch high
 on its rear face.
 
 Construction. The shed is one closed box with the lane cut out of it by an
-exact boolean difference: the lane's void, extended past both gables, and at
-the close tiers the attendant's window recess, are the cutters, so the box
+exact boolean difference (asset_build.difference): the lane's void, extended
+past both gables, and at the close tiers the attendant's window recess, are
+the cutters, so the box
 keeps a 0.02 m floor slab under the lane, the lane's floor face, and the
 void's own faces become the lane's walls, ceiling, the lintels' soffits and
 the gables' inner faces over them, with the void's UVs. Then the lean-to and
@@ -68,7 +69,7 @@ sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "scripts"))
 import asset_build  # noqa: E402
 import downpipes as DP  # noqa: E402
 import model_facts  # noqa: E402
-from asset_build import to_object, union  # noqa: E402
+from asset_build import difference, to_object, union  # noqa: E402
 
 asset_build.check_toolchain()
 BUILD = asset_build.Asset(ASSET, HERE, L.VARIANTS, L.DEFAULT_VARIANT, tint=L.LIT_FACTOR)
@@ -591,35 +592,6 @@ def lane_window_cutter():
     B.face([(s0, ya, z0), (s0, yb, z0), (s0, yb, z1), (s0, ya, z1)], rev)
     B.face([(s1, ya, z0), (s1, ya, z1), (s1, yb, z1), (s1, yb, z0)], rev)
     return B
-
-
-def difference(base, cutters):
-    """Exact boolean difference of *cutters* from *base*, applied, as
-    asset_build.union() applies its union: keyholes opened, the operands
-    removed, *base* returned unlinked."""
-    scn = bpy.context.scene
-    scn.collection.objects.link(base)
-    col = bpy.data.collections.new(base.name + "_cutters")
-    scn.collection.children.link(col)
-    for o in cutters:
-        col.objects.link(o)
-    mod = base.modifiers.new("cut", 'BOOLEAN')
-    mod.operation, mod.solver = 'DIFFERENCE', 'EXACT'
-    mod.operand_type, mod.collection = 'COLLECTION', col
-    dg = bpy.context.evaluated_depsgraph_get()
-    me = bpy.data.meshes.new_from_object(base.evaluated_get(dg))
-    asset_build._open_keyholes(me)
-    old = base.data
-    base.modifiers.clear()
-    base.data = me
-    bpy.data.meshes.remove(old)
-    for o in cutters:
-        d = o.data
-        bpy.data.objects.remove(o, do_unlink=True)
-        bpy.data.meshes.remove(d)
-    bpy.data.collections.remove(col)
-    scn.collection.objects.unlink(base)
-    return base
 
 
 def keeps_beams(level):

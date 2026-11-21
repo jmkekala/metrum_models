@@ -25,8 +25,8 @@ Construction is a set of closed solids unioned with Blender's exact boolean:
 the tower (shaft and head room as one ring of walls, the cantilevers' soffits
 included, the sheave bay recessed into its front), the base, the annex,
 the two roof slabs, three downpipes (scripts/downpipes.py), the sheaves
-(rims, hubs, spokes, axles, ropes), the wall ladder
-(scripts/roof_safety.py) and its cage, which that module does not build.
+(rims, hubs, spokes, axles, ropes), and the wall ladder and its cage
+(scripts/roof_safety.py).
 The base stands round the shaft's foot and the annex runs into the shaft,
 so the union removes every buried wall. The result is the boundary of one
 empty volume, so no interior geometry can occur.
@@ -236,26 +236,12 @@ BACK_EAVE = RS.Eave(*TOWER_WALLS["back"][:2], Z_EAVE, EAVE_OV, Z_EDGE, H_TAN)
 LADDER = RS.WallLadder(BACK_EAVE, LADDER_S)
 PAINT = RS.Paint(L.ATLAS, strip=L.PIPE_STRIP)
 
-# The ladder's safety cage, which scripts/roof_safety.py does not build: flat
-# hoops round the climber's back from CAGE_FOOT to CAGE_TOP, fixed to the
-# rails' outsides, and three vertical straps on the hoops' outsides. Across
-# (a) and out (o) are the ladder's own: a along the wall from its axis, o
-# from the wall face. A hoop leaves each rail, flares out to CAGE_R either
-# side of the axis at CAGE_O, and rounds the back on CAGE_ARC chords.
-CAGE_FOOT, CAGE_TOP = 2.50, 21.80
-CAGE_PITCH = 1.65               # the most between two hoops
-CAGE_O = LADDER.standoff + 0.28     # the hoops' arc centre, out from the wall
-CAGE_R = 0.36
-CAGE_ARC = 4
-HOOP_T, HOOP_H = 0.016, 0.05    # flat bar: thickness, height
-STRAP_T, STRAP_W = 0.020, 0.05
-STRAP_ANGLES = (135.0, 90.0, 45.0)  # round the arc, 90 at the back
-STRAP_END = 0.04                # past the first and last hoops
-_n = int(math.ceil((CAGE_TOP - CAGE_FOOT) / CAGE_PITCH - 1e-9))
-CAGE_HOOPS = [CAGE_FOOT + (CAGE_TOP - CAGE_FOOT) * k / _n for k in range(_n + 1)]
-# per tier: which hoops (every n-th, the top one always), or None for the
-# back strap alone, which sets the +Y extent every tier keeps
-CAGE_MODES = (1, 2, 6, None)
+# The ladder's safety cage (scripts/roof_safety.py's Cage, its defaults):
+# hoops from 2.50 m to CAGE_TOP, 13 at 1.61 m, and three straps; per tier
+# every hoop, every other one, every sixth, then the back strap alone, which
+# sets the +Y extent every tier keeps.
+CAGE_TOP = 21.80
+CAGE = RS.Cage(LADDER, top=CAGE_TOP)
 
 
 def outline(kind, length):
@@ -847,75 +833,6 @@ def sheave_solids(level):
     return out
 
 
-# =================================================================== cage
-def cage_point(a, o, z):
-    return tuple(BACK_EAVE.point(LADDER_S + a, o, z))
-
-
-def hoop_path():
-    """A hoop's centre line in (a, o): from inside one rail, flaring out to
-    the arc, round the back, and into the other rail."""
-    rail_o = LADDER.standoff + RS.RAIL_D / 2.0
-    a_in = RS.LADDER_W / 2.0 + RS.RAIL_W / 2.0 - 0.02      # 2 cm inside the rail
-    arc = [(CAGE_R * math.cos(math.pi * (1.0 - k / CAGE_ARC)),
-            CAGE_O + CAGE_R * math.sin(math.pi * (1.0 - k / CAGE_ARC)))
-           for k in range(CAGE_ARC + 1)]
-    return [(-a_in, rail_o)] + arc + [(a_in, rail_o)]
-
-
-def hoop(z):
-    """One flat-bar hoop at height *z*, swept along hoop_path() with mitred
-    corners, its ends capped inside the rails."""
-    pts = [Vector(p) for p in hoop_path()]
-    segs = [(q - p).normalized() for p, q in zip(pts, pts[1:])]
-    left = [Vector((-d.y, d.x)) for d in segs]
-    offs = []
-    for i in range(len(pts)):
-        if i == 0 or i == len(pts) - 1:
-            offs.append(left[0] if i == 0 else left[-1])
-            continue
-        m = (left[i - 1] + left[i]).normalized()
-        offs.append(m / m.dot(left[i - 1]))
-    t, h = HOOP_T / 2.0, HOOP_H / 2.0
-    rings = [[cage_point(*(p + n * sa * t), z + sz * h)
-              for sa, sz in ((1, -1), (-1, -1), (-1, 1), (1, 1))]
-             for p, n in zip(pts, offs)]
-    M = RS.Mesh(PAINT)
-    for i, d in enumerate(segs):
-        along = Vector(cage_point(*pts[i + 1], 0.0)) - Vector(cage_point(*pts[i], 0.0))
-        for k in range(4):
-            M.face([rings[i][k], rings[i][(k + 1) % 4], rings[i + 1][(k + 1) % 4],
-                    rings[i + 1][k]], along)
-    M.face(list(reversed(rings[0])), (0, 0, 1))
-    M.face(list(rings[-1]), (0, 0, 1))
-    return M
-
-
-def strap(angle, tri=False):
-    """A vertical strap on the hoops' outsides at *angle* round the arc;
-    *tri*, a three-sided prism within it whose outer edge keeps its extent."""
-    a = math.radians(angle)
-    rad, tan = Vector((math.cos(a), math.sin(a))), Vector((-math.sin(a), math.cos(a)))
-    c = Vector((0.0, CAGE_O)) + rad * CAGE_R
-    w = STRAP_W / 2.0
-    sec = [c + tan * w, c - tan * w, c - tan * w + rad * STRAP_T, c + tan * w + rad * STRAP_T]
-    if tri:
-        sec = [c + tan * w, c - tan * w, c + rad * STRAP_T]
-    z0, z1 = CAGE_HOOPS[0] - STRAP_END, CAGE_HOOPS[-1] + STRAP_END
-    return _prism(RS.Mesh(PAINT), [cage_point(*p, z0) for p in sec],
-                  [cage_point(*p, z1) for p in sec], (0, 0, 1))
-
-
-def cage_solids(level):
-    """The cage's hoops and straps for the union, or (on a tier without
-    hoops) the back strap alone, three-sided, for append()."""
-    every = CAGE_MODES[level]
-    if every is None:
-        return [strap(90.0, tri=True)]
-    zs = [z for k, z in enumerate(CAGE_HOOPS) if k % every == 0 or k == len(CAGE_HOOPS) - 1]
-    return [hoop(z) for z in zs] + [strap(a) for a in STRAP_ANGLES]
-
-
 # ================================================================ assembly
 def build_lod(level):
     base = to_object(tower_body(level), "tmp_tower")
@@ -934,8 +851,7 @@ def build_lod(level):
     parts += [to_object(B, "tmp_downpipe_a%d" % i) for i, (B, _n) in enumerate(
         DP.solids(DOWNPIPES[2:], sides, bent, L.PIPE_STRIP, L.ATLAS))]
     if RS.MODES[level][0] is not None:
-        parts += [to_object(M, name) for M, name in RS.solids([LADDER], level, PAINT)]
-        parts += [to_object(M, "tmp_cage%d" % i) for i, M in enumerate(cage_solids(level))]
+        parts += [to_object(M, name) for M, name in RS.solids([LADDER, CAGE], level, PAINT)]
     if bay_mode(level) == "recess":
         parts += [to_object(B, "tmp_sheave%d" % i) for i, B in enumerate(sheave_solids(level))]
     obj = union(base, parts)
@@ -956,8 +872,7 @@ def build_lod(level):
     if RS.MODES[level][0] is None:
         # the ladder sets the top and the cage's back strap the +Y extent:
         # the bare rails and that strap stay
-        RS.append(obj, RS.solids([LADDER], level, PAINT, extents=True)
-                  + [(M, "tmp_cage") for M in cage_solids(level)])
+        RS.append(obj, RS.solids([LADDER, CAGE], level, PAINT, extents=True))
     return obj
 
 
@@ -1058,17 +973,10 @@ def check_layout():
     if s0 < HX - TX + RS.CORNER or s1 > HX + TX - RS.CORNER:
         problems.append("the wall ladder is within %.2f m of the shaft's corner" % RS.CORNER)
     # the cage: as wide as its hoops, clear of the same corners and openings
-    half = CAGE_R + HOOP_T
-    c0, c1 = LADDER_S - half, LADDER_S + half
+    problems += RS.problems(CAGE, "the ladder's cage", avoid)
+    c0, c1 = CAGE.span()
     if c0 < HX - TX + RS.CORNER or c1 > HX + TX - RS.CORNER:
         problems.append("the ladder's cage is within %.2f m of the shaft's corner" % RS.CORNER)
-    for what, a0, a1 in avoid:
-        if a0 - RS.CLEAR < c1 and c0 < a1 + RS.CLEAR:
-            problems.append("the ladder's cage crowds the %s" % what)
-    if min(o for _a, o in hoop_path()) < BACK_EAVE.eave_out + 0.10:
-        problems.append("the cage's hoops reach the back eave")
-    if CAGE_HOOPS[-1] + HOOP_H > LADDER.foot + LADDER.length:
-        problems.append("the cage's top hoop is above the ladder")
     # the sheaves: inside the bay with their feet below the deck, clear of
     # each other, and their ropes leaving by the east gable's rope opening
     R, gap = L.SHEAVE_R, 0.10

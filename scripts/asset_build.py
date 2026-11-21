@@ -188,14 +188,34 @@ def _open_keyholes(me):
 def union(base, others):
     """Exact boolean union of *others* into *base*, applied, with any face the
     solver returns as a keyhole triangulated (see _open_keyholes)."""
+    return _boolean(base, others, 'UNION')
+
+
+def difference(base, cutters):
+    """Exact boolean difference of *cutters* from *base*, applied, as union()
+    applies its union: keyholes opened, the cutters removed, *base* returned
+    unlinked. Each cutter is a closed solid, such as a drive-through lane's
+    void cut out of a hand-built box before the rest is unioned in:
+
+        house = difference(to_object(shed_box(level), "tmp_shed"),
+                           [to_object(lane_void(level), "tmp_lane")])
+        obj = union(house, parts)
+    """
+    return _boolean(base, cutters, 'DIFFERENCE')
+
+
+def _boolean(base, others, operation):
+    """union()'s and difference()'s shared body: *others* as one operand
+    collection on a BOOLEAN modifier of *base*, evaluated with the exact
+    solver, keyholes opened, *others* deleted, *base* returned unlinked."""
     scn = bpy.context.scene
     scn.collection.objects.link(base)
     col = bpy.data.collections.new(base.name + "_operands")
     scn.collection.children.link(col)
     for o in others:
         col.objects.link(o)
-    mod = base.modifiers.new("union", 'BOOLEAN')
-    mod.operation, mod.solver = 'UNION', 'EXACT'
+    mod = base.modifiers.new(operation.lower(), 'BOOLEAN')
+    mod.operation, mod.solver = operation, 'EXACT'
     mod.operand_type, mod.collection = 'COLLECTION', col
     dg = bpy.context.evaluated_depsgraph_get()
     me = bpy.data.meshes.new_from_object(base.evaluated_get(dg))

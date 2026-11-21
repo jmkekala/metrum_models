@@ -156,7 +156,7 @@ concrete soffits. Every tier keeps every overhang.
 - the two sheaves, each a rim, a hub, eight spokes and an axle, and on
   `LOD0` their four ropes; on `LOD2` each sheave is one disc; on `LOD3` they
   are painted (The sheave bay);
-- the wall ladder (`scripts/roof_safety.py`) and its cage (`build.py`), on
+- the wall ladder and its cage (`scripts/roof_safety.py`), on
   `LOD0`–`LOD2`.
 
 Parameters the tiers derive from:
@@ -230,17 +230,18 @@ The brief asks for a ladder for the read, and one serves the roof, the
 gutters and the head room from outside. It is `RS.WallLadder` on the back
 eave wall, west of the windows, from the ground to 1 m above the roof's edge,
 passing 0.12 m outside the fascia. Its brackets below 3.95 m run into the
-base. A ladder this tall needs a cage; the module builds none, so
-`build.py` does (The ladder cage). There is no roof ladder or walkway. The
-ladder sets the top, so `LOD3` keeps its bare rails
-(`RS.solids(extents=True)`, appended after the weld).
+base. A ladder this tall needs a cage, `RS.Cage` (The ladder cage). There
+is no roof ladder or walkway. The ladder sets the top, so `LOD3` keeps its
+bare rails (`RS.solids(extents=True)`, appended after the weld).
 
 ### The ladder cage
 
-Closed solids in `build.py`, following the asset's `StepPipe` precedent
-rather than changing `scripts/roof_safety.py`, unioned with the ladder and
-taking its `PIPE_STRIP` mapping (`RS.Mesh`, `RS.Paint`), so it is the
-ladder's galvanised steel in every variant:
+`scripts/roof_safety.py`'s `Cage` on the wall ladder, at the module's
+defaults but for its top hoop (`CAGE_TOP`, 21.80 m): closed solids listed
+after the ladder in `RS.solids()`, unioned with it and taking its
+`PIPE_STRIP` mapping (`RS.Paint`), so it is the ladder's galvanised steel
+in every variant. The cage was first built here and moved into the module
+unchanged, so a second tall ladder gets the same one:
 
 - **Hoops:** flat bars 50 × 16 mm, 13 of them from 2.50 to 21.80 m (at most
   1.65 m apart, here 1.61 m). Each leaves the outside of one rail, buried
@@ -328,7 +329,9 @@ Asserts, before building:
 - the ladder within `RS.CORNER` of the shaft's corners or crowding any
   opening at any height on the back, the base's included, or the pipe
   (`RS.problems`), and its cage doing the same at the cage's width, its
-  hoops reaching the eave, or its top hoop standing above the ladder;
+  hoops reaching the eave, its top hoop standing above the ladder, or its
+  lowest under 2.0 m (`RS.problems` on the `Cage`, the shaft's corners
+  checked here);
 - the sheave bay leaving the front wall, taking in a corner, overlapping
   an opening, or its deck within 0.25 m of the soffit; the front downpipe
   crowding the bay;
@@ -690,6 +693,9 @@ Recorded as known-good markers, not requirements.
 
 ## Revision log
 
+- **2026-11-21:** the ladder cage moved from `build.py` into
+  `scripts/roof_safety.py` (`RS.Cage`); every tier's mesh, UVs and the
+  exported files are unchanged.
 - **2026-11-20:** the head room's front window strip replaced by the sheave
   bay, with two modelled sheaves (painted on `LOD3`), and an east-gable
   louvre by the rope opening; a cage added to the wall ladder. The cage

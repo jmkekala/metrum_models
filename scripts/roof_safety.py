@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Roof safety equipment: the wall ladder, the roof ladder and the walkway
-that take a sweep or a fitter from the ground to whatever on a roof is
-serviced from it, as closed solids for a build.py to union into its tier.
+"""Roof safety equipment: the wall ladder, its safety cage, the roof ladder
+and the walkway that take a sweep or a fitter from the ground to whatever on
+a roof is serviced from it, as closed solids for a build.py to union into
+its tier.
 
     import roof_safety as RS
     PAINT = RS.Paint(L.ATLAS, strip=L.PIPE_STRIP)
@@ -13,6 +14,20 @@ serviced from it, as closed solids for a build.py to union into its tier.
     for B, name in RS.solids([WALL, ROOF, WALK], level, PAINT):
         parts.append(to_object(B, name))
     bad += RS.problems(WALL, "the wall ladder", [("door", s0, s1)])
+
+A wall ladder longer than CAGE_LADDER (6 m) carries a safety cage. Give it
+the ladder and list it after it; problems() checks its place as wide as its
+hoops, against the same spans:
+
+    CAGE = RS.Cage(WALL)            # hoops from 2.5 m over the foot to the top
+    for B, name in RS.solids([WALL, CAGE, ROOF, WALK], level, PAINT):
+        parts.append(to_object(B, name))
+    bad += RS.problems(CAGE, "the ladder's cage", [("door", s0, s1)])
+
+and where the ladder sets the building's extents, on the tier that drops
+the kit (after the weld, as below):
+
+    RS.append(obj, RS.solids([WALL, CAGE], level, PAINT, extents=True))
 
 The eave is given by its wall's plan end points p0 -> p1, walked
 anticlockwise seen from above so the outward face is on the right, as every
@@ -41,6 +56,13 @@ Shape.
   * The wall ladder stands on the ground, off the wall on brackets, passes
     EAVE_CLEAR outside the fascia and runs LADDER_TOP above the roof edge,
     the handhold for stepping onto the roof ladder.
+  * Its cage, on a ladder over CAGE_LADDER: flat-bar hoops from CAGE_FOOT
+    over the ladder's foot to CAGE_TOP_GAP under its top, at most
+    CAGE_PITCH apart, each running from inside one rail out to a half
+    circle CAGE_R round an axis CAGE_OUT beyond the rails' backs and into
+    the other rail; three straps on the hoops' outsides, at the back and
+    either side of it. Hoops and straps are closed solids of their own,
+    overlapping the rails and each other, so the build's union joins them.
   * The roof ladder starts ROOF_START up the slope from the edge, straight
     above the wall ladder, and stands ROOF_STANDOFF off the sheet on
     brackets that run down into the roof slab, so it cuts only a few small
@@ -70,7 +92,10 @@ own modes to solids(). A wall ladder standing outside the eave or the rake
 can be the building's widest point, and every tier shares LOD0's bounds and
 pivot, so solids(extents=True) keeps its bare rails, three-sided, on a tier
 that drops the kit; they touch nothing, and go into the tier through
-append(), after the build's weld and dissolve.
+append(), after the build's weld and dissolve. A cage thins by CAGE_MODES
+(its own *modes*): every hoop, every other one, every sixth with the top
+one always, and on the tier that drops the kit, with extents, its back
+strap alone, three-sided, which stands furthest out of all.
 
 Runs inside Blender only.
 """
@@ -109,6 +134,26 @@ CLEAR = 0.20                # the least from its outside to an opening or a pipe
 # and the walkway's posts. A building that cannot afford that passes its own
 # modes to solids().
 MODES = ((1, True), (2, True), (4, False), (None, False))
+
+# The safety cage round a tall wall ladder's climber (Cage): flat-bar hoops
+# fixed into the rails, flaring out and round the climber's back, and
+# vertical straps on the hoops' outsides. Across (a) and out (o) are the
+# ladder's own: a along the wall from its axis, o out from the wall face.
+CAGE_LADDER = 6.0           # a wall ladder longer than this carries a cage
+CAGE_FOOT = 2.50            # the lowest hoop, over the ladder's foot
+CAGE_TOP_GAP = 0.15         # the top hoop, under the ladder's top, by default
+CAGE_PITCH = 1.65           # the most between two hoops
+CAGE_OUT = 0.28             # the hoops' arc centre, out beyond the rails' backs
+CAGE_R = 0.36               # the arc's radius
+CAGE_ARC = 4                # chords round the half circle
+HOOP_T, HOOP_H = 0.016, 0.05        # flat bar: thickness, height
+STRAP_T, STRAP_W = 0.020, 0.05
+STRAP_ANGLES = (135.0, 90.0, 45.0)  # round the arc, 90 at the back
+STRAP_END = 0.04            # past the first and last hoops
+# Per tier, LOD0 to LOD3: every hoop, every other one, every sixth (the top
+# one always), then the back strap alone, three-sided, which holds the
+# cage's outward extent on the tier that drops the kit (solids(extents=True)).
+CAGE_MODES = (1, 2, 6, None)
 
 
 def brackets_kept(level):
@@ -444,6 +489,120 @@ class WallLadder:
                       self.brackets if fittings and mode else [], mode, paint)
 
 
+def _prism(M, ring0, ring1, along):
+    """Quads between two matching rings of points, and the rings as caps."""
+    n = len(ring0)
+    for k in range(n):
+        M.face([ring0[k], ring0[(k + 1) % n], ring1[(k + 1) % n], ring1[k]], along)
+    M.face(list(reversed(ring0)), along)
+    M.face(list(ring1), along)
+    return M
+
+
+class Cage:
+    """The safety cage round wall ladder *wall*'s climber, its lowest hoop
+    at height *foot* and its top hoop at *top* (build-frame z): by default
+    CAGE_FOOT over the ladder's foot and CAGE_TOP_GAP under its top. Hoops
+    at most CAGE_PITCH apart, evenly spaced; *modes* per tier, as
+    CAGE_MODES. Every hoop is a closed solid whose ends run into the rails,
+    and every strap one that runs through the hoops, so the build's union
+    joins them to the ladder."""
+
+    def __init__(self, wall, foot=None, top=None, modes=CAGE_MODES):
+        self.wall, self.eave, self.s, self.modes = wall, wall.eave, wall.s, modes
+        self.foot = wall.foot + CAGE_FOOT if foot is None else foot
+        self.top = wall.foot + wall.length - CAGE_TOP_GAP if top is None else top
+        if self.top - self.foot < CAGE_PITCH / 2.0:
+            raise ValueError("a cage from %.2f to %.2f m is too short for its ladder"
+                             % (self.foot, self.top))
+        self.o = wall.standoff + CAGE_OUT
+        n = int(math.ceil((self.top - self.foot) / CAGE_PITCH - 1e-9))
+        self.hoops = [self.foot + (self.top - self.foot) * k / n for k in range(n + 1)]
+
+    def span(self):
+        half = CAGE_R + HOOP_T
+        return (self.s - half, self.s + half)
+
+    def point(self, a, o, z):
+        return tuple(self.eave.point(self.s + a, o, z))
+
+    def hoop_path(self):
+        """A hoop's centre line in (a, o): from inside one rail, flaring out
+        to the arc, round the back, and into the other rail."""
+        rail_o = self.wall.standoff + RAIL_D / 2.0
+        a_in = LADDER_W / 2.0 + RAIL_W / 2.0 - 0.02      # 2 cm inside the rail
+        arc = [(CAGE_R * math.cos(math.pi * (1.0 - k / CAGE_ARC)),
+                self.o + CAGE_R * math.sin(math.pi * (1.0 - k / CAGE_ARC)))
+               for k in range(CAGE_ARC + 1)]
+        return [(-a_in, rail_o)] + arc + [(a_in, rail_o)]
+
+    def hoop(self, z, paint):
+        """One flat-bar hoop at height *z*, swept along hoop_path() with
+        mitred corners, its ends capped inside the rails."""
+        pts = [Vector(p) for p in self.hoop_path()]
+        segs = [(q - p).normalized() for p, q in zip(pts, pts[1:])]
+        left = [Vector((-d.y, d.x)) for d in segs]
+        offs = []
+        for i in range(len(pts)):
+            if i == 0 or i == len(pts) - 1:
+                offs.append(left[0] if i == 0 else left[-1])
+                continue
+            m = (left[i - 1] + left[i]).normalized()
+            offs.append(m / m.dot(left[i - 1]))
+        t, h = HOOP_T / 2.0, HOOP_H / 2.0
+        rings = [[self.point(*(p + n * sa * t), z + sz * h)
+                  for sa, sz in ((1, -1), (-1, -1), (-1, 1), (1, 1))]
+                 for p, n in zip(pts, offs)]
+        M = Mesh(paint)
+        for i, d in enumerate(segs):
+            along = Vector(self.point(*pts[i + 1], 0.0)) - Vector(self.point(*pts[i], 0.0))
+            for k in range(4):
+                M.face([rings[i][k], rings[i][(k + 1) % 4], rings[i + 1][(k + 1) % 4],
+                        rings[i + 1][k]], along)
+        M.face(list(reversed(rings[0])), (0, 0, 1))
+        M.face(list(rings[-1]), (0, 0, 1))
+        return M
+
+    def strap(self, angle, paint, tri=False):
+        """A vertical strap on the hoops' outsides at *angle* round the arc;
+        *tri*, a three-sided prism within it whose outer edge keeps its
+        extent."""
+        a = math.radians(angle)
+        rad, tan = Vector((math.cos(a), math.sin(a))), Vector((-math.sin(a), math.cos(a)))
+        c = Vector((0.0, self.o)) + rad * CAGE_R
+        w = STRAP_W / 2.0
+        sec = [c + tan * w, c - tan * w, c - tan * w + rad * STRAP_T,
+               c + tan * w + rad * STRAP_T]
+        if tri:
+            sec = [c + tan * w, c - tan * w, c + rad * STRAP_T]
+        z0, z1 = self.hoops[0] - STRAP_END, self.hoops[-1] + STRAP_END
+        return _prism(Mesh(paint), [self.point(*p, z0) for p in sec],
+                      [self.point(*p, z1) for p in sec], (0, 0, 1))
+
+    def solid(self, paint, level, kit=True):
+        """The hoops this tier keeps and the straps, for the union; or, on a
+        tier without hoops or without the kit, the back strap alone,
+        three-sided, for append()."""
+        every = self.modes[level] if kit else None
+        if every is None:
+            return [self.strap(90.0, paint, tri=True)]
+        zs = [z for k, z in enumerate(self.hoops)
+              if k % every == 0 or k == len(self.hoops) - 1]
+        return [self.hoop(z, paint) for z in zs] + [self.strap(a, paint)
+                                                     for a in STRAP_ANGLES]
+
+    def problems(self, name):
+        """What only a cage can get wrong; problems() adds its place."""
+        bad = []
+        if min(o for _a, o in self.hoop_path()) < self.eave.eave_out + 0.10:
+            bad.append("%s's hoops reach the eave" % name)
+        if self.hoops[-1] + HOOP_H > self.wall.foot + self.wall.length:
+            bad.append("%s's top hoop is above the ladder" % name)
+        if self.hoops[0] < self.wall.foot + 2.0:
+            bad.append("%s starts under 2.0 m, in the climber's way at the foot" % name)
+        return bad
+
+
 class RoofLadder:
     """The ladder up the slope from the eave, centred *s* along it, to where
     the sheet reaches *z_top*."""
@@ -520,27 +679,33 @@ def append(obj, pieces):
 def solids(parts, level, paint, extents=False, modes=MODES):
     """(solid, object name) for each of *parts* at *level*; none past the
     tiers that keep the kit. *modes* replaces MODES for a building that
-    cannot afford the kit as far out. With *extents*, a tier that drops the
-    kit still keeps each wall ladder's bare rails, 16 triangles, for a
-    building whose extents a wall ladder sets: every tier shares LOD0's
-    bounds and pivot."""
+    cannot afford the kit as far out; a Cage thins its hoops by its own
+    modes. With *extents*, a tier that drops the kit still keeps each wall
+    ladder's bare rails, 16 triangles, and each cage's back strap, 8, for a
+    building whose extents a wall ladder or its cage sets: every tier shares
+    LOD0's bounds and pivot."""
     mode, fittings = modes[level]
     out = []
     for p in parts:
-        if mode is None and not (extents and isinstance(p, WallLadder)):
+        if mode is None and not (extents and isinstance(p, (WallLadder, Cage))):
             continue
-        got = p.solid(paint, mode, fittings)
+        if isinstance(p, Cage):
+            got = p.solid(paint, level, kit=mode is not None)
+        else:
+            got = p.solid(paint, mode, fittings)
         for M in (got if isinstance(got, list) else [got]):
             out.append((M, "tmp_roof_safety%d" % len(out)))
     return out
 
 
 def problems(wall, name, avoid, clear=CLEAR):
-    """What is wrong with wall ladder *wall*'s place on its wall: its
-    outside within CORNER of either end, or within *clear* of any (what,
-    s0, s1) span it has to miss, such as an opening, a canopy or a downpipe
-    (give a pipe's span as its axis +- downpipes.A); a span may carry its own
-    clearance as a fourth item. Also a bracket that would meet the soffit."""
+    """What is wrong with wall ladder *wall*'s place on its wall, or a
+    Cage's: its outside within CORNER of either end, or within *clear* of
+    any (what, s0, s1) span it has to miss, such as an opening, a canopy or
+    a downpipe (give a pipe's span as its axis +- downpipes.A); a span may
+    carry its own clearance as a fourth item. Also a ladder's bracket that
+    would meet the soffit, and a cage's hoops reaching the eave, rising
+    above the ladder or starting under 2 m."""
     bad = []
     s0, s1 = wall.span()
     if s0 < CORNER - 1e-6 or s1 > wall.eave.length - CORNER + 1e-6:
@@ -549,6 +714,8 @@ def problems(wall, name, avoid, clear=CLEAR):
         c = own[0] if own else clear
         if a0 - c < s1 and s0 < a1 + c:
             bad.append("%s crowds the %s" % (name, what))
+    if isinstance(wall, Cage):
+        return bad + wall.problems(name)
     if wall.brackets and wall.foot + max(wall.brackets) + BRACKET / 2.0 > \
             wall.eave.z_wall - 0.05:
         bad.append("%s has a bracket in the soffit" % name)
