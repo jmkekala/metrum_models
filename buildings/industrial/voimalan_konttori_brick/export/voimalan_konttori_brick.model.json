@@ -3,14 +3,14 @@
   "version": 1,
   "name": "voimalan_konttori_brick",
   "path": "buildings/industrial/voimalan_konttori_brick",
-  "source": {"commit": "3e3e93de0a47297473217212bea0db141eb777b5", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "d515efbb72acb2d651d909107cde6574c0bd5420", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
-  "bounds": {"min": [-7.4525, 0.0, -6.675], "max": [7.4525, 9.78, 6.675]},
+  "bounds": {"min": [-7.4525, 0.0, -6.3625], "max": [7.4525, 10.25, 6.3625]},
   "footprint": [
-    [-6.61, -5.075],
-    [7.39, -5.075],
-    [7.39, 3.925],
-    [-6.61, 3.925]
+    [-6.61, -4.7625],
+    [7.39, -4.7625],
+    [7.39, 4.2375],
+    [-6.61, 4.2375]
   ],
   "storeys": [
     {"floor_y_m": 0.5, "area_m2": 126.0},
@@ -18,26 +18,26 @@
   ],
   "dwellings": 0,
   "doors": [
-    {"id": "entrance", "kind": "entrance", "position": [-2.235, 0.5, 3.925], "facing": [0.0, 0.0, 1.0], "width_m": 1.5, "height_m": 2.125, "main": true},
-    {"id": "staff", "kind": "service", "position": [-2.235, 0.5, -5.075], "facing": [0.0, 0.0, -1.0], "width_m": 1.0, "height_m": 2.125, "main": false}
+    {"id": "entrance", "kind": "entrance", "position": [-2.235, 0.5, 4.2375], "facing": [0.0, 0.0, 1.0], "width_m": 1.5, "height_m": 2.125, "main": true},
+    {"id": "staff", "kind": "service", "position": [-2.235, 0.5, -4.7625], "facing": [0.0, 0.0, -1.0], "width_m": 1.0, "height_m": 2.125, "main": false}
   ],
   "lods": [
-    {"file": "voimalan_konttori_brick_lod0.glb", "triangles": 2640, "sha256": "52b71643768cec8cd475ab55edb98b0e0b96b9a38d66cd2575bac42fd7b3353d"},
-    {"file": "voimalan_konttori_brick_lod1.glb", "triangles": 2136, "sha256": "116f3062b4cd803d9ca39360e8240cf506156f3b0f1d5f519c98835dd33fa6c3"},
-    {"file": "voimalan_konttori_brick_lod2.glb", "triangles": 864, "sha256": "c4ab8b1ca3930bed4216adf44691fe9ceecffafbd853b5bebf057667eb31d493"},
-    {"file": "voimalan_konttori_brick_lod3.glb", "triangles": 412, "sha256": "86a848ac63f1ff32a695819bd1fc1d1aadaa79c5f1c3addd5bf667b63cadaeb7"}
+    {"file": "voimalan_konttori_brick_lod0.glb", "triangles": 1644, "sha256": "5b5890981a97926515c8aa489ba18c2b3e872d2cea21ce5910e2ec1bd00665ff"},
+    {"file": "voimalan_konttori_brick_lod1.glb", "triangles": 1386, "sha256": "f67466159ac7f06db0308e46d40278d4db722cdb6b465125169970d94741a7b6"},
+    {"file": "voimalan_konttori_brick_lod2.glb", "triangles": 656, "sha256": "00c9abc4d27d289e6589e84b59e8b2cfa191ef1cadd66b14b9f1bc284f7c5916"},
+    {"file": "voimalan_konttori_brick_lod3.glb", "triangles": 456, "sha256": "49d5ef2855ca198c070ea51566e8308e4815435bf75cd09c01701e08d568f5a5"}
   ],
   "textures": {
-    "orm": {"file": "voimalan_konttori_brick_orm.png", "sha256": "a23df232417d8aca0ca043a5f6997406baf333d9daaa23a2e5f2d7cbacc6db97"},
-    "normal": {"file": "voimalan_konttori_brick_normal.png", "sha256": "503dfd6025463853c57084e305192d67979ba7e2e1664fc7e16a235f37fcd190"},
-    "emission": {"file": "voimalan_konttori_brick_emission.png", "sha256": "7ec1554ea27f97ec446b5577353a248d0e6b6c77b77d7b822b6e0282dd4b04b5"}
+    "orm": {"file": "voimalan_konttori_brick_orm.png", "sha256": "4b121a146adfe5a60bc1cd47b32808e8ee9c27892f4776d160177fb4cb7e6ae1"},
+    "normal": {"file": "voimalan_konttori_brick_normal.png", "sha256": "346929fdaa323c5e852b5465413be72b92f30dd315c4115c0d89d1f06059c52d"},
+    "emission": {"file": "voimalan_konttori_brick_emission.png", "sha256": "7875bd87477d3f3e3321751042b88e3a4c072753e1d7cce4003604968f5dd062"}
   },
   "variants": [
-    {"id": "red_brick", "albedo": "voimalan_konttori_brick_albedo_red_brick.png", "sha256": "e55ac163ac337f5bfba122479a81850d271a5c7988587ab7b2868f068fb37cd1"},
-    {"id": "yellow_brick", "albedo": "voimalan_konttori_brick_albedo_yellow_brick.png", "sha256": "9cdfdf99be92d4f31810b8a2ae8984c9c6a2cebcdbf6195f81677ef7c5672cb6"},
-    {"id": "brown_brick", "albedo": "voimalan_konttori_brick_albedo_brown_brick.png", "sha256": "7c2ce7ce5db9fbdb884f04593b86b2b12cbc6ec3c274d9abc609192f5abcd620"}
+    {"id": "red_brick", "albedo": "voimalan_konttori_brick_albedo_red_brick.png", "sha256": "71f2358490ae5dfeb63fd69b35a93c1f2a5d75f0fb76d12e3bbc10a2f571e943"},
+    {"id": "yellow_brick", "albedo": "voimalan_konttori_brick_albedo_yellow_brick.png", "sha256": "dc7b21e5495479c28958a41e01cb045f465c017047378957d7413ffce1108e60"},
+    {"id": "brown_brick", "albedo": "voimalan_konttori_brick_albedo_brown_brick.png", "sha256": "1124a1a75a453e5fa696131870ea5b65520313d86efda64a584d32463d99a54c"}
   ],
   "default_variant": "red_brick",
-  "preview": {"file": "../preview.png", "sha256": "7fc0d145bd68b46db0f8b30efb867d360f5fa54c9c61cb7ddf2c67cfdac3e846"},
+  "preview": {"file": "../preview.png", "sha256": "df6f6ad04e128e12f88dea15ff72d06afeae467fd0fedf9b96051906ee3867f9"},
   "hero": false
 }

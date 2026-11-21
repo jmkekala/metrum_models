@@ -14,18 +14,19 @@ the UVs pointing at the wrong artwork.
 
 The atlas is a trim sheet. Four bands run the full width and tile in U:
 
-    y    0 ..  468   BRICK    z 0 .. 7.3125 m: concrete plinth, brick, the
+    y    0 ..  464   BRICK    z 0 .. 7.25 m: concrete plinth, brick, the
                               cast floor-slab band at the first floor, brick
                               up the parapet into the coping
     y  480 ..  512   COPING   the galvanised coping: its outer face (8 rows),
                               then its top (24 rows)
-    y  528 ..  548   UPSTAND  the parapet's inner face: the felt turned up
+    y  528 ..  544   UPSTAND  the parapet's inner face: the felt turned up
                               from the deck
-    y  560 ..  576   CANOPY   the entrance canopy's sheet fascia
+    y  560 ..  584   CANOPY   the entrance canopy's sheet fascia
     y  592 ..  ...   unique   the entrance with its cast surround, the service
                               door, one light of each window band, concrete,
                               the vent pipe, the ventilation housing's side,
-                              the roof deck, patches
+                              the clock's dial, the wall lamp, the roof deck,
+                              patches
 
 The brick band is the whole wall's height, so every wall samples it by its
 own height from the ground and the plinth, the slab band and the weather at
@@ -80,9 +81,9 @@ Z_DECK = 7.0            # 448 px; the roof deck: 3.25 m over the first floor
 PIN = 0.25              # the parapet's thickness: inner face HX - PIN
 COPING_H = 0.125        # 8 px; the coping's face
 COPING_OUT = 0.0625     # 4 px; its oversail past either face of the parapet
-Z_COP = 7.375           # 472 px; the coping's top, 0.375 m over the deck
-Z_COP0 = Z_COP - COPING_H                        # 7.25, the coping's drip
-Z_PAR = Z_COP - 0.0625                           # 7.3125, the brick's top,
+Z_COP = 7.3125          # 468 px; the coping's top, 0.3125 m over the deck
+Z_COP0 = Z_COP - COPING_H                        # 7.1875, the coping's drip
+Z_PAR = Z_COP - 0.0625                           # 7.25, the brick's top,
                                                  # inside the coping
 
 # window bands: sills over each floor, every ground-storey head on one line
@@ -90,23 +91,28 @@ Z_PAR = Z_COP - 0.0625                           # 7.3125, the brick's top,
 Z_SILL = Z_FLOOR + 1.0                           # 1.5, ground-floor offices
 Z_SILL_CTRL = Z_FLOOR + 0.75                     # 1.25, the control room
 Z_SILL2 = Z_FLOOR2 + 0.875                       # 4.625, the upper ribbon
+Z_HEAD2 = Z_FLOOR2 + 2.75                        # 6.5, its head at the ceiling
+# the ribbon's transom: a fixed upper light TRANSOM2 tall over the lower
+# lights, so the 1.875 m band still reads horizontal
+TRANSOM2 = 0.5
 # doors: every leaf 2.125 m; the entrance has a transom light above its pair
 Z_LEAF = 2.125          # leaf height over the threshold
 ENTRY_H = 2.6875        # the entrance's opening, threshold to head (3.1875)
 SURROUND = 0.1875       # the entrance's cast surround, each side
 SURROUND_TOP = 0.375    # and above the head, up into the canopy
 
-# the canopy over the entrance: the first-floor slab carried out, its fascia
-# in line with the painted slab band
+# the canopy over the entrance: the first-floor slab carried out, its soffit
+# in line with the painted slab band's underside, its fascia turned up
+# 0.125 m past the band's top into a deeper edge beam
 Z_CAN0 = Z_BAND0                                 # 3.5, underside
-Z_CAN1 = Z_BAND1                                 # 3.75, top
+Z_CAN1 = Z_BAND1 + 0.125                         # 3.875, top
 
 # ------------------------------------------------------------------ openings
 # Window bands: kind -> (light width, band height) in metres. A band of n
 # lights is n light widths long; each light samples one of its kind's
 # regions (LIGHTS).
 BANDS = {
-    "rib": (1.5, 1.4375),           # the upper storey's ribbon
+    "rib": (1.5, Z_HEAD2 - Z_SILL2),  # the upper storey's ribbon, 1.875 m
     "ctrl": (1.5, 1.9375),          # the control room's band
     "gwin": (0.9375, 1.6875),       # the ground-floor offices' windows
 }
@@ -119,10 +125,10 @@ REVEAL = {"rib": 0.15, "ctrl": 0.15, "gwin": 0.15, "entrance": 0.20,
           "service_door": 0.15}
 
 # ------------------------------------------------------------------- bands
-BRICK_Y0, BRICK_H = 0, 468        # z 0 .. Z_PAR
+BRICK_Y0, BRICK_H = 0, 464        # z 0 .. Z_PAR
 COP_Y0, COP_FACE, COP_TOP = 480, 8, 24   # the coping's face, then its top
-UPST_Y0, UPST_H = 528, 20         # the parapet's inner face, Z_DECK .. Z_PAR
-CANE_Y0, CANE_H = 560, 16         # the canopy's fascia, 0.25 m
+UPST_Y0, UPST_H = 528, 16         # the parapet's inner face, Z_DECK .. Z_PAR
+CANE_Y0, CANE_H = 560, 24         # the canopy's fascia, 0.375 m
 # The handrails and the ladder take the coping's galvanised colour: the
 # middle rows of its top, where no joint lies along them.
 PIPE_STRIP = (COP_Y0 + COP_FACE + 6, COP_Y0 + COP_FACE + COP_TOP - 6)
@@ -138,13 +144,15 @@ UNI_Y = 592
 ENTRANCE = (4, UNI_Y, 128, 196)       # surround 2.0 x 3.0625 m round the door
 SERVICE_DOOR = (136, UNI_Y, 72, 140)  # 1.125 x 2.1875 m
 CTRL = (212, UNI_Y, 96, 124)          # one control-room light, 1.5 x 1.9375 m
-RIB_F = (312, UNI_Y, 96, 92)          # a fixed light of the ribbon
-RIB_V = (412, UNI_Y, 96, 92)          # one with a vent sash
+RIB_F = (312, UNI_Y, 96, 120)         # a fixed light of the ribbon
+RIB_V = (412, UNI_Y, 96, 120)         # one with a vent sash
 GWIN = (512, UNI_Y, 60, 108)          # one light of the offices' windows
 CONC = (640, UNI_Y, 168, 128)         # 2.625 x 2.0 m of cast concrete
 VENT = (812, UNI_Y, 32, 96)           # a pipe's side: across x 1.5 m up
 PIPE_TOP = (848, UNI_Y, 24, 24)       # a pipe's open end, planar
 HOUSING = (876, UNI_Y, 96, 60)        # the ventilation housing's side
+CLOCK = (580, UNI_Y, 40, 40)          # the entrance clock's dial, 0.625 m
+LAMP = (580, 640, 16, 20)             # the staff door's lamp: its front
 DECK = (140, 744, 432, 272)           # the roof deck at DPPM: 13.5 x 8.5 m
 
 REGION = {"entrance": ENTRANCE, "service_door": SERVICE_DOOR, "ctrl": CTRL,
@@ -159,7 +167,7 @@ REGION_OFF = {"entrance": (int(SURROUND * PPM), 0)}
 HOUSING_W, HOUSING_H = 1.5, 0.9375
 
 PATCH_NAMES = ("blank", "soffit", "sill", "render", "pipe", "post", "housing_top",
-               "drip", "galv")
+               "drip", "galv", "frosted")
 PATCHES = {n: (580 + 20 * i, 744, 16, 16) for i, n in enumerate(PATCH_NAMES)}
 
 # internal rainwater outlets on the deck, plan (x, y)
@@ -171,6 +179,7 @@ ID_FRAME, ID_GLASS, ID_DECK, ID_COPING, ID_LAP = 5, 6, 7, 8, 9
 ID_CONC, ID_DOOR, ID_RENDER, ID_STEEL, ID_PIPE = 10, 11, 12, 13, 14
 ID_SOFFIT, ID_FASCIA, ID_HANDLE, ID_DARK, ID_SLAB = 15, 16, 17, 18, 19
 ID_SILL, ID_ENTRY, ID_LOUVRE, ID_POST = 20, 21, 22, 23
+ID_DIAL, ID_HAND, ID_FROST = 24, 25, 26
 
 # (roughness, metallic). The deck is mineral-surfaced felt; the coping,
 # the housing and the kit galvanised; the canopy's fascia painted sheet.
@@ -183,7 +192,8 @@ SURFACE = {
     ID_PIPE: (0.55, 0.20), ID_SOFFIT: (0.74, 0.0), ID_FASCIA: (0.52, 0.0),
     ID_HANDLE: (0.30, 0.85), ID_DARK: (0.96, 0.0), ID_SLAB: (0.90, 0.0),
     ID_SILL: (0.62, 0.30), ID_ENTRY: (0.44, 0.0), ID_LOUVRE: (0.46, 0.55),
-    ID_POST: (0.55, 0.10),
+    ID_POST: (0.55, 0.10), ID_DIAL: (0.30, 0.0), ID_HAND: (0.40, 0.0),
+    ID_FROST: (0.35, 0.0),
 }
 
 
@@ -213,7 +223,7 @@ VARIANTS = {
                      "entry": (90, 66, 48), "door": (78, 88, 86)},
     "brown_brick": {"brick": (80, 59, 57), "brick2": (62, 46, 45),
                     "mortar": (108, 106, 102), "frame": (214, 210, 198),
-                    "entry": (104, 76, 52), "door": (80, 74, 68)},
+                    "entry": (104, 76, 52), "door": (64, 88, 74)},
 }
 DEFAULT_VARIANT = "red_brick"
 
@@ -224,13 +234,14 @@ FIXED = {
     ID_BLANK: (52, 52, 52), ID_SILL: (128, 130, 130), ID_SLAB: (170, 168, 162),
     ID_DECK: (92, 91, 88), ID_LAP: (78, 77, 75), ID_COPING: (150, 152, 150),
     ID_FASCIA: (196, 196, 190), ID_LOUVRE: (140, 142, 141), ID_POST: (70, 72, 72),
+    ID_DIAL: (214, 212, 204), ID_HAND: (34, 34, 36), ID_FROST: (176, 176, 170),
 }
 
 BAND_IDS = {
-    "BRICK": ((0, 470), {ID_BRICK, ID_BRICK2, ID_MORTAR, ID_PLINTH, ID_SLAB}),
+    "BRICK": ((0, 466), {ID_BRICK, ID_BRICK2, ID_MORTAR, ID_PLINTH, ID_SLAB}),
     "COPING": ((478, 514), {ID_COPING}),
-    "UPSTAND": ((526, 550), {ID_DECK, ID_LAP, ID_COPING}),
-    "CANOPY": ((558, 578), {ID_FASCIA}),
+    "UPSTAND": ((526, 546), {ID_DECK, ID_LAP, ID_COPING}),
+    "CANOPY": ((558, 586), {ID_FASCIA}),
 }
 
 # The candidate-glazing mask is the emission map, neutral white.
@@ -407,18 +418,29 @@ MULL = 3                # half a mullion at each side of a light, px
 HEAD, FOOT = 4, 6       # the band's head and bottom rails, px
 
 
-def paint_band_light(c, rect, vent=None, vent_w=0.0):
+TRANSOM = 4             # the ribbon's transom bar, px
+
+
+def paint_band_light(c, rect, vent=None, vent_w=0.0, transom=None):
     """One light of a window band: white steel, half a mullion either side so
     two neighbours make a whole one, a head rail and a heavier bottom rail,
     the glass between. *vent* "side" adds a side-hung vent sash *vent_w*
     metres wide at the light's left; "top" a top-hung one *vent_w* tall
-    across its head, so a band of them reads as one line of vents."""
+    across its head, so a band of them reads as one line of vents.
+    *transom* splits off a fixed upper light that many metres tall over a
+    slim transom bar, the vent below it; across a band the bars make one
+    line."""
     x, y, w, h = rect
     c.paint(x, x + w, y, y + h, ID_FRAME, 1.0, 1.0, height=FRAME_H)
     c.bevel(x - 2, x + w + 2, y, y + h, FRAME_H, 1.0, axes="y")
     for a in (x, x + w):                                 # mullion arrises
         c.mul(a - 0.5, a + 0.5, y + FOOT, y + h - HEAD, 0.92, ao=0.9)
     a0, a1, b0, b1 = x + MULL, x + w - MULL, y + FOOT, y + h - HEAD
+    if transom:
+        top = b1 - m(transom)
+        _light(c, a0, a1, top, b1)
+        _bar(c, a0 - MULL, a1 + MULL, top - TRANSOM, top, axes="y")
+        b1 = top - TRANSOM
     if vent == "side":
         s1 = a0 + m(vent_w)
         _sash(c, a0, s1, b0, b1)
@@ -435,8 +457,8 @@ def paint_band_light(c, rect, vent=None, vent_w=0.0):
 
 
 def paint_windows(c):
-    paint_band_light(c, RIB_F)
-    paint_band_light(c, RIB_V, "side", 0.4375)
+    paint_band_light(c, RIB_F, transom=TRANSOM2)
+    paint_band_light(c, RIB_V, "side", 0.4375, transom=TRANSOM2)
     paint_band_light(c, CTRL, "top", 0.375)
     paint_band_light(c, GWIN, "top", 0.375)
 
@@ -505,6 +527,37 @@ def paint_service_door(c):
     hx, hy = l1 - 8, y + m(1.0)
     c.paint(hx - 1.5, hx + 1.5, hy - 5, hy + 5, ID_HANDLE, 1.0, 0.9, height=0.01)
     c.stroke((hx, hy + 2), (hx - 8, hy + 2), 2.2, ID_HANDLE, 1.0, 0.9, height=0.04)
+
+
+def paint_clock(c):
+    """The entrance clock's dial: a white face in a dark steel bezel, a
+    stroke at every hour, heavier at the quarters, the hands at ten past
+    ten."""
+    x, y, w, h = CLOCK
+    cx, cy, r = x + w / 2.0, y + h / 2.0, w / 2.0
+    c.paint(x - 2, x + w + 2, y - 2, y + h + 2, ID_HAND, 0.9, 0.9, height=0.0)
+    c.disc(cx, cy, r - 2.5, ID_DIAL, 1.0, 1.0, height=0.004)
+    c.disc(cx, cy, r - 0.5, ID_HAND, 1.0, 0.9, inner=r - 2.5, height=0.012)
+    for k in range(12):
+        a = k * np.pi / 6.0
+        r0 = r - (7.5 if k % 3 == 0 else 6.0)
+        c.stroke((cx + r0 * np.sin(a), cy + r0 * np.cos(a)),
+                 (cx + (r - 4.0) * np.sin(a), cy + (r - 4.0) * np.cos(a)),
+                 1.6 if k % 3 == 0 else 1.0, ID_HAND, 1.0, 1.0)
+    for a, ln, wd in ((np.radians(-60.0), 0.50, 1.8), (np.radians(60.0), 0.74, 1.2)):
+        c.stroke((cx, cy), (cx + ln * r * np.sin(a), cy + ln * r * np.cos(a)), wd,
+                 ID_HAND, 1.0, 1.0, height=0.006)
+    c.disc(cx, cy, 1.2, ID_HAND, 1.0, 1.0, height=0.008)
+
+
+def paint_lamp(c):
+    """The staff door's bulkhead lamp, seen from the front: a cast body
+    round a frosted glass, a guard bar across it. Not emissive."""
+    x, y, w, h = LAMP
+    c.paint(x - 2, x + w + 2, y - 2, y + h + 2, ID_POST, 1.0, 0.95, height=0.0)
+    c.rounded_rect(x + 3, y + 3, w - 6, h - 6, 3.0, ID_FROST, 1.0, 0.95, height=0.006)
+    c.paint(x + 3, x + w - 3, y + h / 2.0 - 0.6, y + h / 2.0 + 0.6, ID_POST, 1.0, 0.9,
+            height=0.010)
 
 
 def paint_conc(c):
@@ -599,6 +652,7 @@ def paint_patches(c):
         "housing_top": (ID_COPING, 1.02, 1.0),
         "drip": (ID_COPING, 0.62, 0.70),
         "galv": (ID_COPING, 1.0, 1.0),
+        "frosted": (ID_FROST, 1.0, 1.0),
     }
     for name, (mid, sh, ao) in spec.items():
         x, y, w, h = PATCHES[name]
@@ -624,7 +678,7 @@ def check_regions():
     rects = {"entrance": ENTRANCE, "service_door": SERVICE_DOOR, "ctrl": CTRL,
              "rib_f": RIB_F, "rib_v": RIB_V, "gwin": GWIN,
              "conc": CONC, "vent": VENT, "pipe_top": PIPE_TOP, "housing": HOUSING,
-             "deck": DECK}
+             "deck": DECK, "clock": CLOCK, "lamp": LAMP}
     rects.update(PATCHES)
     bands_top = CANE_Y0 + CANE_H + PAD
     names = sorted(rects)
@@ -663,7 +717,8 @@ def check_regions():
     if abs(m(COPING_H) - COP_FACE) > 1e-6 or abs(m(PIN + 2 * COPING_OUT) - COP_TOP) > 1e-6:
         problems.append("the coping band does not fit the coping")
     for z in (Z_PLINTH, Z_FLOOR, Z_FLOOR2, Z_BAND0, Z_DECK, Z_COP, Z_COP0, Z_PAR,
-              Z_SILL, Z_SILL2, Z_SILL_CTRL, Z_LEAF, ENTRY_H):
+              Z_SILL, Z_SILL2, Z_HEAD2, Z_SILL_CTRL, Z_LEAF, ENTRY_H, TRANSOM2,
+              Z_CAN1):
         if abs(m(z) - round(m(z))) > 1e-6:
             problems.append("height %.4f is not a whole texel" % z)
     if problems:
@@ -679,7 +734,8 @@ def weather(c):
     round, and so do the runs from the slab band's top arris.
     """
     brick = (ID_BRICK, ID_BRICK2, ID_MORTAR)
-    steel = (ID_COPING, ID_STEEL, ID_PIPE, ID_DOOR, ID_HANDLE, ID_LOUVRE, ID_POST)
+    steel = (ID_COPING, ID_STEEL, ID_PIPE, ID_DOOR, ID_HANDLE, ID_LOUVRE, ID_POST,
+             ID_HAND)
     w = weathering.Weather(c, clean=(ID_GLASS,), steel=steel)
     w.grime()
     w.fade((ID_FRAME, ID_DOOR, ID_ENTRY, ID_FASCIA, ID_DECK, ID_LAP, ID_POST))
@@ -770,6 +826,8 @@ def paint(ss=atlas.SS):
     paint_conc(c)
     paint_vent(c)
     paint_housing(c)
+    paint_clock(c)
+    paint_lamp(c)
     paint_deck(c)
     paint_patches(c)
 

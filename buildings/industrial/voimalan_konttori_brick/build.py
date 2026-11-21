@@ -19,22 +19,25 @@ of red facing brick on a cast concrete plinth, 14 x 9 m, under a flat roof
 behind a low brick parapet with a galvanised coping, drained inside. A light
 cast band marks the first floor right round the building. Upstairs one
 continuous ribbon of white steel lights runs along each long side, brick only
-at its ends; downstairs the control room's taller band fills the east half of
-front and rear, and the offices have smaller windows in the same language.
-The plant's main entrance is on the front, west of the middle: a pair of
-glazed leaves and a transom light in a cast surround, under a thin slab
-canopy carried out 2.75 m on two slim steel posts, up three steps with a
-handrail. Staff go out to the boiler house by a steel door on the rear, up
-three steps of their own. On the deck a ventilation housing, a short radio
-mast and two vent pipes; a caged wall ladder at the west end's rear corner
-serves the housing.
+at its ends, its head at the ceiling tight under the roof edge and a slim
+transom across it; downstairs the control room's taller band fills the east
+half of front and rear, and the offices have smaller windows in the same
+language. The plant's main entrance is on the front, west of the middle: a
+pair of glazed leaves and a transom light in a cast surround, under a slab
+canopy cantilevered 2.125 m with a deep fascia and a concrete fin at its
+west edge, up three steps with a handrail, the plant clock beside it. Staff
+go out to the boiler house by a steel door on the rear, up three steps of
+their own, a bulkhead lamp over it. On the deck a ventilation housing, the
+control room's guyed radio mast and two vent pipes; a caged wall ladder at
+the west end's rear corner serves the housing.
 
 Construction is a set of closed solids unioned with Blender's exact boolean:
 the wall ring, capped as one solid with the building's whole volume (its lid
-the deck sunk inside the parapet), the coping ring, the canopy and its posts,
-the two flights of steps, their handrails, the roof plant, the ladder and its
-cage. The union leaves the boundary of one empty volume, so interior
-geometry cannot occur.
+the deck sunk inside the parapet), the coping ring, the canopy and its fin,
+the two flights of steps, the clock and the lamp, the roof plant. The union
+leaves the boundary of one empty volume, so interior geometry cannot occur.
+The ladder, its cage and the handrails are roof_safety's lean kit, separate
+solids appended after the weld that touch nothing.
 
 Every number the mesh and the atlas share is imported from facade_atlas.py
 rather than written here a second time.
@@ -101,11 +104,16 @@ EAST_ITEMS = [("ctrl", 0.0, SC, 2), ("rib", 0.0, S2, 2)]
 WEST_ITEMS = [("gwin", 0.0, S1, 2), ("rib", 0.0, S2, 2)]
 
 # The canopy over the entrance: (centre x, width, projection), sunk into the
-# wall CANOPY_BURY; its outer corners on two square steel posts, POST_IN in
-# from the slab's edges.
-CANOPY = (ENTRANCE_X, 2.9, 2.75)
+# wall CANOPY_BURY, cantilevered with no posts. Under its west edge, away
+# from the control room's band, a cast concrete fin FIN_T thick stands from
+# the ground into the slab, out FIN_D from the wall to the landing's edge,
+# taking the steps' west cheek: a wing wall framing the entrance, the slab
+# carried on past it. A fin the canopy's whole depth hid the offices'
+# window beside it from the catalog view.
+CANOPY = (ENTRANCE_X, 2.9, 2.125)
 CANOPY_BURY = 0.1
-POST_W, POST_IN = 0.08, 0.15
+FIN_T = 0.2
+FIN_D = 1.2
 
 # Steps up to the doors, as (out from the wall, z) profiles extruded across
 # the door: a landing 3 cm under the threshold, then two steps, so three
@@ -129,19 +137,36 @@ REAR_STEPS = (SERVICE_X, 1.8, _profile(1.0, 0.3))
 
 def _flight(spec, wall_y, outward):
     cx, w, profile = spec
-    return HR.Flight(cx - w / 2.0, cx + w / 2.0, wall_y, outward, profile)
+    return HR.Flight(cx - w / 2.0, cx + w / 2.0, wall_y, outward, profile, lean=True)
 
 
 HANDRAILS = [_flight(FRONT_STEPS, -HY, -1.0), _flight(REAR_STEPS, HY, 1.0)]
 
 # On the deck: the ventilation housing over the stair, (centre x, y), its
 # side and height facade_atlas's; the control room's radio mast, (x, y,
-# height above the deck); and two plain vent pipes, (x, y, diameter, height
-# above the deck), which are not serviced items.
+# height of its tube above the deck), a galvanised tube MAST_R in radius
+# with a dipole across its head, a whip on top and two stays down to the
+# deck; and two plain vent pipes, (x, y, diameter, height above the deck),
+# which are not serviced items.
 HOUSING = (-3.25, 1.75)
-MAST = (3.0, 2.5, 2.75)
-MAST_W = 0.06
+MAST = (3.0, 2.5, 2.5)
+MAST_R = 0.05
+WHIP = (0.75, 0.025)                    # length over the tube, and section
+DIPOLE = (1.3, 0.03, 0.2)               # length, section, and depth under the top
+STAY_Z = 1.6                            # where the stays meet the tube, over the deck
+STAYS = [(-0.85, -0.85), (0.85, -0.85)]  # each stay's foot, from the mast's foot
+STAY_W = 0.025
 VENTS = [(-1.6, 2.3, 0.25, 0.85), (1.2, 2.6, 0.16, 0.60)]
+
+# The plant clock on the entrance wall, between the entrance's surround and
+# the control room's band: (centre x, centre z), a dial facade_atlas's CLOCK
+# wide on a drum CLOCK_D proud of the brick. The staff door's bulkhead lamp
+# over it on the rear: (width, height, depth) and the gap over the opening.
+CLOCK_AT = (-0.8125, 2.5625)
+CLOCK_R = L.CLOCK[2] / PPM / 2.0
+CLOCK_D = 0.06
+LAMP_SIZE = (L.LAMP[2] / PPM, L.LAMP[3] / PPM, 0.14)
+LAMP_GAP = 0.1875
 
 # The wall ladder up to the deck, which the housing is serviced from: at the
 # back, and the rear wall's ribbon leaves it no run clear of openings, so on
@@ -171,15 +196,28 @@ def vent_sides(level, dia):
     return 4 if dia >= 0.2 else 0
 
 
-def mast_kept(level):
-    """The 6 cm mast is a pixel wide at 70 m: LOD0 and LOD1 only."""
+def mast_sides(level):
+    """The mast's tube sets the building's height, so it stays on every
+    tier: eight sides up close, six to 70 m, four past it."""
+    return (8, 6, 4, 4)[level]
+
+
+def mast_parts(level):
+    """(dipole, stays) per tier: the stays, 2.5 cm bars, to 70 m; the
+    1.3 m dipole, which gives the mast its aerial's outline, to 120 m. The
+    whip stays on every tier: it sets the height."""
+    return (level < 3, level < 2)
+
+
+def clock_sides(level):
+    """The 0.625 m clock: twelve sides to 70 m, eight to 120 m, then gone
+    (3 px)."""
+    return (12, 12, 8, 0)[level]
+
+
+def lamp_kept(level):
+    """The staff door's 0.25 m lamp: LOD0 and LOD1."""
     return level < 2
-
-
-def posts_kept(level):
-    """The canopy's posts stand under the slab, inside the plan's extents;
-    8 cm, under a pixel past 120 m, so LOD3 drops them."""
-    return level < 3
 
 
 # ============================================================== mesh builder
@@ -581,30 +619,51 @@ def canopy():
     x0, x1 = cx - w / 2.0, cx + w / 2.0
     y0, y1 = -HY - proj, -HY + CANOPY_BURY
     fx, fy = uv_cane("x", L.Z_CAN0), uv_cane("y", L.Z_CAN0)
-    # the concrete region is 2.625 x 2.0 m: the 2.9 x 2.85 m top samples
+    # the concrete region is 2.625 x 2.0 m: the 2.9 x 2.225 m top samples
     # it shrunk, which its board-float texture does not show
-    top = uv_conc(lambda co: (co.x - x0) * 0.88, lambda co: (co.y - y0) * 0.68)
+    top = uv_conc(lambda co: (co.x - x0) * 0.88, lambda co: (co.y - y0) * 0.88)
     return box(x0, x1, y0, y1, L.Z_CAN0, L.Z_CAN1, [fx, fy, uv_patch("blank"), fy],
                top, uv_patch("soffit"))
 
 
-def canopy_posts():
-    """The canopy's two square steel posts at its outer corners, from the
-    ground into the slab."""
-    cx, w, proj = CANOPY
-    y = -HY - proj + POST_IN
-    h = POST_W / 2.0
-    out = []
-    for x in (cx - w / 2.0 + POST_IN, cx + w / 2.0 - POST_IN):
-        out.append(box(x - h, x + h, y - h, y + h, 0.0, L.Z_CAN0 + 0.08,
-                       uv_patch("post"), uv_patch("post"), uv_patch("blank")))
-    return out
+FIN_K = 2.0 / (L.Z_CAN0 + 0.05)       # the fin's 3.55 m on the 2.0 m region
 
 
-def post_spots():
-    cx, w, proj = CANOPY
-    y = -HY - proj + POST_IN
-    return [(cx - w / 2.0 + POST_IN, y), (cx + w / 2.0 - POST_IN, y)]
+def fin_span():
+    """(x0, x1) of the fin: flush with the canopy's west edge."""
+    cx, w, _proj = CANOPY
+    return (cx - w / 2.0, cx - w / 2.0 + FIN_T)
+
+
+def fin():
+    """The cast concrete fin under the canopy's west edge: a wing wall from
+    the ground up into the slab and from the front wall out to the slab's
+    edge, its back sunk into the wall. Its faces sample the concrete region
+    across its depth and up its height, the height squeezed onto the
+    region's 2.0 m."""
+    x0, x1 = fin_span()
+    y0, y1 = -HY - FIN_D, -HY + CANOPY_BURY
+    z1 = L.Z_CAN0 + 0.05
+    out = lambda co: -HY - co.y                                # noqa: E731
+    up = lambda co: co.z * FIN_K                               # noqa: E731
+    side = uv_conc(lambda co: out(co) + 0.2, up)
+    end = uv_conc(lambda co: co.x - x0 + 2.3, up)
+    return box(x0, x1, y0, y1, 0.0, z1, [end, side, uv_patch("blank"), side],
+               uv_patch("blank"), uv_patch("blank"))
+
+
+def prism(px, py, r, z0, z1, sides, side_uv, top_uv, bottom_uv):
+    """An upright round bar of *sides* sides, centre (px, py)."""
+    B = Builder()
+    ring = [(px + r * math.cos(a), py + r * math.sin(a))
+            for a in [(i + 0.5) * 2.0 * math.pi / sides for i in range(sides)]]
+    for (ax, ay), (bx, by) in zip(ring, ring[1:] + ring[:1]):
+        B.face([(ax, ay, z0), (bx, by, z0), (bx, by, z1), (ax, ay, z1)], side_uv)
+    B.face([(x, y, z1) for x, y in ring], top_uv)
+    B.face([(x, y, z0) for x, y in reversed(ring)], bottom_uv)
+    return B
+
+
 
 
 def steps(spec, wall_y, outward):
@@ -683,44 +742,103 @@ def housing():
                uv_patch("housing_top"), uv_patch("blank"))
 
 
-def mast():
-    """The control room's radio mast: a galvanised pole on the deck carrying
-    a small directional aerial at its top, a boom pointing out across the
-    yard with three elements across it."""
+def bar(p0, p1, w, uv):
+    """A straight square bar *w* across from *p0* to *p1*, a closed solid."""
+    a, b = Vector(p0), Vector(p1)
+    d = (b - a).normalized()
+    side = d.cross(Vector((0.0, 0.0, 1.0)))
+    if side.length < 1e-6:
+        side = Vector((1.0, 0.0, 0.0))
+    side.normalize()
+    up = side.cross(d).normalized()
+    h = w / 2.0
+    ring = [side * h + up * h, -side * h + up * h, -side * h - up * h, side * h - up * h]
+    B = Builder()
+    r0, r1 = [tuple(a + q) for q in ring], [tuple(b + q) for q in ring]
+    for k in range(4):
+        B.face([r0[k], r0[(k + 1) % 4], r1[(k + 1) % 4], r1[k]], uv)
+    B.face(list(reversed(r1)), uv)
+    B.face(list(r0), uv)
+    return B
+
+
+def mast(level):
+    """The control room's radio mast: a galvanised tube on the deck, a
+    horizontal dipole across its head, a whip on top, and two stays down to
+    the deck on its yard side."""
     mx, my, mh = MAST
-    h = MAST_W / 2.0
     galv = uv_patch("galv")
     zt = L.Z_DECK + mh
-    out = [box(mx - h, mx + h, my - h, my + h, L.Z_DECK - SUNK, zt + 0.03,
-               galv, galv, galv),
-           box(mx - 0.02, mx + 0.02, my - 0.55, my + 0.25, zt - 0.03, zt + 0.01,
-               galv, galv, galv)]
-    for dy in (-0.5, -0.2, 0.15):
-        out.append(box(mx - 0.22, mx + 0.22, my + dy - 0.012, my + dy + 0.012,
-                       zt - 0.02, zt, galv, galv, galv))
+    out = [prism(mx, my, MAST_R, L.Z_DECK - SUNK, zt, mast_sides(level), galv, galv,
+                 uv_patch("blank"))]
+    wl, ww = WHIP
+    out.append(box(mx - ww / 2, mx + ww / 2, my - ww / 2, my + ww / 2, zt - 0.05,
+                   zt + wl, galv, galv, galv))
+    dipole, stays = mast_parts(level)
+    if dipole:
+        dl, dw, dd = DIPOLE
+        out.append(box(mx - dl / 2, mx + dl / 2, my - MAST_R - dw, my - MAST_R + 0.02,
+                       zt - dd - dw, zt - dd, galv, galv, galv))
+    if stays:
+        top = (mx, my, L.Z_DECK + STAY_Z)
+        for dx, dy in STAYS:
+            # from under the deck's surface to the tube's axis
+            foot = Vector((mx + dx, my + dy, L.Z_DECK - SUNK))
+            out.append(bar(tuple(foot), top, STAY_W, galv))
     return out
 
 
+def clock(sides):
+    """The plant clock: a drum on the front wall, its face the dial."""
+    cx, cz = CLOCK_AT
+    x, y, w, h = L.CLOCK
+    B = Builder()
+    y_face, y_back = -HY - CLOCK_D, -HY + 0.05
+    ring = [(cx + CLOCK_R * math.cos(a), cz + CLOCK_R * math.sin(a))
+            for a in [(i + 0.5) * 2.0 * math.pi / sides for i in range(sides)]]
+    rim = uv_patch("post")
+    for (ax, az), (bx, bz) in zip(ring, ring[1:] + ring[:1]):
+        B.face([(ax, y_back, az), (bx, y_back, bz), (bx, y_face, bz),
+                (ax, y_face, az)][::-1], rim)
+    B.face([(px, y_face, pz) for px, pz in ring],
+           lambda co: (x + w / 2.0 + (co.x - cx) * PPM, y + h / 2.0 + (co.z - cz) * PPM))
+    B.face([(px, y_back, pz) for px, pz in reversed(ring)], uv_patch("blank"))
+    return B
+
+
+def lamp():
+    """The staff door's bulkhead lamp, centred over the door: a cast box on
+    the rear wall, its frosted glass to the front and underneath. Painted,
+    not emissive."""
+    lw, lh, ld = LAMP_SIZE
+    z0 = L.Z_FLOOR + L.OPENINGS["service_door"][1] + LAMP_GAP
+    x0, x1 = SERVICE_X - lw / 2.0, SERVICE_X + lw / 2.0
+    lx, ly, _w, _h = L.LAMP
+    front = lambda co: (lx + (x1 - co.x) * PPM, ly + (co.z - z0) * PPM)  # noqa: E731
+    body = uv_patch("post")
+    return box(x0, x1, HY - 0.05, HY + ld, z0, z0 + lh, [uv_patch("blank"), body, front, body],
+               body, uv_patch("frosted"))
+
+
 # ----------------------------------------------------------------- the kit
+# The lean kit (scripts/roof_safety.py): the ladder, its cage and the two
+# handrails as separate solids that touch nothing, appended after the weld
+# on every tier rather than unioned. The plinth is painted flush with the
+# brick, so nothing stands proud behind the ladder's brackets.
 WEST = MAIN_WALLS["west"]
 EAVE = RS.Eave(*WEST, L.Z_COP0, L.COPING_OUT, L.Z_COP, 0.0)
-WALL_LADDER = RS.WallLadder(EAVE, LADDER_S)
+WALL_LADDER = RS.WallLadder(EAVE, LADDER_S, lean=True)
 CAGE = RS.Cage(WALL_LADDER) if WALL_LADDER.length > RS.CAGE_LADDER else None
 KIT = [WALL_LADDER] + ([CAGE] if CAGE else [])
 
 
 def kit(level):
     """The ladder and its cage, roof_safety's MODES and CAGE_MODES
-    unchanged."""
-    return RS.solids(KIT, level, PAINT)
-
-
-def kit_extents(level):
-    """On the tier that drops the kit, its bare rails and the cage's back
-    strap, which set the plan's west extent, appended after the cleanup."""
-    if RS.MODES[level][0] is not None:
-        return []
-    return RS.solids(KIT, level, PAINT, extents=True)
+    unchanged, with extents: LOD3 keeps the bare rails and the cage's back
+    strap, which set the plan's west extent; and the handrails, handrails'
+    MODES unchanged."""
+    return (RS.solids(KIT, level, PAINT, extents=True)
+            + HR.solids(HANDRAILS, level, PAINT))
 
 
 # ================================================================ assembly
@@ -728,19 +846,16 @@ def build_lod(level):
     base = to_object(main_body(level), "tmp_body")
     parts = [to_object(coping(), "tmp_coping"),
              to_object(canopy(), "tmp_canopy"),
+             to_object(fin(), "tmp_fin"),
              to_object(steps(FRONT_STEPS, -HY, -1), "tmp_steps_front"),
              to_object(steps(REAR_STEPS, HY, +1), "tmp_steps_rear"),
              to_object(housing(), "tmp_housing")]
-    if posts_kept(level):
-        for i, B in enumerate(canopy_posts()):
-            parts.append(to_object(B, "tmp_post%d" % i))
-    if mast_kept(level):
-        for i, B in enumerate(mast()):
-            parts.append(to_object(B, "tmp_mast%d" % i))
-    for B, name in HR.solids(HANDRAILS, level, PAINT):
-        parts.append(to_object(B, name))
-    for B, name in kit(level):
-        parts.append(to_object(B, name))
+    for i, B in enumerate(mast(level)):
+        parts.append(to_object(B, "tmp_mast%d" % i))
+    if clock_sides(level):
+        parts.append(to_object(clock(clock_sides(level)), "tmp_clock"))
+    if lamp_kept(level):
+        parts.append(to_object(lamp(), "tmp_lamp"))
     for i, (px, py, dia, h) in enumerate(VENTS):
         n = vent_sides(level, dia)
         if n:
@@ -764,9 +879,7 @@ def build_lod(level):
             delimit={'UV', 'MATERIAL'})
     bm.to_mesh(obj.data)
     bm.free()
-    extents = kit_extents(level)
-    if extents:
-        RS.append(obj, extents)
+    RS.append(obj, kit(level), check=True)
     return obj
 
 
@@ -805,8 +918,16 @@ def check_layout():
     for kind, (lw, lh) in L.BANDS.items():
         if kind != "gwin" and not 1.2 <= lw <= 1.5:
             bad.append("the %s band's mullions are not 1.2-1.5 m apart" % kind)
-    if not 1.3 <= L.BANDS["rib"][1] <= 1.45:
-        bad.append("the upper ribbon is not 1.3-1.45 m tall")
+    # the ribbon's head at the upper rooms' ceiling, tight under the roof
+    # edge, its sill at desk height; a transom keeps it horizontal
+    if abs(L.Z_SILL2 + L.BANDS["rib"][1] - L.Z_HEAD2) > EPS:
+        bad.append("the upper ribbon's head is not at Z_HEAD2")
+    if not 2.6 <= L.Z_HEAD2 - L.Z_FLOOR2 <= 2.8:
+        bad.append("the upper ribbon's head is not at a 2.6-2.8 m ceiling")
+    if L.Z_COP0 - L.Z_HEAD2 > 0.75:
+        bad.append("more than 0.75 m of brick over the upper ribbon")
+    if not 0.4 <= L.TRANSOM2 <= 0.6 or L.TRANSOM2 > L.BANDS["rib"][1] / 3.0:
+        bad.append("the ribbon's fixed upper light is not a slim 0.4-0.6 m")
     if L.BANDS["ctrl"][1] <= L.BANDS["gwin"][1]:
         bad.append("the control room's band is not taller than the offices' windows")
     # the human scale: door leaves, the transom, sills against both floors
@@ -829,7 +950,7 @@ def check_layout():
     if not 0.3 <= L.Z_COP - L.Z_DECK <= 0.5:
         bad.append("the parapet is not 0.3-0.5 m over the deck")
     # the canopy: on the surround, wider than it, clear of the windows,
-    # 2.5-3 m out, its posts clear of the steps and the handrail
+    # cantilevered 2.0-2.2 m, covering the landing
     if abs(L.Z_CAN0 - (L.Z_FLOOR + L.ENTRY_H + L.SURROUND_TOP)) > 0.0626:
         bad.append("the canopy does not sit on the entrance surround")
     cx, w, proj = CANOPY
@@ -837,17 +958,37 @@ def check_layout():
     srd = surround_rect(item_rect(fr, "entrance", ENTRANCE_X, L.Z_FLOOR))
     if w < srd[1] - srd[0] + 0.4:
         bad.append("the canopy is not wider than the entrance surround")
-    if not 2.5 <= proj <= 3.0:
-        bad.append("the canopy is not 2.5-3 m out")
+    if not 2.0 <= proj <= 2.2:
+        bad.append("the cantilevered canopy is not 2.0-2.2 m out")
     for k, c, z, n in FRONT_ITEMS:
         if k != "entrance" and z < L.Z_FLOOR2:
             hw = item_width(k, n) / 2.0
             if c + hw > cx - w / 2.0 - 0.25 and c - hw < cx + w / 2.0 + 0.25:
                 bad.append("the canopy runs within 0.25 m of the %s at %.2f" % (k, c))
-    step_out = FRONT_STEPS[2][-1][0]
-    for px, py in post_spots():
-        if -HY - py < step_out + 0.3:
-            bad.append("a canopy post at x %.2f stands within 0.3 m of the steps" % px)
+    # the fin: under the canopy's west edge, away from the control room,
+    # beside the steps (it takes their west cheek), as deep as the landing
+    fx0, fx1 = fin_span()
+    if fx1 > ENTRANCE_X - L.OPENINGS["entrance"][0] / 2.0 - L.SURROUND:
+        bad.append("the fin runs into the entrance's surround")
+    if fx0 > FRONT_STEPS[0] - FRONT_STEPS[1] / 2.0 or fx1 < FRONT_STEPS[0] - FRONT_STEPS[1] / 2.0:
+        bad.append("the fin does not take the steps' west cheek")
+    if not FRONT_STEPS[2][2][0] <= FIN_D < proj:
+        bad.append("the fin does not reach the landing's edge or outruns the slab")
+    # the clock: clear of the surround, the control band and the canopy
+    cx, cz = CLOCK_AT
+    clock_r = (cx - CLOCK_R, cx + CLOCK_R, cz - CLOCK_R, cz + CLOCK_R)
+    for k, r in [(k, item_rect(fr, k, c, z, n)) for k, c, z, n in FRONT_ITEMS]:
+        if k == "entrance":
+            r = surround_rect(r)
+        r = (r[0] - HX, r[1] - HX, r[2], r[3])
+        if _overlap(clock_r, r, 0.3):
+            bad.append("the clock is within 0.3 m of the %s" % k)
+    if clock_r[3] > L.Z_CAN0 - 0.3:
+        bad.append("the clock is within 0.3 m of the canopy's height")
+    # the lamp: over the staff door, under the slab band
+    z_lamp = L.Z_FLOOR + L.OPENINGS["service_door"][1] + LAMP_GAP + LAMP_SIZE[1]
+    if z_lamp > L.Z_BAND0 - 0.2:
+        bad.append("the staff door's lamp runs into the slab band")
     if proj < FRONT_STEPS[2][2][0] + 0.2:
         bad.append("the canopy does not cover the landing")
     # the steps: as wide as the surround, risers of a stair
@@ -861,13 +1002,16 @@ def check_layout():
     bad += HR.problems(HANDRAILS[1], "the rear handrail",
                        door_w=L.OPENINGS["service_door"][0], door_c=SERVICE_X)
     # the roof plant on the deck, clear of the parapet and of one another
-    plant = [(HOUSING[0], HOUSING[1], L.HOUSING_W / 2.0), (MAST[0], MAST[1], 0.55)]
-    plant += [(px, py, dia / 2.0) for px, py, dia, h in VENTS]
-    for i, (px, py, r) in enumerate(plant):
+    # (x, y, radius, item): the mast's stays' feet are part of the mast
+    plant = [(HOUSING[0], HOUSING[1], L.HOUSING_W / 2.0, "housing"),
+             (MAST[0], MAST[1], DIPOLE[0] / 2.0, "mast")]
+    plant += [(MAST[0] + dx, MAST[1] + dy, 0.05, "mast") for dx, dy in STAYS]
+    plant += [(px, py, dia / 2.0, "vent%d" % i) for i, (px, py, dia, h) in enumerate(VENTS)]
+    for i, (px, py, r, what) in enumerate(plant):
         if abs(px) + r > XI - 0.4 or abs(py) + r > YI - 0.4:
             bad.append("roof plant at (%.1f, %.1f) crowds the parapet" % (px, py))
-        for qx, qy, q in plant[i + 1:]:
-            if abs(px - qx) < r + q + 0.3 and abs(py - qy) < r + q + 0.3:
+        for qx, qy, q, other in plant[i + 1:]:
+            if other != what and abs(px - qx) < r + q + 0.3 and abs(py - qy) < r + q + 0.3:
                 bad.append("roof plant at (%.1f, %.1f) crowds another" % (px, py))
         for ox, oy in L.OUTLETS:
             if abs(px - ox) < r + 0.4 and abs(py - oy) < r + 0.4:
@@ -901,8 +1045,9 @@ LEAF_W = {"entrance": (L.ENTRANCE[2] - 2 * L.REGION_OFF["entrance"][0] - 8) / PP
 def facts():
     """The geometry facts sidecar's per-asset half (scripts/model_facts.py),
     in the build frame. The footprint is the outer wall faces, 14 x 9 m; the
-    coping's 6 cm oversail, the canopy and its posts, the two flights of
-    steps with their rails and the caged ladder stand outside it. Two
+    coping's 6 cm oversail, the canopy and its fin, the clock, the lamp, the
+    two flights of steps with their rails and the caged ladder stand outside
+    it. Two
     storeys, at 0.5 and 3.75 m, each the whole plate inside the outer wall
     faces (the upper one under the flat roof, 3.25 m to the deck). The main
     door is the front entrance; the rear door is the staff's, a service
