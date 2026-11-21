@@ -3,7 +3,7 @@
   "version": 1,
   "name": "kaivostorni_concrete",
   "path": "buildings/industrial/kaivostorni_concrete",
-  "source": {"commit": "8909fdaa55f1c1e0396ffa3da7f28f8909170840", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "c92ea00140c23e1078f58786abe78fb30d398558", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-5.95, 0.0, -3.8477], "max": [5.95, 21.9428, 3.8477]},
   "footprint": [
