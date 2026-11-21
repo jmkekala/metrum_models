@@ -3,7 +3,7 @@
   "version": 1,
   "name": "muuntajakentta_walled",
   "path": "buildings/industrial/muuntajakentta_walled",
-  "source": {"commit": "9aa0427a93f29266ba7e1d5d430ad02997354370", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "da1062efb71eb56efdbab468c8b14679cedf1519", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-8.0, 0.0, -6.0], "max": [8.0, 7.45, 6.0]},
   "footprint": [

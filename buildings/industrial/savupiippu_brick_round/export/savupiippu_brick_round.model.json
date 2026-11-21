@@ -3,7 +3,7 @@
   "version": 1,
   "name": "savupiippu_brick_round",
   "path": "buildings/industrial/savupiippu_brick_round",
-  "source": {"commit": "9aa0427a93f29266ba7e1d5d430ad02997354370", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "da1062efb71eb56efdbab468c8b14679cedf1519", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-2.8, 0.0, -2.8], "max": [2.8, 46.5, 2.8]},
   "footprint": [
