@@ -206,8 +206,11 @@ def check_tier(results, asset, adir, level, kind, hero):
                     "GLB container: header_ok={header_ok} chunks={chunks} "
                     "walk_ok={walk_ok}".format(**hdr)))
 
+    # Any class: a night-lit building's windows, or a lamp post's lit lamp
+    # (props/lighting/), ships the same mask, binding and default-off factor.
     emission_name = asset + "_emission.png"
-    if kind == "building" and os.path.isfile(os.path.join(adir, "export", emission_name)):
+    what = "window emission" if kind == "building" else "emission"
+    if os.path.isfile(os.path.join(adir, "export", emission_name)):
         bound = 0
         for index, material in enumerate(js.get("materials", [])):
             binding = material.get("emissiveTexture")
@@ -226,8 +229,8 @@ def check_tier(results, asset, adir, level, kind, hero):
             except (KeyError, IndexError, TypeError):
                 valid = False
             results.append(("PASS" if valid else "FAIL", tag,
-                            "window emission: external mask, UV binding, default off"
-                            if valid else "invalid window emission image/UV/default state"))
+                            "%s: external mask, UV binding, default off" % what
+                            if valid else "invalid %s image/UV/default state" % what))
         if not bound:
             results.append(("FAIL", tag, "emission PNG exists but no emissiveTexture is bound"))
 
@@ -257,6 +260,13 @@ def check_tier(results, asset, adir, level, kind, hero):
            if "uri" in i and "bufferView" in i]
     embedded = [i.get("name") for i in js.get("images", [])
                 if "uri" not in i and "bufferView" in i]
+    # A binding to a texture that does not ship (a normal map a prop left
+    # out, a renamed variant) is no texture at all in the consumer.
+    unresolved = [i["uri"] for i in js.get("images", []) if "uri" in i
+                  and not os.path.isfile(os.path.join(adir, "export", i["uri"]))]
+    if unresolved:
+        results.append(("FAIL", tag, "image uri does not resolve to a file in "
+                                     "export/: %s" % unresolved))
     if bad:
         results.append(("FAIL", tag, "images carry both uri and bufferView: %s "
                                      "(Godot drops these)" % bad))
@@ -583,18 +593,26 @@ def check_facts(results, asset, adir, hero):
                         % (doors, "passages, " if "passages" in doc else "")))
 
 
-def check_plan_bounds(results, asset, adir):
-    """Every tier's plan bounds against LOD0's: a boundary piece's plan
-    rectangle is the consumer's obstacle, and its pivot is the attachment
-    point rather than the plan's centre, so a tier that lost an overhang
-    would change the obstacle while each file looked right alone."""
+def check_plan_bounds(results, asset, adir, kind):
+    """Every tier's plan bounds against LOD0's, for every prop class: a
+    prop's pivot is its attachment point rather than the plan's centre, so
+    the building check (pivot centred on the footprint) cannot see a tier
+    that lost an overhang or a foot, and a boundary piece's plan rectangle
+    is the consumer's obstacle. asset_build's build_all() already refuses
+    such a tier; this checks the files that ship. Tiers that are absent and
+    optional are skipped; a missing required tier is check_tier's FAIL."""
     edir = os.path.join(adir, "export")
-    paths = [os.path.join(edir, "%s_lod%d.glb" % (asset, lv)) for lv in range(4)]
-    if not all(os.path.isfile(p) for p in paths):
+    levels = range(len(BUDGETS[(kind, False)]))
+    paths = [os.path.join(edir, "%s_lod%d.glb" % (asset, lv)) for lv in levels]
+    if not os.path.isfile(paths[0]):
         return                      # already reported by check_tier
-    stats = [model_facts.glb_stats(p) for p in paths]
+    if kind in FOUR_TIERS and not all(os.path.isfile(p) for p in paths):
+        return                      # already reported by check_tier
+    stats = [model_facts.glb_stats(p) if os.path.isfile(p) else None for p in paths]
     ref = stats[0]
     for lv, s in enumerate(stats[1:], 1):
+        if s is None:
+            continue
         off = [abs(s[k][i] - ref[k][i]) for k in ("min", "max") for i in (0, 2)]
         results.append(("PASS" if max(off) < 1e-3 else "FAIL", "LOD%d" % lv,
                         "plan bounds x %.3f..%.3f, z %.3f..%.3f%s"
@@ -619,17 +637,26 @@ def validate(adir, kind="building", hero=False):
     check_notes(results, adir, kind)
     for level in range(len(BUDGETS[(kind, hero)])):
         check_tier(results, asset, adir, level, kind, hero)
-    if kind == "prop_boundary":
-        check_plan_bounds(results, asset, adir)
+    if kind != "building":
+        check_plan_bounds(results, asset, adir, kind)
     check_textures(results, asset, adir, kind, hero)
     if kind in FOUR_TIERS:
         check_facts(results, asset, adir, hero)
-    for note in ("material palette within the muted/realistic range",
+    if kind == "building":
+        notes = ("material palette within the muted/realistic range",
                  "silhouette, roofline and major recesses match across tiers",
-                 "front faces -Y" if kind == "building" else
-                 "orientation only forced where the prop has a real front",
+                 "front faces -Y",
                  "not a reproduction of a specific real building or object",
-                 "the six verification views have been looked at"):
+                 "the six verification views have been looked at")
+    else:
+        notes = ("material palette within the muted/realistic range",
+                 "silhouette and identity hold across tiers at prop switch "
+                 "distances",
+                 "orientation only forced where the prop has a real front",
+                 "not a reproduction of a specific real object",
+                 "the six views looked at, size checked against a 1.8 m "
+                 "standing figure")
+    for note in notes:
         results.append(("MANUAL", "review", note))
     return asset, results
 

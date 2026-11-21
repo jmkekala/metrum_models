@@ -757,6 +757,9 @@ Fixed in every variant:
 - the board-marked fire wall and tables, the concrete and the gravel;
 - the felt roof.
 
+`variants.png` shows the three at `LOD0`, one labelled daylight panel each
+from the catalog preview camera; with no emission there is no night row.
+
 ## Night lighting
 
 **None. The yard is not night-lit, and it ships no `_emission.png`.** The
@@ -768,7 +771,8 @@ would be a luminous region the brief does not call for. Consequences:
 
 - **No `emissiveTexture` on any tier.** The validator's emission checks do
   not apply. The facts sidecar omits `textures.emission`.
-- **No `variants.png`.** CLAUDE.md asks for it only of night-lit buildings.
+- **`variants.png` has a day row only**, one panel per colour (Variant
+  list).
 
 `build.py` builds through the shared `asset_build.Asset` with
 `night_lit=False`, which leaves out only the window wiring:
@@ -776,13 +780,15 @@ would be a luminous region the brief does not call for. Consequences:
 - `material()` wires no emission mask;
 - `export_all()` sets no lit state and rewrites no emission factor;
 - `render_preview()` has no emission state to set;
-- `render_variants()` renders nothing.
+- `render_variants()` renders the day row alone.
 
 The 2026-11-21 revision's full rebuild was the first full export through
 that path. It wrote no emission PNG; each tier's one material carries
 `baseColorTexture`, `metallicRoughnessTexture`, `occlusionTexture` and
 `normalTexture` and no `emissiveTexture` or `emissiveFactor`; and the
-build printed "no variants.png: not night-lit" and wrote none.
+build printed "no variants.png: not night-lit" and wrote none; the
+day-only sheet was rendered afterwards by `build.py -- variants`, from the
+tiers in memory checked against `export/`, with nothing re-exported.
 
 ## Export
 
@@ -902,6 +908,7 @@ Checked here, in Blender:
 - The plant palette pass: ORM, normal and `yellow_brick` albedo
   pixel-identical to the previous build, triangle counts and bounds
   unchanged; a 35 m oblique noon render of each variant before and after.
+- `variants.png`, the three colours in daylight (`build.py -- variants`).
 
 Pending in the consumer:
 

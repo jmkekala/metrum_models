@@ -153,14 +153,10 @@ class Builder:
         self.cache = {}
 
     def v(self, co):
-        # every vertex sits on the 0.1 mm grid its cache key names, so faces
-        # that two solids share by design (the office's east wall and the
-        # strip's west end, x = -2.667 m) are exactly coplanar for the exact
-        # boolean, whatever rounding each solid's own arithmetic took
         key = (round(co[0], 4), round(co[1], 4), round(co[2], 4))
         vert = self.cache.get(key)
         if vert is None:
-            vert = self.bm.verts.new(key)
+            vert = self.bm.verts.new(co)
             self.cache[key] = vert
         return vert
 
@@ -971,7 +967,10 @@ def build_lod(level):
         for i, (fx, fy) in enumerate(L.FANS):
             for j, B in enumerate(fan(fx, fy, n)):
                 parts.append(to_object(B, "tmp_fan%d_%d" % (i, j)))
-    obj = union(base, parts)
+    # snapped to 0.1 mm first: the office's east wall and the strip's west
+    # end share x = -2.667 m, which each solid's arithmetic reaches a hair
+    # apart, and only exactly coplanar faces merge in the exact boolean
+    obj = union(base, parts, snap=asset_build.SNAP)
     obj.name = "{}_LOD{}".format(ASSET, level)
     obj.data.name = obj.name + "_mesh"
 

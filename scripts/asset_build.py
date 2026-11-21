@@ -185,29 +185,75 @@ def _open_keyholes(me):
     bm.free()
 
 
-def union(base, others):
+SNAP = 1e-4
+
+
+def snap_vertices(obj, grid=SNAP):
+    """Move every vertex of *obj* onto a *grid* metres lattice, in place.
+
+    The exact boolean merges two faces only when they are exactly coplanar.
+    Two solids built to share a wall at a non-round coordinate (x = -8/3 m,
+    say) reach it by different arithmetic, land an ulp or two apart, and the
+    union keeps both faces as an internal double wall. Snapped, both solids
+    carry the same float. A power-of-ten grid rounds to decimal places
+    (Python's round(), as a build.py's vertex cache keys do), so the snap
+    reproduces a vertex already put on that grid by its builder exactly;
+    -0.0 is folded into 0.0. The grid must be finer than the smallest
+    authored feature, or distinct vertices fold onto one lattice point.
+    """
+    digits = round(-math.log10(grid))
+    if abs(10.0 ** -digits - grid) <= 1e-12 * grid:
+        def snap(c):
+            return round(c, digits) + 0.0
+    else:
+        def snap(c):
+            return round(c / grid) * grid + 0.0
+    for v in obj.data.vertices:
+        v.co = (snap(v.co.x), snap(v.co.y), snap(v.co.z))
+    return obj
+
+
+def union(base, others, snap=None):
     """Exact boolean union of *others* into *base*, applied, with any face the
-    solver returns as a keyhole triangulated (see _open_keyholes)."""
-    return _boolean(base, others, 'UNION')
+    solver returns as a keyhole triangulated (see _open_keyholes).
+
+    snap=SNAP (0.1 mm) first puts every operand's vertices, *base*'s too, on
+    that grid (snap_vertices()), so faces two solids share by design are
+    exactly coplanar for the solver however each solid's arithmetic rounded:
+    without it a shared wall at a non-round coordinate can survive as an
+    internal double wall. Off by default, which leaves every catalog asset's
+    build as it was: on, it moves the off-grid vertices of round pipes,
+    rails and sloped planes by up to 0.05 mm, which changes where the
+    boolean cuts and so the triangle counts of most existing buildings. A
+    new build.py should pass it:
+
+        obj = union(base, parts, snap=asset_build.SNAP)
+    """
+    return _boolean(base, others, 'UNION', snap)
 
 
-def difference(base, cutters):
+def difference(base, cutters, snap=None):
     """Exact boolean difference of *cutters* from *base*, applied, as union()
     applies its union: keyholes opened, the cutters removed, *base* returned
-    unlinked. Each cutter is a closed solid, such as a drive-through lane's
-    void cut out of a hand-built box before the rest is unioned in:
+    unlinked, and *snap* as union() takes it. Each cutter is a closed solid,
+    such as a drive-through lane's void cut out of a hand-built box before
+    the rest is unioned in:
 
         house = difference(to_object(shed_box(level), "tmp_shed"),
                            [to_object(lane_void(level), "tmp_lane")])
         obj = union(house, parts)
     """
-    return _boolean(base, cutters, 'DIFFERENCE')
+    return _boolean(base, cutters, 'DIFFERENCE', snap)
 
 
-def _boolean(base, others, operation):
-    """union()'s and difference()'s shared body: *others* as one operand
-    collection on a BOOLEAN modifier of *base*, evaluated with the exact
-    solver, keyholes opened, *others* deleted, *base* returned unlinked."""
+def _boolean(base, others, operation, snap=None):
+    """union()'s and difference()'s shared body: the operands snapped when
+    *snap* is a grid, *others* as one operand collection on a BOOLEAN
+    modifier of *base*, evaluated with the exact solver, keyholes opened,
+    *others* deleted, *base* returned unlinked."""
+    if snap:
+        for o in [base] + list(others):
+            snap_vertices(o, snap)
     scn = bpy.context.scene
     scn.collection.objects.link(base)
     col = bpy.data.collections.new(base.name + "_operands")
@@ -273,9 +319,11 @@ class Asset:
     was framed by hand, and keeping its camera keeps its preview unchanged.
 
     night_lit=False is for a building with no glazing and so no emission map
-    (a windowless shed, a chimney stack; CLAUDE.md, Output Contract): the
-    material has no emission mask wired in, the export leaves out the lit
-    state and the factor rewrite, and there is no day/night variants.png.
+    (a windowless shed, a chimney stack; CLAUDE.md, Output Contract), and
+    for a prop without a lamp: the material has no emission mask wired in,
+    the export leaves out the lit state and the factor rewrite, and
+    variants.png is a day-only row, written only when there is more than one
+    variant to show.
 
     pivot is for a prop pivoted on its attachment point (CLAUDE.md, Props)
     rather than its plan's centre: a build-frame point every tier is moved
@@ -328,10 +376,16 @@ class Asset:
         The normal map goes through a tangent-space Normal Map node at
         strength 1, written as normalTexture at scale 1; tangents are left to
         the consumer's MikkTSpace, as glTF specifies when none are exported.
-        The emission mask is attached default-off (window_emission) when the
+        A prop may ship without a normal map (CLAUDE.md, Props): when
+        export/<name>_normal.png does not exist the material has no normal
+        nodes, so the export writes no normalTexture. Buildings always have
+        one (validate_asset.py warns if a building's is missing). The
+        emission mask is attached default-off (window_emission) when the
         asset is night-lit.
         """
         variant = variant or self.default_variant
+        normal_fn = "{}_normal.png".format(self.name)
+        has_normal = os.path.isfile(os.path.join(self.export_dir, normal_fn))
         mat = bpy.data.materials.get(self.name) or bpy.data.materials.new(self.name)
         if mat.node_tree is None:        # use_nodes is deprecated in 5.x, gone in 6.0
             mat.use_nodes = True
@@ -341,20 +395,24 @@ class Asset:
         bsdf = nt.nodes.new("ShaderNodeBsdfPrincipled"); bsdf.location = (300, 0)
         t_alb = nt.nodes.new("ShaderNodeTexImage"); t_alb.location = (-380, 160)
         t_orm = nt.nodes.new("ShaderNodeTexImage"); t_orm.location = (-380, -200)
-        t_nrm = nt.nodes.new("ShaderNodeTexImage"); t_nrm.location = (-380, -560)
+        if has_normal:
+            t_nrm = nt.nodes.new("ShaderNodeTexImage"); t_nrm.location = (-380, -560)
         sep = nt.nodes.new("ShaderNodeSeparateColor"); sep.location = (-70, -200)
-        nmap = nt.nodes.new("ShaderNodeNormalMap"); nmap.location = (-70, -560)
-        nmap.space = 'TANGENT'
-        nmap.inputs["Strength"].default_value = 1.0
+        if has_normal:
+            nmap = nt.nodes.new("ShaderNodeNormalMap"); nmap.location = (-70, -560)
+            nmap.space = 'TANGENT'
+            nmap.inputs["Strength"].default_value = 1.0
         self._image(t_alb, "{}_albedo_{}.png".format(self.name, variant), 'sRGB')
         self._image(t_orm, "{}_orm.png".format(self.name), 'Non-Color')
-        self._image(t_nrm, "{}_normal.png".format(self.name), 'Non-Color')
+        if has_normal:
+            self._image(t_nrm, normal_fn, 'Non-Color')
         nt.links.new(t_alb.outputs["Color"], bsdf.inputs["Base Color"])
         nt.links.new(t_orm.outputs["Color"], sep.inputs["Color"])
         nt.links.new(sep.outputs["Green"], bsdf.inputs["Roughness"])
         nt.links.new(sep.outputs["Blue"], bsdf.inputs["Metallic"])
-        nt.links.new(t_nrm.outputs["Color"], nmap.inputs["Color"])
-        nt.links.new(nmap.outputs["Normal"], bsdf.inputs["Normal"])
+        if has_normal:
+            nt.links.new(t_nrm.outputs["Color"], nmap.inputs["Color"])
+            nt.links.new(nmap.outputs["Normal"], bsdf.inputs["Normal"])
         nt.links.new(bsdf.outputs["BSDF"], out.inputs["Surface"])
 
         grp = bpy.data.node_groups.get("glTF Material Output")
@@ -550,11 +608,14 @@ class Asset:
         return path
 
     def render_variants(self, tile_w=640):
-        """variants.png: day above night, one column per colour."""
-        if not self.night_lit:
-            return "no variants.png: not night-lit"
+        """variants.png: one column per colour, day above night when the
+        asset is night-lit; for an unlit asset a single day row, and none at
+        all when it has only one variant (preview.png already shows it)."""
+        if not self.night_lit and len(self.variants) < 2:
+            return "no variants.png: not night-lit, one variant"
         return render_sheet(self.name, self.here, self.variants, self.material,
-                            self.preview_studio, self.show_only, tile_w, self.tint)
+                            self.preview_studio, self.show_only, tile_w, self.tint,
+                            with_night=self.night_lit)
 
     # ---------------------------------------------------------------- facts
     def check_export(self, tol=1e-3):
@@ -602,6 +663,15 @@ class Asset:
         return model_facts.write(model_facts.sidecar_path(self.here, self.name), doc)
 
     # ---------------------------------------------------------------- main
+    def _clear_factory_scene(self):
+        """Started from the factory scene rather than source.blend: its cube,
+        light and camera would sit in the renders, so remove every object
+        but the tiers."""
+        keep = {"{}_LOD{}".format(self.name, lv) for lv in self.levels}
+        for o in list(bpy.data.objects):
+            if o.name not in keep:
+                bpy.data.objects.remove(o, do_unlink=True)
+
     def main(self, build_all, facts=None):
         """The headless rebuild: build, export, preview, variants, save, and
         the facts sidecar when the build.py declares *facts*.
@@ -613,6 +683,14 @@ class Asset:
         nothing else is exported, rendered or saved:
 
             blender --background --python build.py -- facts
+
+        With `variants` it builds the tiers in memory, refuses if they are not
+        the exported ones (check_export(), as facts does), and renders only
+        variants.png (render_variants()) from the textures in export/;
+        nothing is exported or saved, so a new colour or a changed sheet
+        needs no rebuild:
+
+            blender --background --python build.py -- variants
         """
         argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
         if argv == ["facts"]:
@@ -621,14 +699,22 @@ class Asset:
             print(build_all())
             print(self.write_facts(facts))
             return
+        if argv == ["variants"]:
+            print(build_all())
+            problems = self.check_export()
+            if problems:
+                raise ValueError("the build does not match export/:\n  "
+                                 + "\n  ".join(problems))
+            if not bpy.data.filepath:
+                self._clear_factory_scene()
+            print(self.render_variants())
+            return
         if argv:
-            raise RuntimeError("unknown arguments %s; the only one is `facts`" % argv)
+            raise RuntimeError("unknown arguments %s; the only ones are `facts` "
+                               "and `variants`" % argv)
         if not bpy.data.filepath:
-            # started from the factory scene rather than source.blend: its
-            # cube, light and camera would sit in the renders, so clear them,
-            # and save straight away so the texture paths are written relative
-            for o in list(bpy.data.objects):
-                bpy.data.objects.remove(o, do_unlink=True)
+            # save straight away so the texture paths are written relative
+            self._clear_factory_scene()
             bpy.ops.wm.save_as_mainfile(filepath=os.path.join(self.here, "source.blend"))
         print(build_all())
         print(self.export_all())

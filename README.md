@@ -10,24 +10,27 @@ An AI agent connects to a local Blender instance over MCP, builds a mesh
 interactively using reference imagery for proportions and style, and
 checks its own work via rendered views. The result is a low-poly,
 game-ready exterior shell — no interiors, no rigging, no animation —
-exported as four `.glb` LOD tiers sharing one set of external PNG textures
-(albedo, ORM, a normal map, and an emission mask for lit windows at night). Colour
-variants are texture swaps on the same geometry.
+exported as `.glb` LOD tiers (four for a building) sharing one set of
+external PNG textures (albedo, ORM, a normal map, and an emission mask for
+lit windows at night). Colour variants are texture swaps on the same
+geometry.
 
 Two asset classes are defined:
 
 - **Buildings** — exterior shells: massing, roofline, facade texture.
-- **Props** — street furniture and lighting (benches, bins, bollards,
-  mailboxes, planters, lamp posts).
+- **Props** — street furniture, lighting and boundary pieces (benches,
+  bins, bollards, mailboxes, planters, lamp posts; wall runs, piers, gates).
 
 ## Status
 
-Ten buildings are finished and listed in [`CATALOG.md`](CATALOG.md):
-six residential (four Finnish post-war houses and two terraces), two
-commercial (a corner grocery and a small shopping centre), one service
-building (a civic hall with a clock tower) and one industrial (a brick
-workshop-and-office block with flat-roofed wings). No props have been built yet;
-their conventions and budgets are specified and waiting for the first one.
+Twenty-three buildings and eight props are finished and listed in
+[`CATALOG.md`](CATALOG.md). The buildings: six residential (four Finnish
+post-war houses and two terraces), two commercial (a corner grocery and a
+small shopping centre), eleven industrial (a light-industrial works and the
+buildings of a mine and a town power plant), three agricultural (farm
+buildings) and one service building (a civic hall with a clock tower). The
+props: seven brick perimeter wall pieces (runs, a pier and gate sides) and
+one park bench; no lighting props have been built yet.
 
 ## Documentation
 
@@ -64,8 +67,8 @@ blender --background --python scripts/validate_asset.py -- buildings/residential
 ## Repository layout
 
 ```text
-buildings/<category>/<asset_name>/   # residential, commercial, industrial, service
-props/<category>/<asset_name>/       # street_furniture, lighting
+buildings/<category>/<asset_name>/   # residential, commercial, industrial, service, agricultural
+props/<category>/<asset_name>/       # street_furniture, lighting, boundary
 scripts/                             # shared helpers: atlas rasteriser, weathering, build pipeline, glazing, emission wiring, validation, review renders
 ```
 

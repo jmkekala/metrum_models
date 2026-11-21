@@ -112,6 +112,8 @@ Two, the CLAUDE.md default for props. A town paints its benches one colour, so t
 
 Fixed across both: the LOD1 gap tone (70, 70, 68) and the bolt heads (74, 74, 72). Roughness and metallic are shared, so the ORM is one file: paint or oiled wood 0.58, worn wood 0.82, end grain 0.78, iron 0.55, bolts 0.45 and metallic 0.6. Only the albedo differs between variants.
 
+`variants.png` shows both at `LOD0` side by side, one labelled daylight panel each from the catalog preview camera (the bench has no emission, so there is no night row).
+
 ## Export
 
 One material, `puistopenkki_slatted`, on both tiers:
@@ -120,7 +122,7 @@ One material, `puistopenkki_slatted`, on both tiers:
 - ORM → `metallicRoughnessTexture` and `occlusionTexture`;
 - normal → `normalTexture` at scale 1.
 
-All are external PNGs with a `uri` and no `bufferView`; traced in both GLBs and checked by the validator. Both tiers reference the default albedo; `brown_oiled` is the same mesh with that one file swapped. There is no emission (`night_lit=False`), no `variants.png` and no facts sidecar (plain props ship none).
+All are external PNGs with a `uri` and no `bufferView`; traced in both GLBs and checked by the validator. Both tiers reference the default albedo; `brown_oiled` is the same mesh with that one file swapped. There is no emission (`night_lit=False`) and no facts sidecar (plain props ship none); `variants.png` is a day-only sheet.
 
 glTF export by `asset_build.export_all()`: GLB, selection only, +Y up, modifiers applied, keep original textures, no cameras or lights. The image `bufferView`s are stripped afterwards.
 
@@ -131,7 +133,7 @@ python3 props/street_furniture/puistopenkki_slatted/bench_atlas.py export
 blender --background --python props/street_furniture/puistopenkki_slatted/build.py
 ```
 
-The second step builds both tiers, exports them, renders `preview.png` and saves `source.blend`.
+The second step builds both tiers, exports them, renders `preview.png` and `variants.png` and saves `source.blend`. With `-- variants` after `build.py` it renders `variants.png` alone from the tiers in memory, refusing if they differ from `export/`; nothing is exported or saved.
 
 ## Review status
 
@@ -142,8 +144,9 @@ Done here:
 - Orientation on reimport: the seat's front at glTF +Z (bounds z max 0.290 is the seat's front edge), the back toward −Z.
 - The slat arrises and casting rim read raised in lit renders.
 - The catalog `preview.png` (standard setup).
+- `variants.png`, both finishes in daylight, rendered by `build.py -- variants` from the exported textures (tiers checked against `export/`, nothing re-exported).
 
-The validator does not check that a plain prop's tiers share LOD0's plan bounds; `asset_build.build_all()` asserts it at build time.
+The validator checks that `LOD1` shares `LOD0`'s plan bounds (PASS), as `asset_build.build_all()` asserts at build time.
 
 The standard preview, fitted to the bounds, frames the bench from about 3.5 m. At that distance one texel covers 2–3 screen pixels, so the preview shows the 256 atlas softer than the bench reads at its 5–20 m use distances. The preview also carries no scale cue.
 

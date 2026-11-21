@@ -13,6 +13,16 @@ use 1920x1080, with distance measured along the view direction to the centre
 of the visible front/rear wall. These are authoring scenarios, not game presets.
 Optional --texture-dir substitutes temporary mip PNGs without editing exports.
 Renders and settings go to OUTPUT_DIR; no source blend or catalog preview saves.
+
+The tiers reference the default variant's albedo. --variant NAME renders
+another colour instead: every image named ASSET_albedo_*.png is swapped for
+export/ASSET_albedo_NAME.png, and the shared ASSET_orm.png and
+ASSET_normal.png for ASSET_orm_NAME.png and ASSET_normal_NAME.png where those
+variant-specific maps exist. The variant name is appended to every render's
+file name (..._lod0_NAME.png) and recorded in the settings JSON. With
+--texture-dir the substituted names are then looked up there in turn:
+    blender -b -t 8 -P scripts/review_asset.py -- ASSET_DIR OUTPUT_DIR \
+        --six-views --variant yellow_brick
 """
 
 import argparse
@@ -128,6 +138,8 @@ def load_tiers(args):
         tiers[tier] = [o for o in set(bpy.data.objects) - old if o.type == 'MESH']
         if not tiers[tier]:
             raise RuntimeError(f'No mesh in {path}')
+    if args.variant:
+        substitute_variant(args.asset, args.variant)
     if args.texture_dir:
         for im in bpy.data.images:
             if im.source == 'FILE':
@@ -139,6 +151,31 @@ def load_tiers(args):
                 im.filepath = str(replacement)
                 im.reload()
     return tiers
+
+
+def substitute_variant(asset, variant):
+    """Point the imported images at *variant*'s textures in asset/export."""
+    name, export = asset.name, asset / 'export'
+    albedo = export / f'{name}_albedo_{variant}.png'
+    if not albedo.is_file():
+        known = sorted(p.name[len(name) + 8:-4] for p in export.glob(f'{name}_albedo_*.png'))
+        raise RuntimeError(f'No {albedo.name}; variants here: {", ".join(known)}')
+    for im in bpy.data.images:
+        if im.source != 'FILE':
+            continue
+        if im.packed_file:
+            raise RuntimeError(f'{im.name} is packed; a substitute would be ignored')
+        current = Path(bpy.path.abspath(im.filepath)).name
+        if current.startswith(f'{name}_albedo_'):
+            replacement = albedo
+        elif current in (f'{name}_orm.png', f'{name}_normal.png'):
+            replacement = export / current.replace('.png', f'_{variant}.png')
+            if not replacement.is_file():
+                continue                    # shared by every variant
+        else:
+            continue
+        im.filepath = str(replacement)
+        im.reload()
 
 
 def bounds(objects):
@@ -215,7 +252,8 @@ def main(args):
                         for obj in objects:
                             obj.hide_render = lv != level
                     state = 'on' if lit else 'off'
-                    name = f'{args.asset.name}_{view}_{distance:.1f}m_{light}_emission_{state}_lod{level}.png'
+                    name = f'{args.asset.name}_{view}_{distance:.1f}m_{light}_emission_{state}_lod{level}'
+                    name += f'_{args.variant}.png' if args.variant else '.png'
                     scene.render.filepath = str(args.output / name)
                     if not getattr(args, 'resume', False) or not (args.output / name).exists():
                         bpy.ops.render.render(write_still=True)
@@ -230,6 +268,7 @@ def main(args):
                 'exposure': 0, 'view_transform': 'AgX', 'lights': LIGHTS,
                 'projection': cam.data.type, 'orthographic_size': cam.data.ortho_scale,
                 'texture_dir': str(args.texture_dir) if args.texture_dir else None,
+                'variant': args.variant,
                 'renders': records}
     (args.output / f'{args.asset.name}_settings.json').write_text(json.dumps(settings, indent=2) + '\n')
 
@@ -248,6 +287,8 @@ if __name__ == '__main__':
     p.add_argument('--resolution', type=int, nargs=2, default=[1920, 1080])
     p.add_argument('--samples', type=int, default=24)
     p.add_argument('--texture-dir', type=Path)
+    p.add_argument('--variant', help='Render this colour variant (export/ASSET_albedo_VARIANT.png) '
+                                     'instead of the default the tiers reference.')
     p.add_argument('--emission', choices=['auto', 'on', 'off'], default='auto',
                    help='Default: light candidate windows at night only; game timing stays external.')
     main(p.parse_args(sys.argv[sys.argv.index('--') + 1:]))

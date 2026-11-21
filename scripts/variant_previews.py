@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Reproducible day/night contact sheets for any window-emitting building."""
+"""Reproducible variant contact sheets: day/night for any window-emitting
+asset, day only for an unlit one (asset_build.Asset.render_variants())."""
 
 from pathlib import Path
 import tempfile
@@ -15,11 +16,13 @@ from window_emission import LIT_FACTOR, set_state
 
 
 def render_sheet(asset, here, variants, get_material, preview_studio, show_only,
-                 tile_w=640, tint=None):
+                 tile_w=640, tint=None, with_night=True):
     """Colours in columns; day above night. Fixed camera and exposure.
 
     *tint* is the asset's reference lit factor; the catalog's warm default is
-    used when an asset does not state one of its own.
+    used when an asset does not state one of its own. with_night=False is
+    for an asset with no emission (night_lit=False): one day row, each panel
+    labelled with its variant's name alone, and no emission state touched.
     """
     tint = LIT_FACTOR if tint is None else tint
     scn = bpy.context.scene
@@ -49,7 +52,8 @@ def render_sheet(asset, here, variants, get_material, preview_studio, show_only,
     rows = []
     try:
         with tempfile.TemporaryDirectory(prefix=asset + '_variants_') as tmp:
-            for night in (False, True):
+            rows_of = (False, True) if with_night else (False,)
+            for night in rows_of:
                 bg.inputs[0].default_value = (0.24, 0.32, 0.50, 1) if night else day[0]
                 bg.inputs[1].default_value = 0.08 if night else day[1]
                 sun.data.energy = 0.12 if night else day[2]
@@ -57,7 +61,8 @@ def render_sheet(asset, here, variants, get_material, preview_studio, show_only,
                 tiles = []
                 for variant in variants:
                     material = get_material(variant)
-                    set_state(material, float(night), tint)
+                    if with_night:
+                        set_state(material, float(night), tint)
                     path = str(Path(tmp) / f'{variant}_{night}.png')
                     scn.render.filepath = path
                     bpy.ops.render.render(write_still=True)
@@ -66,7 +71,10 @@ def render_sheet(asset, here, variants, get_material, preview_studio, show_only,
                         blf.size(0, max(14, rh // 25))
                         blf.color(0, *((0.86, 0.89, 0.96, 1) if night else (0.08, 0.08, 0.08, 1)))
                         blf.position(0, c0 + 14, rh - rh // 14, 0)
-                        blf.draw_buffer(0, variant.replace('_', ' ') + (' / NIGHT' if night else ' / DAY'))
+                        label = variant.replace('_', ' ')
+                        if with_night:
+                            label += ' / NIGHT' if night else ' / DAY'
+                        blf.draw_buffer(0, label)
                     imbuf.write(ib, filepath=path)
                     image = bpy.data.images.load(path, check_existing=False)
                     px = np.array(image.pixels[:], np.float32).reshape(rh, rw, 4)

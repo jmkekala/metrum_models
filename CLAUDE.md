@@ -8,8 +8,8 @@ reference imagery, issues `bpy` operations, checks viewport renders, and
 iterates toward game-ready meshes.
 
 Output: exterior building shells (massing, roofline, facade texture) and props
-(street furniture, lighting), with colour/material variants that share geometry
-where appropriate. No interiors, rigging, or animation.
+(street furniture, lighting, boundary pieces), with colour/material variants
+that share geometry where appropriate. No interiors, rigging, or animation.
 
 The repository has its own git history, licence and workflow, and depends on no
 other project's source, tooling, files or directory layout. Its primary
@@ -132,8 +132,8 @@ budgets; style ambition never raises a ceiling.
   by 5.3, and Blender cannot open files saved by a newer version, so 5.3 is
   the lowest version that can work on all of them (the MCP extension itself
   installs on 5.1).
-  Every `build.py` asserts the floor as `BLENDER_MIN`. Record the actual version
-  in `notes.md`.
+  `asset_build.check_toolchain()`, which every `build.py` calls, asserts the
+  floor as `BLENDER_MIN`. Record the actual version in `notes.md`.
 - **Blender MCP server addon**, bound to `localhost` only. The MCP client
   (Claude Code) issues `bpy` calls, scene queries and viewport screenshots. In
   practice: the Blender Lab "MCP" extension's local socket server, driven by a
@@ -156,7 +156,7 @@ metrum_models/
     residential/
       <asset_name>/
         source.blend        # authoring file, all LOD tiers as separate objects/collections
-        build.py             # optional; cleaned-up bpy build script, not a raw session transcript
+        build.py             # required; cleaned-up bpy build, not a session transcript
         <other>.py           # optional; further scripts for this asset alone, e.g. facade_atlas.py (texture generator)
         export/
           <asset_name>_lod0.glb
@@ -170,7 +170,7 @@ metrum_models/
           <asset_name>.model.json             # required; geometry facts sidecar written by the build, see Output Contract
         notes.md             # see Notes.md & Catalog Template below — no reference material, images or prose
         preview.png          # required; LOD0, default variant, standard daytime catalog setup
-        variants.png         # night-lit buildings: day/night rows for every colour
+        variants.png         # night-lit: day/night rows; other multi-variant assets: day row
     commercial/
       <asset_name>/           # same per-asset layout as residential/
     industrial/
@@ -183,16 +183,18 @@ metrum_models/
     street_furniture/
       <asset_name>/
         source.blend        # authoring file
-        build.py             # optional; cleaned-up bpy build script, not a raw session transcript
+        build.py             # required; cleaned-up bpy build, not a session transcript
+        <other>.py           # optional; e.g. bench_atlas.py (texture generator)
         export/
           <asset_name>_lod0.glb
           <asset_name>_lod1.glb
           <asset_name>_lod2.glb               # optional for props, see Props
           <asset_name>_albedo_<variant>.png   # always named for its finish, even with one texture set, e.g. _albedo_green_steel.png
           <asset_name>_orm.png                # required; shared by all variants unless the pattern changes
-          <asset_name>_normal.png             # optional
+          <asset_name>_normal.png             # optional; bound on every tier when present
         notes.md
         preview.png          # required; same standard preview setup as buildings
+        variants.png         # night-lit: day/night rows; other multi-variant assets: day row
     lighting/
       <asset_name>/           # same per-asset layout as street_furniture/
     boundary/
@@ -202,13 +204,16 @@ metrum_models/
   .gitattributes             # LFS patterns
   .gitignore                 # Blender autosave/backup files, untracked local working material, etc.
   LICENSE.md                 # CC BY 4.0 for repository content; see Licensing
+  README.md                  # public overview; CLAUDE.md is the contract
+  AGENTS.md                  # symlink to CLAUDE.md
   CLAUDE.md
 ```
 
 **Categories:** `residential/`, `commercial/`, `industrial/`, `service/`,
-`agricultural/` under `buildings/`; `street_furniture/`, `lighting/`, `boundary/` under `props/`. Add categories
-when needed. A mixed-use building goes under its primary category, with the
-secondary use recorded in `notes.md`.
+`agricultural/` under `buildings/`; `street_furniture/`, `lighting/` and
+`boundary/` under `props/`. Add categories when needed. A mixed-use building
+goes under its primary category, with the secondary use recorded in
+`notes.md`.
 
 **Names:** descriptive `snake_case`, e.g. `lowrise_brick_corner`; no numeric
 IDs, no repeated category. The folder path is the asset's only identity, so the
@@ -232,21 +237,21 @@ and its `facts()` and hands the rest to one `asset_build.Asset`.
 | --- | --- |
 | `atlas.py` | Rasterises every atlas: a supersampled `Canvas` with id, shade, AO and height channels, rect, bevel and shape primitives (stroke, disc, rounded rect), and `pad()`; periodic `noise()`; `cavity()`; and resolvers for albedo, ORM, normal map and emission (Texture Requirements). |
 | `weathering.py` | Weathering as per-sample fields (dirt, algae, rust, faded paint, rain runs, coal dust) that the canvas carries through `pad()` and `atlas.albedo()`/`orm()` resolve per variant, with helpers for a plinth, splash-back, a sheltered eave, runs under a drip, a roof band, a window and a door. Each atlas's `weather()` places them. |
-| `asset_build.py` | The shared half of every `build.py`: `check_toolchain()`, the catalog preview constants, `open_stack()` (a chimney or stack open at the top round a sooted flue), `union()` (the exact boolean, which triangulates any keyhole face it returns round a hole before the build's weld can fold it) and `difference()`, its subtracting twin, and an `Asset` (`night_lit=False` for one without glazing) with `material()`, `build_all()`, `export_all()`, `render_preview()`, `render_variants()`, `write_facts()` and `main()`. Runs inside Blender only. |
+| `asset_build.py` | The shared half of every `build.py`: `check_toolchain()`, the catalog preview constants, `open_stack()` (a chimney or stack open at the top round a sooted flue), `union()` (the exact boolean, which triangulates any keyhole face it returns round a hole before the build's weld can fold it; opt-in `snap=SNAP` first puts the operands on a 0.1 mm grid) and `difference()`, its subtracting twin, and an `Asset` (`night_lit=False` for one without lit regions; `pivot=` and `levels=` for a prop) with `material()`, `build_all()`, `export_all()`, `render_preview()`, `render_variants()`, `write_facts()` and `main()`. Runs inside Blender only. |
 | `model_facts.py` | The facts sidecar `export/<asset_name>.model.json`: its schema, the build-frame to glTF conversion, `wall_door()`, `lane_passage()` and `roof_clear_width()` for a `build.py`'s `facts()`, `compose()`/`write()`, and `check()`, which `validate_asset.py` runs on the file. Pure Python. |
 | `boundary_wall.py` | The brick perimeter wall pieces of `props/boundary/`: their shared 512 atlas (`export`, written into each piece's `export/`), the joint rule, `Run`/`Pier`/`Gate` and their four tiers, layout checks and facts; each piece's `build.py` names its piece and calls `piece_asset()`. |
 | `glazing.py` | Paints glass as the room behind it: `rooms()` on the finished albedo by day, `night_rooms()` on the emission mask by night. Called by texture generators. |
 | `downpipes.py` | Downpipes as swept, mitred closed solids for `build.py` to union: a `Pipe` placed on a wall, swan-neck and shoe, UVs on the atlas's painted gutter (`PIPE_STRIP`), per-tier `MODES`, and `problems()` for `check_layout()`. Runs inside Blender only. |
 | `roof_safety.py` | Roof safety equipment as closed solids for `build.py` to union: the wall ladder and its safety cage, the roof ladder and the walkway, UVs on the painted gutter (`PIPE_STRIP`) or a fixed patch, per-tier `MODES`, and `problems()` for `check_layout()`; an opt-in lean wall ladder and cage (`lean=True`), separate solids that cut nothing, added after the weld by `append(check=True)` at a fraction of the triangles. Runs inside Blender only. |
-| `handrails.py` | Handrails on entrance flights as closed solids for `build.py` to union: one rail on posts, on the right going up (`side="left"` where that is blocked), level along the landing and down the nosing line, UVs on `PIPE_STRIP` through `roof_safety.Paint`, per-tier `MODES`, and `problems()` for `check_layout()`. Runs inside Blender only. |
+| `handrails.py` | Handrails on entrance flights as closed solids for `build.py` to union: one rail on posts, on the right going up (`side="left"` where that is blocked), level along the landing and down the nosing line, UVs on `PIPE_STRIP` through `roof_safety.Paint`, per-tier `MODES`, and `problems()` for `check_layout()`; an opt-in lean rail (`lean=True`), appended like the lean ladder. Runs inside Blender only. |
 | `window_emission.py` | Wires the emission mask into the material (`attach`, `set_state`), rewrites an exported GLB's emission factor (`rewrite_glb_emission`, which `asset_build` uses to ship it default-off), holds the reference `LIT_FACTOR`. |
 | `glb_images.py` | `strip_embedded_images()`: removes the `bufferView` the exporter leaves beside each image `uri`; `asset_build`'s export runs it on every tier (Texture Requirements). |
-| `variant_previews.py` | `render_sheet()`: the day/night `variants.png`, called by `asset_build`. |
+| `variant_previews.py` | `render_sheet()`: the day/night (or, for unlit assets, day-only) `variants.png`, called by `asset_build`. |
 | `validate_asset.py` | Mechanical export checks (Validation Checklist). |
-| `review_asset.py` | Renders exported tiers in a disposable scene: day cycle, LOD distance pairs, views, light states, optional mip textures. Run in a separate background Blender. |
+| `review_asset.py` | Renders exported tiers in a disposable scene: day cycle, LOD distance pairs, views, light states, optional mip textures, another colour by `--variant`. Run in a separate background Blender. |
 | `review_atlas_mips.py` | Writes temporary atlas mips for filtering stress renders (`review_asset.py --texture-dir`). |
 | `review_gallery.py` | Contact sheets and an HTML gallery from `review_asset.py` output. |
-| `review_compare.py` | Before/after sheets and an HTML page from two `review_asset.py` runs with identical settings. |
+| `review_compare.py` | Before/after sheets and an HTML page from two `review_asset.py` runs with identical settings; `--ignore-distance` pairs by view where the fitted distance changed, `--pad` centres differing sizes. |
 
 Each script's docstring gives its command line.
 
@@ -308,11 +313,14 @@ section (Reference Image Policy keeps references out of notes).
 **Props — required, in order:** `Style brief`, `Category and secondary use`,
 `Footprint`, `Construction`, `Per-tier triangle counts`, `LOD review`,
 `Texture set`, `Variant list`, `Export`, `Review status`, `Tooling versions`;
-add `Glazing treatment` when the prop has glass. Building-only sections are
-left out, not filled with "n/a". `Footprint` gives width x depth x height
-against the 1.8 m standing figure; `Construction` gives the pivot's attachment
-point and whether the asset has an authored front. Inside a required section,
-an inapplicable field is marked "n/a" rather than dropped.
+add `Glazing treatment` when the prop has glass, `Night lighting` when it
+emits, and `Interior geometry` (kept contact or closure faces) and `Known
+simplifications` when there is something to record, each in its building
+position. Other building-only sections are left out, not filled with "n/a".
+`Footprint` gives width x depth x height against the 1.8 m standing figure;
+`Construction` gives the pivot's attachment point and whether the asset has
+an authored front. Inside a required section, an inapplicable field is
+marked "n/a" rather than dropped.
 
 **Notes describe the asset as it stands now.** A revision edits the section
 that owns the change; it never appends a second, dated section that says
@@ -345,7 +353,10 @@ thumbnail, so the index is browsable without opening asset folders.
     No curtains or blinds (they read as dark bars, not fabric) and no colour,
     which is the consumer's.
   - Other luminous regions (signs, lamps) only when the brief calls for them,
-    with their mask regions and control scope in `notes.md`.
+    with their mask regions and control scope in `notes.md`. They are
+    written in their own colours (a sign's face, an obstruction lamp's red),
+    which is how the validator tells them from glazing, and share the mask's
+    one control. A building without glazing may be night-lit by them alone.
   - Export an intact `emissiveTexture` binding with the emission factor zero by
     default; keep the texture even at zero (`scripts/window_emission.py`).
   - The consumer controls per-building intensity, colour and occupancy
@@ -355,8 +366,13 @@ thumbnail, so the index is browsable without opening asset folders.
     depends on consumer lighting.
 - **Coordinates:** Blender `Z`-up, front toward `-Y`; export right-handed
   `+Y`-up / `+X`-right. Verify orientation on reimport.
-- **Pivot:** ground level, footprint-centred, one authored origin shared by all
-  tiers. Never recentre a simplified tier on its own bounds.
+- **Pivot:** ground level, at the centre of `LOD0`'s plan bounds (eaves,
+  steps and ladders included; not the sidecar's wall footprint), one
+  origin shared by all tiers. Never recentre a simplified tier on its own
+  bounds.
+- **Assets that meet** (a gallery and the hall it enters) meet on a
+  shared plan-bounds plane and never overlap: the whole plan bounds may
+  be taken as solid, so an overhanging part enlarges the obstacle too.
 - **Tiers:** all four, `LOD0` through `LOD3`.
 - **Materials:** one render slot; at most two, only for a real UV/shading
   constraint (roof and walls counted together). Every tier uses its variant's
@@ -401,10 +417,11 @@ thumbnail, so the index is browsable without opening asset folders.
 
 - **Ceilings are binding; there is no floor.** A building's count follows from
   its massing, and geometry is never padded. For scale, `CATALOG.md` lists
-  every asset's counts: detached houses and single-storey shops sit around
-  1,000 triangles at `LOD0`, two-storey terraces 3,000–4,500, the civic hall
-  about 5,200. Mid-rise and larger buildings are expected to approach the
-  ceilings. There is no fixed reduction ratio between tiers.
+  every asset's counts: sheds, shops and small industrial blocks sit at
+  300–1,000 triangles at `LOD0`, detached houses about 2,600, two-storey
+  terraces 5,600–6,600, the civic hall about 5,200. Mid-rise and larger
+  buildings are expected to approach the ceilings. There is no fixed
+  reduction ratio between tiers.
 - **Review camera:** perspective, 1920x1080, **50° vertical FOV**, distance
   measured along the view direction to the assessed feature, plus oblique and
   elevated views. These are review assumptions, not game-camera claims; record
@@ -416,6 +433,8 @@ thumbnail, so the index is browsable without opening asset folders.
 - **Distances are starting points.** An asset's size or a visible transition
   may justify a recorded override. Test both sides of each switch; if a feature
   visibly flattens or vanishes, keep it within budget or move the switch.
+  A consumer may switch by screen size instead, so a small asset's last
+  tier is seen near: review it at its switch's screen size too.
 - **20–150 m is a near-view review range**, not a consumer camera limit. Review
   `LOD3` into its intended distant range; the consumer owns culling and farther
   representations.
@@ -498,11 +517,11 @@ triangle cost and the tiers that keep it.
   more, whose landing is a fall of half a metre or so: one rail, on the
   right-hand side going up, level along the landing and following the
   nosings down the flight, its top 0.9 m above them, on posts. Where the
-  right side is blocked it goes on the left, with the reason in `notes.md`. Like the roof kit it is under the
-  relief threshold and placement-specific, seen by its outline against the
-  wall and its shadow on the treads. Build it with `scripts/handrails.py`,
-  which owns the shape, the default tiers and `problems()` for
-  `check_layout()`.
+  right side is blocked it goes on the left, with the reason in
+  `notes.md`. Like the roof kit it is under the relief threshold and
+  placement-specific, seen by its outline against the wall and its shadow
+  on the treads. Build it with `scripts/handrails.py`, which owns the
+  shape, the default tiers and `problems()` for `check_layout()`.
   - It takes the gutter's colour (`PIPE_STRIP`), like the roof kit.
   - Where a flight comes down from a railed deck, the rail meets the
     railing's end at its height, so the two read as one.
@@ -536,8 +555,10 @@ triangle cost and the tiers that keep it.
   repetition. Beyond that, simplify or document the visible value.
 
 **An exported closed shell is required; the construction method is open.**
-Union plan outlines, exact booleans on closed solids and direct exterior
-meshing are all valid.
+Union plan outlines, exact booleans on closed solids (`asset_build`'s
+`union()`/`difference()`), direct exterior meshing, and disjoint closed
+solids in one mesh that touch nothing (kits of thin bars built
+`lean=True`, a bench's slats) are all valid.
 
 - Remove buried partitions and duplicate internal surfaces; close the exterior
   and check topology.
@@ -622,8 +643,9 @@ loss of white corner boards, dark windows or another dominant colour.
   tools.
 - **Fully opaque:** no alpha or masked transparency, glass included. A future
   prop cutout (e.g. ornate metalwork) needs a per-asset decision.
-- **Consistent texel density** across the catalog: an asset visibly sharper or
-  blurrier than its neighbours is wrong even if it looks fine alone.
+- **Consistent texel density** across the catalog, 64 texels/metre for every
+  class: an asset visibly sharper or blurrier than its neighbours is wrong
+  even if it looks fine alone.
 - **Seamless tiling:** repeating regions (brick, siding) tile at their edges;
   non-tiling regions avoid visible UV-boundary seams.
 - **Atlas padding and filtering:**
@@ -666,6 +688,9 @@ uniformity, not category folder.
   multicoloured building is not. Architectural variety needs distinct geometry.
   A singular landmark may have one variant.
 - Ambiguous cases: decide from the actual massing and record it in `notes.md`.
+- Assets meant to stand together (a plant's buildings, the walls round
+  them, a farmstead) share variant names and palettes, so one name
+  dresses the set.
 - Variants change textures only (albedo, and ORM/emission if the pattern
   changes); geometry and UVs stay identical. Every tier uses its own variant's
   textures.
@@ -687,8 +712,10 @@ orientation, budgets and variants differ:
 - **Categories:** `street_furniture/` (benches, bins, bollards, mailboxes,
   planters), `lighting/` (lamp posts) and `boundary/` (wall runs, piers,
   gates). Add more only when work starts.
-- **Pivot:** the actual attachment or ground-contact point (e.g. base centre of
-  a bench or lamp), not necessarily the footprint centre.
+- **Pivot:** on the ground at the centre of the ground-contact footprint
+  (a bench's feet, a lamp's base plate), or a mounted prop's attachment
+  point; not the plan bounds' centre. Record it in `notes.md`. Every tier
+  keeps `LOD0`'s pivot and plan bounds, the consumer's obstacle.
 - **Orientation:** front toward Blender `-Y` only for a genuinely asymmetric
   front (e.g. a backed bench). No invented front for bollards, bins or planters.
 - **Budgets** (provisional):
@@ -702,10 +729,13 @@ orientation, budgets and variants differ:
   - Record intended switch/cull distances from projected size in
     representative views. Props usually need shorter ranges than buildings; the
     consumer implements culling.
-- **Share atlases and materials across prop types** where the palette allows:
-  props appear by the hundreds.
-- **Variants:** 0–2 by default; municipal furniture is usually city-uniform.
-  Record the reasoning in `notes.md`.
+- **A family shares one atlas:** related props paint it once and write it
+  into each asset's `export/` under that asset's name (the boundary
+  pieces), so every asset ships self-contained; the sidecar hashes let a
+  consumer merge identical files.
+- **Variants:** 1–2 named finishes by default (a single albedo is still a
+  named variant); boundary pieces up to three. Municipal furniture is
+  usually city-uniform. Record the reasoning in `notes.md`.
 - **Glass on a prop** (e.g. a lamp cover) follows the building glass rules.
 - **Boundary pieces** fence a lot as a building's neighbours, seen as far:
   - All four tiers, `LOD0`–`LOD3`. Provisional ceilings, no floors: `LOD0`
@@ -729,22 +759,23 @@ Bit-identical rebuilds are unnecessary; the goal is being able to reproduce and
 iterate later.
 
 - `notes.md` is the primary record.
-- Where practical, keep a cleaned-up `build.py` beside `source.blend` as a
-  reproduction aid. It cannot capture every screenshot-driven decision, so it
-  replaces neither.
+- Every asset keeps a cleaned-up `build.py` beside `source.blend`: it
+  writes the tiers, previews and facts sidecar. It cannot capture every
+  screenshot-driven decision, so it replaces neither.
 - **A rebuild is two steps.** The texture generator bakes the PNGs
-  (`python3 facade_atlas.py export`, system Python with scipy and Pillow);
+  (the asset's generator, e.g. `python3 facade_atlas.py export`, or a
+  family's script in `scripts/`; system Python with scipy and Pillow);
   the Blender build only reads them. A texture or palette change that skips
   the first step rebuilds the old textures without complaint.
 - **Record Blender and addon versions as known-good diagnostics, not pins.**
   The glTF exporter keywords are the likeliest thing to break on upgrade;
-  `build.py` asserts the version floor and that each exporter flag it passes
-  still exists. Changed defaults fail silently, so record export settings in
-  `notes.md`, not only in the call.
+  `asset_build.check_toolchain()` asserts the version floor and that each
+  exporter flag `export_all()` passes still exists. Changed defaults fail
+  silently, so record export settings in `notes.md`, not only in the call.
 - **Saving a `source.blend` in a newer Blender raises the floor for that file.**
   `.glb` and PNG exports stay portable; `.blend` files do not. When it happens,
-  raise the floor in Tech Stack and every `build.py`'s `BLENDER_MIN` together,
-  so the stated floor stays true.
+  raise the floor in Tech Stack and `asset_build.BLENDER_MIN` together, so
+  the stated floor stays true.
 
 ## Reference Image Policy
 
@@ -777,26 +808,28 @@ Two licences; the file format decides, not the location:
 
 - Bind the MCP addon to `localhost` only.
 - Keep `source.blend` textures external/linked, never packed.
-- Iterate on renders against the brief: compare, adjust, repeat. Never export a
-  first pass.
+- Gather references before designing, in `reference/` (Reference Image
+  Policy); proportions and details come from them, and each review pass
+  critiques the build against them and the brief. Never export a first
+  pass.
 - **Six pre-export views:** orthographic front, rear, both sides and top-down,
   plus a raised three-quarter aerial (~45° above the horizon, off the front
   corner, aimed at the building centre). The top view shows the whole roof;
   the aerial shows the roof and two elevations together, which exposes bad
   joins.
 - **Working renders go in the git-ignored `review/` folder** at the repository
-  root, one dated subfolder per pass (e.g. `review/review_YYYY_MM_DD/`). This
-  covers the six views, LOD and distance comparisons, mip stress renders and
-  galleries. Keep them out of asset folders and out of `reference/`. The only
-  render deliverables are `preview.png` and `variants.png`.
+  root, one dated subfolder per pass, and per builder when several work at
+  once (e.g. `review/review_YYYY_MM_DD/`). This covers the six views, LOD and
+  distance comparisons, mip stress renders and galleries. Keep them out of
+  asset folders and out of `reference/`. The only render deliverables are
+  `preview.png` and `variants.png`.
 - **Exterior views cannot rule out internal geometry.** Run the validator and
   inspect suspect surfaces by isolation, sections or topology.
 - After `LOD0` passes, author the remaining tiers (Appearance Across LODs) and
   compare them at intended screen sizes.
 - **Before changing a finished asset,** copy its folder into `review/` and
   render a before set with `review_asset.py`; render the same set afterwards
-  and compare with `review_compare.py`. `buildings/` may not be in git yet,
-  so the copy is the only way back.
+  and compare with `review_compare.py`.
 - Finish every tier under the first variant before making further variant
   textures. Never regenerate geometry per variant.
 - Before a destructive `bpy` operation (deleting objects outside the current
@@ -805,13 +838,16 @@ Two licences; the file format decides, not the location:
 - **`preview.png`:** fixed catalog camera orientation and lens, lighting and
   colour management, distance fitted to the bounds. Use a neutral world/sun
   (or an authoring-only studio HDRI), the same for every asset, and record it.
+  A small prop's fitted preview is nearer than any use distance; judge its
+  texture sharpness in review renders, not the preview.
 - **`variants.png`** (night-lit buildings, single-variant ones included): every
   colour at `LOD0`, a labelled day row (emission off) above a matching night
   row (reference emission on), with camera, framing, exposure and colour
   management fixed between rows (`scripts/variant_previews.py`). Record the
   lighting and emission settings. Also check off/on behaviour on reimported
   tiers, including oblique/distant filtering and LOD switches; a `LOD0` sheet
-  cannot show those.
+  cannot show those. An unlit asset with more than one variant ships a
+  day-only `variants.png` instead: one labelled row of every colour.
 
 ## Validation Checklist Before Marking an Asset Done
 
@@ -833,11 +869,13 @@ transparency, triangle counts against the budgets, welded topology, pivot and
 bounds, PNG size and format, `notes.md` section order, the facts sidecar
 (schema, hashes, tier counts and bounds, door kinds, one `main` entrance
 where there are doors, doors on the footprint, passages within the bounds),
-and a sampled
-hidden-surface test. For buildings with an emission PNG it also checks the
-emission binding, its UV attribute and default-off factor, and measures the
-albedo under the mask against the glazing band. A `PASS` covers only its
-printed check.
+every prop tier's plan bounds against `LOD0`'s, and a sampled
+hidden-surface test. Where a normal or emission PNG exists, on any class,
+it checks the binding on every tier (emission: its UV attribute and
+default-off factor) and measures the albedo under the mask's neutral
+pixels against the glazing band; coloured pixels are reported as luminous
+fixtures. It does not check `variants.png` or variant naming. A `PASS`
+covers only its printed check.
 
 - Geometry checks inspect only the first mesh in each tier. Multi-mesh exports
   need manual aggregate counts, bounds and material slots.
@@ -914,10 +952,10 @@ is exterior surface.
 - `LOD0`/`LOD1` present; optional `LOD2` cost and benefit recorded
   (boundary pieces: all four tiers, plan bounds equal, facts sidecar).
 - Small/medium/boundary triangle bands met; below-floor counts explained.
-- Attachment pivot unchanged across tiers; `-Y` front only for genuinely
-  asymmetric props.
+- Pivot and plan bounds unchanged across tiers; `-Y` front only for
+  genuinely asymmetric props, verified on reimport.
 - Switch/cull distances and appearance reviewed at prop scale.
-- Variants 0–2, or a documented exception.
+- Variants 1–2 (boundary up to 3), or a documented exception.
 
 ## What Not To Do
 

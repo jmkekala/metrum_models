@@ -157,11 +157,12 @@ Closed solids unioned with Blender's exact boolean (`asset_build.union`):
    entrance bay's glazing, and **the landing step** against the plinth.
 
 The union leaves the boundary of one empty volume; the touching faces
-between the bodies go. Every builder vertex sits on the 0.1 mm grid its
-cache key names: the office and the strip meet at x = -2.667 m, which
-float arithmetic left a hair off coplanar from one solid to the other, so
-the exact boolean kept both faces as a 62 m2 internal double wall until the
-vertices were snapped. A 0.1 mm weld and a limited dissolve (0.001 rad, UV
+between the bodies go. The union snaps every operand's vertices to a
+0.1 mm grid first (`asset_build.union(..., snap=asset_build.SNAP)`): the
+office and the strip meet at x = -2.667 m, which float arithmetic left a
+hair off coplanar from one solid to the other, so the exact boolean kept
+both faces as a 62 m2 internal double wall until the vertices were
+snapped. A 0.1 mm weld and a limited dissolve (0.001 rad, UV
 seams kept) follow on every tier. Then **the lean kit** goes in, appended
 rather than unioned (`roof_safety.append(..., check=True)`, which fails if a
 piece touches the building or another piece): the wall ladder and its cage
@@ -322,7 +323,7 @@ or duplicate surfaces. Hidden-surface test:
 A first build left the office's east wall and the strip's west end both in
 place, a 62 m2 double wall at x = -2.667 m flagged by the test: the two
 faces were a float's rounding apart, so the exact boolean did not take them
-as touching. Every builder vertex now sits on its 0.1 mm grid
+as touching. The union now snaps its operands to a 0.1 mm grid
 (Construction); the faces between the three bodies are gone on every tier.
 
 Kept closure faces: none visible. The ground faces are on the ground; the
