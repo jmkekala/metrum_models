@@ -32,9 +32,10 @@ lamp graphic or real livery; the plates are blank.
 | Rear track (twin centres) | about 1.84 | 1.840, 2.48 over the twins |
 | Ground clearance | 0.20-0.25 | 0.250 (the mud flaps' lower edge; the tank 0.43, the bumper 0.40) |
 
-Cab: front at s 0.08 at the corners and 0.04 at the centre line (bowed),
-bumper face at s 0 (centre) to 0.02 (corners), back wall at s 1.80, so
-1.72-1.76 long, 2.30 wide, roof 2.75. Box: s 1.90 to 7.90 (5.95 plus the rear frame), z
+Cab: front at s 0.11 at the corners and 0.05 at the centre line at its
+foot (bowed, the lower front tucked back to the bumper), the screen's foot
+at s 0.13 at the corners; bumper face at s 0 (centre) to 0.02 (corners);
+back wall at s 1.80, so 1.69-1.75 long, 2.30 wide, roof 2.75. Box: s 1.90 to 7.90 (5.95 plus the rear frame), z
 1.15 to 3.70, 2.53 wide; gap to the cab 0.10, closed at the sides by the
 deflector's extenders to 0.03. Against the review sheet's 1.8 m figure the
 cab floor sits at chest height and the box floor above head height, as it
@@ -48,16 +49,19 @@ tiers as `vehicle_build.Piece`s. Front toward -Y; the origin on the ground
 at the centre of the 7.90 x 2.53 plan box.
 
 - **Cab:** a loft of eight rounded plan rings (front corner radius 0.18,
-  rear 0.06, four and two segments) from z 0.80 to the roof, the front
-  leaning 3.6 degrees below the screen and 6 degrees in it, the roof edge
-  rounded all round by three rings that pull the front back to s 0.39 and
-  the sides in to 1.08. The front panel is bowed in plan: the centre line
-  stands 40 mm proud of the corners on a parabola (three segments a side
+  rear 0.06, four and two segments) from z 0.80 to the roof: the lower
+  front tucked back 30 mm toward its foot over the bumper, the grille
+  panel leaning 3.6 degrees, the screen 8.5 degrees, the roof edge rounded
+  all round by three rings that pull the front back to s 0.43 and the
+  sides in to 1.08. The front panel is bowed in plan: the centre line
+  stands 60 mm proud of the corners on a parabola (three segments a side
   at LOD0, one at LOD1 and LOD2), sweeping into the corner radius. Cut by
   exact booleans: two arch cutters (radius 0.64 about the axle, inner wall
   at |x| 0.58, 12 segments), the step wells (0.20 deep; tread, dark
   liner walls and a plastic riser), the screen and grille recesses (30 and
-  35 mm, their floors following the bow in strips), the door glass
+  35 mm) and a dark wiper cowl recessed 20 mm under the screen up to its
+  foot, their floors following the bow in strips (LOD1 keeps grille and
+  cowl in the texture), the door glass
   recesses (20 mm) and the side repeaters. A lamp or pane is the floor
   of the cutter that makes its recess, built with its own id and UVs, so
   the difference leaves it tagged and mapped. Unioned with the deflector (a
@@ -67,9 +71,11 @@ at the centre of the 7.90 x 2.53 plan box.
   wrapped round the corners (radius 0.15): a chamfered lower edge (70 mm
   back over 70 mm), a vertical face carrying the lamps, a small chamfer
   back at the top, 40 mm proud of the cab's lower front at the centre. The
-  two headlamp units, 0.38 x 0.18, are recessed 26 mm: a 20 mm dark
-  housing frame round the indicator, the low and high beam reflector cells
-  and the daytime strip under them. The front plate is recessed 6 mm. The
+  two headlamp units, 0.38 x 0.18, are recessed 26 mm: a thin (12 mm)
+  dark frame round a light silver interior, the amber indicator at the
+  outer end, the low and high beam cells with soft reflector bowls (a
+  little lighter at the heart, a little darker toward the rim, no dark
+  rings) and the daytime strip under them; lens roughness 0.12. The front plate is recessed 6 mm. The
   step carriers behind it are boxes with the lower step recessed (tread,
   dark walls). LOD1/LOD2: a tiled box with the same lens rectangles flat
   on its face.
@@ -83,9 +89,13 @@ at the centre of the 7.90 x 2.53 plan box.
   tank, silencer, guards and brackets, under-run bar and brackets, lamp
   housings, mudguards, flaps). Unioning them first cut every long face at
   every contact and cost 940 triangles at LOD0.
-- **Mirrors:** per side two heads (main and wide angle, chamfered fronts,
-  glass on the rear face), a post and two arms, unioned; they stop 2-3 mm
-  off the cab side.
+- **Mirrors:** per side two shaped heads, the tall main mirror (0.20 x
+  0.38) and the squarer wide-angle one (0.16 x 0.15) under it, each a
+  chamfered housing lofted from a front 20 % (16 %) smaller to the full
+  rear, the dark mirror glass on the rear face (a plain face on a dark,
+  metallic patch, not a glass id); a hexagonal tube post and two tube
+  arms; unioned; the arms stop 2-6 mm off the cab. LOD1: one arm and one
+  block.
 - Normals: every face smooth, edges over 40 degrees (LOD1 50, LOD2/3 30)
   sharp, then a face-area weighted normal pass, so the big flat panels
   shade flat and the rounded corners blend into them.
@@ -186,51 +196,56 @@ file.
 
 Painted (B = 1): the cab shell above the door line and its lower front
 panel, the deflector and extenders, the box side panels and front wall.
-A neutral base of 0.78 linear (sRGB 229) with panel seams, rivets, cavity
-shading and a light, neutral road film and faint runs, so the panel field
-resolves to 0.75-0.77 (box sides 0.76, front 0.75, cab roof 0.76) and the
-mean over every painted face of every tier is 0.745 linear, mean chroma
-0.1.
+A neutral base of 0.78 linear (sRGB 229) with panel seams, shut lines,
+rivets, cavity shading and a light, neutral road film and faint runs: the
+panel field (validator, area-weighted median of the painted texels) is
+0.761 linear at LOD0 and LOD1, mean chroma 0.1. The band's dark details
+stop at the openings' own edges, so the small LOD0 faces round the
+recesses sample paint, not rubber. Unpainted: bumper and lower cab
+plastic, aluminium rails, posts and rear frame, the roller door, the box
+roof (pale translucent-white panel, the largest surface seen from above),
+chassis, wheels. Plates blank white with a thin dark border, unpainted.
+The review sheet's white, dark grey and red paint read on cab and box
+alike; the deflector's caps and extenders take a uniform painted patch.
 
 ### Brightness across tiers
 
 The painted mean (area-weighted over the albedo texels the painted faces
 sample, linear) of each tier stays within 10 % of LOD0's, so a tier switch
-does not change the truck's brightness under the same paint: plain LOD0
-0.753, LOD1 0.747 (-0.9 %), LOD2 0.712 (-5.4 %), LOD3 0.739 (-1.9 %);
-haulier 0.522, 0.521, 0.482 (-7.6 %), 0.519 (-0.6 %). LOD2's and LOD3's
-few large painted faces carry windows, grille and lower plastic inside
-them, so the LOD3 pictures paint their cab and box with their own ids
-(`M_CAB_FAR`, `M_BOX_FAR`) at 0.83 linear in `plain`, the haulier's own
-colours in `haulier`; LOD3 was 0.681 (-9.6 %) before. LOD2 shares the cab
-band with LOD0/LOD1, and splitting its window and grille into their own
-faces would not fit its 350 triangles, so it stays at -5.4 %. Rendered
-check (AgX, the review camera's 75 degree field of view, silhouette mean):
-from LOD2 to LOD3 the step is +1 % under white paint, -2 % under red, -3 to
--5 % under dark grey; under dark paint the far tiers are darker overall
-(LOD3 -13 % of LOD0 at 100 m) because LOD0's light unpainted parts (tank,
-guards, rims, tape) shrink to a few texels. The band's dark details stop at the openings' own edges, so the small
-LOD0 faces round the recesses sample paint, not rubber. Unpainted: bumper and lower cab plastic,
-aluminium rails, posts and rear frame, the roller door, the box roof
-(pale translucent-white panel, the largest surface seen from above),
-chassis, wheels. Plates blank white with a thin dark border, unpainted.
-The review sheet's white, dark grey and red paint read on cab and box
-alike; the deflector's caps and extenders take a uniform painted patch.
+does not change the truck's brightness under the same paint (validator):
+plain LOD0 0.749, LOD1 0.741 (-1.1 %), LOD2 0.709 (-5.3 %), LOD3 0.740
+(-1.2 %); haulier 0.523, 0.522, 0.483 (-7.8 %), 0.519 (-0.9 %). LOD2's and
+LOD3's few large painted faces carry windows, grille and lower plastic
+inside them, so the LOD3 pictures paint their cab and box with their own
+ids (`M_CAB_FAR`, `M_BOX_FAR`) at 0.83 linear in `plain`, the haulier's
+own colours in `haulier`. LOD2 shares the cab band with LOD0/LOD1, and
+splitting its window and grille into their own faces would not fit its
+350 triangles, so it stays at -5.3 %.
+
+Rendered check (AgX, the review camera's 75 degree field of view,
+silhouette mean): from LOD2 to LOD3 the step is under 1 % under white
+paint, -4 % under red, -6 % under dark grey. Under dark paint the far
+tiers are darker overall than LOD0 (LOD2 -6 %, LOD3 -12 % at 100 m)
+because LOD0's light unpainted parts (tank, guards, rims, tape) shrink to
+a few texels; the far pictures' light under-body parts were enlarged and
+LOD2's under-box block now shows them, which took LOD2 from -9 % to -6 %
+and LOD3 from -13 % to -12 %. More would need the light parts drawn larger
+than they are.
 
 ## Per-tier triangle counts
 
 | Tier | Triangles | Ceiling |
 | --- | --- | --- |
-| LOD0 | 4,062 | 4,500 |
-| LOD1 | 1,388 | 1,400 |
+| LOD0 | 4,316 | 4,500 |
+| LOD1 | 1,380 | 1,400 |
 | LOD2 | 348 | 350 |
 | LOD3 | 60 | 60 |
 
-LOD0: wheels 1,504 (front 2 x 316, rear 2 x 436), cab group 1,050 (the
+LOD0: wheels 1,504 (front 2 x 316, rear 2 x 436), cab group 1,076 (the
 bowed shell before its cuts, arches, recesses, deflector, visor, fender
-lips), bumper 214, box 196, mirrors 136 + 130, step carriers 56, chassis
+lips, cowl), bumper 214, box 196, mirrors 248 + 246, step carriers 56, chassis
 and gear about 780 as some 50 small solids, wipers 24. LOD1: wheels 304,
-cab group 416, box 140, bumper 84, mirrors 2 x 24, chassis and gear about
+cab group 408, box 140, bumper 84, mirrors 2 x 24, chassis and gear about
 350. LOD2: cab 60, bumper 68, box 44, bar 12 and lamp housings 32 + 28,
 front wheels 2 x 20, the rear twins one hexagonal prism across the axle
 (20, its middle inside the under-box mass), visor, deflector and dark
@@ -250,10 +265,13 @@ front and under the left side, fixed camera and studio light.
   door glass, arches, guards, tank, twin width, under-run bar, mirrors and
   every lamp; loses the step wells, fender lips, cross bearers, AdBlue and
   air tanks, the panel recess and the roller door's inset (both kept in
-  the texture), and the grille's recess (texture).
+  the texture), the grille's and the cowl's recesses (texture), and the
+  shaped mirror heads (one block a side); the cab's shut lines, flap,
+  corner panels and handle are the same texture on both tiers.
 - LOD2 keeps the box-over-cab massing, deflector, visor, the dark under-box
   mass, wheel positions and the wider rear, the dark screen and the pale
-  roof; the wheels go hexagonal and the mirrors and guards go; the rear is
+  roof; the wheels go hexagonal and the mirrors and guards go (the dark
+  under-box block's sides carry the far picture's guards and tank); the rear is
   the bar with the two lamp housings over its ends, as LOD0's. At 100 m
   the silhouette holds.
 - LOD3: the cab's nose chamfered, deflector and box front one slope, from
@@ -287,6 +305,9 @@ wheel prisms' tops inside the cab and the block.
   window many cabs have.
 - The glass shows no interior (seats, dash, wheel): only the neutral dark
   cab and its vertical falloff.
+- Under the studio sun the main mirror head casts a soft dark shape on the
+  door below its window (checked with shadows off: it is the cast
+  shadow, not geometry or texture).
 
 ## Texture set
 
@@ -309,6 +330,14 @@ One 1024 atlas, 64 texels per metre in final pixels, supersampled 4x
   stretch; the LOD3 side, front and rear pictures at 16 texels/m, their
   cab and box in the far paint ids (0.83 linear in `plain`) and the cab's
   lower front painted as LOD0's.
+- Cab shut lines are two texels (31 mm) of darkening on a 3 mm groove:
+  the door all round (from the step up into the roof's rounding, across
+  the top and along the door line), the front service flap round the
+  grille with rounded corners, the corner panels either side of the front
+  below the screen and just round the corner up the A-pillar, and the
+  break between the upper and the lower panels at the door line; the
+  door handle a dark recess with a lighter pull; the step area under the
+  door dark plastic with tread lines (the step patches too).
 - Relief in the height channel: box panel joints 1.5 mm, rivets 1 mm,
   roof bows 4 mm, roller door slat grooves 4 mm, door seams 2 mm, grille
   slats 8-10 mm, tread grooves 8 mm, rim edges 4 mm; glass flat.
@@ -362,9 +391,14 @@ Done here:
 - Review sheet looked at: views, both steering angles (wheels clear the
   arches and fender lips), every lamp group lit alone, the night set, the
   lit cabin, ids, white, dark grey and red paint, the tiers at 30, 100 and
-  400 m. Three critique rounds and a polish round (see Revision log); the
-  polish round compared before and after renders of a snapshot of the
-  previous build.
+  400 m. Three critique rounds, a polish round and a cab detail round
+  (see Revision log), each compared before and after with renders of a
+  snapshot of the previous build.
+- Light-fringe sweep in close renders: arches and fender lips, step wells
+  and carriers, visor, mirror arms and heads, bumper top, grille and cowl
+  recesses, box rails, mudguards and flaps. One found and fixed: a painted
+  strip between the cowl and the screen recess (the cowl now runs up to
+  the screen's foot).
 - Mip stress renders at mips 3-5 (Texture set).
 - Glass and paint measured; lens rectangles, glass texels and pairs pass.
 - A generic composite: no make, badge, signature grille or livery.
@@ -379,6 +413,17 @@ Blender 5.3.0 (2026-11-11); Blender MCP extension not used for this build
 (headless scripts only).
 
 ## Revision log
+
+- 2026-11-21, cab detail: shut lines for the front service flap, the
+  corner panels, the upper/lower panel break and the door all round, a
+  dark recessed handle and tread lines on the step area; a recessed wiper
+  cowl under the screen; the front bowed 60 mm (was 40), the lower front
+  tucked back 30 mm toward the bumper, the screen raked 8.5 degrees (was
+  6); headlamp units as light silver interiors in a 12 mm dark frame with
+  soft reflector bowls, lens roughness 0.12; shaped, tapered mirror heads
+  on tube arms, darker mirror glass; door, door glass and repeaters moved
+  back with the corner; the far pictures' light under-body parts larger
+  and shown on LOD2's under-box block.
 
 - 2026-11-21, tier brightness: the LOD3 pictures' cab and box on their own
   far paint ids at 0.83 linear (LOD3 painted mean 0.681 to 0.739, LOD0

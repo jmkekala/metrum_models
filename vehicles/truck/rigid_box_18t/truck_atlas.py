@@ -81,22 +81,26 @@ WHEELS = [  # part, x, s, width, steer, twin
 CAB_HW = 1.15
 CAB_BACK = 1.80
 CAB_RINGS = [   # front station at the corners; the centre is CAB_BOW proud of it
-    (0.80, 0.080, 1.150, 0.18, 1.800, 0.06),
+    (0.80, 0.110, 1.150, 0.18, 1.800, 0.06),    # tucked back to the bumper
     (1.10, 0.09875, 1.150, 0.18, 1.800, 0.06),
     (1.55, 0.126875, 1.150, 0.18, 1.800, 0.06),
     (1.60, 0.130, 1.150, 0.18, 1.800, 0.06),
-    (2.55, 0.230, 1.150, 0.18, 1.800, 0.06),
-    (2.66, 0.265, 1.140, 0.17, 1.790, 0.055),
-    (2.725, 0.320, 1.115, 0.15, 1.775, 0.05),
-    (2.75, 0.390, 1.080, 0.12, 1.755, 0.04),
+    (2.55, 0.272, 1.150, 0.18, 1.800, 0.06),    # the screen raked 8.5 degrees
+    (2.66, 0.307, 1.140, 0.17, 1.790, 0.055),
+    (2.725, 0.362, 1.115, 0.15, 1.775, 0.05),
+    (2.75, 0.432, 1.080, 0.12, 1.755, 0.04),
 ]
-CAB_BOW = 0.04                        # the front panel bowed in plan, centre proud
+CAB_BOW = 0.06                        # the front panel bowed in plan, centre proud
 Z_DOOR = 1.10                         # painted cab above, dark plastic below
 GRILLE = (0.70, 1.17, 1.49)           # half width, z0, z1 (front plane)
 WSCREEN = (0.92, 1.64, 2.51)          # half width, z0, z1 (front plane)
-DOOR = (0.42, 1.25)                   # door seams, s
-DOOR_GLASS = (0.47, 1.20, 1.72, 2.40)  # s0, s1, z0, z1 on the cab side
-REPEATER = (0.34, 0.44, 1.22, 1.28)   # s0, s1, z0, z1 on the cab side
+DOOR = (0.46, 1.25)                   # door shut lines, s
+DOOR_TOP = 2.70                       # the door's top shut line, in the roof's rounding
+DOOR_GLASS = (0.51, 1.20, 1.72, 2.40)  # s0, s1, z0, z1 on the cab side
+COWL = (0.92, 1.565, 1.64, 0.02)      # recessed cowl up to the screen: |x|, z0, z1, depth
+FLAP = (0.86, 1.13, 1.575, 0.07)      # front service flap round the grille: |x|, z0, z1, r
+CORNER_X = 0.93                       # the corner panels' shut line on the front
+REPEATER = (0.37, 0.44, 1.22, 1.28)   # s0, s1, z0, z1 on the cab side
 STEP_UP = (0.33, 0.73, 0.86, 1.06, 0.20)    # s0, s1, z0, z1, depth
 ARCH = (FRONT_AXLE, R_WHEEL, 0.64, 0.58)  # s, centre z, radius, inner |x|
 
@@ -115,7 +119,7 @@ STEP_LO = (0.36, 0.70, 0.47, 0.67, 0.18)
 DEFL_Z0 = 2.70
 DEFL = [(0.82, 2.80, 0.98, 0.92), (1.06, 3.10, 1.03, 0.98), (1.31, 3.33, 1.07, 1.03),
         (1.56, 3.48, 1.10, 1.07), (1.82, 3.55, 1.12, 1.10)]
-FLAP = (1.70, 1.87, 1.115, 1.145, 1.90, 3.50)  # s0, s1, |x|0, |x|1, z0, z1
+EXT = (1.70, 1.87, 1.115, 1.145, 1.90, 3.50)   # deflector extenders: s0, s1, |x|0, |x|1, z0, z1
 
 # box
 BOX_S0, BOX_S1 = 1.90, 7.90
@@ -363,7 +367,7 @@ BASE = {
     M_PLASTIC: (52, 53, 54), M_DARK: (36, 36, 37), M_LINER: (28, 28, 29),
     M_ALU: (170, 172, 172), M_TANK: (186, 188, 189), M_GUARD: (128, 130, 131),
     M_RUBBER: (34, 34, 35), M_TYRE: (38, 38, 39), M_RIM: (176, 177, 176),
-    M_HUB: (70, 71, 72), M_GLASS: glazing.BASE, M_MIRROR: (120, 124, 128),
+    M_HUB: (70, 71, 72), M_GLASS: glazing.BASE, M_MIRROR: (58, 61, 64),
     M_PLATE: (236, 236, 232), M_PLATE_EDGE: (40, 40, 42), M_HOUSING: (64, 65, 66),
     M_GRILLE: (40, 41, 42), M_GRILLE_HOLE: (16, 16, 17), M_DOOR: (196, 198, 198),
     M_STEP: (44, 44, 45), M_SEAL: (24, 24, 25), M_TAPE: (214, 170, 40),
@@ -371,7 +375,7 @@ BASE = {
     M_HANDLE: (30, 30, 31), M_ALU_DARK: (120, 122, 123),
     M_CAB_FAR: (0, 0, 0), M_BOX_FAR: (0, 0, 0),         # set below from FAR_GREY
 }
-LENS_UNLIT = {"low": (168, 172, 174), "high": (160, 164, 166), "drl": (186, 188, 188),
+LENS_UNLIT = {"low": (206, 209, 211), "high": (200, 203, 206), "drl": (214, 216, 217),
               "ind": (176, 104, 30), "tail_brake": (124, 26, 24), "reverse": (178, 180, 180),
               "fog": (112, 24, 22), "mark_white": (180, 182, 182), "mark_amber": (184, 110, 30),
               "mark_red": (128, 26, 24)}
@@ -395,7 +399,7 @@ SURFACE = {  # roughness, metallic
     M_ALU_DARK: (0.5, 0.8), M_CAB_FAR: (0.32, 0.0), M_BOX_FAR: (0.40, 0.0),
 }
 for _m in M_LENS.values():
-    SURFACE[_m] = (0.15, 0.0)
+    SURFACE[_m] = (0.12, 0.0)
 CABIN_LEVEL = 0.25
 # Vehicle glass is not glazing.rooms(): a cab seen through its screen is a
 # dark, neutral interior, not a room with a lit far wall (which read as a
@@ -577,45 +581,71 @@ def paint_cab(P):
         hgt[m] -= d
         shade[m] *= sh
         ao[m] = np.minimum(ao[m], 0.7)
-    sw = 0.010                                    # seam width
-    # door outline, its top following the roof's rounding
+
+    gw = 2.0 / PPM                                # a shut line: two texels
+
+    def gap(m):
+        """A panel shut line: a dark gap two texels wide, grooved."""
+        hgt[m] -= 0.003
+        shade[m] *= 0.42
+        ao[m] = np.minimum(ao[m], 0.55)
+    sw = 0.010                                    # fine seam width
+    corner = np.interp(z, [r[0] for r in CAB_RINGS], [r[1] + r[3] for r in CAB_RINGS])
+    # the door: a shut line all round, from the step up into the roof's
+    # rounding, with a dark recessed handle
     d0, d1 = DOOR
-    groove(side & (np.abs(s - d0) < sw / 2) & (z > Z_DOOR) & (z < 2.50))
-    groove(side & (np.abs(s - d1) < sw / 2) & (z > Z_DOOR) & (z < 2.50))
-    groove(side & (np.abs(z - 2.50) < sw / 2) & (s > d0) & (s < d1))
-    # door glass: black rubber surround, and the opening dark for LOD2
+    gap(side & (np.abs(s - d0) < gw / 2) & (z > 0.86) & (z < DOOR_TOP))
+    gap(side & (np.abs(s - d1) < gw / 2) & (z > 1.17) & (z < DOOR_TOP))
+    gap(side & (np.abs(z - DOOR_TOP) < gw / 2) & (s > d0) & (s < d1))
+    gap(side & (np.abs(z - Z_DOOR - 0.012) < gw / 2) & (s > d0) & (s < d1))
+    # door glass: the opening dark, for LOD2
     g0, g1, gz0, gz1 = DOOR_GLASS
     win = side & (s > g0) & (s < g1) & (z > gz0) & (z < gz1)
     mid[win] = M_SEAL
-    # door handle and a key plate
-    hdl = side & (s > 1.08) & (s < 1.21) & (np.abs(z - 1.52) < 0.025)
+    hdl = side & (s > 1.05) & (s < 1.21) & (np.abs(z - 1.52) < 0.035)
     mid[hdl] = M_HANDLE
-    hgt[hdl] += 0.006
+    hgt[hdl] -= 0.010
+    ao[hdl] = 0.6
+    bar = side & (s > 1.08) & (s < 1.18) & (np.abs(z - 1.52) < 0.010)
+    hgt[bar] += 0.006
+    shade[bar] *= 1.6
+    # the step area under the door: dark plastic with tread lines
+    stp = side & (s > corner + 0.02) & (s < 0.80) & (z < Z_DOOR - 0.01)
+    hgt[stp & (np.mod(z, 0.035) < 0.012)] += 0.002
+    shade[stp & (np.mod(z, 0.035) < 0.012)] *= 1.25
     # the quarter panel behind the door: an intake grille
     vent = side & (s > 1.44) & (s < 1.66) & (z > 1.74) & (z < 2.06)
     mid[vent] = M_GRILLE
     slots = vent & (np.mod(z - 1.74, 0.032) < 0.014)
     mid[slots] = M_GRILLE_HOLE
     hgt[vent & ~slots] += 0.004
-    # the front corner panel's seam, just round the corner on the side
-    corner = np.interp(z, [r[0] for r in CAB_RINGS], [r[1] + r[3] for r in CAB_RINGS])
-    groove(side & (np.abs(s - corner - 0.025) < sw / 2) & (z > Z_DOOR) & (z < 2.48))
-    # front: service flap seam round the grille, a seam under the screen
+    # the corner panels: shut lines just round the corner on the side (up
+    # the A-pillar to the roof) and on the front either side, below the screen
+    gap(side & (np.abs(s - corner - 0.06) < gw / 2) & (z > 0.82) & (z < DOOR_TOP))
+    gap(front & (np.abs(x - CORNER_X) < gw / 2) & (z > 0.82) & (z < COWL[1]))
+    # the break between the upper panels and the lower corner panels
+    gap((seg <= 1) & (np.abs(z - Z_DOOR - 0.012) < gw / 2))
+    gap(side & (np.abs(z - Z_DOOR - 0.012) < gw / 2) & (s < d0))
+    # the front service flap round the grille, rounded corners
+    fh, fz0, fz1, fr = FLAP
+    zc, hh = (fz0 + fz1) / 2, (fz1 - fz0) / 2
+    dx, dz = x - (fh - fr), np.abs(z - zc) - (hh - fr)
+    dist = np.hypot(np.maximum(dx, 0), np.maximum(dz, 0)) + np.minimum(np.maximum(dx, dz), 0) - fr
+    gap(front & (np.abs(dist) < gw / 2))
     gh, gz0_, gz1_ = GRILLE
-    groove(front & (np.abs(z - 1.575) < sw / 2))
-    groove(front & (np.abs(z - (Z_DOOR + 0.02)) < sw / 2))
     gr = front & (x < gh) & (z > gz0_) & (z < gz1_)
     mid[gr] = M_GRILLE
     holes = front & (x < gh - 0.02) & (z > gz0_ + 0.02) & (z < gz1_ - 0.02) \
         & (np.mod(z - gz0_, 0.067) > 0.024)
     mid[holes] = M_GRILLE_HOLE
     hgt[gr & ~holes] += 0.008
+    # the recessed cowl under the screen, dark plastic (a recess at LOD0)
+    ch, cz0, cz1, _cd = COWL
+    mid[front & (x < ch) & (z > cz0) & (z < cz1)] = M_PLASTIC
     # windscreen rubber, for the screen's edges and LOD2
     wh, wz0, wz1 = WSCREEN
     ws = front & (x < wh) & (z > wz0) & (z < wz1)
     mid[ws] = M_SEAL
-    # the screen's foot: a black cowl strip with the wiper spindles
-    # (the screen's foot is the recess wall in 3D: no painted cowl strip)
     # back wall: a horizontal seam
     groove((seg == 4) & (np.abs(z - 1.30) < sw / 2))
     c.mid[sy, sx] = mid
@@ -711,8 +741,7 @@ def paint_patches(P):
                       ("mirror_body", M_PLASTIC), ("roof_edge", M_ALU), ("hub", M_HUB),
                       ("cabpaint", M_CAB)):
         P.fill(name, mid)
-    P.where("step", lambda u, v: (np.mod(u, 0.05) < 0.02) & (np.mod(v, 0.05) < 0.02),
-            add_h=0.002, shade=1.15)
+    P.where("step", lambda u, v: np.mod(v, 0.035) < 0.012, add_h=0.002, shade=1.3)
     P.where("tank", lambda u, v: np.mod(v, 0.12) < 0.02, add_h=0.003)
     P.where("guard", lambda u, v: np.mod(v, 0.08) < 0.012, add_h=-0.002, shade=0.85)
     # plate: blank white with a thin dark border
@@ -725,9 +754,13 @@ def paint_patches(P):
     for name in LENS_KINDS:
         P.fill("lens_" + name, M_LENS[name])
     for name in ("low", "high"):
+        # a soft reflector bowl: a little lighter at its heart, a little
+        # darker toward its rim, no dark ring
         x, y, w, h = REG["lens_" + name]
-        P.c.disc(x + w / 2, y + h / 2, h * 0.36, shade=0.82, height=-0.004)
-        P.c.disc(x + w / 2, y + h / 2, h * 0.12, shade=1.15)
+        sy, sx, Y_, X_ = P.c.field(x, x + w, y, y + h)
+        r = np.hypot(X_ - (x + w / 2), (Y_ - (y + h / 2)) * 1.1) / (h * 0.48)
+        P.c.shade[sy, sx] *= np.clip(1.06 - 0.20 * r ** 2, 0.86, 1.06)
+        P.c.height[sy, sx] -= 0.003 * np.clip(1.0 - r, 0, 1)
     for name in ("tail_brake", "ind", "reverse", "fog"):
         x, y, w, h = REG["lens_" + name]
         sy, sx, Y_, X_ = P.c.field(x, x + w, y, y + h)
@@ -762,11 +795,12 @@ def paint_lod3(P):
     # the under-body solid's sides are unpainted: its guards, tank and rims
     # in their own colours, light under dark paint as LOD0's are
     W(lambda s, z: (s > GUARD_S[0]) & (s < GUARD_S[1]) & (
-        (np.abs(z - 0.51) < 0.05) | (np.abs(z - 0.81) < 0.05)), M_GUARD)
-    W(lambda s, z: (s > TANK[0]) & (s < TANK[1]) & (np.abs(z - TANK[3]) < 0.22), M_TANK)
+        (np.abs(z - 0.51) < 0.07) | (np.abs(z - 0.81) < 0.07)), M_GUARD)
+    W(lambda s, z: (s > TANK[0] - 0.05) & (s < TANK[1] + 0.05) & (np.abs(z - TANK[3]) < 0.26),
+      M_TANK)
     for sc in (FRONT_AXLE, REAR_AXLE):
         W(lambda s, z, sc=sc: np.hypot(s - sc, z - R_WHEEL) < R_WHEEL, M_TYRE)
-        W(lambda s, z, sc=sc: np.hypot(s - sc, z - R_WHEEL) < 0.29, M_RIM)
+        W(lambda s, z, sc=sc: np.hypot(s - sc, z - R_WHEEL) < 0.32, M_RIM)
     reg = "lod3_front"
     P.fill(reg, M_DARK)
     # the cab front, painted down to its foot as LOD0's (the lower intake slot

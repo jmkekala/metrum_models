@@ -331,7 +331,7 @@ def cab_shell(level):
         if level == 2 and zs[i] == 1.60 and (j < nbow or j >= len(rings[0]) - nbow):
             return K("glass_ws", surface=32)   # LOD2: the screen is the whole front face
         n = len(rings[0])
-        front = max(rings[i][j][0][1], rings[i][(j + 1) % n][0][1]) + L.HL < 0.27
+        front = max(rings[i][j][0][1], rings[i][(j + 1) % n][0][1]) + L.HL < 0.30
         return 0, zs[i] >= L.Z_DOOR or level == 2 or front
     B = new()
     loft(B, rings, kind, top=K(uv=uv_cab_roof, paint=True), bottom=DARK)
@@ -355,9 +355,11 @@ def cab_cutters(level):
     nseg = 3 if level == 0 else 1
     wh, wz0, wz1 = L.WSCREEN
     out.append(bowed_cutter(wz0, wz1, wh, 0.03, nseg, "glass_ws", 32, SEAL))
-    if level == 0:          # LOD1 keeps the grille in the band's texture
+    if level == 0:          # LOD1 keeps the grille and cowl in the band's texture
         gh, gz0, gz1 = L.GRILLE
         out.append(bowed_cutter(gz0, gz1, gh, 0.035, nseg, "grille", 0, PLASTIC))
+        ch, cz0, cz1, cd = L.COWL
+        out.append(bowed_cutter(cz0, cz1, ch, cd, nseg, "plastic", 0, PLASTIC))
     g0, g1, gz0_, gz1_ = L.DOOR_GLASS
     r0, r1, rz0, rz1 = L.REPEATER
     for sgn in (1, -1):
@@ -429,7 +431,7 @@ def headlamp_cells(sgn):
     xi, xo, z0, z1 = L.HEADLAMP
     xc, zc = (xi + xo) / 2, (z0 + z1) / 2
     ind = 4 if sgn > 0 else 5
-    b = 0.02
+    b = 0.012                       # a thin dark frame
     zd = 0.645
     A = lambda x: x - xc            # noqa: E731
     Z = lambda z: z - zc            # noqa: E731
@@ -525,7 +527,7 @@ def deflector(level):
     B = new()
     loft(B, rings, lambda i, j: (0, True), top=PAINT_CAB, bottom=PAINT_CAB)
     out = [obj(B, "defl")]
-    s0, s1, x0, x1, z0, z1 = L.FLAP
+    s0, s1, x0, x1, z0, z1 = L.EXT
     for sgn in (1, -1):
         out.append(xbox(sgn * x0, sgn * x1, s0, s1, z0, z1, PAINT_CAB))
     return out
@@ -541,7 +543,7 @@ def cab_addons(level):
     the front arches."""
     out = []
     B = new()
-    prism(B, [(0.30, 2.665), (0.03, 2.59), (0.03, 2.56), (0.30, 2.635)], "x", -1.0, 1.0,
+    prism(B, [(0.34, 2.665), (0.07, 2.59), (0.07, 2.56), (0.34, 2.635)], "x", -1.0, 1.0,
           PLASTIC, PLASTIC)
     out.append(obj(B, "visor"))
     if level == 0:
@@ -769,41 +771,52 @@ def rear_lamp(sgn, level):
 
 # ================================================================ mirrors
 def mirror(sgn, level):
+    """A mirror per side: at LOD0 two shaped heads (the tall main mirror and
+    the squarer wide-angle one under it) on a tube post, the post on two
+    tube arms from the cab side; at LOD1 one arm and one block holding both
+    glasses."""
     def X(a, b):
         return sorted((sgn * a, sgn * b))
     parts = []
     if level >= 1:
-        # one arm into the head, one head holding both mirrors
         a, b = X(1.153, 1.385)
         parts.append(xbox(a, b, 0.40, 0.43, 2.385, 2.415, MBODY))
         a, b = X(1.30, 1.48)
         parts.append(xbox(a, b, 0.425, 0.495, 1.80, 2.36, {"all": MBODY, "s1": MGLASS}))
         return asset_build.union(parts[0], parts[1:], snap=asset_build.SNAP)
-    a, b = X(1.153, 1.385)
-    parts.append(xbox(a, b, 0.40, 0.43, 2.385, 2.415, MBODY))
-    parts.append(xbox(a, b, 0.402, 0.438, 1.83, 1.86, MBODY))
-    a, b = X(1.37, 1.40)
-    parts.append(xbox(a, b, 0.40, 0.44, 1.83, 2.415, MBODY))
-    for x0, x1, s0, s1, z0, z1 in ((1.29, 1.49, 0.425, 0.50, 1.98, 2.36),
-                                   (1.31, 1.47, 0.425, 0.49, 1.80, 1.95)):
-        a, b = X(x0, x1)
-        parts.append(head(a, b, s0, s1, z0, z1))
+    r = 0.013
+    for z in (2.40, 1.845):                        # arms, tubes along x
+        B = new()
+        a, b = X(1.153, 1.395)
+        prism(B, polygon(0.415, z, r, 6, math.pi / 6), "x", a, b, MBODY, MBODY, smooth=True)
+        parts.append(obj(B, "arm"))
+    B = new()                                      # the post, a tube along z
+    prism(B, polygon(sgn * 1.385, 0.415, r + 0.002, 6), "z", 1.83, 2.415, MBODY, MBODY,
+          smooth=True)
+    parts.append(obj(B, "post"))
+    parts.append(head(sgn, 1.39, 0.10, 0.425, 0.50, 2.17, 0.19, 0.20))      # main
+    parts.append(head(sgn, 1.39, 0.08, 0.425, 0.49, 1.875, 0.075, 0.16))    # wide angle
     return asset_build.union(parts[0], parts[1:], snap=asset_build.SNAP)
 
 
-def head(x0, x1, s0, s1, z0, z1, c=0.02):
-    """A mirror head: a box chamfered round its front, the glass at the back."""
+def head(sgn, xc, hx, s0, s1, zc, hz, taper, c=0.03):
+    """A mirror head round (xc, zc), half sizes hx across and hz up: a
+    chamfered housing tapering toward the front (s0) by *taper*, rounded
+    over its middle, the dark glass on its rear face (s1)."""
+    def ring(s, k):
+        ax, az = hx * k, hz * k
+        cc = min(c, ax * 0.45, az * 0.45)
+        pts = [(ax - cc, az), (ax, az - cc), (ax, -az + cc), (ax - cc, -az),
+               (-ax + cc, -az), (-ax, -az + cc), (-ax, az - cc), (-ax + cc, az)]
+        return [P(sgn * xc + px, s, zc + pz) for px, pz in pts]
+    rings = [ring(s0, 1.0 - taper), ring(s0 + 0.45 * (s1 - s0), 1.0 - taper * 0.25),
+             ring(s1, 1.0)]
     B = new()
-    rear = [P(x0, s1, z0), P(x1, s1, z0), P(x1, s1, z1), P(x0, s1, z1)]
-    mid = [P(x0, s0 + c, z0), P(x1, s0 + c, z0), P(x1, s0 + c, z1), P(x0, s0 + c, z1)]
-    front = [P(x0 + c, s0, z0 + c), P(x1 - c, s0, z0 + c), P(x1 - c, s0, z1 - c),
-             P(x0 + c, s0, z1 - c)]
-    put(B, rear, MGLASS, False)
-    put(B, list(reversed(front)), MBODY, False)
-    for i in range(4):
-        j = (i + 1) % 4
-        put(B, [rear[i], mid[i], mid[j], rear[j]], MBODY, False)
-        put(B, [mid[i], front[i], front[j], mid[j]], MBODY, True)
+    for r0, r1 in zip(rings, rings[1:]):
+        for k in range(8):
+            put(B, [r0[k], r0[(k + 1) % 8], r1[(k + 1) % 8], r1[k]], MBODY, True)
+    put(B, list(reversed(rings[0])), MBODY, False)
+    put(B, rings[-1], MGLASS, False)
     return obj(B, "head")
 
 
@@ -935,10 +948,11 @@ def box_lod2():
 
 def lod2_parts():
     B = new()
-    prism(B, [(0.30, 2.665), (0.03, 2.59), (0.03, 2.56), (0.30, 2.635)], "x", -1.0, 1.0,
+    prism(B, [(0.34, 2.665), (0.07, 2.59), (0.07, 2.56), (0.34, 2.635)], "x", -1.0, 1.0,
           PLASTIC, PLASTIC)
     parts = [cab_shell(2), bumper(2), obj(B, "visor")] + deflector(2) + [box_lod2()]
-    parts.append(xbox(-0.95, 0.95, 1.83, 7.64, 0.48, L.BOX_Z0 - G, DARK))
+    parts.append(xbox(-0.95, 0.95, 1.83, 7.64, 0.48, L.BOX_Z0 - G,
+                      {"all": DARK, "x0": K(uv=uv_lod3_side), "x1": K(uv=uv_lod3_side)}))
     # the under-run bar and the two lamp housings above its ends
     b0, b1, bh, bz0, bz1 = L.BAR
     parts.append(xbox(-bh, bh, b0, b1, bz0, bz1, GUARD))
