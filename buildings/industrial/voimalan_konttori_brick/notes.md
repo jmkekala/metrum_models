@@ -440,8 +440,20 @@ parapet's top inside the coping, and the union removes them.
   guard ownership.
 - **Filtering:** review renders at 65-75 and 115-125 m on every tier (LOD
   review); the coping, slab band, window frames and the ribbon's transom
-  survive, no band leaks into another. A mip stress pass with
-  `scripts/review_atlas_mips.py` was not repeated for this revision.
+  survive, no band leaks into another. The mip review of this revision
+  rendered each tier at its switch distance and one level beyond (`LOD1`
+  70 m at mip 2-3, `LOD2` 120 m at mip 3-4, `LOD3` 250 m at mip 4-5), front
+  and oblique, noon and reverse sun, the default and one contrasting
+  variant, with whole-atlas mips and again at a per-texel level matched to
+  each tier's texel density (`review/phase2_2026_11_21/mips/
+  voimalan_konttori_brick/`). No gutter leak at any tier's real distance;
+  the clock, the lamp, the taller ribbon band and the fin are clean.
+  Latent, stress renders only: VENT (812, 592, 32, 96) has 4 px gaps to
+  CONC and PIPE_TOP, giving 64 levels at mip 2 on the vent pipe's wrap
+  seam; not visible, the pipe being 2-3 px wide at 70 m. The right fix, if
+  ever needed, is periodic padding in U for wrapped cylinder regions. The
+  ribbon's white frames soften its windows toward pale grey at `LOD2` from
+  one level beyond 120 m: averaging within the region, not a leak.
 - **Unique textures:** 3 albedo + ORM + normal + emission = 6 PNGs at
   1024 x 1024.
 
@@ -575,12 +587,16 @@ Completed in this repository:
   baked light in any albedo.
 - **Scale:** the door leaves are 2.125 m; the sills were checked against
   them and against both floors (Window sills).
+- **Mip review** of this revision (Texture set, Filtering): every tier at
+  its switch distance and one level beyond, whole-atlas and distance-matched
+  per-texel mips. No gutter leak at any tier's real distance; one latent
+  seam on the vent pipe in the stress renders only.
 
 Pending, outside this repository:
 
 - Consumer import, LOD switching and runtime emission control.
-- Consumer-side mipmap and anisotropic filtering; a mip stress pass for
-  this revision.
+- Consumer-side mip generation and anisotropic filtering, and the emission
+  mask's mips at night.
 - Performance in a representative scene.
 - Placement beside the plant's other buildings, whose palettes this
   asset's variants are named to match.
@@ -598,6 +614,8 @@ Pending, outside this repository:
 
 ## Revision log
 
+- **2026-11-21:** mip review of this revision recorded (Texture set,
+  Review status); no asset change.
 - **2026-11-21:** polish pass: the upper ribbon raised to a 6.5 m head at
   the ceiling, 1.875 m tall with a painted transom under a fixed upper
   light, the end walls' upper windows with it; the parapet lowered to

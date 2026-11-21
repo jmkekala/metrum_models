@@ -99,7 +99,7 @@ One 256 × 256 atlas at **64 texels/m on every modelled face**. Each slat has it
 
 **Weathering** (`scripts/weathering.py`, moderate): `grime()` and `fade()` overall, extra fade on seat tops (strongest over the middle 1.2 m) and back fronts, dust on undersides and top edges, splash and rust at the frame face's foot (V is height there), dirt and rust on the edge strip by height (interpolated from the outline), and rust round each bolt. After `pad()`, cavity dust. The bare-wood wear is painted as an id (`ID_WORN`) so each variant colours it.
 
-**Mips:** not separately reviewed with `review_atlas_mips.py`. Regions keep ≥ 3 px apart (asserted in `check_layout()`), and the composites are padded from their own edges. At 30 m and beyond the bench samples mip 2–3, where neighbouring regions blend; all regions are the same dark paint or iron family. Pending in the consumer.
+**Mips:** reviewed 2026-11-21 (`review/phase2_2026_11_21/mips/puistopenkki_slatted/`) with whole-atlas mips (`review_atlas_mips.py`) at mip 1–3 and again at a per-texel level matched to each tier's texel density, `LOD0` at 15 and 30 m and `LOD1` at 30 and 60 m, front and oblique, noon and reverse sun, both variants: slats and frames clean. Regions keep ≥ 3 px apart (asserted in `check_layout()`), and the composites are padded from their own edges. At 30 m and beyond the bench samples mip 2–3, where neighbouring regions blend; all regions are the same dark paint or iron family. Anisotropic filtering and the consumer's own mip generator are pending in the consumer.
 
 **Unique textures:** 4 PNGs at 256: 2 albedo, the ORM and the normal map, shared by both variants. Mean texel footprint matches the buildings' 64/m. The slats' 4 cm thickness is only 2.6 texels, and the catalog preview's close framing magnifies that softness (see Review status).
 
@@ -143,6 +143,7 @@ Done here:
 - The six orthographic views, oblique at 3, 8 and 20 m, LOD0 against LOD1 at 15–30 m in two lights, both variants, the 1.8 m figure (`review/followups_2026_11_21/bench/`).
 - Orientation on reimport: the seat's front at glTF +Z (bounds z max 0.290 is the seat's front edge), the back toward −Z.
 - The slat arrises and casting rim read raised in lit renders.
+- Mip review (Texture set): both tiers at 15, 30 and 60 m, both variants; no gutter leak.
 - The catalog `preview.png` (standard setup).
 - `variants.png`, both finishes in daylight, rendered by `build.py -- variants` from the exported textures (tiers checked against `export/`, nothing re-exported).
 
@@ -150,7 +151,7 @@ The validator checks that `LOD1` shares `LOD0`'s plan bounds (PASS), as `asset_b
 
 The standard preview, fitted to the bounds, frames the bench from about 3.5 m. At that distance one texel covers 2–3 screen pixels, so the preview shows the 256 atlas softer than the bench reads at its 5–20 m use distances. The preview also carries no scale cue.
 
-Pending in the consumer: switch and cull distances, mip filtering, shadow-map treatment of the slat gaps, and placement against paths. The placement rule is pivot on the ground, front +Z toward the path.
+Pending in the consumer: switch and cull distances, anisotropic filtering and the consumer's own mip generator, shadow-map treatment of the slat gaps, and placement against paths. The placement rule is pivot on the ground, front +Z toward the path.
 
 ## Tooling versions
 

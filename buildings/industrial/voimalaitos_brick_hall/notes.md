@@ -876,8 +876,28 @@ aerial, at 20 m:
   expected far past the tier's use.
 
 At 120 m a metre is about 9.7 px, so the elevations sample mip 0. At 500 m
-they reach about mip 1.3, and only past about 1 km mip 3. Consumer filtering
-beyond that is pending.
+they reach about mip 1.3, and only past about 1 km mip 3.
+
+The mip review after the repack and the inlet passes rendered each tier at
+its switch distance and one level beyond (`LOD1` 70 m at mip 2–3, `LOD2`
+120 m at mip 3–4, `LOD3` 250 m at mip 4–5), front and oblique, noon and
+reverse sun, default and one contrasting variant, and again at a per-texel
+mip level matched to each tier's own texel density (renders in
+`review/phase2_2026_11_21/mips/voimalaitos_brick_hall/`). No gutter leak
+shows at any tier's real distance: the inlet, the dusted panel, the coping
+over it, the bushing panel, the flue stub's sides, the decks and the `LOD3`
+elevations are clean. Latent, in the stress renders only:
+
+- `STACK_L` (236, 740, 204, 20) sits 4 px above `WINDOW` (top 736) and
+  picks up window artwork on its lower edge at mip 2–3 (36–41 levels); not
+  visible at 120 m.
+- `INLET`'s bottom edge picks up `MOUTH` (10 px gap) at mip 3, 29 levels
+  in the yellow variant.
+- The deck smear in the whole-atlas mip 3 renders is the stress test's: the
+  8 px/m decks sample mip 0–1 at their real distances.
+
+The small square bunker windows' white frames average toward pale grey at
+120 m; that is averaging within the region, not a leak.
 
 ### Weathering
 
@@ -1144,9 +1164,7 @@ Checked here, in Blender:
 - The polish pass: before/after sets with identical settings and their
   sheets; the sidecar diffed against the previous one (only triangle
   counts, hashes and source changed); `check=True` on every appended kit;
-  the `LOD3` small windows re-measured. The mip 3/4 stress renders were not
-  re-run after the atlas repack: the moved regions keep 4 px gutters and
-  are padded by `pad()`, but that review is outstanding.
+  the `LOD3` small windows re-measured.
 - The conveyor-inlet pass: the asset folder copied to
   `review/conveyor_joint_2026_11_21/before_snapshot/` first; before/after
   sets with identical settings and their sheets; the exported tiers
@@ -1156,9 +1174,7 @@ Checked here, in Blender:
   the previous build, and the ORM, normal and albedos changed only in the
   inlet's, the dusted panel's, the freed regions' and the west
   elevation's texels (and their gutters); the `eye_inlet` and west views
-  at `LOD0`, `LOD2` and `LOD3`. The mip 3/4 stress renders were not re-run
-  for the new `INLET` region (4 px gutters, padded by `pad()`): outstanding,
-  with the polish pass's.
+  at `LOD0`, `LOD2` and `LOD3`.
 
 - The inlet frame pass: the asset folder copied to
   `review/followups_2026_11_21/before_snapshot/` first; the inlet at 10 m
@@ -1174,11 +1190,18 @@ Checked here, in Blender:
   counts, hashes and source changed); the textures re-exported
   byte-identical.
 
+- The mip review of the current atlas (Texture set, *Filtering*): every
+  tier at its switch distance and one level beyond, front and oblique, noon
+  and reverse sun, `red_brick` and `yellow_brick`, with whole-atlas and
+  distance-matched per-texel mips. No gutter leak at any tier's real
+  distance; two latent edges (`STACK_L`, `INLET`) in the stress renders.
+
 Pending, outside this repository:
 
 - **In the consumer:**
   - import, MikkTSpace tangent generation and the normal map at distance;
-  - mip and anisotropic filtering;
+  - night/emission mips, anisotropic filtering and the consumer's own mip
+    generator;
   - LOD switching, night exposure and spill;
   - runtime performance;
   - how this piece sits beside the plant's other four, above all the coal
@@ -1197,6 +1220,8 @@ These are recorded as known-good markers, not requirements.
 
 ## Revision log
 
+- **2026-11-21**: Mip review of the current atlas recorded (Texture set,
+  Review status); no asset change.
 - **2026-11-21**: Inlet frame pass, so the coal reception's gallery meets
   the hall on its bounds' plane; `LOD0` bounds, pivot, footprint and doors
   unchanged (the sidecar differs only in triangle counts, hashes and

@@ -120,7 +120,7 @@ One 512 × 512 atlas at 64 texels/m, shared by all seven pieces (painted once by
 
 Relief heights for the normal map: brick faces 6 mm over the mortar, coping and cap arrises 20 mm, leaf frame 25 mm, pressed ribs 8 mm, hinges 30–40 mm. Weathering (`scripts/weathering.py`, moderate): soil and algae at the plinth, splash-back and a little salt bloom above it, light runs under the coping and the gate cap, dust on coping and cap tops, kicked-up dirt and grime at the leaf's foot and latch, rust at the steel's feet.
 
-Mips: not separately reviewed with `review_atlas_mips.py`; the bands are full-width and wrap in U, the unique regions sit in ≥4 px of their own padding. Pending in the consumer.
+Mips: not separately reviewed with `review_atlas_mips.py`; the bands are full-width and wrap in U, the unique regions sit in ≥4 px of their own padding. Pending in the consumer. The latent edge found in gate_left's mip review applies here too, on the mirrored leaf region: pier brick reaches the leaf's bottom edge at mip 3, under 1 px at 150 m.
 
 Unique textures per piece: 5 PNGs at 512 (3 albedo, ORM, normal), identical across the seven pieces.
 

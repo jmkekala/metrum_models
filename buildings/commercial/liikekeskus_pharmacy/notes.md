@@ -344,10 +344,20 @@ regions and the three flat swatches moved to the free corner of the upper
 shelf; the single-door region of the old three-unit front is gone.
 
 **Padding** is 6 px everywhere, clamped for the non-repeating bands and the
-regions, periodic for the stone band. **Pending:** mipmapped appearance has
-not been reviewed at the switch distances or under anisotropic sampling, and
-no explicit consumer filtering arrangement has been checked. Coarse mips can
-still merge neighbouring regions across a 6 px gutter.
+regions, periodic for the stone band.
+
+**Mip review** of the single-shop atlas: every tier at its switch distance
+and one level beyond (`LOD1` 70 m at mip 2-3, `LOD2` 120 m at mip 3-4,
+`LOD3` 250 m at mip 4-5), front and oblique, noon and reverse sun, the
+default and one contrasting colour, with whole-atlas mips and again at a
+per-texel level matched to each tier's texel density
+(`review/phase2_2026_11_21/mips/liikekeskus_pharmacy/`). No gutter leak at
+any tier's real distance: the shopfront, the sign boards with their
+lettering and cross, and the plaque blur as expected with no foreign
+colour. Latent, one level beyond only: a little white frame bleeds onto the
+logo plaque's sides across its 6 px gaps to `SIDE_WINDOW` and
+`GABLE_GLAZE`. **Pending in the consumer:** night/emission mips,
+anisotropic sampling and the consumer's own mip generator.
 
 ### Signage and artwork
 
@@ -660,10 +670,17 @@ Checked here, in Blender:
   its one warning is the sidecar's dirty source, pending a rewrite from the
   committed tree.
 
+- The mip review of the single-shop atlas (Texture set): every tier at its
+  switch distance and one level beyond, whole-atlas and distance-matched
+  per-texel mips, under noon and reverse sun. No gutter leak at any tier's
+  real distance; a latent white bleed onto the plaque's sides one level
+  beyond only.
+
 Pending, and outside this repository:
 
-- Mipmapped and anisotropic appearance at and beyond the switch distances, and
-  any explicit consumer filtering arrangement.
+- Anisotropic appearance, the emission mask's mips at night, the
+  consumer's own mip generator and any explicit consumer filtering
+  arrangement.
 - Emission off/on across the LOD switches and at oblique or distant views.
 - Consumer import, LOD selection and performance measurement in a
   representative scene.
@@ -687,6 +704,9 @@ files, not newer ones. The `.glb` and PNG exports are unaffected.
   texture export.
 
 ## Revision log
+
+- **2026-11-21 — mip review.** The review at the switch distances recorded
+  (Texture set, Review status); no asset change.
 
 - **2026-11-21 — one shop, one door.** The three-unit front (a pharmacy
   between a beauty salon and a barber, three customer doors, four sign boards)

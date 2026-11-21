@@ -748,6 +748,30 @@ windows, the pale head house and gallery and the dark lane all hold. The
 pale lean-to slopes in the rear view are the noon sun's glint, the same at
 full resolution.
 
+The mip review of the current atlas rendered each tier at its switch
+distance and one level beyond (`LOD1` 70 m at mip 2–3, `LOD2` 120 m at mip
+3–4, `LOD3` 250 m at mip 4–5), front and oblique, noon and reverse sun, the
+default and one contrasting variant, and again at a per-texel mip level
+matched to each tier's own texel density (renders in
+`review/phase2_2026_11_21/mips/hiilenvastaanotto_brick_shed/`). No gutter
+leak shows at any tier's real distance; the hazard strip is clean on every
+tier. Latent, in the stress renders only:
+
+- `GAL_SIDE` (648, 912, …) is 5.2 px above `win_s_b` (648, 830, 57.6,
+  76.8): the brick surround bleeds into the gallery side's bottom edge at
+  mip 2–3 (58–88 levels, `red_brick` worst). Not visible at `LOD1` 70 m,
+  where the gallery's 30–38 px/m samples about level 1.7.
+- The `PIER` hazard strip (984, 0, 25.6, 420) is 6.4 px from `COL`:
+  yellow/black reaches the column strip's edge at mip 3 (45 levels), under
+  a pixel at 120 m. Nothing reaches the brick.
+- `LANE_FLOOR`'s top is 8.8 px from a window region: white frame into the
+  floor's far edge at mip 3, inside the dark lane.
+- With REPEAT sampling the brick band's bottom rows at y = 0 pick up the
+  atlas's top rows at mip 2–3, on the ground line; negligible.
+
+If the atlas is ever repacked, the cheap fixes are 8 px gaps at those
+three edges and starting the brick band a few pixels above y = 0.
+
 ### Unique textures
 
 Six 1024² RGB PNGs, about 24 MB uncompressed (4 MiB each in memory without
@@ -970,9 +994,12 @@ Checked here, in Blender, after the revision:
 - **LOD pairs:** around 35, 70 and 120 m, oblique and rear three-quarter,
   noon (LOD review).
 - **Filtering:** mip4 stress renders (`scripts/review_atlas_mips.py`) of
-  `LOD2` and `LOD3` at 120 m from the earlier pass. The gallery's side
-  region changed in this one (30 px/m, same slot) and was not stress
-  rendered again.
+  `LOD2` and `LOD3` at 120 m from the earlier pass, and the mip review of
+  the current atlas, the 30 px/m gallery side included (Texture set,
+  *Filtering*): every tier at its switch distance and one level beyond,
+  whole-atlas and distance-matched per-texel mips. No gutter leak at any
+  tier's real distance; latent edges at `GAL_SIDE`, the `PIER` strip,
+  `LANE_FLOOR` and the band's y = 0 rows in the stress renders only.
 - **Before/after:** the review set rendered from the copy taken before the
   revision and again after, compared with `scripts/review_compare.py`.
 - **Variants:** day and night for all three (`variants.png`).
@@ -992,7 +1019,8 @@ Pending in the consumer:
 - LOD switching (the trestle's bracing going at 120 m), shadows and AO in
   the lane;
 - filtering of the stretched roof, cladding and gallery bands and the 30–32
-  px/m gallery and lane regions;
+  px/m gallery and lane regions under the consumer's own mip generator and
+  anisotropic filtering, and the emission mask's mips at night;
 - night intensity;
 - performance.
 
@@ -1003,6 +1031,9 @@ The MCP addon was not used. Texture generation used the system Python 3
 with numpy, scipy and Pillow.
 
 ## Revision log
+
+- **2026-11-21:** mip review of the current atlas recorded (Texture set,
+  Review status); no asset change.
 
 - **2026-11-21:** the whole conveyor: the plant hall drops its gallery stub,
   so this gallery now runs 12.0 m in plan (end centre 17.3676 m) to an end

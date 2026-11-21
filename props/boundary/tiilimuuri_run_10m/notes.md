@@ -121,7 +121,7 @@ One 512 × 512 atlas at 64 texels/m, shared by all seven pieces (painted once by
 
 Relief heights for the normal map: brick faces 6 mm over the mortar, coping and cap arrises 20 mm, leaf frame 25 mm, pressed ribs 8 mm, hinges 30–40 mm. Weathering (`scripts/weathering.py`, moderate): soil and algae at the plinth, splash-back and a little salt bloom above it, light runs under the coping and the gate cap, dust on coping and cap tops, kicked-up dirt and grime at the leaf's foot and latch, rust at the steel's feet.
 
-Mips: not separately reviewed with `review_atlas_mips.py`; the bands are full-width and wrap in U, the unique regions sit in ≥4 px of their own padding. Pending in the consumer.
+Mips: reviewed 2026-11-21 (`review/phase2_2026_11_21/mips/tiilimuuri_run_10m/`) with whole-atlas mips (`review_atlas_mips.py`) at mip 1–3 and again at a per-texel level matched to each tier's texel density, `LOD0` at 15 m, `LOD1` at 30 m, `LOD2` at 60 m and `LOD3` at 30 m and 150 m, front and oblique, noon and reverse sun, both variants: the brick band and the coping are clean on every tier. The bands are full-width and wrap in U, the unique regions sit in ≥4 px of their own padding. Anisotropic filtering and the consumer's own mip generator are pending in the consumer.
 
 Unique textures per piece: 5 PNGs at 512 (3 albedo, ORM, normal), identical across the seven pieces.
 
@@ -157,9 +157,10 @@ Done here:
 - Front, top and oblique views (`review/boundary_wall_2026_11_21/views/`), the catalog preview.
 - Test assemblies from the exported `LOD0` and `LOD3` files by the joint rule alone: a closed 30 × 20 m lot of 10 m and 5 m runs, a 6 m gate in a 10 m cell between 10 m runs, a free end and a corner (`assembly/`). One pier at every joint and corner, no gaps, no step in the coping line, no wall end showing.
 - LOD comparisons at 10–80 m for the 10 m run and gate_left.
+- Mip review (Texture set): every tier at its distance and one level beyond, `LOD3` at 30 and 150 m, both variants; no gutter leak.
 - `LOD3` against the consumer's screen-size switching (2026-11-21): the seven pieces rebuilt and validated (0 FAIL; the three runs' rewritten sidecars warn `source.dirty` until rewritten from a commit), the textures not rebaked, the `LOD0`–`LOD2` files and the other four pieces' `LOD3` byte-identical, every `preview.png` pixel-identical (the committed files kept), the assemblies and LOD pairs above at 25 and 40 m, a coplanarity check of the assembled `LOD3` and `LOD0` files.
 
-Pending in the consumer: switch and cull distances, mip filtering, depth fighting at the joints (none expected: no coplanar faces above the ground), the obstacle rectangles against its pathing.
+Pending in the consumer: switch and cull distances, anisotropic filtering and the consumer's own mip generator, depth fighting at the joints (none expected: no coplanar faces above the ground), the obstacle rectangles against its pathing.
 
 ## Tooling versions
 
@@ -167,4 +168,5 @@ Blender 5.3.0 (hash 02f0899d78e3), headless; the MCP addon was not used. System 
 
 ## Revision log
 
+- 2026-11-21: mip review recorded (Texture set, Review status); no asset change.
 - 2026-11-21: `LOD3` keeps the piers (12 → 48 triangles, height 2.10 → 2.25 m): the consumer switches tiers by screen size and showed the pierless box at ~25 m. Its wall stops where `LOD0`'s does, ending the coplanar overlaps at joints. `prop_boundary`'s `LOD3` ceiling 24 → 48.

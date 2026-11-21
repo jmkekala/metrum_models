@@ -412,9 +412,22 @@ bodies' faces against one another are removed by the union.
   fascias stay brown and the walls light, the windows' frames survive at
   mip 3 and blur into dark bands at mip 4, which is the read wanted at
   120 m. The painted domes on the 8 texels/m roof plan smear into soft
-  pale patches at mips 3-4; that test minifies the whole atlas alike, but
-  a sampler keeps that region at mip 0 to well past 1 km, so it overstates
-  it. Consumer-side filtering is pending.
+  pale patches in whole-atlas stress renders; that test minifies the whole
+  atlas alike and overstates it.
+- **Mip review at real distance** (`review/phase2_2026_11_21/mips/
+  konepaja_element_monitors/`), of the roof plan region only: each tier at
+  its switch distance and one level beyond (`LOD1` 70 m at mip 2-3, `LOD2`
+  120 m at mip 3-4, `LOD3` 250 m at mip 4-5), front and oblique, noon and
+  reverse sun, the default and one contrasting variant, with whole-atlas
+  mips and again at a per-texel level matched to each tier's texel
+  density. The roof plan samples mip 0-1.8 at those distances, so the
+  smear shows only in the whole-atlas mip 4-5 renders; at real distance
+  the domes read cleanly at 250 m. Under back light the monitors' glazing
+  glints weaken at `LOD1` 70 m: about two-thirds of it the normal map's
+  mips flattening the relief, the rest the glass and frame roughness
+  averaging; a specular anti-aliasing matter, pending in the consumer.
+  Night/emission mips, anisotropic filtering, the consumer's own mip
+  generator and the rest of the atlas at real distance stay pending.
 - **Unique textures:** 3 albedo + ORM + normal + emission = 6 PNGs at
   1024 x 1024.
 
@@ -547,11 +560,16 @@ Completed in this repository:
 - **Scale:** the personnel leaves 2.125 m and the entrance's 2.1875 m with
   a transom light over them; the sills checked against the doors and the
   floors (Window sills).
+- **Mip review of the roof plan** at each tier's switch distance and one
+  level beyond, whole-atlas and distance-matched per-texel mips (Texture
+  set, Filtering): the domes clean at real distance, 250 m included.
 
 Pending, outside this repository:
 
 - Consumer import, LOD switching and runtime emission control.
-- Consumer-side mipmap and anisotropic filtering.
+- Consumer-side mip generation and anisotropic filtering, the emission
+  mask's mips at night, and specular anti-aliasing of the monitors'
+  glazing glints, which weaken at 70 m under back light.
 - Performance in a representative scene.
 - A truck in the consumer driving the east side: the wall is clear, but the
   turning room at the street and the stand beside the door are the

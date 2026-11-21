@@ -707,6 +707,29 @@ porcelain brown and the breakers' heads red-brown, and `LOD3`'s painted
 gantry stayed a neutral grey line with no brick or porcelain bleeding
 into it. The lattice regions sit in row C with at least 8 px gutters.
 
+A later mip review rendered each tier at its switch distance and one level
+beyond (`LOD1` 70 m at mip 2–3, `LOD2` 120 m at mip 3–4, `LOD3` 250 m at
+mip 4–5), front and oblique, noon and reverse sun, the default and one
+contrasting variant, with whole-atlas mips and again at a per-texel level
+matched to each tier's texel density
+(`review/phase2_2026_11_21/mips/muuntajakentta_walled/`). No gutter leak
+shows at any tier's real distance, and the painted lattice strips of
+`LOD2`/`LOD3` hold.
+
+- **Porcelain at distance:** under back light the bushings, breaker poles,
+  current transformers and post insulators lose their bright shed
+  highlights at `LOD1` 70 m and `LOD2` 120 m from mip 2, and read flat
+  red-brown. The 30 mm sheds on their 0.07–0.08 m pitch average flat in
+  the normal map's mips; a full-resolution normal map restores them, the
+  ORM makes no difference. Not an atlas-layout fault: specular
+  anti-aliasing is pending in the consumer; a future repaint could lower
+  the sheds' contrast or fold some of the glaze into the albedo.
+- **Latent, stress renders only:** the wrapped cylinder regions
+  (`BUSH_R`, `BREAKER_R`, `POST_R`, `CT_R`, `POLE3_R`) have 8 px gaps and
+  leak 27–50 levels across their wrap seams at mip 3–4 (`POLE3_R` 86 at
+  mip 5); not visible at 120 or 250 m. Periodic padding in U would cure
+  them.
+
 Unique textures are five 1024² RGB PNGs: three albedos, one ORM and one
 normal map, about 4 MiB each in memory without mips. The ORM and normal
 map are shared by every variant.
@@ -893,6 +916,12 @@ Checked here, in Blender:
   oblique and aerial after the lattice pass; grazing in the first build):
   the heads stay red-brown, the porcelain dark brown, the steel grey,
   with no leaks or dark seams.
+- The mip review at each tier's switch distance and one level beyond,
+  whole-atlas and distance-matched per-texel mips, under noon and reverse
+  sun (Texture set, *Filtering and inventory*): no gutter leak at any
+  tier's real distance; latent seam leaks on the wrapped cylinder regions
+  in the stress renders only; the porcelain's shed highlights lost from
+  mip 2 under back light.
 - Close renders of the house's yard walls (trench cover plates, lamp,
   number plate) and of the disconnector legs at 20 m.
 - The wall at 1.55 and 1.70 m from the catalog camera and at 30 m eye
@@ -916,7 +945,10 @@ Pending in the consumer:
 - LOD switching, shadows in the yard and performance;
 - mip and anisotropic filtering of the lattice's thin bars (aliasing and
   shimmer at 35–70 m in motion), `LOD3`'s painted lattice, the radiator
-  fins (a 3.2 px period), the porcelain sheds and the brick;
+  fins (a 3.2 px period), the porcelain sheds and the brick, under the
+  consumer's own mip generator;
+- specular anti-aliasing of the porcelain's sheds, whose highlights the
+  normal map's mips flatten at 70–120 m under back light;
 - shadow-map resolution on the lattice's 0.05 m bars;
 - the yard's placement on terrain, with no ground of its own.
 
@@ -928,6 +960,8 @@ Python 3 with numpy, scipy and Pillow.
 
 ## Revision log
 
+- **2026-11-21 — mip review.** The review at each tier's switch distance
+  recorded (Texture set, Review status); no asset change.
 - **2026-11-21 — lattice pass.** The solid portal became a galvanised
   lattice: four corner angles per tapering column (0.64 to 0.40 m),
   braced on every face, lattice peaks with finials, and a box truss
