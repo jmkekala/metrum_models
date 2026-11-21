@@ -12,6 +12,8 @@ fixed exposure and physically shaded opaque materials. Distance comparisons
 use 1920x1080, with distance measured along the view direction to the centre
 of the visible front/rear wall. These are authoring scenarios, not game presets.
 Optional --texture-dir substitutes temporary mip PNGs without editing exports.
+Vertex colours are cut from the imported materials, so a vehicle's COLOR_0
+ids do not darken its tiers: every asset renders with its textures alone.
 Renders and settings go to OUTPUT_DIR; no source blend or catalog preview saves.
 
 The tiers reference the default variant's albedo. --variant NAME renders
@@ -138,6 +140,7 @@ def load_tiers(args):
         tiers[tier] = [o for o in set(bpy.data.objects) - old if o.type == 'MESH']
         if not tiers[tier]:
             raise RuntimeError(f'No mesh in {path}')
+        drop_vertex_colours(tiers[tier])
     if args.variant:
         substitute_variant(args.asset, args.variant)
     if args.texture_dir:
@@ -151,6 +154,51 @@ def load_tiers(args):
                 im.filepath = str(replacement)
                 im.reload()
     return tiers
+
+
+def drop_vertex_colours(objects):
+    """Render the tiers with their textures alone. The glTF importer
+    multiplies COLOR_0 into the base colour, and a vehicle's COLOR_0 holds
+    its ids (part, surface, paint), not a colour: cut every colour-attribute
+    node out of the imported materials, bridging the multiply it fed, then
+    drop the meshes' colour attributes. Buildings and props export none."""
+    done = set()
+    for obj in objects:
+        names = {a.name for a in obj.data.color_attributes}
+        for mat in obj.data.materials:
+            if not mat or not mat.node_tree or mat.name in done:
+                continue
+            done.add(mat.name)
+            nt = mat.node_tree
+            for node in list(nt.nodes):
+                if not (node.type == 'VERTEX_COLOR' or
+                        (node.type == 'ATTRIBUTE' and node.attribute_name in names | {'COLOR_0'})):
+                    continue
+                for out in node.outputs:
+                    for link in list(out.links):
+                        mix = link.to_node
+                        if mix.type == 'MIX' and mix.blend_type == 'MULTIPLY':
+                            _bridge(nt, mix, link.to_socket)
+                        elif link.is_valid:
+                            nt.links.remove(link)
+                nt.nodes.remove(node)
+        for attr in list(obj.data.color_attributes):
+            obj.data.color_attributes.remove(attr)
+
+
+def _bridge(nt, mix, cut):
+    """Replace multiply node *mix* by its other colour operand (the one
+    that is not *cut*), so what it fed reads that operand directly."""
+    other = next(s for s in mix.inputs if s.enabled and s.type == 'RGBA' and s != cut)
+    result = next(s for s in mix.outputs if s.enabled and s.type == 'RGBA')
+    src = other.links[0].from_socket if other.is_linked else None
+    for link in list(result.links):
+        if src is not None:
+            nt.links.new(src, link.to_socket)
+        else:
+            link.to_socket.default_value = other.default_value
+            nt.links.remove(link)
+    nt.nodes.remove(mix)
 
 
 def substitute_variant(asset, variant):

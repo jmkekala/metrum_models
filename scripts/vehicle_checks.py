@@ -20,10 +20,13 @@ own importer is not used, because it reads COLOR_0 as an sRGB byte colour.
     6  steer clearance: wheels turned +-35 degrees (and straight, for every
        wheel) keep 10 mm from every body triangle
     7  lamp faces inside the nearest lens rectangle of their id, no lens
-       without a face, lit lens texels
+       without a face, lit lens texels, each lens's stated colour against
+       the emission texels its LOD0 faces sample
     8  glass ids against the glass texels both ways, lit cabin texels, the
        glass albedo and roughness band
-    9  emission black off the lamps and the glass; painted faces neutral
+    9  emission black off the lamps and the glass; painted faces neutral;
+       the panel field of LOD0 and LOD1 near 0.75 linear, and every tier's
+       painted mean within 10 % of LOD0's (check_paint_level)
     10 one material, the sidecar (hashes, clean source, lists against the
        mesh), texture sizes
 
@@ -49,7 +52,9 @@ LENS_TOL = 0.002         # a lamp face's reach past its lens rectangle, metres
 LENS_DEPTH = 0.05        # and along the lens's facing
 BLACK = 3                # an 8-bit texel at or under this in every channel is black
 NEUTRAL_CHROMA = 10.0    # mean sRGB max - min over a painted face
-PAINT_LEVEL = (0.60, 0.90)   # linear grey of the painted panels, WARN outside
+PAINT_LEVEL = (0.70, 0.80)   # linear panel field of LOD0 and LOD1, FAIL outside
+PAINT_FIELD_TIERS = (0, 1)   # the tiers whose panel field is held to PAINT_LEVEL
+PAINT_TIER_SPREAD = 0.10     # every tier's painted mean within this of LOD0's
 GLASS_SRGB = (40.0, 78.0)    # mean over the glass texels, as validate_asset's glazing
 GLASS_ROUGH = (0.05, 0.12)
 
@@ -147,37 +152,7 @@ def wheel_sides(pts, centre, radius):
 
 
 # ================================================================ texels
-def texel_sets(uv, tris, size):
-    """For each triangle, the flat indices of its texel set in a
-    *size* x *size* image (rows top-down, as glTF UVs address it)."""
-    px = np.asarray(uv, float) * size
-    out = []
-    for t in tris:
-        a, b, c = px[t[0]], px[t[1]], px[t[2]]
-        x0, y0 = np.floor(np.minimum(np.minimum(a, b), c)).astype(int)
-        x1, y1 = np.ceil(np.maximum(np.maximum(a, b), c)).astype(int)
-        xs, ys = np.meshgrid(np.arange(x0, x1 + 1) + 0.5, np.arange(y0, y1 + 1) + 0.5)
-        P = np.stack([xs.ravel(), ys.ravel()], axis=1)
-        area = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
-        inside = np.ones(len(P), bool)
-        if abs(area) > 1e-12:
-            sgn = 1.0 if area > 0 else -1.0
-            for p, q in ((a, b), (b, c), (c, a)):
-                e = q - p
-                ln = math.hypot(*e)
-                if ln < 1e-12:
-                    continue
-                dist = sgn * (e[0] * (P[:, 1] - p[1]) - e[1] * (P[:, 0] - p[0])) / ln
-                inside &= dist >= 0.5
-        else:
-            inside[:] = False
-        P = P[inside]
-        if not len(P):
-            P = ((a + b + c) / 3.0)[None]
-        ix = np.mod(np.floor(P[:, 0]).astype(int), size)
-        iy = np.mod(np.floor(P[:, 1]).astype(int), size)
-        out.append(np.unique(iy * size + ix))
-    return out
+texel_sets = vi.texel_sets     # each triangle's texel set (module docstring)
 
 
 def _png(path):
@@ -615,8 +590,8 @@ def check_texels(R, asset, adir, tiers, ids, doc, spec):
     if glass.size != size * size:
         R("FAIL", "glass", "%s is not the atlas's size %d" % (vi.GLASS_TEXELS, size))
         return
-    if size > spec["texture"]:
-        R("FAIL", "tex", "atlas %d over the class's %d" % (size, spec["texture"]))
+    if size != spec["texture"]:
+        R("FAIL", "tex", "atlas %d, not the class's %d" % (size, spec["texture"]))
     lit = emit.reshape(-1, 3).max(axis=1) > BLACK
     if not glass.any():
         R("FAIL", "glass", "%s marks no glass texels" % vi.GLASS_TEXELS)
@@ -642,6 +617,7 @@ def check_texels(R, asset, adir, tiers, ids, doc, spec):
     grow[:, 1:] |= grid[:, :-1]
     grow[:, :-1] |= grid[:, 1:]
     lamp_texels = grow.ravel()
+    check_lens_colours(R, tiers[0], ids[0], sets[0], emit.reshape(-1, 3), doc)
 
     for lv, t in sorted(tiers.items()):
         tag = "LOD%d" % lv
@@ -702,31 +678,140 @@ def check_texels(R, asset, adir, tiers, ids, doc, spec):
             R("PASS", "paint", "%s: a full-colour livery (paint false), not held to neutral"
               % name)
             continue
-        chroma, level, faces, bad = [], [], 0, []
+        chroma, faces, bad = [], 0, []
+        field, means = {}, {}
         for lv, t in sorted(tiers.items()):
-            cen = t["positions"][t["triangles"]].mean(axis=1)
+            P, tri = t["positions"], t["triangles"]
+            cen = P[tri].mean(axis=1)
+            area = 0.5 * np.linalg.norm(np.cross(P[tri[:, 1]] - P[tri[:, 0]],
+                                                 P[tri[:, 2]] - P[tri[:, 0]]), axis=1)
+            vals, wts = [], []
             for k in np.flatnonzero(ids[lv]["tpaint"]):
                 px = alb[sets[lv][k]]
                 ch = float((px.max(axis=1) - px.min(axis=1)).mean())
                 faces += 1
                 chroma.append(ch)
-                level.append(float(_srgb_to_linear(px).mean()))
                 if ch > NEUTRAL_CHROMA:
                     bad.append((lv, cen[k], ch))
+                grey = _srgb_to_linear(px).mean(axis=1)        # per texel, linear
+                vals.append(grey)
+                wts.append(np.full(len(grey), area[k] / len(grey)))
+            if vals and sum(float(w.sum()) for w in wts) > 0:
+                vals, wts = np.concatenate(vals), np.concatenate(wts)
+                means[lv] = float(np.sum(vals * wts) / np.sum(wts))
+                field[lv] = _weighted_median(vals, wts)
         for lv, c, ch in bad[:6]:
             R("FAIL", "paint", "%s LOD%d: a painted face at %s has mean chroma %.1f (over %.0f): "
                                "painted panels are neutral grey" % (name, lv, _fmt(c), ch,
                                                                     NEUTRAL_CHROMA))
         if len(bad) > 6:
             R("FAIL", "paint", "... and %d more painted faces" % (len(bad) - 6))
-        if faces and not bad:
-            lvl = float(np.mean(level))
-            status = "PASS" if PAINT_LEVEL[0] <= lvl <= PAINT_LEVEL[1] else "WARN"
-            R(status, "paint", "%s: %d painted faces neutral (mean chroma %.1f), grey %.2f "
-                               "linear (about 0.75 wanted)"
-              % (name, faces, float(np.mean(chroma)), lvl))
-        elif not faces:
+        if not faces:
             R("WARN", "paint", "no painted faces (B = 1) on any tier")
+            continue
+        if not bad:
+            R("PASS", "paint", "%s: %d painted faces neutral (mean chroma %.1f)"
+              % (name, faces, float(np.mean(chroma))))
+        check_paint_level(R, name, field, means, tiers)
+
+
+def nearest_lens(lenses, lamp, point):
+    """Index of the lens entry of id *lamp* nearest *point*, or None."""
+    cand = [i for i, ln in enumerate(lenses) if ln["lamp"] == lamp]
+    if not cand:
+        return None
+    return min(cand, key=lambda i: np.linalg.norm(np.asarray(point) - lenses[i]["centre"]))
+
+
+def check_lens_colours(R, t, ids0, sets0, emit, doc):
+    """Check 7, colour: each lens's stated colour is one its group allows
+    (vehicle_ids.lens_colours) and the commonest lit colour among the
+    emission texels its LOD0 faces sample (vehicle_ids.lit_colour)."""
+    lenses = doc["lamps"]
+    P, tri, ts = t["positions"], t["triangles"], ids0["tsurf"]
+    texels = [[] for _ in lenses]
+    for k in np.flatnonzero((ts >= 1) & (ts <= 15)):
+        i = nearest_lens(lenses, int(ts[k]), P[tri[k]].mean(axis=0))
+        if i is not None:
+            texels[i].append(sets0[k])
+    bad, counts, unstated = [], {}, 0
+    for i, ln in enumerate(lenses):
+        stated = ln.get("colour")
+        where = "%s %s %s at %s" % (ln["group"], ln["position"], ln["side"], _fmt(ln["centre"]))
+        if stated is None:
+            unstated += 1
+            continue
+        if stated not in vi.lens_colours(ln["lamp"]):
+            bad.append("lens %s states colour %r, not one of %s"
+                       % (where, stated, list(vi.lens_colours(ln["lamp"]))))
+            continue
+        if not texels[i]:
+            continue                      # check_lamps reports a lens without a face
+        lit, share = vi.lit_colour(emit[np.unique(np.concatenate(texels[i]))], BLACK)
+        if lit != stated:
+            bad.append("lens %s states %s, its emission texels are %s (%.0f%% of the lit ones)"
+                       % (where, stated, lit or "black", 100 * share))
+            continue
+        counts[stated] = counts.get(stated, 0) + 1
+    if unstated:
+        bad.insert(0, "%d of %d lens entries state no colour, so they cannot be checked against "
+                      "the emission" % (unstated, len(lenses)))
+    for b in bad[:12]:
+        R("FAIL", "lamps", "colour: " + b)
+    if len(bad) > 12:
+        R("FAIL", "lamps", "colour: ... and %d more lenses" % (len(bad) - 12))
+    if not bad:
+        R("PASS", "lamps", "colour: every lens's stated colour allowed for its group and "
+                           "matching its LOD0 emission texels (%s)"
+          % ", ".join("%d %s" % (counts[c], c) for c in vi.LENS_COLOURS if c in counts))
+
+
+def _weighted_median(vals, wts):
+    order = np.argsort(vals)
+    cum = np.cumsum(wts[order])
+    return float(vals[order][np.searchsorted(cum, cum[-1] / 2.0)])
+
+
+def check_paint_level(R, name, field, means, tiers):
+    """Check 9, the paint level, on one paint-true albedo *name*.
+
+    The consumer multiplies the painted panels by the paint colour, so what
+    must sit near 0.75 linear is the panel field: on LOD0 and LOD1, the
+    area-weighted median of the painted faces' texels (each face's area
+    shared among the texels it samples), which panel gaps, trim lines and
+    light wear inside a painted face do not move. FAIL outside PAINT_LEVEL.
+    And the same paint must not change brightness at a tier switch: every
+    tier's plain area-weighted mean over its painted faces' texels lies
+    within PAINT_TIER_SPREAD of LOD0's (FAIL otherwise)."""
+    def fmt(d):
+        return ", ".join("LOD%d %.3f" % (lv, d[lv]) for lv in sorted(d))
+    bad = [lv for lv in PAINT_FIELD_TIERS if lv in tiers
+           and not (lv in field and PAINT_LEVEL[0] <= field[lv] <= PAINT_LEVEL[1])]
+    shown = {lv: field[lv] for lv in PAINT_FIELD_TIERS if lv in field}
+    R("FAIL" if bad else "PASS", "paint",
+      "%s: panel field (area-weighted median of the painted texels) %s linear, band "
+      "%.2f-%.2f, about 0.75 wanted%s"
+      % (name, fmt(shown) or "none", PAINT_LEVEL[0], PAINT_LEVEL[1],
+         "; outside or without painted faces: %s" % ", ".join("LOD%d" % lv for lv in bad)
+         if bad else ""))
+    if 0 not in means:
+        R("FAIL", "paint", "%s: LOD0 has no painted faces to compare the tiers with" % name)
+        return
+    ref = means[0]
+    off = []
+    parts = []
+    for lv in sorted(tiers):
+        if lv not in means:
+            off.append("LOD%d has no painted faces" % lv)
+            continue
+        d = (means[lv] - ref) / ref
+        parts.append("LOD%d %.3f%s" % (lv, means[lv], " (%+.1f%%)" % (100 * d) if lv else ""))
+        if abs(d) > PAINT_TIER_SPREAD:
+            off.append("LOD%d %+.1f%%" % (lv, 100 * d))
+    R("FAIL" if off else "PASS", "paint",
+      "%s: painted mean (area-weighted, all texels) %s linear; every tier within %.0f%% of "
+      "LOD0's%s" % (name, ", ".join(parts), 100 * PAINT_TIER_SPREAD,
+                    ": NOT %s" % ", ".join(off) if off else ""))
 
 
 if __name__ == "__main__":

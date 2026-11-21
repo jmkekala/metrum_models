@@ -42,11 +42,12 @@ import numpy as np
 # ================================================================ classes
 # Box (length, width, height) in metres, a hard limit for the straight-ahead
 # model; width without mirrors. mirror: what mirrors may add a side.
-# ceilings: LOD0..LOD3 triangles. texture: the atlas size.
+# ceilings: LOD0..LOD3 triangles. texture: the atlas size, 1024 for every
+# class.
 CLASSES = {
-    "car": {"box": (4.50, 1.80, 1.95), "mirror": 0.12, "texture": 512,
+    "car": {"box": (4.50, 1.80, 1.95), "mirror": 0.12, "texture": 1024,
             "ceilings": (3000, 900, 220, 40), "bay": (2.5, 5.0)},
-    "van": {"box": (6.00, 2.10, 2.70), "mirror": 0.25, "texture": 512,
+    "van": {"box": (6.00, 2.10, 2.70), "mirror": 0.25, "texture": 1024,
             "ceilings": (3500, 1000, 260, 40), "bay": (3.0, 8.0)},
     "truck": {"box": (8.00, 2.55, 3.80), "mirror": 0.25, "texture": 1024,
               "ceilings": (4500, 1400, 350, 60), "bay": (3.0, 8.0)},
@@ -124,6 +125,87 @@ def lamp_colour(lamp_id):
     marker lamps fall back to white; their colour is the asset's)."""
     word = LAMPS[lamp_id][1]
     return word if word in LENS_LIT else "white"
+
+
+# A lens's lit colour, as the sidecar states it per lens ("colour").
+LENS_COLOURS = ("white", "amber", "red")
+LIT_WHITE_SAT = 0.40     # a lit texel under this saturation, (max - min) / max, is white
+LIT_RED_HUE = 0.25       # (G - min) / (R - min) under this is red, over it amber
+
+
+def lens_colours(lamp_id):
+    """The lit colours a lens of *lamp_id* may state: its group's one
+    colour; any of the three for a marker (15). Beacon (13) and sign (14)
+    are reserved and their colours not defined yet, so they also take any
+    of the three for now."""
+    word = LAMPS[lamp_id][1]
+    return (word,) if word in LENS_LIT else LENS_COLOURS
+
+
+def texel_colours(rgb, black=3):
+    """Per texel of 8-bit sRGB *rgb* (n, 3): "white", "amber", "red",
+    "other" (a lit hue that is none of them) or None (black: every channel
+    at or under *black*)."""
+    rgb = np.asarray(rgb, float).reshape(-1, 3)
+    mx, mn = rgb.max(axis=1), rgb.min(axis=1)
+    out = np.full(len(rgb), None, object)
+    lit = mx > black
+    sat = np.where(lit, (mx - mn) / np.maximum(mx, 1e-9), 0.0)
+    red_top = rgb[:, 0] >= mx
+    hue = (rgb[:, 1] - mn) / np.maximum(rgb[:, 0] - mn, 1e-9)
+    out[lit] = "other"
+    out[lit & (sat < LIT_WHITE_SAT)] = "white"
+    warm = lit & (sat >= LIT_WHITE_SAT) & red_top
+    out[warm & (hue < LIT_RED_HUE)] = "red"
+    out[warm & (hue >= LIT_RED_HUE)] = "amber"
+    return out
+
+
+def lit_colour(rgb, black=3):
+    """The lit colour of a lens from the emission texels it samples (8-bit
+    sRGB, (n, 3)): the commonest of texel_colours() among the lit texels,
+    and its share of them. (None, 0.0) where no texel is lit."""
+    words = [w for w in texel_colours(rgb, black) if w is not None]
+    if not words:
+        return None, 0.0
+    names, counts = np.unique(np.array(words, dtype=str), return_counts=True)
+    k = int(np.argmax(counts))
+    return str(names[k]), float(counts[k]) / len(words)
+
+
+def texel_sets(uv, tris, size):
+    """For each triangle, the flat indices of its texel set in a
+    *size* x *size* image (rows top-down, as glTF UVs address it): the
+    texels whose centres lie at least half a texel inside it in UV, or, for
+    a triangle too small to hold one, the texel under its centroid."""
+    px = np.asarray(uv, float) * size
+    out = []
+    for t in tris:
+        a, b, c = px[t[0]], px[t[1]], px[t[2]]
+        x0, y0 = np.floor(np.minimum(np.minimum(a, b), c)).astype(int)
+        x1, y1 = np.ceil(np.maximum(np.maximum(a, b), c)).astype(int)
+        xs, ys = np.meshgrid(np.arange(x0, x1 + 1) + 0.5, np.arange(y0, y1 + 1) + 0.5)
+        P = np.stack([xs.ravel(), ys.ravel()], axis=1)
+        area = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
+        inside = np.ones(len(P), bool)
+        if abs(area) > 1e-12:
+            sgn = 1.0 if area > 0 else -1.0
+            for p, q in ((a, b), (b, c), (c, a)):
+                e = q - p
+                ln = math.hypot(*e)
+                if ln < 1e-12:
+                    continue
+                dist = sgn * (e[0] * (P[:, 1] - p[1]) - e[1] * (P[:, 0] - p[0])) / ln
+                inside &= dist >= 0.5
+        else:
+            inside[:] = False
+        P = P[inside]
+        if not len(P):
+            P = ((a + b + c) / 3.0)[None]
+        ix = np.mod(np.floor(P[:, 0]).astype(int), size)
+        iy = np.mod(np.floor(P[:, 1]).astype(int), size)
+        out.append(np.unique(iy * size + ix))
+    return out
 
 
 def required_lamps(body_class, present):

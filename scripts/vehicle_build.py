@@ -180,10 +180,15 @@ def conform(B, tol=1e-6):
     """Remove T-junctions from builder *B*: every vertex lying inside
     another face's edge is inserted into that face (UVs interpolated along
     the edge), so faces cut into cells (a lens or a pane inside a panel)
-    close against their neighbours. Run before the piece is used."""
+    close against their neighbours. Run before the piece is used.
+
+    A replaced face's old edges that no face uses any more are removed, and
+    so is any vertex that loses its last edge, so the piece stays closed for
+    Piece's checks; edges and vertices that were loose before are kept."""
     bm = B.bm
     bm.verts.ensure_lookup_table()
     cos = np.array([v.co[:] for v in bm.verts])
+    dropped = set()                      # edges of the faces replaced
     changed = True
     while changed:
         changed = False
@@ -211,12 +216,23 @@ def conform(B, tol=1e-6):
             if len(new) == len(loops):
                 continue
             s, p, sm = f[B.surf], f[B.paint], f.smooth
+            dropped.update(f.edges)
             bm.faces.remove(f)
             g = bm.faces.new(new)
             for lp, uv in zip(g.loops, uvs):
                 lp[B.uv].uv = uv
             g[B.surf], g[B.paint], g.smooth = s, p, sm
             changed = True
+    loose = [e for e in dropped if e.is_valid and not e.link_faces]
+    ends = {v for e in loose for v in e.verts}
+    for e in loose:
+        bm.edges.remove(e)
+    lone = [v for v in ends if v.is_valid and not v.link_edges]
+    if lone:
+        gone = set(lone)
+        B.cache = {k: v for k, v in B.cache.items() if v not in gone}
+        for v in lone:
+            bm.verts.remove(v)
     return B
 
 
@@ -398,7 +414,11 @@ def gate_emission(nt, colour_socket_input, g255, ids):
 
 
 # ================================================================ geometry
-def _object(name, src):
+def to_object(name, src):
+    """An unlinked mesh object named *name* from *src*: a Builder or a
+    bmesh (face normals recalculated outward first), or an object, which is
+    returned as it is. For a build.py that works on a piece as an object
+    (an exact boolean, edge creases) before handing it to Piece."""
     if isinstance(src, Builder):
         src = src.bm
     if isinstance(src, bmesh.types.BMesh):
@@ -407,6 +427,27 @@ def _object(name, src):
         src.to_mesh(me)
         return bpy.data.objects.new(name, me)
     return src
+
+
+_object = to_object     # the earlier private name, which committed build.py files call
+
+
+def lens_texel_colour(me, polys, emit):
+    """The lit colour (vehicle_ids.lit_colour()) of the emission texels
+    *emit* (8-bit sRGB, rows top-down) that polygons *polys* of mesh *me*
+    sample through its active UV map; None where they are not white, amber
+    or red."""
+    uvl = me.uv_layers.active.data
+    uv, tris = [], []
+    for p in polys:
+        loops = list(me.polygons[p].loop_indices)
+        base = len(uv)
+        uv += [(uvl[i].uv[0], 1.0 - uvl[i].uv[1]) for i in loops]
+        tris += [(base, base + k, base + k + 1) for k in range(1, len(loops) - 1)]
+    size = emit.shape[0]
+    sets = vi.texel_sets(np.array(uv), np.array(tris), size)
+    word, _share = vi.lit_colour(emit.reshape(-1, 3)[np.unique(np.concatenate(sets))])
+    return word if word in vi.LENS_COLOURS else None
 
 
 def _closed(obj):
@@ -466,9 +507,10 @@ class VehicleAsset(asset_build.Asset):
     its panels in full colour (CLAUDE.md, Vehicles). Authored in the
     exported frame's origin: the build frame's origin is on the ground at
     the centre of the body's plan box, mirrors excluded, and build_all()
-    refuses a tier that is not. *preview_paint* is the linear colour the
-    preview multiplies the painted panels by (None: white, the albedo as
-    shipped).
+    refuses a tier that is not. *preview_paint* is the linear colour
+    preview.png and variants.png multiply the painted panels of a paint-true
+    variant by (None: white, the albedo as shipped); a paint-false livery is
+    always shown white, as the consumer paints it.
     """
 
     id_attribute = vi.ID_ATTRIBUTE
@@ -588,7 +630,7 @@ class VehicleAsset(asset_build.Asset):
         for k, p in enumerate(pieces):
             name = "%s_LOD%d_%s%s" % (self.name, level, p.role,
                                       p.part if p.role == "wheel" else k)
-            obj = _object(name, p.src)
+            obj = to_object(name, p.src)
             obj.name = obj.data.name = name
             open_, flat = _closed(obj)
             if open_ or flat:
@@ -664,10 +706,16 @@ class VehicleAsset(asset_build.Asset):
 
     def lamp_lenses(self, level=0):
         """One lamp_lens() per connected group of same-id lamp faces of the
-        tier: a lens."""
+        tier: a lens. A lens of a group with one colour takes it; a marker
+        (or beacon, or sign) lens takes the lit colour of the emission
+        texels its faces sample (vehicle_ids.lit_colour()), so the texture
+        generator's lens colours are the record. Where that is not white,
+        amber or red, compose_vehicle() refuses the lens: the build.py then
+        states the lenses itself, facts()["lamps"], with
+        model_facts.lamp_lens(..., colour=)."""
         me = self.lod(level).data
         _part, surf, _paint, _c = read_ids(me)
-        out = []
+        emit, out = None, []
         for lamp in sorted(set(surf.tolist()) & set(vi.LAMP_IDS)):
             for comp in _components(me, [int(i) for i in np.flatnonzero(surf == lamp)]):
                 pts, n = [], Vector()
@@ -675,8 +723,27 @@ class VehicleAsset(asset_build.Asset):
                     poly = me.polygons[p]
                     pts += [tuple(me.vertices[v].co) for v in poly.vertices]
                     n += poly.normal * poly.area
-                out.append(model_facts.lamp_lens(lamp, pts, tuple(n.normalized())))
+                colour = None
+                if len(vi.lens_colours(lamp)) > 1:
+                    if emit is None:
+                        emit = self.emission_texels()
+                    colour = lens_texel_colour(me, comp, emit)
+                out.append(model_facts.lamp_lens(lamp, pts, tuple(n.normalized()),
+                                                 colour=colour))
         return out
+
+    def emission_texels(self):
+        """export/<name>_emission.png as 8-bit sRGB (size, size, 3), rows
+        top-down as the PNG stores them."""
+        path = os.path.join(self.export_dir, self.name + "_emission.png")
+        im = bpy.data.images.load(path, check_existing=False)
+        try:
+            w, h = im.size
+            px = np.zeros(w * h * 4, np.float32)
+            im.pixels.foreach_get(px)
+        finally:
+            bpy.data.images.remove(im)
+        return np.round(np.flipud(px.reshape(h, w, 4)[:, :, :3]) * 255.0).astype(np.uint8)
 
     def glass_areas(self, level=0):
         me = self.lod(level).data
@@ -747,10 +814,17 @@ class VehicleAsset(asset_build.Asset):
         return super().export_all()
 
     # -------------------------------------------------------------- previews
+    def paint_for(self, variant):
+        """The linear colour a preview multiplies *variant*'s painted panels
+        by: preview_paint for a paint-true variant; None (white, the albedo
+        as shipped) for a paint-false livery, which the consumer paints
+        white."""
+        return self.preview_paint if dict(self.paint_flags)[variant] else None
+
     def render_preview(self):
         self.preview_studio()
         self.show_only(0)
-        mat = self.material(self.default_variant, paint=self.preview_paint)
+        mat = self.material(self.default_variant, paint=self.paint_for(self.default_variant))
         set_state(mat, 0.0, self.tint)
         path = os.path.join(self.here, "preview.png")
         bpy.context.scene.render.filepath = path
@@ -760,9 +834,10 @@ class VehicleAsset(asset_build.Asset):
 
     def render_variants(self, tile_w=640):
         """variants.png: each variant by day and at night with the night
-        driving lamps (NIGHT_LAMPS) lit, painted with preview_paint."""
+        driving lamps (NIGHT_LAMPS) lit; paint-true variants painted with
+        preview_paint, a paint-false livery white (paint_for())."""
         path = render_sheet(self.name, self.here, self.variants,
-                            lambda v: self.material(v, paint=self.preview_paint,
+                            lambda v: self.material(v, paint=self.paint_for(v),
                                                     lamps=NIGHT_LAMPS),
                             self.preview_studio, self.show_only, tile_w, self.tint,
                             with_night=True)

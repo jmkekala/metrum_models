@@ -623,8 +623,8 @@ BODY_KEYS = ("class", "length_m", "width_m", "width_mirrors_m", "height_m",
 AXLE_KEYS = ("z", "track_m", "steer", "twin")
 WHEEL_KEYS = ("id", "part", "axle", "side", "centre", "radius_m", "width_m", "steer")
 ATTRIBUTES = {"set": "COLOR_0", "r": "part", "g": "surface", "b": "paint", "version": 1}
-LAMP_KEYS = ("group", "lamp", "side", "position", "centre", "facing", "width_m",
-             "height_m")
+LAMP_KEYS = ("group", "lamp", "side", "position", "colour", "centre", "facing",
+             "width_m", "height_m")
 GLASS_KEYS = ("group", "id", "area_m2")
 CARGO_KEYS = ("min", "max", "door")
 CARGO_DOORS = ("rear", "side", "top")
@@ -644,9 +644,12 @@ def wheel_part(part, centre, radius, width, steer, twin=False):
             "width": float(width), "steer": bool(steer), "twin": bool(twin)}
 
 
-def lamp_lens(lamp, points, facing):
+def lamp_lens(lamp, points, facing, colour=None):
     """One lens of lamp id *lamp* from its faces' vertices *points* and
     their outward *facing* (the area-weighted normal), in the build frame.
+    *colour* is its lit colour, white, amber or red: None takes the group's
+    one colour (vehicle_ids.lens_colours); a marker, beacon or sign lens
+    states its own (VehicleAsset.lamp_lenses() reads it from the emission).
 
     The rectangle is the faces' bounding rectangle in the plane across the
     facing: width along up x facing (horizontal), height along facing x
@@ -661,8 +664,11 @@ def lamp_lens(lamp, points, facing):
     pu, pv, pf = p @ u, p @ v, p @ f
     cu, cv = (pu.min() + pu.max()) / 2.0, (pv.min() + pv.max()) / 2.0
     c = u * cu + v * cv + f * pf.mean()
-    return {"lamp": int(lamp), "centre": vi.to_build(c), "facing": vi.to_build(f),
-            "width": float(pu.max() - pu.min()), "height": float(pv.max() - pv.min())}
+    out = {"lamp": int(lamp), "centre": vi.to_build(c), "facing": vi.to_build(f),
+           "width": float(pu.max() - pu.min()), "height": float(pv.max() - pv.min())}
+    if colour is not None:
+        out["colour"] = colour
+    return out
 
 
 def glass_group(glass_id, area):
@@ -780,8 +786,16 @@ def compose_vehicle(name, here, variants, default_variant, levels, facts, blende
         c, f = vi.to_gltf(ln["centre"]), vi.to_gltf(ln["facing"])
         n = math.sqrt(sum(x * x for x in f))
         f = [x / n for x in f]
+        allowed = vi.lens_colours(ln["lamp"])
+        colour = ln.get("colour") or (allowed[0] if len(allowed) == 1 else None)
+        if colour not in allowed:
+            raise ValueError("a %s lens at %s needs its colour, one of %s, not %r "
+                             "(lamp_lens(..., colour=))"
+                             % (vi.LAMPS[ln["lamp"]][0], [_r(x) for x in c], list(allowed),
+                                colour))
         lamps.append({"group": vi.LAMPS[ln["lamp"]][0], "lamp": int(ln["lamp"]),
                       "side": vi.lens_side(c[0]), "position": vi.lens_position(f),
+                      "colour": colour,
                       "centre": [_r(x) for x in c], "facing": [_r(x) for x in f],
                       "width_m": _r(ln["width"]), "height_m": _r(ln["height"])})
     lamps.sort(key=lambda d: (d["lamp"], order[d["position"]], sides[d["side"]],
@@ -994,9 +1008,13 @@ def check_vehicle(doc, export_dir):
     if doc["attributes"] != ATTRIBUTES:
         problems.append("attributes are %s, not %s" % (doc["attributes"], ATTRIBUTES))
 
-    lamp_ids = set()
+    lamp_ids, uncoloured = set(), []
     for i, ln in enumerate(doc["lamps"]):
-        if not keyed("lamps[%d]" % i, ln, LAMP_KEYS):
+        if isinstance(ln, dict) and "colour" not in ln and \
+                tuple(ln) == tuple(k for k in LAMP_KEYS if k != "colour"):
+            uncoloured.append(i)          # one summary below; the rest is checked
+            ln = dict(ln, colour=None)
+        elif not keyed("lamps[%d]" % i, ln, LAMP_KEYS):
             continue
         lid = ln["lamp"]
         if lid not in vi.LAMPS or ln["group"] != vi.LAMPS[lid][0]:
@@ -1005,6 +1023,9 @@ def check_vehicle(doc, export_dir):
         lamp_ids.add(lid)
         if ln["side"] not in vi.SIDES or ln["position"] not in vi.POSITIONS:
             problems.append("lamps[%d]: side %r position %r" % (i, ln["side"], ln["position"]))
+        if ln["colour"] not in vi.lens_colours(lid) and i not in uncoloured:
+            problems.append("lamps[%d] (%s): colour %r, not one of %s"
+                            % (i, ln["group"], ln["colour"], list(vi.lens_colours(lid))))
         if not (_vec(ln["centre"]) and _vec(ln["facing"])):
             problems.append("lamps[%d]: centre or facing is not [x, y, z]" % i)
             continue
@@ -1016,6 +1037,10 @@ def check_vehicle(doc, export_dir):
         if not (_number(ln["width_m"]) and _number(ln["height_m"])
                 and ln["width_m"] >= 0 and ln["height_m"] >= 0):
             problems.append("lamps[%d]: width and height must be numbers" % i)
+    if uncoloured:
+        problems.append("lamps%s: %d lens entries have no colour (a sidecar written before "
+                        "the field: rewrite it with build.py -- facts)"
+                        % (uncoloured if len(uncoloured) < 6 else "", len(uncoloured)))
     if cls:
         missing = vi.required_lamps(cls, lamp_ids)
         if missing:
