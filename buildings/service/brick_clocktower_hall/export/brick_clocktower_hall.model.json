@@ -3,7 +3,7 @@
   "version": 1,
   "name": "brick_clocktower_hall",
   "path": "buildings/service/brick_clocktower_hall",
-  "source": {"commit": "3655f55d58396fe4415d343ed7d2447890f38ad6", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "c0a48351952ae0b4ff02f130aea49e7f6a35a490", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-24.85, 0.0, -14.175], "max": [24.85, 24.6, 14.175]},
   "footprint": [
@@ -35,23 +35,24 @@
   "dwellings": 0,
   "doors": [
     {"id": "front", "kind": "entrance", "position": [0.0, 0.15, 12.975], "facing": [0.0, 0.0, 1.0], "width_m": 2.0, "height_m": 2.35, "main": true},
-    {"id": "balcony", "kind": "balcony", "position": [0.0, 5.6, 12.975], "facing": [0.0, 0.0, 1.0], "width_m": 1.24, "height_m": 3.5, "main": false}
+    {"id": "balcony", "kind": "balcony", "position": [0.0, 5.6, 12.975], "facing": [0.0, 0.0, 1.0], "width_m": 1.24, "height_m": 2.3, "main": false},
+    {"id": "rear", "kind": "service", "position": [18.9, 0.15, -13.725], "facing": [0.0, 0.0, -1.0], "width_m": 1.4, "height_m": 2.3, "main": false}
   ],
   "lods": [
-    {"file": "brick_clocktower_hall_lod0.glb", "triangles": 5204, "sha256": "9e0925c5ba4038f7cce415e7ee3b96aa5dbf05a956b085e394663b8d52a2e749"},
-    {"file": "brick_clocktower_hall_lod1.glb", "triangles": 3980, "sha256": "4129dc080c59e20df0890119ff827f7a5ff3a427ad64ca37b5dea9d924680518"},
-    {"file": "brick_clocktower_hall_lod2.glb", "triangles": 584, "sha256": "2603c7e568de8a99a1d1f7080a223239ed7be9a196c761bf5fda53b583433a41"},
-    {"file": "brick_clocktower_hall_lod3.glb", "triangles": 564, "sha256": "aced58bdd33c591549b4731bcfca2e13ed779fae2f80d1d367b31401ff7230f9"}
+    {"file": "brick_clocktower_hall_lod0.glb", "triangles": 5248, "sha256": "542132a85b0b410aeacfea322643649e04d929393539fec6a810f92b8b722397"},
+    {"file": "brick_clocktower_hall_lod1.glb", "triangles": 4024, "sha256": "da20cf65454a8624b397d64451705f4084f5d0780c098f6215923bb867149ee3"},
+    {"file": "brick_clocktower_hall_lod2.glb", "triangles": 592, "sha256": "c1c4ac03f7d6b06b59e626d183101c6711859cc2b64cd8cb02d6bf9f91a610c6"},
+    {"file": "brick_clocktower_hall_lod3.glb", "triangles": 572, "sha256": "1a31f1e39027056d3e941b9ca15740d25429b71ebc2476c1bb333b95ffa7d9d9"}
   ],
   "textures": {
-    "orm": {"file": "brick_clocktower_hall_orm.png", "sha256": "3e376f6f6fd9e6a32dc01b6b1c9475d4ae8b037200424aad0474fa6fb26d47d3"},
-    "normal": {"file": "brick_clocktower_hall_normal.png", "sha256": "01b7bc3eded79741bc4cf4abce5dea3393dc94097c7e9d7816d1af111b4cd0e7"},
-    "emission": {"file": "brick_clocktower_hall_emission.png", "sha256": "3d65ac63ba5a1a450006c0ea640f11e8209e32c6c8e4aca34dba41208ec0a797"}
+    "orm": {"file": "brick_clocktower_hall_orm.png", "sha256": "307c45df23160c4bb408a97727d4a20773f56e2345a33e3c41613f7fa6090260"},
+    "normal": {"file": "brick_clocktower_hall_normal.png", "sha256": "8beebe968660d73e3a71024517c14eba61ccd3a03d1ce8774230abff31398812"},
+    "emission": {"file": "brick_clocktower_hall_emission.png", "sha256": "712c29cfe7ce4a9b1fdc6f4c8523f524feac57858ea4e43e824cb1f1ed7ff185"}
   },
   "variants": [
-    {"id": "red_brick", "albedo": "brick_clocktower_hall_albedo_red_brick.png", "sha256": "f1d777f75805e40e508472c1fb704fabaf7b59ce0ae4014beb10a46a05d11372"}
+    {"id": "red_brick", "albedo": "brick_clocktower_hall_albedo_red_brick.png", "sha256": "f91ea3e83ab476cec4097dfe5c4f5275c369579aeb15c3797bb7503ff4b2406b"}
   ],
   "default_variant": "red_brick",
-  "preview": {"file": "../preview.png", "sha256": "4c4c6e7da2bed814f7e44121275af369db3fd84738e954a70e5a13b100014f70"},
+  "preview": {"file": "../preview.png", "sha256": "7bb7742832722ea16255e6bd10673ad90d821b8bc60b644394d99a2f74e1bfc7"},
   "hero": true
 }

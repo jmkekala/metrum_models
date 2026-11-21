@@ -67,6 +67,13 @@ QUOIN = (1720.0, 1752.0, UNI, UNI + 730.0)
 BALUS = (0.0, 308.0, 1750.0, 1814.0)
 REVEALP = (1752.0, 1812.0, UNI, UNI + 60.0)
 SOOT = (1600.0, 1660.0, UNI + 72.0, UNI + 132.0)
+# The rear service door's bay: facade_atlas.py's REAR holds a copy of the
+# facade band's columns REAR_SRC, bay REAR_BAY, painted with the door in
+# place of the ground-floor window. Faces in that bay sample the copy, one
+# texel to one texel, so the bays either side meet it without a seam.
+REAR_BAY = 1
+REAR_SRC_X0 = 204.0
+REAR_X0, REAR_Y0 = 1816.0, 1290.0
 
 Z_EAVE = 11.4                    # single continuous cornice height
 EAVE_OVER = 0.45                 # projection, within the 0.3-0.6 m convention
@@ -104,6 +111,20 @@ BALC_FRONT = (-2.36, 2.36, -11.36, -11.16, 5.45, 6.55)
 BALC_SIDES = [(-2.34, -2.14, -11.30, -10.00, 5.45, 6.55),
               (2.14, 2.34, -11.30, -10.00, 5.45, 6.55)]
 BALC_RAIL_Z = (5.55, 1.0)        # visible parapet height, for the UV band
+
+# The rear service door, in the right rear wing's end wall (its outline run
+# from p0 at x = 24.4 to p1 at x = 13.4, facing +Y), in place of the middle
+# bay's ground-floor window. A pair of leaves 1.40 m wide; the cut runs from
+# the ground floor at 0.15 m, through the plinth as the front entrance's does,
+# to 2.60 m, both heights the ring already cuts at, so the door costs no new
+# band round the building. The leaves end at a head rail at 2.45 m, which
+# facade_atlas.draw_rear_door() paints: a 2.30 m leaf. The wall keeps three
+# bays; facade_atlas.py paints the door narrowed by that wall's stretch of
+# the band (REAR_STRETCH), and check_massing() fails if either changes.
+REAR_WALL = ((24.4, 16.5), (13.4, 16.5))
+REAR_NBAY = 3
+REAR_DOOR = (5.50, WIN_HW, 0.15, 2.60, "rear")
+REAR_LEAF_TOP = 2.45
 
 # Quoined corners are derived from the plan outline, never listed by hand.
 # Hand-maintaining them went wrong twice in opposite directions: flattening a
@@ -263,6 +284,18 @@ def _uv_panel_facade(face, uvl, p0, t, length, nbay):
         co = loop.vert.co
         s = (co - p0).dot(t)
         loop[uvl].uv = (s / length * nbay * BAY_U, co.z * PPM / ATLAS)
+
+
+def _uv_rear_bay(face, uvl, p0, t, length, nbay):
+    """The rear door's bay: the facade band's mapping, moved onto the copy
+    of the band's bay REAR_BAY that holds the door (facade_atlas.REAR). The
+    copy is the band's own columns, texel for texel, so the shift is the
+    whole mapping."""
+    for loop in face.loops:
+        co = loop.vert.co
+        u_px = (co - p0).dot(t) / length * nbay * BAY_U * ATLAS
+        loop[uvl].uv = ((REAR_X0 + u_px - REAR_SRC_X0) / ATLAS,
+                        (REAR_Y0 + co.z * PPM) / ATLAS)
 
 
 def _inset(rect, half=0.5):
@@ -831,6 +864,12 @@ def is_court_wall(p0, p1):
                for p in (p0, p1))
 
 
+def is_rear_wall(p0, p1):
+    """True for the right rear wing's end wall, which has the service door."""
+    return all(abs(p[0] - q[0]) < 1e-6 and abs(p[1] - q[1]) < 1e-6
+               for p, q in zip((p0, p1), REAR_WALL))
+
+
 def cuts_openings(level, p0, p1):
     """Whether this tier cuts the openings of the wall from *p0* to *p1*.
 
@@ -936,10 +975,22 @@ def build_lod(level):
                     _uv_panel_rect(f, uvl, q0, t, L, ENT, 0.0, 11.4)
             return (ENTRANCE_OPENINGS if cut else []), uvfn, breaks
         openings, nbay = _bay_openings(length)
+        door_bay = None
+        if is_rear_wall(p0, p1):
+            # The rear service door takes the middle bay's ground-floor
+            # window's place, and that bay, split off at its joints at every
+            # tier, samples the atlas's copy of it with the door painted in.
+            bw = length / nbay
+            door_bay = (REAR_BAY * bw, (REAR_BAY + 1) * bw)
+            openings = [REAR_DOOR if o[4] == ("gf", REAR_BAY) else o for o in openings]
+            breaks = breaks + list(door_bay)
 
         def uvfn(f, q0, t, L, nbay=nbay):
+            ss = [(l.vert.co - q0).dot(t) for l in f.loops]
             if in_strip(f, q0, t):
                 apply_region([f], "quoin", uvl)
+            elif door_bay and door_bay[0] - 1e-6 <= min(ss) and max(ss) <= door_bay[1] + 1e-6:
+                _uv_rear_bay(f, uvl, q0, t, L, nbay)
             else:
                 _uv_panel_facade(f, uvl, q0, t, L, nbay)
         return (openings if cut else []), uvfn, breaks
@@ -1087,11 +1138,26 @@ def check_massing(min_seg=1.0):
                             % ((cx0 + cx1) / 2, (cy0 + cy1) / 2))
     # Every door opens onto a floor: its threshold on a storey's floor or at
     # most a sill's 0.10 m above it, never a flight of steps away from it.
-    for _s, _hw, z0, _z1, tag in ENTRANCE_OPENINGS:
+    for _s, _hw, z0, _z1, tag in ENTRANCE_OPENINGS + [REAR_DOOR]:
         if tag in DOOR_TAGS and not any(0.0 <= z0 - f <= 0.10 + 1e-6
                                         for f in (Z_GROUND_FLOOR, Z_UPPER_FLOOR)):
             problems.append("the %s door's threshold at %.2f m meets no floor"
                             % (tag, z0))
+    # The rear door's wall has to exist, keep its three bays (the atlas's
+    # copy of the door is narrowed for exactly that stretch of the band),
+    # and carry the door at its middle bay's centre, where the copy has it.
+    rear = [i for i in range(n) if is_rear_wall(poly[i], poly[(i + 1) % n])]
+    if len(rear) != 1:
+        problems.append("the rear door's wall %s is not one outline segment" % (REAR_WALL,))
+    else:
+        (ax, ay), (bx, by) = poly[rear[0]], poly[(rear[0] + 1) % n]
+        length = math.hypot(bx - ax, by - ay)
+        _ops, nbay = _bay_openings(length)
+        if nbay != REAR_NBAY:
+            problems.append("the rear door's wall has %d bays, not the atlas's %d"
+                            % (nbay, REAR_NBAY))
+        if abs(REAR_DOOR[0] - (REAR_BAY + 0.5) * length / nbay) > 1e-6:
+            problems.append("the rear door is not at its bay's centre")
     return problems
 
 
@@ -1107,12 +1173,15 @@ def build_all():
 # sills stand 1.10 m above it. The 0.95 m plinth is the stone base course of
 # the wall, not a floor level. The upper floor is the balcony's deck, on the
 # string course's top (facade_atlas.py's Z_STRING_TOP): the balcony door's
-# threshold stands 0.05 m above it and the upper sills 0.80 m. The entrance's
-# pair of leaves ends at the transom, where facade_atlas.paint_entrance()
-# draws it; the fanlight above is not part of the leaf.
+# threshold stands 0.05 m above it and the upper sills 0.80 m. Each door's
+# leaf ends at its transom, where facade_atlas.py draws it, and the fanlight
+# above is not part of the leaf: the entrance's at 2.50 m (paint_entrance()),
+# the balcony door's at 7.90 m, a 2.30 m leaf under a fanlight to the 9.10 m
+# head (draw_balcony_door()).
 Z_GROUND_FLOOR, Z_UPPER_FLOOR = 0.15, 5.55
 DOOR_TRANSOM = 2.50
-DOOR_TAGS = ("door", "bal")      # the ENTRANCE_OPENINGS that are doors
+BAL_TRANSOM = 7.90
+DOOR_TAGS = ("door", "bal", "rear")   # the openings that are doors
 
 
 def facts():
@@ -1120,10 +1189,11 @@ def facts():
     in the build frame. The footprint is the wall ring's own outline, without
     the quoin blocks that stand 0.08 m proud of it. Both storeys fill that
     outline: the upper one ends under the cornice, below the roof. The tower
-    and the clock attic are not floors. The one door at ground level is the
-    arched entrance in the centre bay, its threshold on the ground floor; the
-    balcony door above it is in the same outer wall, onto the upper floor.
-    The hall has no other outer door."""
+    and the clock attic are not floors. At ground level there are two doors,
+    both on the ground floor: the arched entrance in the centre bay, the main
+    door, and the service door in the right rear wing's end wall. The balcony
+    door over the entrance opens onto the upper floor. Each door's height is
+    its leaf's, to its transom or head rail."""
     outline = union_outline(WALLS)
     n = len(outline)
     area = sum(outline[i][0] * outline[(i + 1) % n][1]
@@ -1142,7 +1212,10 @@ def facts():
         "footprint": outline,
         "storeys": [(Z_GROUND_FLOOR, area), (Z_UPPER_FLOOR, area)],
         "doors": [door("front", "entrance", "door", DOOR_TRANSOM, main=True),
-                  door("balcony", "balcony", "bal")],
+                  door("balcony", "balcony", "bal", BAL_TRANSOM),
+                  model_facts.wall_door("rear", "service", *REAR_WALL, s=REAR_DOOR[0],
+                                        z=REAR_DOOR[2], width=2.0 * REAR_DOOR[1],
+                                        height=REAR_LEAF_TOP - REAR_DOOR[2])],
     }
 
 

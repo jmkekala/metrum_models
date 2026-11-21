@@ -13,7 +13,8 @@ in lockstep with the UV assignment in build.py beside it:
 
     y    0 ..  730   facade   - tiles horizontally, 11.4 m of wall at 64 px/m
     y  730 ..  986   roof     - tiles horizontally, V stretched across each slope
-    y  986 .. 2048   unique   - entrance / tower / clock attic / chimney / patches
+    y  986 .. 2048   unique   - entrance / tower / clock attic / chimney / patches,
+                                and the rear door's bay of the facade band
 
 Everything is authored at 64 px/m so that storey bands, string course and cornice
 line up across every wall of the building without per-wall tweaking.
@@ -69,6 +70,26 @@ REVEALP = (1752, 1812, UNI, UNI + 60)
 # soot for the chimney flues' lining and floor, above the blank patch and
 # clear of every region edge, so its padding touches nothing sampled
 SOOT = (1600, 1660, UNI + 72, UNI + 132)
+# The rear service door's bay: one bay of the facade band, full height, with
+# the door in place of its ground-floor window. The right rear wing's end wall
+# maps it in place of the band's bay REAR_BAY (build.py's REAR_*). It is a
+# copy of a second painting of the whole atlas in which that bay has the door,
+# so the noise, the brick bond and the weather match the bays beside it on
+# the wall exactly; see paint(). REAR_SRC are the band columns copied, the
+# bay's 204.8 px and a texel each side, and REAR is where they land, in the
+# free strip right of the reveal patch, clear of every other region.
+REAR_BAY = 1
+REAR_SRC = (204, 411)
+REAR = (1816, 2023, 1290, 2020)
+# The wing end is 11.0 m in three bays, so the band is stretched across it by
+# (11.0 / 3) / 3.2 in U; the door is painted that much narrower, so it fills
+# its 1.40 m cut exactly. Heights are not stretched.
+REAR_STRETCH = (11.0 / 3.0) / 3.2
+REAR_DOOR_HW = 0.70            # the cut's half-width on the wall, metres
+REAR_SILL, REAR_LEAF_TOP, REAR_HEAD = 0.15, 2.45, 2.60
+# The balcony door's transom: a 2.30 m leaf from its 5.60 m threshold, then
+# a fanlight to the 9.10 m head.
+BAL_SILL, BAL_TRANSOM, BAL_HEAD = 5.60, 7.90, 9.10
 
 # ------------------------------------------------------- materials, colours
 # Material ids, each with its base colour. The other colours the elevations
@@ -259,13 +280,95 @@ def draw_rect_window(c, n01, cx, half_w, yb, sill=Z_UF_SILL, head=Z_UF_HEAD, bar
     sill_grime(c, n01, cx, w, ys)
 
 
-def paint_facade(c, n01):
+def rear_door_x(half=0.0):
+    """Band pixel column of the rear door's centre, plus *half* wall metres:
+    where build.py's mapping puts the middle of the wing end's middle bay."""
+    return (REAR_BAY + 0.5) * ATLAS / 10.0 + m(half / REAR_STRETCH)
+
+
+def draw_rear_door(c):
+    """The rear service door: a pair of panelled timber leaves, 1.40 x 2.30 m,
+    under a 0.15 m head rail to the cut's 2.60 m head, in a plain white
+    architrave with a moulded head like the windows', over a painted
+    threshold step. In band pixels, narrowed by REAR_STRETCH in U."""
+    cx, hw = rear_door_x(), REAR_DOOR_HW
+
+    def x(v):
+        return m(v / REAR_STRETCH)
+    ys, yl, yh = m(REAR_SILL), m(REAR_LEAF_TOP), m(REAR_HEAD)
+    # the threshold step, one 0.15 m riser up from the ground as at the front
+    c.paint(cx - x(hw + 0.30), cx + x(hw + 0.30), 0, ys, ID_PLINTH, 1.0, 0.74, height=0.0)
+    c.paint(cx - x(hw + 0.30), cx + x(hw + 0.30), 0, m(0.04), ID_PLINTH, PLINTH_DK, 0.66)
+    # architrave and its moulded head
+    moulding(c, cx - x(hw + 0.20), cx + x(hw + 0.20), ys, yh + m(0.20), TRIM_H, axes="xy")
+    moulding(c, cx - x(hw + 0.32), cx + x(hw + 0.32), yh + m(0.20), yh + m(0.42), CORNICE_H,
+             axes="xy")
+    c.paint(cx - x(hw + 0.32), cx + x(hw + 0.32), yh + m(0.42), yh + m(0.48), ID_TRIM,
+            TRIM_SH, 0.74)
+    # dark reveal ring, then the leaves, set back
+    c.paint(cx - x(hw + 0.06), cx + x(hw + 0.06), ys, yh + m(0.06), ID_DARK, 1.0, 0.42,
+            height=REVEAL_D)
+    c.paint(cx - x(hw), cx + x(hw), ys, yl, ID_DOOR, 1.0, 0.55, height=REVEAL_D)
+    # two raised fields on each leaf, stiles 0.12 m, rails 0.12 / 0.22 m
+    for a0, a1 in ((-hw + 0.12, -0.12), (0.12, hw - 0.12)):
+        for z0, z1 in ((REAR_SILL + 0.22, REAR_SILL + 0.95), (REAR_SILL + 1.10, REAR_LEAF_TOP - 0.12)):
+            c.paint(cx + x(a0), cx + x(a1), m(z0), m(z1), ID_DOOR, 1.06, 0.60)
+            c.bevel(cx + x(a0), cx + x(a1), m(z0), m(z1), REVEAL_D + 0.010, 1.5,
+                    base=REVEAL_D)
+    # the meeting stiles' joint, and the head rail that ends the leaves: the
+    # transom line, so the 2.30 m leaf reads inside the 2.45 m opening
+    c.paint(cx - 1, cx + 1, ys, yl, ID_DARK, 1.0, 0.40, height=REVEAL_D - 0.004)
+    c.paint(cx - x(hw), cx + x(hw), yl, yh, ID_FRAME, 0.92, 0.50, height=REVEAL_D + 0.015)
+    c.paint(cx - x(hw), cx + x(hw), yl - 2, yl, ID_DARK, 1.0, 0.40, height=REVEAL_D - 0.004)
+    # pull handles either side of the joint
+    for side in (-1, 1):
+        hx = cx + side * x(0.07)
+        c.paint(hx - 1, hx + 1, m(REAR_SILL + 0.95), m(REAR_SILL + 1.15), ID_FRAME, 1.0,
+                height=REVEAL_D + 0.020)
+
+
+def draw_balcony_door(c, n01, cx, yb, half_w=0.62):
+    """The balcony door: a glazed pair of leaves 2.30 m tall, a transom twice
+    as heavy as a glazing bar, and a fanlight over it to the 9.10 m head.
+
+    Its 3.50 m opening is cut in one piece, and with its bars evenly spaced
+    it read as one tall door, over the catalog's 2.6 m ceremonial limit. The
+    transom is what marks the leaf height inside it, so it stands out from
+    the bars in width, in relief and by the shadow under it.
+    """
+    w = m(half_w)
+    ys, yt = yb + m(BAL_SILL), yb + m(BAL_TRANSOM)
+    # surround, reveal ring, glass, the meeting stiles and the sill
+    draw_rect_window(c, n01, cx, half_w, yb, sill=BAL_SILL, head=BAL_HEAD, bars=0)
+    # leaves: a bottom rail, and two bars at the thirds of the glass above it
+    rail = yb + m(BAL_SILL + 0.14)
+    c.paint(cx - w, cx + w, ys, rail, ID_FRAME, 1.0, 0.50, height=REVEAL_D + 0.015)
+    for b in (1, 2):
+        yy = rail + (yt - rail) * b / 3.0
+        c.paint(cx - w, cx + w, yy - 2, yy + 2, ID_FRAME, 1.0, 0.50,
+                height=REVEAL_D + 0.015)
+    # the transom: 0.12 m, against the bars' 0.06, standing further off the
+    # glass, with a shadow line under it
+    c.paint(cx - w, cx + w, yt, yt + m(0.12), ID_FRAME, 1.0, 0.50, height=REVEAL_D + 0.025)
+    c.bevel(cx - w, cx + w, yt, yt + m(0.12), REVEAL_D + 0.025, 1.5, base=REVEAL_D + 0.012,
+            axes="y")
+    c.paint(cx - w, cx + w, yt - 2, yt, ID_DARK, 1.0, 0.40, height=REVEAL_D)
+    # The fanlight above, to the head, is left undivided but for the meeting
+    # stiles' bar, so it reads as a light of its own over the leaves.
+
+
+def paint_facade(c, n01, rear_door=False):
+    """The tiling facade band. *rear_door* paints the rear service door in
+    bay REAR_BAY instead of its ground-floor window, for paint()'s copy."""
     draw_wall_bands(c, 0, ATLAS, 0)
     bays = 10
     edges = [int(round(ATLAS * i / bays)) for i in range(bays + 1)]
     for i in range(bays):
         cx = (edges[i] + edges[i + 1]) / 2.0
-        draw_rect_window(c, n01, cx, 0.70, 0, sill=Z_GF_SILL, head=Z_GF_HEAD)
+        if rear_door and i == REAR_BAY:
+            draw_rear_door(c)
+        else:
+            draw_rect_window(c, n01, cx, 0.70, 0, sill=Z_GF_SILL, head=Z_GF_HEAD)
         draw_rect_window(c, n01, cx, 0.70, 0)
         # slender pilaster on the bay joint, upper storey only
         moulding(c, edges[i] - m(0.10), edges[i] + m(0.10), m(Z_STRING_TOP),
@@ -325,9 +428,8 @@ def paint_entrance(c, n01):
     # painting a balustrade here would show through beside the real one.
     c.paint(ec - m(2.4), ec + m(2.4), ey0 + m(Z_STRING_BOT) - 4,
             ey0 + m(Z_STRING_TOP) + m(0.05), ID_TRIM, 1.0, height=0.0)
-    # upper storey: the balcony door, runs down to the slab and carries more
-    # glazing bars so it reads as a door leaf, between two tall windows
-    draw_rect_window(c, n01, ec, 0.62, ey0, sill=5.60, head=9.10, bars=5)
+    # upper storey: the balcony door, down to the slab, between two tall windows
+    draw_balcony_door(c, n01, ec, ey0)
     for off in (-1.85, 1.85):
         draw_rect_window(c, n01, ec + m(off), 0.62, ey0, sill=6.60, head=9.10, bars=3)
     for off in (-2.85, -0.92, 0.92, 2.85):
@@ -488,8 +590,10 @@ def paint_patches(c):
     c.paint(SOOT[0], SOOT[1], SOOT[2], SOOT[3], ID_DARK, 0.36, 0.35, height=0.0)
 
 
-def weather(c):
+def weather(c, rear_door=False):
     """Where the weather goes; scripts/weathering.py says what it looks like.
+    *rear_door* weathers the rear door in bay REAR_BAY in place of its
+    ground-floor window, as paint_facade() paints it.
     The facade band and the entrance panel both start at the ground and run
     the full wall height with their windows in them, so the plinth's soil, the
     salt bloom above it and the runs under every sill and the string course
@@ -518,7 +622,12 @@ def weather(c):
     edges = [int(round(ATLAS * i / 10)) for i in range(11)]
     for i in range(10):
         cx = (edges[i] + edges[i + 1]) / 2.0
-        window(cx, 0.70, 0, Z_GF_SILL)
+        if rear_door and i == REAR_BAY:
+            # kicked-up dirt across the leaves' foot, hand grime at the pulls
+            w.door(rear_door_x(-REAR_DOOR_HW), rear_door_x(REAR_DOOR_HW), m(REAR_SILL),
+                   m(REAR_LEAF_TOP), (ID_DOOR,), handle=(rear_door_x(), m(REAR_SILL + 1.05)))
+        else:
+            window(cx, 0.70, 0, Z_GF_SILL)
         window(cx, 0.70, 0, Z_UF_SILL)
     ec, ey0 = (ENT[0] + ENT[1]) / 2.0, ENT[2]
     for off in (-3.30, 3.30):
@@ -552,11 +661,42 @@ def weather(c):
 
 
 def paint(ss=atlas.SS):
-    """Paint once: ids, shade, AO and height."""
+    """Paint the atlas: ids, shade, AO, height and weather, then padding.
+
+    The rear door's bay is painted twice over. A second canvas paints the
+    whole atlas again with the door in the facade band's bay REAR_BAY, and
+    that bay's columns, every channel and weather field, are copied into the
+    free REAR region before padding. Painted in place there instead, its
+    brick bond, grime and weather noise would be another stretch of the
+    noise from the bays beside it on the wall, and the joint would show as a
+    vertical step in tone at both its edges.
+    """
+    import gc
+    src = _paint(ss, rear_door=True)
+    sy, sx = src.sl(REAR_SRC[0], REAR_SRC[1], 0, REAR[3] - REAR[2])
+    bay = {k: getattr(src, k)[sy, sx].copy()
+           for k in ("mid", "shade", "ao", "height", "rough_var")}
+    fields = {k: a[sy, sx].copy() for k, a in src.weather.f.items()}
+    del src
+    gc.collect()
+    c = _paint(ss)
+    dy, dx = c.sl(REAR[0], REAR[1], REAR[2], REAR[3])
+    assert REAR[1] - REAR[0] == REAR_SRC[1] - REAR_SRC[0]
+    assert (c.mid[dy, dx] == atlas.UNPAINTED).all(), "the REAR region overlaps another"
+    for k, a in bay.items():
+        getattr(c, k)[dy, dx] = a
+    for k, a in fields.items():
+        c.weather.f[k][dy, dx] = a
+    c.pad()
+    return c
+
+
+def _paint(ss, rear_door=False):
+    """Everything up to padding: ids, shade, AO, height and weather."""
     c = atlas.Canvas(ATLAS, ss, PPM)
     n01 = atlas.noise(c, 23, 30.0)
     n01 = (n01 - n01.min()) / max(1e-6, float(n01.max() - n01.min()))
-    paint_facade(c, n01)
+    paint_facade(c, n01, rear_door)
     paint_roof(c)
     paint_entrance(c, n01)
     paint_attic(c)
@@ -582,8 +722,7 @@ def paint(ss=atlas.SS):
     depth = np.clip(1.0 - Y / m(Z_TOP), 0, 1) ** 2
     c.shade[sy, sx] *= 1.0 - 0.10 * depth
     c.rough_var = 0.12 * grime
-    weather(c)
-    c.pad()
+    weather(c, rear_door)
     return c
 
 

@@ -42,11 +42,14 @@ horizontal — the crown is a punctuation mark, not a second building.
 
 ## Hero/landmark status
 
-**Hero/landmark: yes, for texture size, and for `LOD3`'s triangles.** Every
-other tier sits inside the *ordinary* band. `LOD3` is 564, over the ordinary
-500 and inside the hero 700, since the six chimneys were opened: their flues
-cost 96 triangles on every tier, and at `LOD3`'s 120 m switch each flue is
-still about 7 px across (see Per-tier triangle counts and LOD review).
+**Hero/landmark: yes, for texture size, and for the triangles of `LOD1` and
+`LOD3`.** `LOD0` and `LOD2` sit inside the *ordinary* band. `LOD3` is 572,
+over the ordinary 500 and inside the hero 700, since the six chimneys were
+opened: their flues cost 96 triangles on every tier, and at `LOD3`'s 120 m
+switch each flue is still about 7 px across (see Per-tier triangle counts and
+LOD review). `LOD1` is 4,024, 24 over the ordinary 4,000 and well inside the
+hero 6,000, since the rear service door's bay was split off its wall (see
+Construction, Rear service door).
 
 *Texture* is justified by texel density rather than importance. The facade is
 48.8 m wide; at the catalog's 64 px/m target a 1024 atlas would give this
@@ -69,8 +72,8 @@ are actually being spent on the thing named.
 `scripts/validate_asset.py` takes one hero flag for both texture and
 triangles, so this asset is validated with it
 (`-- buildings/service/brick_clocktower_hall building hero`). Without the flag
-the 2048 atlas fails the texture cap, and `LOD3`'s 564 fails the ordinary 500
-ceiling.
+the 2048 atlas fails the texture cap, `LOD1`'s 4,024 fails the ordinary
+4,000 ceiling and `LOD3`'s 572 the ordinary 500.
 
 ## Footprint
 
@@ -92,7 +95,7 @@ the eave at 11.4 m. Each floor is where a door opens onto it:
 
 | Floor | Level | Set by |
 | --- | --- | --- |
-| Ground | 0.15 m | the entrance's threshold, one painted 0.15 m step above the ground |
+| Ground | 0.15 m | the entrance's and the rear service door's thresholds, each one painted 0.15 m step above the ground |
 | Upper | 5.55 m | the balcony's deck and the string course's top; the balcony door's threshold is 0.05 m above it |
 
 On the facade the ground storey is the grey stone plinth (0–0.95 m, capped
@@ -124,24 +127,33 @@ not be copied into residential work.
 
 ## Door leaf height
 
-**2.35 m**, with an arched fanlight above the transom carrying the opening to
-3.60 m. Within the 2.0–2.4 m anchor range, so no deviation to justify — the
+**2.35 m** for the entrance, with an arched fanlight above the transom
+carrying the opening to 3.60 m; **2.30 m** for the other two doors. All three
+are within the 2.0–2.4 m anchor range, so no deviation to justify — the
 grandeur of the entrance is in the fanlight and the surround, not in a taller
 leaf.
 
-| Door | Leaf (w × h) | Threshold | Notes |
+| Door | Leaf (w × h) | Threshold | Above the leaf |
 | --- | --- | --- | --- |
-| Entrance, centre bay (main) | 2.00 × 2.35 m (a pair of leaves) | 0.15 m, the ground floor | cut to the 2.60 m springing; transom bar at 2.42–2.50 m, arched fanlight to 3.60 m, flush |
-| Balcony door, over the entrance | 1.24 × 3.50 m | 5.60 m, 0.05 m over the upper floor and the balcony's deck | glazed, five glazing bars, no distinct transom |
+| Entrance, centre bay (main) | 2.00 × 2.35 m (a pair of leaves) | 0.15 m, the ground floor | transom bar at 2.42–2.50 m, the cut's head at the 2.60 m springing, then an arched fanlight to 3.60 m, flush |
+| Balcony door, over the entrance | 1.24 × 2.30 m (a glazed pair) | 5.60 m, 0.05 m over the upper floor and the balcony's deck | transom at 7.90–8.02 m, then a fanlight 1.08 m tall to the 9.10 m head |
+| Rear service door, right rear wing's end | 1.40 × 2.30 m (a pair of panelled timber leaves) | 0.15 m, the ground floor | head rail at 2.45–2.60 m, the cut's head |
 
-The entrance's threshold is the floor it opens onto, one 0.15 m step above
-the ground: the step is painted across the panel's foot (3.8 m wide), not
-modelled. There is no other outer door.
+The entrance's and the service door's thresholds are the floor they open
+onto, one 0.15 m step above the ground: each step is painted across the
+wall's foot (3.8 m wide at the entrance, 2.0 m at the service door), not
+modelled.
 
-The balcony door's 3.50 m is its whole glazed opening, which the sidecar
-gives as its leaf: its bars are evenly spaced, so no transom line marks a
-leaf height inside it. That is over the 2.6 m ceremonial limit and is open
-(Known simplifications).
+The balcony door's opening is 3.50 m tall, cut in one piece. The leaf
+height reads inside it by its transom, 0.12 m deep against the glazing bars'
+0.06 m, standing 25 mm off the glass against their 15 mm, with a shadow line
+under it; the leaves below carry a bottom rail and two bars, the fanlight
+above only the meeting stiles' upright, so the two read as different lights.
+The sidecar gives the leaf, 2.30 m, not the opening.
+
+The service door's cut runs to 2.60 m, a height the wall ring already cuts
+at, so the door adds no band round the building; the 0.15 m head rail at the
+top of the cut ends the leaves at 2.45 m.
 
 ## Window sills
 
@@ -150,11 +162,16 @@ leaf height inside it. That is over the 2.6 m ceremonial limit and is open
 | Ground-floor windows | 1.25 – 3.70 m | 2.45 m |
 | Upper-floor windows | 6.35 – 8.95 m | 2.60 m |
 | Main doorway leaf | 0.15 – 2.50 m | **2.35 m**, with an arched fanlight to 3.60 m |
+| Balcony door leaf | 5.60 – 7.90 m | **2.30 m**, with a fanlight over the transom to 9.10 m |
+| Rear service door leaf | 0.15 – 2.45 m | **2.30 m**, under a head rail to 2.60 m |
 
 Against the floors (Story height): the ground-floor sills are 1.10 m over
 the 0.15 m ground floor and the heads 3.55 m; the upper sills are 0.80 m over
 the 5.55 m upper floor and the heads 3.40 m. Both are under the ~1.4 m
-chest-high line, and the entrance's leaf starts on its floor.
+chest-high line, and every door's leaf starts on its floor (the balcony
+door's 0.05 m over it). The balcony door's transom at 7.90 m sits within
+0.05 m of the middle bar of the tall windows either side of it (7.85 m), so
+the three read across as one line.
 
 These were rescaled after a check against human scale. The first pass had a
 1.75 m sill — chest height — with 2.8 m windows, and a doorway opening 3.75 m
@@ -293,14 +310,59 @@ both foreshorten to an ellipse at an angle, so modelling cannot help with
 that. At `LOD2` the dial becomes paint (the rim is about 1.7 px at 70 m), and
 the same dial artwork serves both.
 
+### Rear service door
+
+**Where:** the right rear wing's end wall (x 13.4–24.4 m, facing +Y, 11.0 m
+in three bays), in place of the middle bay's ground-floor window, centred at
+x = 18.9 m; the window above it stays. The rear's other candidates were
+worse. The centre rear link's end, on the building's axis, has four 3.0 m
+bays and so no middle bay: a door there would either sit off the axis or be
+wedged between two windows at the bay joint, with 1.1 m between their
+architraves. It is also a court wall, which `LOD1` bakes flat. A wing end is
+an outer wall, cut at `LOD1` like the street fronts, it faces the open side
+of the U onto the rear street, where deliveries come, and its middle bay
+holds a door with its surround symmetrically. One door, on one wing, is
+enough for a service entrance; the left wing's end is unchanged.
+
+**Geometry.** The door is an opening in the wall ring like a window:
+`REAR_DOOR` replaces that bay's ground-floor window in `_bay_openings()`'s
+list, so `LOD0`/`LOD1` cut it 0.28 m deep with jambs, head, a threshold
+floor sampling the reveal patch, and a closing door plane; `LOD2`/`LOD3`
+leave it flat, painted, like every other opening. The cut is 1.40 m wide,
+the window's own half-width, so it shares the window column above it, and
+runs from 0.15 m to 2.60 m, two heights the ring already cuts at, so no band
+is added round the building. Against the window it replaces it has the same
+number of cells, faces and reveal sides: the door itself costs no triangles.
+
+**Texture.** The wall maps the tiling facade band, whose bays all have a
+ground-floor window, so the door's bay samples its own atlas region, `REAR`
+(below). From every tier the wall is split at the door bay's two joints
+(s = 3.67 and 7.33 m), and the faces between sample `REAR` through
+`_uv_rear_bay()`: the band's own mapping, moved onto the copy. Those two
+splits are the door's whole cost: +44 triangles on `LOD0` and `LOD1` (two
+columns through the ring's ten bands, and two more corners on each of the
+wall ring's caps) and +8 on `LOD2`/`LOD3`.
+
+`check_massing()` fails the build if the wall is no longer one outline
+segment, if it no longer has three bays (the door is painted narrowed for
+exactly that stretch of the band), if the door leaves its bay's centre, or
+if its threshold is not on a floor.
+
 ## Per-tier triangle counts
 
 | Tier | Triangles | Ceiling, ordinary / hero | Notes |
 | --- | --- | --- | --- |
-| `LOD0` | 5204 | 12,000 / 20,000 | Cut window and door reveals on every elevation, modelled clock dial, eave overhang, balcony, quoin blocks on all 12 convex corners, chimneys with open flues, and the full tower crown: balustraded platform, two-stage dome, finial ball and flagpole |
-| `LOD1` | 3980 | 4,000 / 6,000 | as `LOD0`, but the seven walls inside the U-court have their windows baked flat |
-| `LOD2` | 584 | 1,500 / 2,500 | All windows baked flat. Quoins painted onto 0.5 m corner strips, and the dial left to the painted clock. Massing, overhang, pedimented attic, balcony, chimneys and the full crown are all kept |
-| `LOD3` | 564 | 500 / 700 | as `LOD2`, with the dome's two stages merged into one and the finial ball folded into the flagpole |
+| `LOD0` | 5248 | 12,000 / 20,000 | Cut window and door reveals on every elevation, the rear service door included, modelled clock dial, eave overhang, balcony, quoin blocks on all 12 convex corners, chimneys with open flues, and the full tower crown: balustraded platform, two-stage dome, finial ball and flagpole |
+| `LOD1` | 4024 | 4,000 / 6,000 | as `LOD0`, but the seven walls inside the U-court have their windows baked flat; over the ordinary ceiling by 24, inside the hero one |
+| `LOD2` | 592 | 1,500 / 2,500 | All windows and doors baked flat. Quoins painted onto 0.5 m corner strips, and the dial left to the painted clock. Massing, overhang, pedimented attic, balcony, chimneys and the full crown are all kept |
+| `LOD3` | 572 | 500 / 700 | as `LOD2`, with the dome's two stages merged into one and the finial ball folded into the flagpole |
+
+The rear service door costs 44 triangles on `LOD0`/`LOD1` and 8 on
+`LOD2`/`LOD3`, all of it the split that gives its bay its own atlas region;
+its opening has as many faces as the window it replaced (Construction, Rear
+service door). That split is what takes `LOD1` over the ordinary 4,000; the
+door's alternatives, a court wall that `LOD1` bakes flat or a door without
+its own artwork, were worse trades than 24 triangles inside the hero band.
 
 **Modeled trim at `LOD0`: about 278 triangles.** That is roughly 144 for the
 twelve quoin blocks, 48 for the balcony, ~28 for the eave fascia ring (its
@@ -320,7 +382,7 @@ record, not a defect to pad.
   13,304 and read as a staircase (see Known simplifications).
 - **`LOD2`:** everything left on it is massing, roofline or crown, and the
   step to `LOD3` shows what little is left to remove.
-- **`LOD2` and `LOD3` are close together:** 584 against 564. That is what this
+- **`LOD2` and `LOD3` are close together:** 592 against 572. That is what this
   silhouette actually costs, the six open chimney flues' 96 included. Anything more a `LOD3` could drop — chimneys,
   balcony, projections, crown — shows as a change at the 120 m switch.
   Chimneys were tried: dropping them left six gaps of about 12 × 16 px each in
@@ -335,7 +397,9 @@ record, not a defect to pad.
    elevation jog (see Side elevations).
 3. 5108 / 356 / 138: the three-tier chain as it stood before `LOD3`.
 4. 5108 / 3884 / 488 / 468: the four tiers with solid chimneys.
-5. 5204 / 3980 / 584 / 564: the current four tiers, the chimneys open.
+5. 5204 / 3980 / 584 / 564: the chimneys open.
+6. 5248 / 4024 / 592 / 572: the current four tiers, with the rear service
+   door's bay split off its wall.
 
 The three-tier chain predated both the fourth tier and the current bands, and
 its lower tiers dropped far more than silhouette:
@@ -373,7 +437,7 @@ catalog's reference density of 1,160 / d px per metre on a 1080p viewport:
 | Switch | What changes | Size there |
 | --- | --- | --- |
 | `LOD0`→`LOD1`, 35 m | the U-court's windows go flat. The court is seen only from behind and past the wings | reveals 0.28 m ≈ 9 px, in the court only |
-| `LOD1`→`LOD2`, 70 m | all other windows go flat; the quoin blocks become painted strips; the dial becomes paint | reveals ≈ 4.6 px; quoin blocks 0.08 m proud ≈ 1.3 px; dial rim 0.10 m ≈ 1.7 px |
+| `LOD1`→`LOD2`, 70 m | all other windows and the three doors go flat; the quoin blocks become painted strips; the dial becomes paint | reveals ≈ 4.6 px; quoin blocks 0.08 m proud ≈ 1.3 px; dial rim 0.10 m ≈ 1.7 px |
 | `LOD2`→`LOD3`, 120 m | the dome's break merges and the ball folds into the pole | dome profile moves 0.13 m ≈ 1.2 px; ball stood ≈ 1 px either side of the pole |
 
 **The 70 m hard switch is not accepted by the 2026-09-19 daylight review.**
@@ -397,6 +461,13 @@ the front-right. A difference image was taken for each pair.
   edges and dial rim change.
 - At 120 m the difference is the dome's break line and the ball's outline,
   a pixel or two wide.
+
+**The rear service door and the balcony door's transom across the tiers**
+(reviewed as listed under Review status). The door's bay samples the same atlas copy on
+every tier, so at `LOD2`/`LOD3` it is the same door, flat, under the same
+upper window, lit the same at night; only its 0.28 m recess goes, at the
+70 m switch with every other opening on that wall. The balcony door's
+transom is paint on every tier.
 
 ### Focused transition and lighting review
 
@@ -484,10 +555,10 @@ just a saving.
 
 | Tier | Hidden | Share |
 | --- | --- | --- |
-| `LOD0` | 657 | 12.6% |
-| `LOD1` | 539 | 13.5% |
-| `LOD2` | 138 | 23.6% |
-| `LOD3` | 132 | 23.4% |
+| `LOD0` | 659 | 12.6% |
+| `LOD1` | 541 | 13.4% |
+| `LOD2` | 140 | 23.6% |
+| `LOD3` | 134 | 23.4% |
 
 All of it is structural closure or small buried abutments:
 - the cap that closes the wall ring, a single n-gon carrying a vertex per
@@ -498,7 +569,10 @@ All of it is structural closure or small buried abutments:
 - the backs of the quoin blocks and balcony.
 
 The open chimney flues added none: their lining and floor see the sky up the
-shaft, and the hidden counts did not move when they were cut.
+shaft, and the hidden counts did not move when they were cut. The rear
+service door added two per tier, the two more triangles of the wall ring's
+top cap, inside the roof, where the door bay's splits meet it; its recess is
+exterior surface like a window's.
 
 A watertight manifold shell has to close somewhere. That closure is roughly
 the same size on every tier, which is why it is a larger share of the two
@@ -578,16 +652,15 @@ sits 0.28 m behind the wall plane, so that test calls every recessed window
   plausible for the period, so this reads as a design choice, but a future pass
   could start them above the plinth.
 - **No chajja or dormers**, neither of which belongs on this building type.
-- **The entrance is at grade**, one 0.15 m threshold step up, painted across
-  the panel's foot rather than modelled; there is no entrance flight, so no
-  handrail. The 0.95 m plinth is a base course the door is cut through, not
-  a raised floor (Story height).
-- **One outer door at ground level.** The hall has its arched entrance and
-  the balcony door above it, and no service or rear door.
-- **The balcony door has no transom.** Its glazed opening is 3.50 m tall with
-  five evenly spaced bars, so its leaf height does not read inside the 2.6 m
-  ceremonial limit. Painting one bar as a heavier transom at about 7.9 m
-  (a 2.3 m leaf) would; not done.
+- **The entrance and the rear service door are at grade**, each one 0.15 m
+  threshold step up, painted across the wall's foot rather than modelled;
+  there is no flight, so no handrail. The 0.95 m plinth is a base course the
+  doors are cut through, not a raised floor (Story height).
+- **The service door's leaves, panels and pulls are paint** on its recessed
+  closing plane; its head rail is paint too, at the top of the cut.
+- **The balcony door's transom is paint.** The door is cut as one 3.50 m
+  opening; the transom that ends the 2.30 m leaf is a heavier painted bar
+  (Door leaf height), not a modelled member.
 - The painted balustrade was **removed from the entrance atlas region** when
   the balcony became geometry; leaving it would have shown a flat balustrade
   through the real one at oblique angles.
@@ -633,6 +706,26 @@ sits 0.28 m behind the wall plane, so that test calls every recessed window
   first against the roof band and the atlas's right edge, it changed a few
   roof texels and, through the wrapping filters, the entrance artwork's
   leftmost columns.
+- **The rear service door's bay, `REAR`** (x 1816–2023, y 1290–2020,
+  207 × 730 px): one full-height bay of the facade band with the door in
+  place of the ground-floor window, in the free strip right of the reveal
+  patch. It is not painted there. `paint()` paints the whole atlas twice,
+  the second time with the door in the band's bay 1, and copies that bay's
+  columns 204–411, every channel and every weathering field, into `REAR`
+  before padding. So the brick bond, the grime and the weather noise are the
+  band's own, and the wing end's bays either side meet the copy without a
+  step in tone at the joints; painted in place, `REAR` would have drawn
+  another stretch of every noise field. The door is painted 1/1.146 as wide
+  as it stands, since the band is stretched by that across the wing end's
+  3.67 m bays, so it fills its 1.40 m cut exactly. Its weathering is the
+  shared `door()`: kicked-up dirt across the foot and grime at the pulls. The
+  export takes about twice as long for the second painting (about 100 s).
+- `REAR`'s padding reaches the atlas's right edge, which the wrapping filters
+  read beside its left edge. The leftmost one to four columns of the
+  entrance panel and of the balcony parapet changed with it (the cavity, the
+  normal map's edge column, a few levels of albedo). The entrance panel's are
+  under the quoin blocks on `LOD0`/`LOD1` and the painted quoin strips below;
+  the parapet's are its left end and one edge of each return.
 - Roughly a third of the atlas is still unused. Packing could be tightened, or
   the density raised, on a future asset.
 - **Sill weathering is a falloff, not a rectangle.** It was originally a
@@ -775,10 +868,10 @@ Panes are painted by `scripts/glazing.py`, the catalog's shared treatment.
 | | |
 | --- | --- |
 | base colour | sRGB 50/54/57 (`glazing.BASE`) |
-| measured over the glass mask | mean sRGB 55, linear 0.034 |
-| relative to the trim around it | 0.24x |
+| measured over the glass mask | mean sRGB 54, linear 0.033 |
+| relative to the trim around it | 0.23x |
 | roughness / metallic | 0.10 / 0 |
-| panes in the atlas | 36 |
+| panes in the atlas | 38 |
 
 `albedo()` builds the atlas as before and then hands the glass mask to
 `glazing.rooms()`, which gives each pane its own overall level, a falloff
@@ -795,7 +888,12 @@ roughness and the dielectric F0 — a pale base colour asks the diffuse lobe to
 reflect the sky as well, which double-counts it. The eight-way comparison that
 settled the choice lives in `studies/window_glass/`, local only and gitignored.
 
-Limit: the atlas is a trim sheet with 36 glass regions, one per opening
+The balcony door's transom splits its glass into two panes, the leaves and
+the fanlight, each with its own room; the copy of the band's bay in `REAR`
+brings one more, the window over the service door, which therefore differs
+from the other windows on its wall.
+
+Limit: the atlas is a trim sheet with 38 glass regions, one per opening
 kind, so panes vary between kinds and not between windows — every window of a
 kind on this building is identical. Per-window variety would need several pane
 regions per kind and `build.py` picking one per instance. This is the same
@@ -828,8 +926,11 @@ of glazing, the clock dial, and gaps between the upper tower's louvre slats,
 grey where an edge covers part of a pixel. The clock face and the louvre
 gaps stay at full strength; each window pane is lit as a room (see Room-lit
 panes below).
-Glazed door panels participate. The clock's hands/hour marks, louvre slats,
-frames, walls, roof and solid doors stay dark. The dial uses the generator's
+Glazed door panels participate: the balcony door's leaves and fanlight are
+lit as two panes, with its transom dark between them. The clock's
+hands/hour marks, louvre slats, frames, walls, roof and solid doors stay
+dark, the rear service door's timber leaves among them; the window above
+that door is lit from `REAR`'s copy on every tier. The dial uses the generator's
 final `ID_CLOCK` pixels; the tower mask is restricted to its authored arched
 opening, rather than all `ID_DARK` artwork. No interiors or additional
 geometry were added. The same dial artwork serves the raised LOD0/LOD1 dial
@@ -972,7 +1073,8 @@ plan-bounds centre).
 | footprint | the 20-corner wall outline, quoins, eaves and balcony left out |
 | storeys | two: floors 0.15 m and 5.55 m, 1,024 m² each |
 | `front` door | entrance, main; at [0, 0.15, 12.975], facing +Z, 2.00 × 2.35 m |
-| `balcony` door | balcony; at [0, 5.60, 12.975], facing +Z, 1.24 × 3.50 m |
+| `balcony` door | balcony; at [0, 5.60, 12.975], facing +Z, 1.24 × 2.30 m (the leaf, under the transom) |
+| `rear` door | service; at [18.9, 0.15, -13.725], facing -Z, 1.40 × 2.30 m |
 
 Settings: `export_yup=True` (Blender Z-up → glTF Y-up), `export_apply=True`,
 one tier per file by selection, and `export_keep_originals=True` so the two
@@ -1089,6 +1191,27 @@ Checked here, in Blender:
   with the hero flag, reports no failures; its one warning is the sidecar's
   `source.dirty` until it is rewritten from a committed tree.
 
+- The balcony door's transom and the rear service door, before against
+  after with `scripts/review_asset.py` and `scripts/review_compare.py`
+  (Blender 5.3.0, Cycles, the standard 1920 × 1080, 50° review camera):
+  `LOD0`/`LOD1` front, back and rear-oblique at 20 and 35 m under noon and
+  reverse sun; every tier front, rear-oblique and front-oblique at 70 and
+  120 m at noon; every tier front and back at 35 and 70 m at night with the
+  reference emission. Close views at 9–22 m of the service door (face-on and
+  40° oblique, every tier, noon and reverse sun, and at night) and at 12 m
+  of the balcony door. The renders differ only at the two doors, in the
+  copied window over the service door (at night, its own room) and by a
+  pixel's shading at the balcony parapet's left end (Texture set); the bays
+  either side of the door's bay meet it without a seam in tone, brick bond
+  or weather.
+  The door reads as a pair of timber leaves under a pale head rail in a
+  white architrave, recessed on `LOD0`/`LOD1` and flat from `LOD2`; at night
+  it stays dark under its lit window on every tier, and the balcony door
+  shows its transom as a dark bar between the lit leaves and fanlight.
+  `variants.png` was regenerated and checked. The validator, with the hero
+  flag, reports no failures; its one warning is the sidecar's `source.dirty`.
+  LOD0's bounds (49.70 × 28.35 × 24.60 m) and the pivot are unchanged.
+
 Pending, and outside this repository:
 
 - The provisional 140 m and 180 m switch recommendations, which need consumer
@@ -1118,6 +1241,19 @@ CLAUDE.md's 5.3 floor should build this asset.
   texture export.
 
 ## Revision log
+
+- **2026-11-21 — balcony door transom; rear service door.** The balcony
+  door's five even bars became a 2.30 m glazed leaf under a 0.12 m transom
+  at 7.90 m and a fanlight to the 9.10 m head (`draw_balcony_door()`), and
+  the sidecar gives its leaf, 2.30 m, not the 3.50 m opening. A service door,
+  a 1.40 × 2.30 m pair of leaves on the ground floor, replaces the middle
+  ground-floor window of the right rear wing's end wall, cut like a window
+  on `LOD0`/`LOD1` and painted from a new atlas region, `REAR`, a copy of the
+  facade band's bay with the door painted in (Construction, Rear service
+  door). Counts 5204 / 3980 / 584 / 564 → 5248 / 4024 / 592 / 572, which
+  takes `LOD1` 24 over the ordinary ceiling. Every PNG, the GLBs, the
+  sidecar, `source.blend`, `preview.png` and `variants.png` were
+  regenerated; bounds and pivot are unchanged.
 
 - **2026-11-20 — floor levels.** The facts sidecar's floors go from 0.95 m and
   5.10 m to 0.15 m and 5.55 m, where the entrance and the balcony door open
