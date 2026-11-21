@@ -553,8 +553,8 @@ Measured albedo, sRGB band means:
 | Surface | `red_brick` | `yellow_brick` | `brown_brick` |
 | --- | --- | --- | --- |
 | Plinth (0–0.6 m) | 49 | 49 | 49 |
-| Brick 0.6–1.9 m | 82/63/57 | 125/113/90 | 75/60/52 |
-| Brick 2–5.9 m | 102/75/67 | 159/143/112 | 92/71/61 |
+| Brick 0.6–1.9 m | 82/63/57 | 125/113/90 | 64/54/52 |
+| Brick 2–5.9 m | 102/75/67 | 159/143/112 | 77/63/61 |
 | Band | 110 | 110 | 110 |
 | Column strip 2–5 m | 119 | 119 | 119 |
 
@@ -609,14 +609,19 @@ There is no departure from the Style Direction band.
 | --- | --- |
 | `red_brick` (default) | red facing brick in the plant's shared tone, light grey steel windows, grey-green doors and hatch, dark grey roof |
 | `yellow_brick` | yellow facing brick, dark green-grey windows, oxide-red doors |
-| `brown_brick` | brown facing brick, light windows, blue-grey doors, darkest roof |
+| `brown_brick` | dark purple-brown clinker brick, light windows, blue-grey doors, darkest roof |
 
 These are the plant's brick trio. The concrete, the coal dust, the pale
 cladding of the head house and gallery and the galvanised rainwater steel
 are the same in all three. Geometry, UVs, ORM, normal and emission are
 shared.
 
-### The plant's red brick
+### The plant's red and brown brick
+
+`red_brick` and `brown_brick` are the same constants on all five of the
+plant's pieces. `brown_brick` is a dark clinker, brick 80/59/57, darker
+brick 62/46/45, mortar 108/106/102 (sRGB): well below the red in value and
+redness, so the three variants read apart.
 
 `red_brick` is the tone all five of the plant's pieces share
 (`plant_brick()` in `facade_atlas.py`): each brick-face colour of the
@@ -631,8 +636,8 @@ formula and a further 0.90.
 | `mortar` | 150/145/136 | 125/123/118 |
 
 The plain wall's mean albedo at 2–5.9 m, before the coal dust, measures
-111/81/72: R − G = 30 sRGB levels. `yellow_brick` and `brown_brick` are
-unchanged.
+111/81/72: R − G = 30 sRGB levels. The coal dust laid over the whole band
+takes that to 102/75/67 (Texture set); the brown measures 77/63/61 there.
 
 ## Night lighting
 
@@ -767,6 +772,10 @@ Checked here, in Blender, after the revision:
 - **Before/after:** the review set rendered from the copy taken before the
   revision and again after, compared with `scripts/review_compare.py`.
 - **Variants:** day and night for all three (`variants.png`).
+- **Plant palette pass:** ORM, normal, emission, `red_brick` and
+  `yellow_brick` albedos pixel-identical to the previous build, triangle
+  counts and bounds unchanged; a 35 m oblique noon render of each variant
+  before and after.
 
 Pending in the consumer:
 
@@ -790,6 +799,8 @@ with numpy, scipy and Pillow.
 
 ## Revision log
 
+- **2026-11-21:** plant palette pass: `brown_brick` set to the plant's
+  shared dark purple-brown clinker constants.
 - **2026-11-21:** the tower re-proportioned as a slim shaft under a
   sheet-clad head house with a loading hatch and hoist beam; the inclined
   conveyor gallery added off its rear face on two struts, replacing the

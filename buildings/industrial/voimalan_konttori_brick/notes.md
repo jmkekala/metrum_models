@@ -375,14 +375,18 @@ match the plant's other brick buildings:
   teak-brown entrance leaves, grey-green steel staff door. The brick is the
   original red pulled 40% toward its own Rec.709 luma per channel and
   darkened by 0.94 (`facade_atlas.plant_brick`), the mortar a further 10%
-  darker, as on the plant's other pieces: brick (115, 75, 63), darker
-  brick (92, 61, 53), mortar (125, 123, 118). Mean plain-wall albedo
-  sRGB (112, 83, 73): **R - G = 29**.
+  darker, from the catalog red (144, 72, 52), (114, 58, 45), mortar
+  (150, 145, 136), exactly as on the plant's other four pieces: brick
+  (114, 73, 62), darker brick (90, 59, 51), mortar (125, 123, 118). Mean
+  plain-wall albedo (the upper brick band, atlas rows 580–760) sRGB
+  (111, 81, 72): **R - G = 30**.
 - **`yellow_brick`**: buff brick, white frames, darker teak, a green-grey
   staff door.
-- **`brown_brick`**: brown brick, off-white frames, mid-brown teak, a
-  brown-grey staff door. Mean plain-wall albedo (110, 83, 70), now close to
-  the recoloured red's.
+- **`brown_brick`**: dark purple-brown clinker brick, off-white frames,
+  mid-brown teak, a brown-grey staff door. The brick is the plant's shared
+  brown, the same constants on all five pieces: brick (80, 59, 57), darker
+  brick (62, 46, 45), mortar (108, 106, 102). Mean plain-wall albedo
+  (83, 67, 65), R - G 16: darker and far less red than `red_brick`.
 
 All three keep the felt deck, the galvanised coping, housing, ladder and
 rails, the light canopy fascia, the dark steel posts, and the grey concrete
@@ -466,7 +470,11 @@ Completed in this repository:
   (morning, noon, dusk, night with emission) at `LOD0`; before/after sheets
   against the hipped-roof version with `scripts/review_compare.py`.
 - Glazing measured against the band in all three colours.
-- **Palette:** muted red, buff and brown brick; white steel frames; a grey
+- **Plant palette pass:** ORM, normal, emission and `yellow_brick` albedo
+  pixel-identical to the previous build, triangle counts and bounds
+  unchanged; a 35 m oblique noon render of each variant before and after;
+  the three variants distinct in `variants.png`.
+- **Palette:** muted red, buff and dark purple-brown brick; white steel frames; a grey
   felt deck; galvanised coping and kit; grey concrete. No saturated colour,
   and no baked light in any albedo.
 - **Scale:** the door leaves are 2.125 m; the sills were checked against
@@ -494,6 +502,8 @@ Pending, outside this repository:
 
 ## Revision log
 
+- **2026-11-21:** plant palette pass: `red_brick` and a dark purple-brown
+  `brown_brick` set to the plant's shared constants.
 - **2026-11-21:** the hipped felt roof with eaves, gutter and four
   downpipes replaced by a flat roof behind a coped parapet, drained inside;
   residential casement-and-transom windows replaced by bands of steel

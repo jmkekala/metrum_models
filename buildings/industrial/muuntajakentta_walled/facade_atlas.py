@@ -228,14 +228,17 @@ SURFACE = {
 # every variant: grey-green tank paint, galvanised gantry, brown porcelain,
 # the breakers' red-brown heads. red_brick is the plant's shared, muted red:
 # each brick face colour c of the earlier red goes to Y + 0.6 (c - Y), Y its
-# Rec. 709 luma, then times 0.94, and the mortar 10% darker again.
+# Rec. 709 luma, then times 0.94, and the mortar 10% darker again, from
+# the catalog red (144, 72, 52), (114, 58, 45), mortar (150, 145, 136).
+# brown_brick is a dark purple-brown clinker; both are the same constants
+# in all five of the plant's pieces.
 VARIANTS = {
     "red_brick": {"brick": (114, 73, 62), "brick2": (90, 59, 51),
-                  "mortar": (127, 123, 115), "paint": (66, 82, 76)},
+                  "mortar": (125, 123, 118), "paint": (66, 82, 76)},
     "yellow_brick": {"brick": (188, 166, 122), "brick2": (164, 142, 104),
                      "mortar": (160, 156, 148), "paint": (104, 56, 44)},
-    "brown_brick": {"brick": (98, 68, 54), "brick2": (78, 54, 44),
-                    "mortar": (124, 118, 110), "paint": (60, 68, 76)},
+    "brown_brick": {"brick": (80, 59, 57), "brick2": (62, 46, 45),
+                    "mortar": (108, 106, 102), "paint": (60, 68, 76)},
 }
 DEFAULT_VARIANT = "red_brick"
 

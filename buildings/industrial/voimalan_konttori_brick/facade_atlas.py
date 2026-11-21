@@ -198,20 +198,21 @@ def plant_brick(rgb, k=0.94):
 # One coherent treatment per instance, matching the plant's other brick
 # buildings: the brick changes, the frames stay white, the doors move a
 # little with the brick. The deck, coping, kit, fascia, plinth, slab band,
-# surround and canopy are fixed. red_brick is plant_brick() of the original
-# red (146, 74, 54) / (116, 60, 47), its mortar (150, 145, 136) a further
-# 10% darker.
+# surround and canopy are fixed. red_brick is plant_brick() of the catalog
+# red (144, 72, 52) / (114, 58, 45), its mortar (150, 145, 136) a further
+# 10% darker, as on the plant's other four pieces. brown_brick is a dark
+# purple-brown clinker, the same constants in all five.
 VARIANTS = {
-    "red_brick": {"brick": plant_brick((146, 74, 54)),
-                  "brick2": plant_brick((116, 60, 47)),
+    "red_brick": {"brick": plant_brick((144, 72, 52)),
+                  "brick2": plant_brick((114, 58, 45)),
                   "mortar": plant_brick((150, 145, 136), 0.94 * 0.90),
                   "frame": (222, 220, 212),
                   "entry": (98, 70, 50), "door": (86, 94, 90)},
     "yellow_brick": {"brick": (190, 168, 124), "brick2": (166, 144, 104),
                      "mortar": (162, 158, 150), "frame": (226, 224, 216),
                      "entry": (90, 66, 48), "door": (78, 88, 86)},
-    "brown_brick": {"brick": (112, 76, 60), "brick2": (90, 62, 50),
-                    "mortar": (128, 122, 114), "frame": (214, 210, 198),
+    "brown_brick": {"brick": (80, 59, 57), "brick2": (62, 46, 45),
+                    "mortar": (108, 106, 102), "frame": (214, 210, 198),
                     "entry": (104, 76, 52), "door": (80, 74, 68)},
 }
 DEFAULT_VARIANT = "red_brick"

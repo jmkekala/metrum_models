@@ -301,8 +301,9 @@ VARIANTS = {
     "yellow_brick": {"brick": (188, 166, 122), "brick2": (164, 142, 104),
                      "mortar": (160, 156, 148), "frame": (104, 116, 108),
                      "door": (104, 56, 44), "roof": (62, 64, 66)},
-    "brown_brick": {"brick": (98, 68, 54), "brick2": (78, 54, 44),
-                    "mortar": (124, 118, 110), "frame": (186, 182, 172),
+    # a dark purple-brown clinker, the same constants in all five pieces
+    "brown_brick": {"brick": (80, 59, 57), "brick2": (62, 46, 45),
+                    "mortar": (108, 106, 102), "frame": (186, 182, 172),
                     "door": (60, 68, 76), "roof": (52, 52, 54)},
 }
 DEFAULT_VARIANT = "red_brick"

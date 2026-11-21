@@ -3,7 +3,7 @@
   "version": 1,
   "name": "hiilenvastaanotto_brick_shed",
   "path": "buildings/industrial/hiilenvastaanotto_brick_shed",
-  "source": {"commit": "8a62670690c5ed2acea87c4e29b215ef9484a23d", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "36373cf1ef9cf9c10b729e515f9548710029df14", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-7.3, 0.0, -7.4], "max": [7.3, 16.8559, 7.4]},
   "footprint": [
@@ -46,9 +46,9 @@
   "variants": [
     {"id": "red_brick", "albedo": "hiilenvastaanotto_brick_shed_albedo_red_brick.png", "sha256": "04167a3e13cd8075dd7b706ab3e88222f8c5f7a1aa500dc3ac37f7fb15a5e7ad"},
     {"id": "yellow_brick", "albedo": "hiilenvastaanotto_brick_shed_albedo_yellow_brick.png", "sha256": "23bfe7a1dbd0fc80a0778c004da48c33f2e1a07a5d296ebccd0e9d4cfce41843"},
-    {"id": "brown_brick", "albedo": "hiilenvastaanotto_brick_shed_albedo_brown_brick.png", "sha256": "7ef5f2f22ea6001d7e0f41988ebc0f28ed435070d8ea33458be287cd3c090c06"}
+    {"id": "brown_brick", "albedo": "hiilenvastaanotto_brick_shed_albedo_brown_brick.png", "sha256": "859a5c2816d804e6bf7067d4d3deea6714392095c42e782da4f79df932d836ea"}
   ],
   "default_variant": "red_brick",
-  "preview": {"file": "../preview.png", "sha256": "cbf9d65dc353b935295ba3742dcb3282529b28545e00bf9e904ae774cfa91d26"},
+  "preview": {"file": "../preview.png", "sha256": "fa425a54e388a9c764bf38d06fc9909aa34ce3d7dd4f11d89e27aa4daef8d280"},
   "hero": false
 }

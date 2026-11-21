@@ -3,7 +3,7 @@
   "version": 1,
   "name": "voimalan_konttori_brick",
   "path": "buildings/industrial/voimalan_konttori_brick",
-  "source": {"commit": "8ff517533ac2dd7771b5a271a919ca5340c9e504", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "36373cf1ef9cf9c10b729e515f9548710029df14", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-7.4525, 0.0, -6.675], "max": [7.4525, 9.78, 6.675]},
   "footprint": [
@@ -33,11 +33,11 @@
     "emission": {"file": "voimalan_konttori_brick_emission.png", "sha256": "7ec1554ea27f97ec446b5577353a248d0e6b6c77b77d7b822b6e0282dd4b04b5"}
   },
   "variants": [
-    {"id": "red_brick", "albedo": "voimalan_konttori_brick_albedo_red_brick.png", "sha256": "1d0dd1730c08c5aeb5c30f8d29628949a245585117be1194aafe7cfb73b6f996"},
+    {"id": "red_brick", "albedo": "voimalan_konttori_brick_albedo_red_brick.png", "sha256": "e55ac163ac337f5bfba122479a81850d271a5c7988587ab7b2868f068fb37cd1"},
     {"id": "yellow_brick", "albedo": "voimalan_konttori_brick_albedo_yellow_brick.png", "sha256": "9cdfdf99be92d4f31810b8a2ae8984c9c6a2cebcdbf6195f81677ef7c5672cb6"},
-    {"id": "brown_brick", "albedo": "voimalan_konttori_brick_albedo_brown_brick.png", "sha256": "0cc425ceac8f8e00984055628cc1523caf4ebc68e8ecdae96499eb644df5483b"}
+    {"id": "brown_brick", "albedo": "voimalan_konttori_brick_albedo_brown_brick.png", "sha256": "7c2ce7ce5db9fbdb884f04593b86b2b12cbc6ec3c274d9abc609192f5abcd620"}
   ],
   "default_variant": "red_brick",
-  "preview": {"file": "../preview.png", "sha256": "f21f4248b439067165bd8da39d0c8fd9c9920cc51ddd085d08178ee30081d8ba"},
+  "preview": {"file": "../preview.png", "sha256": "7fc0d145bd68b46db0f8b30efb867d360f5fa54c9c61cb7ddf2c67cfdac3e846"},
   "hero": false
 }

@@ -575,16 +575,24 @@ not run, because there is no emission mask to select glass with.
 | --- | --- |
 | `red_brick` (default) | muted red facing brick on the house and yard wall, grey mortar; the gate and door dark green |
 | `yellow_brick` | yellow facing brick, pale mortar; the gate and door oxide red-brown |
-| `brown_brick` | dark brown facing brick, grey mortar; the gate and door blue-grey |
+| `brown_brick` | dark purple-brown clinker brick, darker grey mortar; the gate and door blue-grey |
 
-The brick and its mortar are the plant's, the same three tones as the
-plant's other pieces, so the yard can follow the hall it serves.
-`red_brick` is the plant's shared muted red: from the earlier red, each
-brick face colour c went to Y + 0.6 (c − Y), Y its Rec. 709 luma, then
-times 0.94, and the mortar to 0.94 × 0.90 of itself. The faces are sRGB
-(114, 73, 62) and (90, 59, 51), the mortar (127, 123, 115). The plain
-wall's mean albedo measures sRGB (111, 82, 72), R − G 29.9, on the house
-band and 29.4 on the yard wall's. The painted steel of the gate and door
+The brick and its mortar are the plant's: `red_brick` and `brown_brick`
+are the same constants on all five of the plant's pieces, so the yard can
+follow the hall it serves.
+
+| | `red_brick` | `brown_brick` |
+| --- | --- | --- |
+| Brick | (114, 73, 62) | (80, 59, 57) |
+| Darker brick | (90, 59, 51) | (62, 46, 45) |
+| Mortar | (125, 123, 118) | (108, 106, 102) |
+
+`red_brick` is the catalog red (144, 72, 52), (114, 58, 45), mortar
+(150, 145, 136), each channel taken to Y + 0.6 (c − Y), Y its Rec. 709
+luma, then times 0.94, and the mortar to 0.94 × 0.90. `brown_brick` is a
+dark clinker, well below the red in value and redness. The yard wall's
+plain brick (atlas rows 800–980) measures sRGB (111, 81, 72), R − G 29.7,
+on `red_brick` and (83, 68, 65), R − G 15.5, on `brown_brick`. The painted steel of the gate and door
 moves with the brick. Geometry, UVs, the ORM and the normal map are shared.
 
 Fixed in every variant:
@@ -725,8 +733,11 @@ Checked here, in Blender:
   heads, the current transformers, the bushings, conservators and fire
   wall all show over the wall, with the gate and the house's door in
   front.
-- The red brick against the plant's shared recolour: plain-wall R − G
-  29.9 (Variant list).
+- The red and brown brick against the plant's shared constants (Variant
+  list).
+- The plant palette pass: ORM, normal and `yellow_brick` albedo
+  pixel-identical to the previous build, triangle counts and bounds
+  unchanged; a 35 m oblique noon render of each variant before and after.
 
 Pending in the consumer:
 
@@ -744,6 +755,8 @@ Python 3 with numpy, scipy and Pillow.
 
 ## Revision log
 
+- **2026-11-21 — plant palette pass.** `red_brick`'s mortar and a dark
+  purple-brown `brown_brick` set to the plant's shared constants.
 - **2026-11-21 — open switchyard.** The garden-like wall became a plain
   1.70 m perimeter wall with a thin coping and 12 plain piers instead of 17
   capped ones, and the compound grew 4.0 m west (20.0 × 12.0 m) for a

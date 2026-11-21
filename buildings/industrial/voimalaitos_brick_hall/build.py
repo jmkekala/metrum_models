@@ -1044,10 +1044,11 @@ def facts():
     in the build frame. The footprint is the outer wall outline at the
     ground: the boiler house's 14 x 17 m and the turbine hall's 18 x 16 m,
     without the copings, the canopy, the flue stub, the gallery, the stacks
-    and the ladders. Two storeys: both halls' floors at the ground, which
-    every door opens onto level, inside the outer wall faces; and the
-    bunker bay's floor on the boiler house's deck, inside its faces. The
-    ground under the gallery head is a clear lane (under_gallery())."""
+    and the ladders. One storey: both halls' floors at the ground, which
+    every door opens onto level, inside the outer wall faces. The bunker
+    bay on the boiler house's deck holds coal, not an occupied floor, so it
+    is no storey. The ground under the gallery head is a clear lane
+    (under_gallery())."""
     def door(door_id, kind, wall, item, main=False):
         p0, p1 = L.WALLS[wall][:2]
         it, = [i for i in L.ITEMS[wall] if i[0] == item]
@@ -1057,12 +1058,11 @@ def facts():
 
     bh = (L.BH[1] - L.BH[0]) * (L.BH[3] - L.BH[2])
     th = (L.TH[1] - L.TH[0]) * (L.TH[3] - L.TH[2])
-    bay = (L.BUNKER[1] - L.BUNKER[0]) * (L.BUNKER[3] - L.BUNKER[2])
     return {
         "hero": False,
         "dwellings": 0,
         "footprint": [L.WALLS[n][0] for n in L.WALL_ORDER[:-1]],
-        "storeys": [(0.0, bh + th), (L.Z_BD, bay)],
+        "storeys": [(0.0, bh + th)],
         "doors": [door("entrance", "entrance", "bh_front", "entrance", main=True),
                   door("machinery", "vehicle", "th_front", "bigdoor"),
                   door("service", "service", "th_rear", "service")],

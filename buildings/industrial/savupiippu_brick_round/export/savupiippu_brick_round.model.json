@@ -3,7 +3,7 @@
   "version": 1,
   "name": "savupiippu_brick_round",
   "path": "buildings/industrial/savupiippu_brick_round",
-  "source": {"commit": "8a62670690c5ed2acea87c4e29b215ef9484a23d", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "36373cf1ef9cf9c10b729e515f9548710029df14", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-3.4, 0.0, -3.4], "max": [3.4, 46.5, 3.4]},
   "footprint": [
@@ -29,9 +29,9 @@
   "variants": [
     {"id": "red_brick", "albedo": "savupiippu_brick_round_albedo_red_brick.png", "sha256": "ba0b04b159a449836a4759db6252cab9d3b5d73bd495c7fbd0f961df4456f665"},
     {"id": "yellow_brick", "albedo": "savupiippu_brick_round_albedo_yellow_brick.png", "sha256": "8b7c10a4dca40ce02528c922cf1ee0e155a0f0235f979092ced012d97ac6488b"},
-    {"id": "brown_brick", "albedo": "savupiippu_brick_round_albedo_brown_brick.png", "sha256": "b13abf8b47fd16a25c1ad688a5cd1d8db3cbbdeb980418a849708127a43ecc2e"}
+    {"id": "brown_brick", "albedo": "savupiippu_brick_round_albedo_brown_brick.png", "sha256": "506eb354a2b1474c7680cb10d2d5c59cbd3ee4bffd646766e4d0c6b97867f41a"}
   ],
   "default_variant": "red_brick",
-  "preview": {"file": "../preview.png", "sha256": "9be2bbea5364f74f72b2ea837ee7fff1ff337fe9e10cfe26208a5d2ca4d1b123"},
+  "preview": {"file": "../preview.png", "sha256": "0a86bb9e174b7a1a2b2ddd4b2e222298e083fc81dc3bb6f51b0a5ab12210a274"},
   "hero": false
 }

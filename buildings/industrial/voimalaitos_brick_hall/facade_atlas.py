@@ -417,19 +417,23 @@ SURFACE = {
 # it holds. The concrete, the coping, the roofs, the gallery and the kit
 # stay the same.
 #
-# red_brick is shared with the plant's other pieces: each brick-face colour
-# c of the earlier palette went to Y + 0.6 * (c - Y) per channel (Y its
-# Rec.709 luma), times 0.94, the mortar a further 10 % darker:
-# brick (142, 68, 50), brick2 (112, 55, 43), mortar (150, 146, 138) before.
+# red_brick and brown_brick are shared, constant for constant, with the
+# plant's other four pieces. red_brick is the catalog red (144, 72, 52),
+# (114, 58, 45), mortar (150, 145, 136), each channel taken to
+# Y + 0.6 * (c - Y) (Y its Rec.709 luma), times 0.94, the mortar a further
+# 10 % darker. brown_brick is a dark purple-brown clinker, well below the
+# red in value and redness, so the three variants read apart. The lettering
+# is pale on the red and the brown; on the yellow brick pale letters vanish,
+# so there they take a dark shade of that variant's window steel.
 VARIANTS = {
-    "red_brick": {"brick": (111, 69, 59), "brick2": (88, 56, 49),
-                  "mortar": (126, 124, 120), "frame": (198, 198, 192),
+    "red_brick": {"brick": (114, 73, 62), "brick2": (90, 59, 51),
+                  "mortar": (125, 123, 118), "frame": (198, 198, 192),
                   "door": (64, 80, 76)},
     "yellow_brick": {"brick": (186, 164, 120), "brick2": (162, 140, 102),
                      "mortar": (160, 156, 148), "frame": (98, 110, 104),
-                     "door": (104, 56, 44)},
-    "brown_brick": {"brick": (96, 67, 53), "brick2": (77, 54, 44),
-                    "mortar": (126, 120, 112), "frame": (184, 180, 170),
+                     "door": (104, 56, 44), "letter": (66, 74, 70)},
+    "brown_brick": {"brick": (80, 59, 57), "brick2": (62, 46, 45),
+                    "mortar": (108, 106, 102), "frame": (184, 180, 170),
                     "door": (58, 66, 76)},
 }
 DEFAULT_VARIANT = "red_brick"
@@ -1438,6 +1442,7 @@ def lut(variant):
     t[ID_MORTAR] = pal["mortar"]
     t[ID_FRAME] = pal["frame"]
     t[ID_DOOR] = pal["door"]
+    t[ID_LETTER] = pal.get("letter", FIXED[ID_LETTER])
     return t
 
 

@@ -3,7 +3,7 @@
   "version": 1,
   "name": "muuntajakentta_walled",
   "path": "buildings/industrial/muuntajakentta_walled",
-  "source": {"commit": "8a62670690c5ed2acea87c4e29b215ef9484a23d", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "36373cf1ef9cf9c10b729e515f9548710029df14", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-10.0, 0.0, -6.0], "max": [10.0, 10.9, 6.0]},
   "footprint": [
@@ -30,11 +30,11 @@
     "normal": {"file": "muuntajakentta_walled_normal.png", "sha256": "bac63b6ccfd8dbf908be700aebdea40f2700d4f5a0f2292916fa0a313bc6c7f9"}
   },
   "variants": [
-    {"id": "red_brick", "albedo": "muuntajakentta_walled_albedo_red_brick.png", "sha256": "ae0ecb277194f2bf27728f53b188eb8bf27684e02790ad2c50acadab632a60e1"},
+    {"id": "red_brick", "albedo": "muuntajakentta_walled_albedo_red_brick.png", "sha256": "8f5af239fc28eadca7735b93ff375e2518c35bf0d396f3dfba9beea39168a534"},
     {"id": "yellow_brick", "albedo": "muuntajakentta_walled_albedo_yellow_brick.png", "sha256": "6ee671250b7d5d6f85d0b68fbf2f9a42f777e0fdabaf28c4b1f2ed62a194d909"},
-    {"id": "brown_brick", "albedo": "muuntajakentta_walled_albedo_brown_brick.png", "sha256": "2ff1746dbb5bf26c1037f6da24dfd73211a25548bfb832dcda7d30005758634b"}
+    {"id": "brown_brick", "albedo": "muuntajakentta_walled_albedo_brown_brick.png", "sha256": "19979429f861904ce60ba0560dd6a01afaf52b53326b0c47d30e5747c4ef39a2"}
   ],
   "default_variant": "red_brick",
-  "preview": {"file": "../preview.png", "sha256": "2b6fb51312dd37405f6f94cb79a6317c919692e48d7911dfecbf8cc725319bb8"},
+  "preview": {"file": "../preview.png", "sha256": "b85c83ae3dea736a744c93d96e0c182f1a1bf2fd51fb5838fce350261bc2e78f"},
   "hero": false
 }

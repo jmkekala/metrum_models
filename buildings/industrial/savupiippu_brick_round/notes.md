@@ -395,14 +395,22 @@ validator's glazing check measures them as the only neutral-mask glass.
 | --- | --- |
 | `red_brick` (default) | dull red facing brick, the plant's shared red |
 | `yellow_brick` | yellow (cream) brick |
-| `brown_brick` | dark brown brick |
+| `brown_brick` | dark purple-brown clinker brick |
 
-`red_brick` is the red the plant's five pieces share: every brick-face
-colour of the catalog's red brick taken to Y + 0.6 (c − Y), Y its Rec.709
-luma, then times 0.94, and the mortar a further 10 % darker: brick
-(114, 73, 62), dark brick (90, 59, 51), mortar (125, 123, 118).
-`yellow_brick` and `brown_brick` are unchanged. Only the brick and mortar
-change; concrete, steel, soot, the hatch's paint and the lamps are the same
+`red_brick` and `brown_brick` are the same constants, sRGB, on all five of
+the plant's pieces:
+
+| | `red_brick` | `brown_brick` |
+| --- | --- | --- |
+| Brick | (114, 73, 62) | (80, 59, 57) |
+| Dark brick | (90, 59, 51) | (62, 46, 45) |
+| Mortar | (125, 123, 118) | (108, 106, 102) |
+
+`red_brick` is every brick-face colour of the catalog's red brick taken to
+Y + 0.6 (c − Y), Y its Rec.709 luma, then times 0.94, and the mortar a
+further 10 % darker. `brown_brick` is a dark clinker, well below the red in
+value and redness, so the three variants read apart. Only the brick and
+mortar change; concrete, steel, soot, the hatch's paint and the lamps are the same
 in every variant. Geometry, UVs, ORM, normal and emission are shared.
 
 ## Night lighting
@@ -484,6 +492,12 @@ Checked here, in Blender:
 - The three variants, day and night, in `variants.png`.
 - Mean plain-shaft albedo of `red_brick` (MID's period): R − G = 28 sRGB
   levels.
+- The plant palette pass: ORM, normal, emission, `red_brick` and
+  `yellow_brick` albedos pixel-identical to the previous build, triangle
+  counts and bounds unchanged; the base's clean brick (atlas rows 860–990,
+  columns 0–560) measures sRGB (110, 80, 71) on `red_brick` and (82, 66, 64)
+  on `brown_brick`; a 35 m oblique noon render of each variant before and
+  after.
 
 Pending:
 
@@ -501,6 +515,8 @@ with numpy, scipy and Pillow.
 
 ## Revision log
 
+- **2026-11-21:** plant palette pass: `brown_brick` set to the plant's
+  shared dark purple-brown clinker constants.
 - **2026-11-21:** period revision. Tension bands every 2 m removed (three
   thin galvanised flats in the top 10 m instead); the corbelled head, crown
   course and cap replaced by a straight shaft to a pale concrete head band

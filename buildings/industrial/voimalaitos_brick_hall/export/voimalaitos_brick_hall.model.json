@@ -3,7 +3,7 @@
   "version": 1,
   "name": "voimalaitos_brick_hall",
   "path": "buildings/industrial/voimalaitos_brick_hall",
-  "source": {"commit": "8a62670690c5ed2acea87c4e29b215ef9484a23d", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "36373cf1ef9cf9c10b729e515f9548710029df14", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-18.525, 0.0, -9.625], "max": [18.525, 24.75, 9.625]},
   "footprint": [
@@ -17,8 +17,7 @@
     [-13.525, 8.375]
   ],
   "storeys": [
-    {"floor_y_m": 0.0, "area_m2": 526.0},
-    {"floor_y_m": 18.625, "area_m2": 89.7}
+    {"floor_y_m": 0.0, "area_m2": 526.0}
   ],
   "dwellings": 0,
   "doors": [
@@ -41,11 +40,11 @@
     "emission": {"file": "voimalaitos_brick_hall_emission.png", "sha256": "cb1124b393c47681571673a8895bc6c76e66929cdab928f5b1738e4788831e4b"}
   },
   "variants": [
-    {"id": "red_brick", "albedo": "voimalaitos_brick_hall_albedo_red_brick.png", "sha256": "8945ec5c612b9d0a982e8fa998d8474f1a36ae9ed551cf8fd445bde4619e399c"},
-    {"id": "yellow_brick", "albedo": "voimalaitos_brick_hall_albedo_yellow_brick.png", "sha256": "7e9e5db16b3f3a7a4f53bf33d8b7b016f0f497f89b1c10aefaf239961caecab5"},
-    {"id": "brown_brick", "albedo": "voimalaitos_brick_hall_albedo_brown_brick.png", "sha256": "b8cc7e5fa61df07819a211d74d074b21500c2a3ed794f7e14762b0e246e276fb"}
+    {"id": "red_brick", "albedo": "voimalaitos_brick_hall_albedo_red_brick.png", "sha256": "d064e3944fde55b64ea3f5c6be54e45a59c1329e6aafda87f0af36f44ba2db5e"},
+    {"id": "yellow_brick", "albedo": "voimalaitos_brick_hall_albedo_yellow_brick.png", "sha256": "20381115fc60a770e09281b1ff0a5f4913a2b1ac18b16d7bbdb641c601833f81"},
+    {"id": "brown_brick", "albedo": "voimalaitos_brick_hall_albedo_brown_brick.png", "sha256": "10d723c031c5ec80606719ffc5af1a54b1c297b5eb9577d31655a692aaf52225"}
   ],
   "default_variant": "red_brick",
-  "preview": {"file": "../preview.png", "sha256": "1680aa8ce9faf1fba757d6aaeef052d445a365a135a318790ae32ddd78173a87"},
+  "preview": {"file": "../preview.png", "sha256": "ec0463b9ac3e826759ec39a2be5780b83b779daf6fe8b138d0a9dd5e91b0d6ac"},
   "hero": false
 }

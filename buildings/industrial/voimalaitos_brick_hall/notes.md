@@ -103,8 +103,7 @@ facts sidecar (Export).
 
 ## Story height
 
-**One working storey at the ground in each volume, and the bunker bay's
-floor.**
+**One working storey at the ground in each volume.**
 
 - The boiler house rises 18.6 m from its floor to its deck, the turbine hall
   10.75 m. Both are authored departures from the 3.0–3.3 m standard, and
@@ -112,13 +111,11 @@ floor.**
   its galleries open steelwork inside; a turbine hall is one volume under its
   overhead crane. The boiler house's small windows mark gallery levels every
   3.75 m, but none is a built floor.
-- The bunker bay's floor is the boiler house's roof level, 18.625 m, under a
-  roof 5.4 m above it.
+- The bunker bay stands on the boiler house's roof, 18.625 m, under a roof
+  5.4 m above it. It holds coal, not people, so it is no storey.
 
-The facts sidecar lists two storeys:
-
-- at the ground, 526 m² inside the outer wall faces (238 m² + 288 m²);
-- at 18.625 m, 89.7 m² inside the bay's faces.
+The facts sidecar lists one storey: the ground, 526 m² inside the outer
+wall faces (238 m² + 288 m²).
 
 ## Door leaf height
 
@@ -625,9 +622,11 @@ joins do not show. The coal dust fades to nothing at the panel's edges.
 painted in plain geometric sans-serif capitals, 1.0 m tall with 0.14 m
 strokes, centred in the brick band under the turbine hall's coping. The
 capitals are drawn from primitives in `facade_atlas.py`, so no font file is
-needed. They are light-painted metal letters, 2 cm proud in the normal map,
-with a soft occlusion halo, and they are not luminous. On yellow brick their
-contrast is lower, as light letters on yellow brick are.
+needed. They are painted metal letters, 2 cm proud in the normal map,
+with a soft occlusion halo, and they are not luminous. They are off-white
+(212, 210, 202) on the red and the brown brick; on the yellow brick, where
+light letters all but vanish, they are a dark green-grey (66, 74, 70), a
+shade of that variant's window steel (`VARIANTS["yellow_brick"]["letter"]`).
 
 ### Texel density
 
@@ -757,22 +756,26 @@ brick alternatives on the shared mesh.
 | --- | --- |
 | `red_brick` (default) | red facing brick, off-white window steel, dark green-grey doors |
 | `yellow_brick` | yellow facing brick, grey-green window steel, oxide-red doors |
-| `brown_brick` | dark brown facing brick, light grey window steel, blue-grey doors |
+| `brown_brick` | dark purple-brown clinker brick, light grey window steel, blue-grey doors |
 
-`red_brick` is shared with the plant's other pieces by a formula. For each
-brick-face colour *c* of the earlier palette, the new value is Y + 0.6 (*c* −
-Y) per channel (Y its Rec.709 luma), times 0.94; the mortar is 10 % darker
-again.
+`red_brick` and `brown_brick` are the same constants, sRGB, on all five of
+the plant's pieces, so any two of them match side by side:
 
-| | Before | Now |
+| | `red_brick` | `brown_brick` |
 | --- | --- | --- |
-| Brick | (142, 68, 50) | (111, 69, 59) |
-| Darker brick | (112, 55, 43) | (88, 56, 49) |
-| Mortar | (150, 146, 138) | (126, 124, 120) |
+| Brick | (114, 73, 62) | (80, 59, 57) |
+| Darker brick | (90, 59, 51) | (62, 46, 45) |
+| Mortar | (125, 123, 118) | (108, 106, 102) |
 
-The mean plain-wall albedo (the band's rows 1.25–5.25 m) now has R − G = 30.2
-sRGB levels; it was 53.1. Averaged in linear light it is 28.2.
-`yellow_brick` and `brown_brick` are unchanged.
+- `red_brick` is the catalog red (144, 72, 52), (114, 58, 45), mortar
+  (150, 145, 136), each channel taken to Y + 0.6 (*c* − Y) (Y its Rec.709
+  luma), times 0.94; the mortar is 10 % darker again.
+- `brown_brick` is a dark clinker, well below the red in value and in
+  redness, so the three variants read apart at a glance.
+- The mean plain-wall albedo (the brick band's rows 720–900, clear of
+  windows and plinth) measures sRGB (110.5, 81.0, 71.9) on `red_brick`,
+  R − G 29.5, and (82.5, 67.3, 64.6) on `brown_brick`, R − G 15.3.
+- `yellow_brick` keeps its brick; only its lettering is dark (Texture set).
 
 ## Night lighting
 
@@ -846,8 +849,8 @@ All of them are on UV0 and reference external PNGs.
 The facts sidecar `export/voimalaitos_brick_hall.model.json` records:
 
 - the footprint, as the eight-sided wall outline at the ground;
-- two storeys: the ground, 526 m², and the bunker bay's floor at 18.625 m,
-  89.7 m²;
+- one storey: the ground, 526 m² (the coal bunker bay is not an occupied
+  floor);
 - zero dwellings;
 - three doors:
 
@@ -914,6 +917,10 @@ Checked here, in Blender:
   cycle (morning, noon, dusk, and night with emission on) on the reimported
   `LOD0`.
 - The variant sheet (`variants.png`): day and night for all three colours.
+- The plant palette pass: ORM, normal and emission maps pixel-identical to
+  the previous build, triangle counts and bounds unchanged; the yellow
+  albedo changed only in the lettering; a 35 m oblique noon render of each
+  variant before and after; the three variants distinct in `variants.png`.
 
 Pending, outside this repository:
 
@@ -936,6 +943,9 @@ These are recorded as known-good markers, not requirements.
 
 ## Revision log
 
+- **2026-11-21**: Plant palette pass: `red_brick` and a darker, purple-brown
+  `brown_brick` set to the plant's shared constants, dark lettering on
+  `yellow_brick`, and the coal bunker bay dropped from the sidecar's storeys.
 - **2026-11-21**: Revised the hall's weak spots.
   - Retired the exposed concrete frame: the walls are continuous brick,
     with a flush 0.375 m concrete coping in place of the oversailing edge

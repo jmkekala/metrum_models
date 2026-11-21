@@ -232,13 +232,15 @@ SURFACE = {
 # red: every brick-face constant c of the catalog's red brick (144, 72, 52),
 # (114, 58, 45) and mortar (150, 145, 136) taken to Y + 0.6 (c - Y), Y its
 # Rec.709 luma, then times 0.94; the mortar a further 10 % darker.
+# brown_brick is a dark purple-brown clinker, well below the red in value
+# and redness; both are the same constants in all five of the plant's pieces.
 VARIANTS = {
     "red_brick": {"brick": (114, 73, 62), "brick2": (90, 59, 51),
                   "mortar": (125, 123, 118)},
     "yellow_brick": {"brick": (188, 166, 122), "brick2": (164, 142, 104),
                      "mortar": (160, 156, 148)},
-    "brown_brick": {"brick": (98, 68, 54), "brick2": (78, 54, 44),
-                    "mortar": (124, 118, 110)},
+    "brown_brick": {"brick": (80, 59, 57), "brick2": (62, 46, 45),
+                    "mortar": (108, 106, 102)},
 }
 DEFAULT_VARIANT = "red_brick"
 
