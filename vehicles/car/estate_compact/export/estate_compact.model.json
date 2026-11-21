@@ -4,7 +4,7 @@
   "kind": "vehicle",
   "name": "estate_compact",
   "path": "vehicles/car/estate_compact",
-  "source": {"commit": "d088a2218b522b9d0f26e870fa09bce7709d80c5", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "15ef73d958bdffc3913cbd4efaecfdd9f31646b0", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-1.01, 0.0, -2.24], "max": [1.01, 1.468, 2.24]},
   "body": {
