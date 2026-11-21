@@ -470,7 +470,7 @@ triangle cost and the tiers that keep it.
     about 1 m above the roof edge. Where no eave wall has such a run (a
     terrace's bays), a blank gable next to its rear corner, passing outside
     the rake.
-    - A wall ladder taller than about 6 m carries a safety cage from about
+    - A wall ladder taller than 8 m carries a safety cage from about
       2.5 m up, thinned by tier before it goes.
   - A **roof ladder** from the eave up the slope above the wall ladder, on
     brackets clear of the sheet, to the height of what it serves.

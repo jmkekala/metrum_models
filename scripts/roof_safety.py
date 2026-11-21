@@ -15,7 +15,7 @@ its tier.
         parts.append(to_object(B, name))
     bad += RS.problems(WALL, "the wall ladder", [("door", s0, s1)])
 
-A wall ladder longer than CAGE_LADDER (6 m) carries a safety cage. Give it
+A wall ladder longer than CAGE_LADDER (8 m) carries a safety cage. Give it
 the ladder and list it after it; problems() checks its place as wide as its
 hoops, against the same spans:
 
@@ -139,7 +139,7 @@ MODES = ((1, True), (2, True), (4, False), (None, False))
 # fixed into the rails, flaring out and round the climber's back, and
 # vertical straps on the hoops' outsides. Across (a) and out (o) are the
 # ladder's own: a along the wall from its axis, o out from the wall face.
-CAGE_LADDER = 6.0           # a wall ladder longer than this carries a cage
+CAGE_LADDER = 8.0           # a wall ladder longer than this carries a cage
 CAGE_FOOT = 2.50            # the lowest hoop, over the ladder's foot
 CAGE_TOP_GAP = 0.15         # the top hoop, under the ladder's top, by default
 CAGE_PITCH = 1.65           # the most between two hoops
