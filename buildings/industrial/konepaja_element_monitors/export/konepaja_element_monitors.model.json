@@ -3,7 +3,7 @@
   "version": 1,
   "name": "konepaja_element_monitors",
   "path": "buildings/industrial/konepaja_element_monitors",
-  "source": {"commit": "9c017af71281602e11a5e6feb2d56992cc846e7b", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "6e3973f9979a5b41e6289f64a0061325cd1f3621", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-16.4838, 0.0, -12.7969], "max": [16.4838, 15.25, 12.7969]},
   "footprint": [

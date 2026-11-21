@@ -3,7 +3,7 @@
   "version": 1,
   "name": "hiilenvastaanotto_brick_shed",
   "path": "buildings/industrial/hiilenvastaanotto_brick_shed",
-  "source": {"commit": "3aef1cc028fca8f644381d788ea86598b9e66291", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "6e3973f9979a5b41e6289f64a0061325cd1f3621", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-7.3, 0.0, -11.4], "max": [7.3, 18.8176, 11.4]},
   "footprint": [
