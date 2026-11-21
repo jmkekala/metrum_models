@@ -10,17 +10,18 @@ nothing joins them: this asset has no ground slab shared with the others,
 and no cables or busbars leave its compound.
 
 A compound of 20.0 × 12.0 m behind a plain industrial perimeter wall,
-1.70 m of brick with a thin light coping and plain piers at the corners,
+1.55 m of brick with a thin light coping and plain piers at the corners,
 the gate and every 4–6 m, low enough that the plant inside reads over it.
 A painted sheet-steel double gate with a high-voltage warning plate closes
 the front. Inside, from the incoming (west) side:
 
-- a solid galvanised portal 10.9 m tall: two tapered box columns with
-  shield-wire peaks and a deep I-beam, a suspension string hanging from it
-  over each of the six phases;
+- a galvanised lattice portal 10.9 m tall: two tapering square columns of
+  four corner angles braced on every face, each rising into a lattice
+  shield-wire peak with a finial, and a box truss between them, a
+  suspension string hanging from it over each of the six phases;
 - for each transformer, a switchgear bay, the yard's "forest of
-  insulators": a disconnector with six post insulators on a tall steel
-  table, three minimum-oil breaker poles (brown porcelain columns with
+  insulators": a disconnector with six post insulators on a tall table on
+  two lattice legs, three minimum-oil breaker poles (brown porcelain columns with
   red-brown cast heads) on a 2 m steel stand, and three current
   transformers on a concrete table;
 - slack flexible conductors: a drop from each string to its disconnector,
@@ -39,11 +40,14 @@ The switchgear house is the asset's building. It is a single-storey red
 brick box of 5.0 × 4.0 m under a flat felt roof on a concrete slab, with one
 steel door to the street and steel louvres for ventilation. It stands in the
 compound's front-east corner, its front and east walls in the yard wall's
-outer planes, so the wall stops on it.
+outer planes, so the wall stops on it. Its two yard walls carry what a
+plant room's yard side has: the cable trenches meeting the wall under
+galvanised cover plates, an unlit wall-mounted yard lamp and a small blue
+enamel number plate.
 
 The asset is generic and stands for no particular installation. It carries
-no lettering, brands or logos. The warning plates are a plain yellow
-triangle with a lightning arrow.
+no words, brands or logos. The warning plates are a plain yellow triangle
+with a lightning arrow, and the number plate a plain numeral 1.
 
 ## Category and secondary use
 
@@ -68,10 +72,11 @@ switchgear bays, and keeping the origin kept the house's, transformers' and
 trenches' numbers. The pivot is the plan's centre, x −2.0, y 0 in this
 frame.
 
-- **Yard wall:** 0.24 m thick, 1.70 m high with its 0.06 m coping, on a
+- **Yard wall:** 0.24 m thick, 1.55 m high with its 0.06 m coping, on a
   0.31 m concrete footing.
-- **Piers:** 12 of them, 0.36 m square and as high as the wall, with no
-  caps. There is one at each free corner, one each side of the gate, one
+- **Piers:** 12 of them, 0.36 m square, standing 0.02 m over the wall's
+  coping (1.57 m), with no caps. There is one at each free corner, one each
+  side of the gate, one
   where the east run meets the house's north wall, and between: one on the
   front run (5.4 m bays), one on the west (5.8 m), three on the north
   (4.9 m) and one on the east (3.9 m).
@@ -80,7 +85,7 @@ frame.
   proud of both planes.
 - **Gate:** in the front wall between piers at x −0.98 and 2.80, with
   3.42 m clear between them (x −0.80 to 2.62). The leaves are 0.06 m thick,
-  set 0.08 m behind the wall's outer face, and run from 0.04 to 1.66 m
+  set 0.08 m behind the wall's outer face, and run from 0.04 to 1.51 m
   high.
 - **Transformer plinths:** 4.40 × 3.40 × 0.30 m, centred on x −2.00 and
   y ±2.70.
@@ -90,8 +95,9 @@ frame.
   line. Disconnector posts at x −9.30 and −8.70 on a deck x −9.45 to
   −8.55, 4.20 m up; breaker poles on x −7.00, on a stand 2.00 m up;
   current transformers on x −5.30, on a table 2.20 m up.
-- **Gantry:** columns at x −10.60, y ±4.60, on 0.80 m square concrete pads.
-  The shield-wire peaks' tips at 10.90 m are the highest point.
+- **Gantry:** columns at x −10.60, y ±4.60, on 0.80 m square concrete pads,
+  0.64 m square over the pads tapering to 0.40 m at 9.70 m. The finials'
+  tips at 10.90 m are the highest point.
 
 The pivot is at ground level, centred on the plan's bounding box, which is
 the compound's centre. It is taken from `LOD0` and applied to every tier.
@@ -117,9 +123,9 @@ steel frame adds 0.0625 m at the sides and head. The threshold is at
 ground level and the door faces the street (−Y). It is the house's only
 door.
 
-The gate (two leaves, 3.42 m clear, 1.62 m high) is not a door in the
+The gate (two leaves, 3.42 m clear, 1.47 m high) is not a door in the
 facts schema: it opens onto the open yard, not an occupied space. It reads
-at the scale of the 1.70 m wall it closes, under the 2.0–2.4 m band.
+at the scale of the 1.55 m wall it closes, under the 2.0–2.4 m band.
 
 ## Window sills
 
@@ -169,11 +175,18 @@ z = 0 or on another solid. One mesh per tier.
 A plain perimeter wall: it closes the yard without hiding it, and the
 catalog and play cameras see the plant over it. It is boxes:
 
-- four runs, 0.24 m thick and 1.70 m high, each ending inside a pier or
-  inside the house;
-- 12 plain piers, 0.36 m square and as high as the runs, their tops
-  flush with the coping;
+- on `LOD0` and `LOD1`, the wall as separate lengths between piers, 0.24 m
+  thick and 1.55 m high, each running 0.05 m into the pier at either end
+  and standing 1 mm off the ground (`between_piers()`);
+- 12 plain piers, 0.36 m square, standing 0.02 m over the coping;
 - the gate, as one 0.06 m plate whose ends run 0.05 m into its piers.
+
+With the piers proud of the wall's top and the lengths clear of the
+ground, no face of a length is coplanar with a pier's, so the union cuts
+one clean rectangular hole in each pier side it enters. Threading the
+piers onto four long runs flush top and bottom split every pier's top and
+foot along the run and cost 162 more triangles per tier. The 1 mm under
+each length is the piers' and the gate's foot, invisible at any distance.
 
 Every face is closed, both faces of the wall and its top included. The
 gate's east pier stands against the house's front-west corner and runs
@@ -181,6 +194,14 @@ gate's east pier stands against the house's front-west corner and runs
 north wall, so no face of the wall is left coplanar and open against the
 house. The piers' faces take the wall's band, so the footing, the brick
 and the thin coping run round them.
+
+The height was chosen from renders at the catalog camera and at 30 m eye
+level: at 1.55 m more of the transformers' tanks and the switchgear's
+stands show over the front wall, and the yard reads as plant behind a
+wall rather than a walled garden. Lower would no longer read as a
+security wall round high-voltage plant. Coal fines
+darken the wall's foot (Texture set, Weathering), which sets it back
+further at play distance.
 
 On `LOD2` and `LOD3` the runs are one pier thick (0.36 m), centred so that
 their outer faces are the piers' outer faces, and the piers fold into the
@@ -203,6 +224,17 @@ Openings by tier:
   door and 0.10 m for the louvres;
 - **`LOD1`:** one recess the size of the casing;
 - **`LOD2`/`LOD3`:** a flush painted rectangle.
+
+The yard walls (north and west) carry painted fittings on the house band,
+at U values that map onto those walls only (`paint_house_fittings()`):
+
+- a galvanised cover plate, 0.68 m wide and up to 0.50 m, where each cable
+  trench meets the wall, bolted, with two cable glands;
+- a yard lamp on the west wall, over the south trench: a wall plate, a
+  short arm and a dark conical shade, its rim 2.70 m up, the white enamel
+  reflector showing under it. It is paint, not emission;
+- a blue vitreous enamel number plate, 0.22 × 0.16 m, at 1.62 m on the
+  north wall, white border and a plain numeral 1.
 
 ### Transformers
 
@@ -233,18 +265,50 @@ The sheds, fins, bolts and valves are texture.
 
 ### Gantry and strings
 
-A solid portal, as the period built them where a lattice was not wanted;
-a lattice would need alpha here.
+A galvanised lattice portal, as every period yard built them. The catalog
+is opaque, so the lattice is real geometry, built lean: every corner
+angle, chord and bracing bar is its own closed solid, stopping 4 mm
+(`G_GAP`) short of whatever it meets, and bars crossing in a face are cut
+back so they never intersect. Exact-boolean intersections between bars
+would multiply triangles, so only the columns' corner angles go into the
+union (into their pads); the bracing, the truss's chords and the finials
+join the mesh after it, and `build_lod()` asserts with a BVH overlap test
+(`touching()`) that none of them comes within 1 mm of another shell. The
+validator's welded-manifold check passes with them on every tier.
 
-- **Columns:** square galvanised boxes tapering from 0.40 m at their pads
-  to 0.22 m at 9.70 m, from inside their 0.30 m pads.
-- **Shield-wire peaks:** a square spike on each column, 0.16 m at its foot,
-  rising 1.20 m to a point at 10.90 m.
-- **Beam:** an I on its side, 0.60 m deep with 0.30 m flanges, z
-  9.00–9.60, from y −4.90 to 4.90.
+- **Columns:** four corner angles each (a right-triangle hull, 0.08 m
+  legs), 0.64 m square over the 0.30 m pads tapering to 0.40 m at 9.70 m,
+  then converging up the peak to 0.22 m at 10.50 m. On `LOD0` every face
+  has a rail at 11 panel points (0.86 m apart, the top one level with the
+  truss's top chord) and one diagonal per panel, the faces' diagonals
+  alternating; the peak has one diagonal up to a rail at 10.10 m. Bracing
+  angles are triangular prisms, a 0.05 m flange in the face and a
+  0.035 m toe.
+- **Finials:** a cap plate over the legs' tops and a pyramid spike to
+  10.90 m for the shield wire.
+- **Truss:** a box of four chord angles (0.07 m legs), 0.60 m deep
+  (z 9.00–9.60) and 0.41 m wide, as wide as the columns at its
+  mid-height, stopping short of the columns' inner faces. Its sides are an
+  18-panel Warren zigzag with end posts; its bottom has a rail under each
+  string and at mid-span with a diagonal per panel; its top the same
+  zigzag between end rails.
 - **Strings:** one over each switchgear phase, at y = ±2.70 and
-  ±2.70 ± 1.00, hanging 0.85 m from inside the beam's bottom flange. Each
-  has a cap, four discs of r 0.125 m at a 0.146 m pitch, and a clamp.
+  ±2.70 ± 1.00, hanging 0.85 m from 4 mm under the truss's bottom rail.
+  Each has a cap, four discs of r 0.125 m at a 0.146 m pitch, and a clamp.
+
+By tier:
+
+- **`LOD1`:** legs on every face with a zigzag of diagonals between 7
+  panel points (no rails), the truss's chords and 10-panel side zigzags,
+  and a bottom rail under each string. Same outline, a coarser web.
+- **`LOD2`:** the corner angles, the chords and a plain spike finial; no
+  bracing (Per-tier triangle counts).
+- **`LOD3`:** slim solids with the lattice painted on (`paint_lattice()`):
+  each column one tapered square solid 0.42 of the lattice's width (0.27 m
+  at the foot, 0.17 m at 9.70 m) with a pyramid peak to 10.90 m, and the
+  truss one box 0.18 m wide and 0.21 m deep on the lattice's mid-height.
+  The painted members are galvanised on a lighter grey (`ID_LAT_GAP`) that
+  stands for the openings against the sky. `LOD3` has no strings.
 
 ### Switchgear
 
@@ -252,7 +316,10 @@ One bay per transformer, on the transformer's centre line, phases 1.00 m
 apart across Y. West to east, with a walkway of 0.75–1.4 m between parts:
 
 - **Disconnector:** a galvanised deck 0.90 × 2.70 × 0.15 m, its top at
-  4.20 m, on two 0.24 m square steel legs; on it six post insulators in
+  4.20 m, on two 0.24 m square legs, solid posts with a lattice painted on
+  every face (`DIS_LAT_R`: corner angles, a rail at ten panel points and a
+  zigzag of diagonals over a dark grey for the shade inside), so they
+  read as the gantry's kind of steelwork; on it six post insulators in
   two rows 0.60 m apart (porcelain r 0.09 tapering to 0.075 m, a
   galvanised cap r 0.10 m, tops at 5.15 m) and a closed blade across each
   phase's pair. It stands high so that its outgoing span meets the
@@ -268,7 +335,7 @@ apart across Y. West to east, with a walkway of 0.75–1.4 m between parts:
   base r 0.15 m, porcelain r 0.12–0.10 m, and a grey-green oil head
   r 0.19 m 0.40 m tall, the top at 3.92 m.
 
-Each turned part is an 8-, 6- or 4-sided prism by tier; the sheds are
+Each turned part is an 8-, 6-, 5- or 4-sided prism by tier; the sheds are
 texture. `LOD3` keeps only the breaker poles, each one 3-sided prism
 from the ground to its top head (`poles3()`), its stand painted at its
 foot on a strip of its own (`POLE3_R`, 32 px/m along V).
@@ -279,7 +346,7 @@ Flexible conductors as thin closed tubes (r 0.025 m) through points on a
 parabolic sag, rings square to the local tangent, both ends buried in the
 parts they join. Per phase:
 
-- **drop:** from the string's clamp at 8.21 m down to the disconnector's
+- **drop:** from the string's clamp at 8.19 m down to the disconnector's
   incoming post cap, 0.35 m sag;
 - **span:** from the outgoing post cap to the breaker's top head, level,
   0.14 m sag;
@@ -323,41 +390,80 @@ points and sags (`spans()`) and the tiers' modes (`mode()`).
 
 | Tier | Triangles | Ceiling | What changes |
 | --- | --- | --- | --- |
-| `LOD0` | 6,856 | 12,000 | everything; turned disc strings (6 sides); 8-sided breaker poles and current transformers, 6-sided disconnector posts with caps and blades; conductors 4-sided, 6 segments on the drop and 4 on each span; 8-sided bushings and conservators; I-beam; house openings as casing rings round recesses |
-| `LOD1` | 3,760 | 4,000 | strings as plain 6-sided prisms carrying the discs in paint; poles 6-sided, current transformers 6-sided without the base step, posts 3-sided tapers with no caps, no blades; conductors 3-sided, 3 segments on the drop and 2 on the spans; bushings 6-sided turret and one taper; conservators 6-sided; openings one recess each |
-| `LOD2` | 1,448 | 1,500 | the wall one pier thick, the piers folded in; poles and current transformers 4-sided single tapers carrying heads and bases in paint, posts 3-sided, no breaker cabinet; only the six drops kept, straight; strings, bushings (one taper) and conservators 4-sided, the conservators' saddles gone and each drum a box down into its cover; beam a box; openings flush; coplanar boolean splits dissolved |
-| `LOD3` | 460 | 500 | the switchgear goes but for the six breaker poles, each one 3-sided prism from the ground; strings, conductors and bushings go; both radiator banks one box through the tank; cable boxes and pads go; trenches go; the house's two yard-side louvres go |
+| `LOD0` | 8,794 | 12,000 | everything; the lattice portal braced on every face (rails and a diagonal per panel), its truss a Warren zigzag on the sides with rails and diagonals top and bottom; turned disc strings (6 sides); 8-sided breaker poles and current transformers, 6-sided disconnector posts with caps and blades; conductors 4-sided, 6 segments on the drop and 4 on each span; 8-sided bushings and conservators; the wall as lengths between piers; house openings as casing rings round recesses |
+| `LOD1` | 3,936 | 4,000 | the lattice coarser: legs and one zigzag of diagonals per face over 6 panels, no rails, the truss's sides a 10-panel zigzag and a rail under each string; strings as plain 4-sided prisms carrying the discs in paint; poles and current transformers 5-sided, the current transformers without the base step, posts 3-sided tapers with no caps, no blades; conductors 3-sided, 3 segments on the drop and 2 on the spans; bushings 5-sided turret and one taper; conservators 6-sided; openings one recess each |
+| `LOD2` | 1,480 | 1,500 | the wall one pier thick, the piers folded in; the lattice's corner angles and chords alone, a plain spike finial; poles and current transformers 4-sided single tapers carrying heads and bases in paint, posts 3-sided, no breaker cabinet; only the six drops kept, straight; strings 3-sided, bushings (one taper) and conservators 4-sided, the conservators' saddles gone and each drum a box down into its cover; openings flush; coplanar boolean splits dissolved |
+| `LOD3` | 482 | 500 | the switchgear goes but for the six breaker poles, each one 3-sided prism from the ground; the gantry slim solids with the lattice painted on; bushings 3-sided single tapers; strings and conductors go; both radiator banks one box through the tank; cable boxes and pads go; trenches go; the house's two yard-side louvres go |
 
-Where `LOD0`'s triangles go, measured by building each group alone and by
-leaving groups out of the union:
+Where `LOD0`'s triangles go, measured by building each group alone (with
+the union inside the group) and by leaving groups out of the union:
 
 | Group | Triangles |
 | --- | --- |
+| Gantry lattice | about 2,320: the bars joined after the union 2,212 (columns' bracing about 1,600, truss chords and bracing about 570, finials 44, each bar 8 triangles), the eight corner angles 112 |
+| Gantry pads and strings | about 1,260, nearly all in the six turned strings (200 each) |
 | Switchgear, both bays, with their unions | about 2,480 (2,136 before the union: 6 poles about 124 each, 12 posts 44 each, 6 current transformers 92 each, frames and blades) |
 | Conductors, 24 of them, with their unions | about 1,190 (960 before) |
-| Gantry and strings | about 1,300, nearly all in the six turned strings (200 each) |
-| Each transformer | about 390 |
-| Yard wall, 12 piers and gate | 204 |
+| Each transformer | about 440 |
+| Yard wall, 12 piers and gate | 364 |
 | House | 164 |
 | Trenches and fire wall | 52 |
+
+The lattice is the pass's main cost: `LOD0` rose by 1,938 triangles, the
+lattice's 2,320 less the solid portal's columns, peaks and I-beam, and
+less 162 saved on the wall by building it as lengths between proud piers.
+Bars joined after the union add exactly their own triangles; every
+intersection between them would have added more.
+
+### What `LOD1` traded for its lattice
+
+The coarse lattice costs 780 triangles (668 in bars, 112 in legs); the
+gantry and strings went from 392 to 908. `LOD1` had 240 to spare, so it
+paid with:
+
+- the wall as lengths between proud piers: 162;
+- breaker poles and current transformers 6- to 5-sided: 140;
+- bushings 6- to 5-sided: 48;
+- strings from 6- to 4-sided prisms: about 48.
+
+At 35–70 m a 5-sided pole and a 6-sided one have the same outline and
+shading within a pixel; the painted discs carry the strings.
+
+### `LOD2` and `LOD3`
+
+`LOD2` keeps the lattice's 8 corner angles and 4 chords (156 triangles)
+and no bracing; the budget, 20 under its ceiling, has no room for a
+diagonal per panel. Slim solid columns and truss with the lattice painted
+on were tried first at `LOD2`, at the lattice's full width and at about
+half of it. Both read as a heavy grey frame against `LOD1`'s open web at
+65/75 m, and the legs-only frame pops least (LOD review). `LOD3` takes the
+painted slim solids (40 triangles with the truss): at 120 m and beyond the
+lattice's members are under a pixel and a thin solid reads as the
+portal's outline. Its truss is 0.21 m deep, a continuous thin line at
+125 m; at 0.33 m it read as a dark bar heavier than `LOD2`'s chords, its
+sides being in shade under most sun directions. Freeing those 56 triangles on the
+gantry brought the transformers' bushings back to `LOD3` as 3-sided
+tapers (76 with their unions).
 
 **Comparison with the catalog.** `LOD0` is well above the small brick
 buildings (`nostokonehuone_brick` 540, `kaivoskonttori_brick` 896) because
 the yard is mostly equipment, not wall plane: the switchgear's 18 turned
-parts per bay and the 24 conductors are the asset. It is still under 60% of
-the ceiling. The strings and the switchgear's turned profiles are where
+parts per bay, the 24 conductors and the lattice portal are the asset. It
+is under three quarters of the ceiling. The strings and the switchgear's turned profiles are where
 triangles buy silhouette below the relief threshold: at 20–35 m a pole
 reads by its two stepped heads and a string by its scalloped outline.
 Trim in CLAUDE.md's sense (the piers, the house's slab edge and the
 trench covers) is under 500 triangles.
 
-**`LOD1` and `LOD2` sit near their ceilings** (240 and 52 to spare) and
-**`LOD3` 40 under**, so any change to them must be recounted. The union
-costs more than the parts here: every conductor end, post foot and leg cuts
-the face it enters. Thinning the posts to 3 sides, the spans to 2 segments
-and the bushings to one taper paid for `LOD1`; the pier-thick wall, the
-one-taper bushings and dropping every span but the drops paid for `LOD2`.
-`LOD3`'s pointed peaks pay for its conservators' new boxes, and its bushings (76 with their unions) for the six poles (48).
+**Every tier from `LOD1` down sits near its ceiling** (`LOD1` 64 to
+spare, `LOD2` 20, `LOD3` 18), so any change to them must be recounted. The
+union costs more than the parts here: every conductor end, post foot and
+leg cuts the face it enters. Thinning the posts to 3 sides, the spans to 2
+segments and the bushings to one taper paid for `LOD1` before the lattice,
+and the trades above for the lattice; the pier-thick wall, the one-taper
+bushings and dropping every span but the drops paid for `LOD2`. `LOD3`'s
+pointed peaks pay for its conservators' boxes, the six poles cost 48 and
+the bushings 76.
 
 ## LOD review
 
@@ -374,12 +480,16 @@ denoising, AgX, exposure 0. Pairs compared:
 - `LOD2`/`LOD3` at 115/125 m, front, oblique and aerial, noon and reverse.
 
 Every working render is in the local, untracked
-`review/power_plant_rev_2026_11_21/muuntajakentta_walled/` (the first
-build's in `review/power_plant_2026_11_21/muuntajakentta_walled/`).
+`review/power_plant_polish_2026_11_21/muuntajakentta_walled/` (the lattice
+pass: `before/`, `after/`, `compare/`, `mip4/`), with the earlier passes'
+in `review/power_plant_rev_2026_11_21/` and `review/power_plant_2026_11_21/`.
 
-- **`LOD0`→`LOD1`:** the strings lose their modelled discs and keep them in
+- **`LOD0`→`LOD1`:** the gantry's lattice loses its rails and half its
+  diagonals but keeps its corner angles, chords, finials and a zigzag on
+  every face, so at 30–40 m both read as braced lattice of the same
+  outline; the strings lose their modelled discs and keep them in
   paint; the disconnector posts lose their caps and blades; the poles and
-  current transformers go from 8 to 6 sides; the conductors lose
+  current transformers go from 8 to 5 sides; the conductors lose
   segments, their sag now in two or three straight runs. At 30 m the
   switchgear's outline, the heads' red-brown and the conductors' paths are
   the same; the caps and blades are 1–2 px. The house's openings go from
@@ -390,21 +500,31 @@ build's in `review/power_plant_2026_11_21/muuntajakentta_walled/`).
   parts, which stay: poles and current transformers as tapers with their
   heads in paint, posts as 3-sided prisms, the tables and stands. The
   piers' 0.06 m projection folds into a pier-thick wall, under a pixel.
-  The beam becomes a box of the same outline; the openings go flush.
+  The gantry keeps its outline as the lattice's corner angles and chords;
+  its bracing goes. At 65 m a bracing bar is about 1 px and `LOD1`'s
+  columns read as a light, faintly crossed web; `LOD2`'s as four thin
+  rails. Blinked, the columns lighten slightly but neither the silhouette
+  nor the tone jumps. Slim painted solids tried here read as a heavier
+  grey frame and popped more (Per-tier triangle counts). The openings go
+  flush.
 - **`LOD2`→`LOD3`:** the switchgear cannot fit in 500 triangles, and with
   it simply dropped the whole west half of the yard emptied at 120 m: an
   identity change. `LOD3` therefore keeps the six breaker poles as single
   3-sided prisms from the ground (`poles3()`), their stands painted grey
   at the foot and their red-brown heads painted on a strip of their own,
-  48 triangles; the bushings (76) went to pay for them. In the 115/125 m
-  pair the poles keep the bays' verticals and red heads; the
-  disconnectors' tables, the current transformers, the strings, the drops
-  and the bushings go, which shows when the pair is blinked. The trench
-  covers go too. The radiator banks become one box, keeping their
+  48 triangles. The gantry becomes slim solids with the lattice painted
+  on; at 115/125 m its columns and truss stay thin continuous lines of
+  the lattice's outline and tone, the peaks pointed. The transformers'
+  bushings stay, as 3-sided tapers. In the 115/125 m pair the poles keep
+  the bays' verticals and red heads; the disconnectors' tables, the
+  current transformers, the strings and the drops go, which still shows
+  when the pair is blinked: with 18 triangles to spare, the current
+  transformers alone as 3-sided prisms from the ground would cost 48 and
+  the strings 48. The trench covers go too. The radiator banks become one box, keeping their
   outline. The gantry, tanks, conservators, fire wall, wall, gate and
   house keep their silhouettes on every tier.
 - **Bounds:** every tier keeps the 20.0 × 12.0 m plan bounds and the
-  pivot. The 10.90 m height is the gantry's peaks, kept on every tier.
+  pivot. The 10.90 m height is the gantry's finials, kept on every tier.
 
 The six working views (`review_asset.py --six-views`: orthographic front,
 rear, both sides, top and a raised aerial) were looked at for `LOD0` and
@@ -412,22 +532,31 @@ rear, both sides, top and a raised aerial) were looked at for `LOD0` and
 shows each phase running straight from its string through disconnector,
 breaker and current transformer to its bushing, converging on the
 bushings' closer spacing; the aerial shows the switchgear and gantry well
-over the 1.7 m wall. Before/after sheets against the first build (padded
-to a common canvas, since the bounds changed) are in `compare/`.
+over the 1.55 m wall. The lattice pass's six views at all four tiers,
+20/30 m eye-level and oblique views and the three LOD pairs were rendered
+before and after with identical settings, with sheets from
+`scripts/review_compare.py` in its `compare/`.
 
 Pending in the consumer: real LOD switching, shadows in the yard and
 performance.
 
 ## Interior geometry
 
-The validator's hidden-surface test reports 4 of 6,856 triangles at
-`LOD0` (1.4 m²), 4 at `LOD1`, 2 at `LOD2` and 3 at `LOD3`, all PASS.
+The validator's hidden-surface test reports 19 of 8,794 triangles at
+`LOD0` (1.4 m² of it vertical), 4 at `LOD1`, 2 at `LOD2` and 2 at `LOD3`,
+all PASS. Listed face by face from the exported tiers:
 
-The candidates are the strips of each tank's long sides under its radiator
-banks. They run between the plinth's top at 0.30 m and the banks'
-undersides at 0.70 m, 0.55 m deep under the bank. That is exterior surface,
-visible from low views along the plinth, but the test's 40 fixed rays from
-each face's centre all strike the bank or the plinth.
+- **The tank strips** (every tier): the strips of each tank's long sides
+  under its radiator banks, between the plinth's top at 0.30 m and the
+  banks' undersides at 0.70 m, 0.55 m deep under the bank, and one bank's
+  underside. That is exterior surface, visible from low views along the
+  plinth, but the test's 40 fixed rays from each face's centre all strike
+  the bank or the plinth.
+- **The strings' top caps** (`LOD0` only, 15 faces of about 0.001 m²
+  each): each string hangs from 4 mm under the truss's bottom rail, so
+  the rays from its top cap all hit the rail. They close the string's
+  solid and are kept: the lattice's bars and the strings touch nothing,
+  which is what keeps the union from cutting them.
 
 What is removed and kept:
 
@@ -435,13 +564,15 @@ What is removed and kept:
   and roof are its caps and it has no room.
 - The union removes every buried face: the tank's base in the plinth, the
   banks' and cable boxes' backs, the bushings' and saddles' feet, the
-  conservator boxes' feet in the covers (`LOD2`, `LOD3`), the strings' tops
-  in the beam, the columns' feet in their pads and the peaks' feet in the
-  columns, the switchgear's legs in their decks and its posts, poles and
-  current transformers in theirs, the conductors' ends, the runs' ends in
-  the piers and the house, and the trenches' ends.
-- The only closure faces kept are the floor faces on the ground under the
-  walls, piers, house, plinths, pads, legs, fire wall and trenches.
+  conservator boxes' feet in the covers (`LOD2`, `LOD3`), the corner
+  angles' and the slim columns' feet in their pads, the switchgear's legs
+  in their decks and its posts, poles and current transformers in theirs,
+  the conductors' ends, the wall lengths' ends in the piers and the
+  house, and the trenches' ends.
+- The closure faces kept are the floor faces on the ground under the
+  piers, house, plinths, pads, legs, fire wall and trenches, the wall
+  lengths' undersides 1 mm over the ground, and every lattice bar's own
+  faces where it stops 4 mm short of the bar or angle it meets.
 
 ## Known simplifications
 
@@ -465,19 +596,24 @@ What is removed and kept:
 - **Switchgear simplified:** each disconnector is a closed blade between
   two posts, with no operating rod or arcing horns; each breaker has one
   operating cabinet and no linkage to the poles; the current transformers
-  carry no secondary wiring. The steel tables and stands are plain
-  galvanised boxes, not lattice.
+  carry no secondary wiring. The breaker stands are plain galvanised
+  boxes; the disconnector tables' legs are solid posts with the lattice
+  painted on, so they cast solid shadows.
 - **Conductors:** thin closed tubes on a parabolic sag, with no clamps or
   spacers. Nothing runs between the gantry and the world outside: the
   beam carries strings but no incoming line, and the portal stands for the
   yard's incoming side without wiring it to anything outside. The
   transformers' low-voltage side is the cable box and trench to the house,
   with no cables modelled.
-- **No lattice:** the gantry is solid tapered box section with no lattice
-  (which would need alpha) and no bracing.
+- **Lattice:** the gantry's angles and bars are closed prisms (triangular
+  hulls) with no bolts, gussets or gusset plates, and every joint is a
+  4 mm gap rather than a connection; the gaps are under a pixel from 5 m
+  on. `LOD2` drops the bracing and `LOD3` paints it.
 - **One door and no yard door:** the house has no door into the yard, and
   the yard's only way in is the gate. The house's door is on the street.
-- **No yard lighting, signage text, fence wire or barbed wire.**
+- **Yard lamp, number plate and trench cover plates are paint** on the
+  house's yard walls, flat to the wall; the lamp is unlit (Night
+  lighting). No signage text, fence wire or barbed wire.
 - **No equipment inside the house:** the louvres are dark behind their
   blades.
 - **One-sided gate artwork:** the gate's back shows the same leaves
@@ -491,21 +627,27 @@ the default supersampling (`atlas.SS` = 4) and padded last by
 
 | Rows | Region | Mapping |
 | --- | --- | --- |
-| 0–248 | HOUSE band | U along the wall, V = height, 64 px/m; concrete plinth to 0.375 m, then stretcher-bond brick |
-| 252–384 | FENCE band | U along the wall, V = height; concrete footing to 0.3125 m, brick, the thin precast coping from 1.6375 m to 1.70 m; the piers' faces too |
+| 0–248 | HOUSE band | U along the wall, V = height, 64 px/m; concrete plinth to 0.375 m, then stretcher-bond brick; on the yard walls' own U ranges the trench cover plates, the yard lamp and the number plate (`HOUSE_U_OFF`) |
+| 252–384 | FENCE band | U along the wall, V = height; concrete footing to 0.3125 m, brick, the thin precast coping from 1.4875 m to 1.55 m; the piers' faces too (their 0.02 m over the coping samples the coping's top row and the padding above it) |
 | 390–558 | unique, row A | tank side, gate, door, radiator face and end, conservator barrel, gravel bed |
-| 566–734 | unique, row B | tank cover, roof, slab edge, radiator top, louvre, bushing, string, galvanised steel, cable box, conservator end |
-| 740–1016 | unique, row C | flat patches (the breakers' head paint among them), breaker pole, disconnector post, current transformer, `LOD3`'s whole-pole strip (32 px/m in V), the fire wall's board-marked concrete (also the current transformers' tables), the trench covers |
+| 566–734 | unique, row B | tank cover, roof, slab edge, radiator top, louvre, bushing, string, cable box, conservator end |
+| 740–1016 | unique, row C | flat patches (the breakers' head paint among them), breaker pole, disconnector post, current transformer, `LOD3`'s whole-pole strip (32 px/m in V), `LOD3`'s painted lattice (a column face, the truss's sides, its top and bottom), the disconnector legs' painted lattice, the fire wall's board-marked concrete (also the current transformers' tables), the trench covers |
 
 ### Deviations from 64 px/m
 
 - **Gravel bed on the plinths' tops:** 40 px/m.
 - **House roof:** 32 px/m. Both are horizontal surfaces of low-contrast
   gravel and felt, seen from above at a distance.
-- **Gantry steel:** U at 64 px/m at the columns' feet, held across their
-  taper, V stretched along the members. It is uniform galvanised mottling
-  with nothing that shows the stretch. The peaks, the switchgear's steel
-  and the conductors take flat patches.
+- **Gantry lattice (`LOD0`–`LOD2`):** every bar takes the flat
+  galvanised patch, as do the switchgear's steel and the conductors their
+  aluminium patch.
+- **`LOD3`'s painted gantry:** a column face's region is 40 px across
+  whatever the face's width and 17.9 px/m up (`COL_LAT_R`); the truss's
+  sides and top 40 px/m along it, its depth and width across the region
+  (`BEAM_LAT_R`, `BEAM_TOP_R`). Members are painted about a pixel wide,
+  seen only from 120 m on.
+- **Disconnector legs:** 24 px across a 0.24 m face (100 px/m) and
+  32 px/m up (`DIS_LAT_R`), members 2.6 px.
 - **Bushings, strings, poles, posts and current transformers:** wrapped
   once round, U by angle, V at 64 px/m along the axis.
 
@@ -537,6 +679,10 @@ lighter shed paint.
 
 - **masonry:** grime, plinth soil, splash and salt bloom on both brick bands
   and the fire wall, dust on the coping and runs under it;
+- **coal fines on the yard wall:** a grey-black film thrown up along its
+  foot, strongest at the footing and fading by 1/e every 0.45 m up, and a
+  light patchy film above it and on the coping (`scripts/weathering.py`'s coal channel), so the
+  wall sits back behind the plant;
 - **gate and door:** kicked dirt at the foot, grime at the hasp and handle,
   a little rust at the gate's foot;
 - **transformers:** runs down the tank sides, dust on the covers,
@@ -546,18 +692,20 @@ lighter shed paint.
   runs down the breakers' mid heads, a trace on the porcelain;
 - **ground surfaces:** dust and oil on the gravel and curbs, dust on the
   trench covers;
-- **steel and porcelain:** light dust on the zinc, a trace on the
-  porcelain;
+- **steel and porcelain:** light dust on the zinc (the galvanised patch
+  and the painted lattices), a trace on the porcelain;
 - **slab edge:** runs down it from the felt.
 
 ### Filtering and inventory
 
 Whole-atlas mip4 stress renders (`scripts/review_atlas_mips.py`) of `LOD2`
-and `LOD3` were checked at 125 m in the first build: aerial, front and 75°
-grazing, under noon. They showed no colour leaks between regions and no
-dark seams; the brick stayed brick-red, the copings light, the gate dark
-and the porcelain brown. The new regions sit in row C with 8 px gutters
-and were not mip-reviewed separately (Review status).
+and `LOD3` were checked at 125 m in the first build (aerial, front and 75°
+grazing) and again after the lattice pass (front, oblique and aerial),
+under noon. They showed no colour leaks between regions and no dark
+seams; the brick stayed brick-red, the copings light, the gate dark, the
+porcelain brown and the breakers' heads red-brown, and `LOD3`'s painted
+gantry stayed a neutral grey line with no brick or porcelain bleeding
+into it. The lattice regions sit in row C with at least 8 px gutters.
 
 Unique textures are five 1024² RGB PNGs: three albedos, one ORM and one
 normal map, about 4 MiB each in memory without mips. The ORM and normal
@@ -601,6 +749,11 @@ Fixed in every variant:
   galvanised gantry and switchgear steel (134, 137, 137), brown porcelain
   (98, 54, 36), the breakers' red-brown heads (144, 66, 44) and aluminium
   conductors;
+- the lattice's painted openings, a light neutral grey (150, 153, 153)
+  on `LOD3`'s gantry and a darker shade of it inside the disconnector
+  legs;
+- the number plate's blue enamel (44, 60, 92) and off-white (196, 194,
+  186), the yard lamp's dark paint;
 - the board-marked fire wall and tables, the concrete and the gravel;
 - the felt roof.
 
@@ -609,8 +762,9 @@ Fixed in every variant:
 **None. The yard is not night-lit, and it ships no `_emission.png`.** The
 house has no glazing, only steel louvres, because an unmanned switchgear
 room is ventilated, not lit for the street. CLAUDE.md's Output Contract
-allows a building without glazing to ship no emission map. No yard lamp is
-painted or lit. Consequences:
+allows a building without glazing to ship no emission map. The yard lamp
+on the house's west wall is painted only, with no emission; a lit lamp
+would be a luminous region the brief does not call for. Consequences:
 
 - **No `emissiveTexture` on any tier.** The validator's emission checks do
   not apply. The facts sidecar omits `textures.emission`.
@@ -690,17 +844,18 @@ The schema has no place for the compound, so these are recorded here
 rather than in the sidecar, in the same glTF frame:
 
 - **Wall line (piers' outer faces):** the rectangle x −10.00 to 10.00, z
-  −6.00 to 6.00, 1.70 m high. The house fills its corner x 4.94–9.94, z
+  −6.00 to 6.00, 1.55 m high, the piers 1.57 m. The house fills its corner x 4.94–9.94, z
   1.94–5.94.
 - **Gate:** its centre on the wall's outer face at [2.91, 0, 5.94], 3.42 m
-  clear between its piers (x 1.20–4.62), 1.62 m high, facing +Z.
+  clear between its piers (x 1.20–4.62), 1.47 m high, facing +Z.
 - **Transformer plinths:** x −2.20 to 2.20, z 1.00 to 4.40 (south) and z
   −4.40 to −1.00 (north), 0.30 m high.
 - **Switchgear bays:** on z ±2.70, phases at z ±1.70, ±2.70 and ±3.70.
   Disconnectors on x −7.30 and −6.70, posts' tops 5.15 m; breaker poles
   on x −5.00, tops 5.27 m; current transformers on x −3.30, tops 3.92 m.
-- **Gantry:** columns at x −8.60, z ±4.60, beam 9.00–9.60 m, column tops
-  9.70 m, peaks to 10.90 m, on the −X (incoming) side.
+- **Gantry:** lattice columns at x −8.60, z ±4.60, truss 9.00–9.60 m,
+  shafts to 9.70 m, lattice peaks to 10.50 m and finials to 10.90 m, on
+  the −X (incoming) side.
 
 ## Review status
 
@@ -720,16 +875,25 @@ Checked here, in Blender:
 - `check_layout()`, with the switchgear's and conductors' checks.
 - The bindings traced in each GLB: albedo, ORM twice and normal, no
   emission (Night lighting).
-- The six working views at `LOD0` and `LOD3`.
+- The six working views at every tier.
 - LOD pairs around 35, 70 and 120 m from front, oblique, rear and aerial
-  views, under two sun directions; the 115/125 m pair re-rendered after
-  `LOD3` kept the breaker poles.
-- Whole-atlas mip4 stress renders of `LOD2` and `LOD3` at 125 m, aerial,
-  front and grazing: the heads stay red-brown, the porcelain dark brown,
-  the steel grey, with no leaks or dark seams.
+  views, under two sun directions, before and after the lattice pass,
+  with before/after sheets; the `LOD1`/`LOD2` gantry compared with legs
+  only and with slim painted solids, the `LOD3` truss at three depths.
+- `build_lod()`'s assertion that no lattice bar touches another shell or
+  the union, on every tier, and the validator's welded-manifold check on
+  the exports with the bars in them.
+- Whole-atlas mip4 stress renders of `LOD2` and `LOD3` at 125 m (front,
+  oblique and aerial after the lattice pass; grazing in the first build):
+  the heads stay red-brown, the porcelain dark brown, the steel grey,
+  with no leaks or dark seams.
+- Close renders of the house's yard walls (trench cover plates, lamp,
+  number plate) and of the disconnector legs at 20 m.
+- The wall at 1.55 and 1.70 m from the catalog camera and at 30 m eye
+  level (Construction).
 - The day cycle (morning, noon, dusk, night) from the fitted oblique.
 - The catalog preview: the fixed camera sees over the low front wall into
-  the yard. The gantry, its strings and drops, the switchgear's poles and
+  the yard. The lattice gantry, its strings and drops, the switchgear's poles and
   heads, the current transformers, the bushings, conservators and fire
   wall all show over the wall, with the gate and the house's door in
   front.
@@ -743,8 +907,10 @@ Pending in the consumer:
 
 - import, orientation and pivot on reimport in the engine;
 - LOD switching, shadows in the yard and performance;
-- mip and anisotropic filtering of the stretched gantry steel, the radiator
+- mip and anisotropic filtering of the lattice's thin bars (aliasing and
+  shimmer at 35–70 m in motion), `LOD3`'s painted lattice, the radiator
   fins (a 3.2 px period), the porcelain sheds and the brick;
+- shadow-map resolution on the lattice's 0.05 m bars;
 - the yard's placement on terrain, with no ground of its own.
 
 ## Tooling versions
@@ -755,6 +921,21 @@ Python 3 with numpy, scipy and Pillow.
 
 ## Revision log
 
+- **2026-11-21 — lattice pass.** The solid portal became a galvanised
+  lattice: four corner angles per tapering column (0.64 to 0.40 m),
+  braced on every face, lattice peaks with finials, and a box truss
+  between them, every bar a closed solid joined after the union. `LOD1`
+  takes a coarser lattice, paid for by the wall built as lengths between
+  proud piers and 5-sided poles, current transformers and bushings and
+  4-sided strings; `LOD2` keeps the angles and chords; `LOD3` slim solids
+  with the lattice painted on, and its transformers' bushings came back.
+  The yard wall came down from 1.70 to 1.55 m (piers 0.02 m proud, the
+  gate's leaves to 1.51 m) with coal fines at its foot. The house's yard
+  walls got painted trench cover plates, an unlit yard lamp and an enamel
+  number plate; the disconnector tables' legs a painted lattice. Triangles
+  6,856 / 3,760 / 1,448 / 460 became 8,794 / 3,936 / 1,480 / 482. Bounds,
+  height (10.90 m), footprint, door and pivot are unchanged. Every PNG,
+  GLB, `source.blend`, `preview.png` and the sidecar changed.
 - **2026-11-21 — plant palette pass.** `red_brick`'s mortar and a dark
   purple-brown `brown_brick` set to the plant's shared constants.
 - **2026-11-21 — open switchyard.** The garden-like wall became a plain

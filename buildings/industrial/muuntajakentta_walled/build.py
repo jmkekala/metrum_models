@@ -15,11 +15,11 @@ Regenerate the textures first (python3 facade_atlas.py export): the UVs index
 into the atlas, and the renders read it.
 
 The walled transformer yard of a small mid-century Nordic coal-fired heat
-and power plant: a 20.0 x 12.0 m compound behind a plain 1.7 m brick
+and power plant: a 20.0 x 12.0 m compound behind a plain 1.55 m brick
 perimeter wall with plain piers every 4-6 m, closed at the front by a
 sheet-steel double gate. Inside, two power transformers stand on concrete
 plinths either side of a concrete fire wall, their high-voltage bushings
-toward the west (incoming) side. There, a solid galvanised portal with
+toward the west (incoming) side. There, a galvanised lattice portal with
 shield-wire peaks carries a suspension string over each phase, and between
 it and each transformer stands that transformer's switchgear bay: a
 disconnector on a tall steel table, three minimum-oil breaker poles on a
@@ -30,12 +30,14 @@ planes, its steel door on the street.
 
 Construction is a set of closed solids unioned with Blender's exact boolean
 (asset_build.union): the switchgear house (one solid with its openings, slab
-edge and roof), the wall's runs, its piers and the gate; per transformer the
-plinth, tank, two radiator banks, the conservator and its saddles, three
-bushings and the cable box; the fire wall; the gantry's two columns, peaks,
-beam and foundation pads and six insulator strings; per bay the switchgear's
-frames, posts, poles and current transformers and twelve conductors. There
-is no ground: every solid stands on z = 0 or on another solid.
+edge and roof), the wall's lengths between piers, its piers and the gate; per
+transformer the plinth, tank, two radiator banks, the conservator and its
+saddles, three bushings and the cable box; the fire wall; the gantry's
+foundation pads, its columns' corner angles and six insulator strings; per
+bay the switchgear's frames, posts, poles and current transformers and
+twelve conductors. There is no ground: every solid stands on z = 0 or on
+another solid. The lattice's bracing, chords and finials are closed solids
+that touch nothing; they join the mesh after the union (build_lod()).
 
 The yard has no glazing, so it has no emission map (CLAUDE.md, Output
 Contract); BUILD below is asset_build.Asset with night_lit=False.
@@ -101,6 +103,31 @@ RUNS = [
     (WCX0, WCX1, WCY - HW, WCY + HW),                   # north
     (WCX1 - HW, WCX1 + HW, JUNCTION_Y - 0.10, WCY),     # east
 ]
+
+
+def between_piers(runs, piers, into, lift):
+    """Each run as the lengths between the piers on its centre line, each
+    running *into* into the pier at either end and standing *lift* off the
+    ground, (x0, x1, y0, y1, z0). With the piers PIER_PROUD over the wall's
+    top, each length's end is buried in its pier with no face coplanar with
+    the pier's, so the union cuts one clean hole in the pier's side; threading
+    every pier onto one long run, flush top and bottom, cost 240 more
+    triangles."""
+    out = []
+    for x0, x1, y0, y1 in runs:
+        if x1 - x0 > y1 - y0:
+            c = (y0 + y1) / 2.0
+            on = sorted(x for x, y in piers if abs(y - c) < EPS and x0 - EPS <= x <= x1 + EPS)
+            out += [(a + PW / 2 - into, b - PW / 2 + into, y0, y1, lift)
+                    for a, b in zip(on, on[1:])]
+        else:
+            c = (x0 + x1) / 2.0
+            on = sorted(y for x, y in piers if abs(x - c) < EPS and y0 - EPS <= y <= y1 + EPS)
+            out += [(x0, x1, a + PW / 2 - into, b - PW / 2 + into, lift)
+                    for a, b in zip(on, on[1:])]
+    return out
+
+
 # LOD3's wall is one pier thick, its outer faces the piers', so the piers
 # fold into it and the plan bounds stay theirs; the gate's east pier and the
 # junction pier become the short run into the house and the east run's foot.
@@ -112,6 +139,7 @@ RUNS_THICK = [
     (FX0, FX1, FY - PW, FY),
     (FX1 - PW, FX1, JUNCTION_Y - PW / 2.0, FY),
 ]
+RUN_SEGS = between_piers(RUNS, PIERS, 0.05, 0.001)
 
 # ----------------------------------------------------------------- the house
 HX0, HX1, HY0, HY1 = L.HX0, L.HX1, L.HY0, L.HY1
@@ -141,12 +169,12 @@ def bushing_xy(ty, k):
 
 
 def string_top():
-    """Inside the beam's bottom flange."""
-    return L.G_BEAM_Z[0] + 0.02
+    """GAP under the truss's bottom rail (or the slim truss's bottom)."""
+    return L.G_BEAM_Z[0] - L.G_GAP
 
 
 # Terminal heights the conductors join, each inside its part on every tier.
-Z_CLAMP = L.G_BEAM_Z[0] + 0.02 - L.STRING_LEN + 0.04
+Z_CLAMP = string_top() - L.STRING_LEN + 0.04
 Z_POST_TOP = L.POST_Z0 + L.POST_H - 0.05
 Z_BRK_TOP = L.BRK_Z0 + (L.Z_BRK[2] + L.Z_BRK[3]) / 2.0
 Z_BRK_MID = L.BRK_Z0 + (L.Z_BRK[0] + L.Z_BRK[1]) / 2.0
@@ -185,7 +213,11 @@ def mode(level):
     runs    the wall one brick thick between piers, or one pier thick
     louvres the house walls whose louvres are kept (None: all)
     piers   the plain piers, or none (LOD3's pier-thick wall)
-    h       the gantry's beam as an I-section, or as a box
+    lat     the gantry: "full" lattice (every face braced, rails and
+            diagonals), "coarse" lattice (legs, a zigzag of diagonals, the
+            truss's sides and string rails), "legs" (the corner angles and
+            chords alone, a plain spike for the finial) or "painted" (slim
+            solids with the lattice painted on)
     bush    sides of a bushing, and whether its full profile is turned
     string  "discs" (turned profile), sides of a plain prism, or 0 (none)
     cons    sides of the conservator; saddles kept or not
@@ -200,21 +232,23 @@ def mode(level):
             one prism each from the ground (poles3())
     """
     return [
-        dict(item="ring", runs=RUNS, louvres=None, piers=PIERS, h=True, bush=(8, True),
-             string=("discs", 6), cons=(8, True), cable=True, pads=True, rad=True, trench=True,
+        dict(item="ring", runs=RUN_SEGS, louvres=None, piers=PIERS, lat="full",
+             bush=(8, True), string=("discs", 6), cons=(8, True), cable=True, pads=True,
+             rad=True, trench=True,
              sw=dict(pole=(8, True), post=(6, True), ct=(8, True), blades=True, cab=True),
              cond=dict(drop=(6, 4), span=(4, 4)), poles3=False),
-        dict(item="cut", runs=RUNS, louvres=None, piers=PIERS, h=True, bush=(6, False),
-             string=("prism", 6), cons=(6, True), cable=True, pads=True, rad=True, trench=True,
-             sw=dict(pole=(6, True), post=(3, False), ct=(6, "mid"), blades=False, cab=True),
+        dict(item="cut", runs=RUN_SEGS, louvres=None, piers=PIERS, lat="coarse",
+             bush=(5, False), string=("prism", 4), cons=(6, True), cable=True, pads=True,
+             rad=True, trench=True,
+             sw=dict(pole=(5, True), post=(3, False), ct=(5, "mid"), blades=False, cab=True),
              cond=dict(drop=(3, 3), span=(2, 3)), poles3=False),
-        dict(item="flush", runs=RUNS_THICK, louvres=None, piers=[], h=False, bush=(4, None),
-             string=("prism", 4), cons=(4, False), cable=True, pads=True, rad=True,
-             trench=True,
+        dict(item="flush", runs=RUNS_THICK, louvres=None, piers=[], lat="legs",
+             bush=(4, None), string=("prism", 3), cons=(4, False), cable=True, pads=True,
+             rad=True, trench=True,
              sw=dict(pole=(4, False), post=(3, False), ct=(4, False), blades=False, cab=False),
              cond=dict(drop=(1, 3)), poles3=False),
         dict(item="flush", runs=RUNS_THICK, louvres=("front", "east"),
-             piers=[], h=False, bush=(0, None), string=(None, 0),
+             piers=[], lat="painted", bush=(3, None), string=(None, 0),
              cons=(4, False), cable=False, pads=False, rad="one",
              trench=False, sw=None, cond=None, poles3=True),
     ][level]
@@ -396,30 +430,17 @@ def extrude(poly, P, d0, d1, side_uv, cap_uv):
     return B
 
 
-def h_profile(w, h, tf, tw):
-    """An H-section's outline, flanges at u = +-w/2, web along u = 0."""
-    a, b = w / 2.0, h / 2.0
-    return [(-a, -b), (-a + tf, -b), (-a + tf, -tw / 2), (a - tf, -tw / 2), (a - tf, -b),
-            (a, -b), (a, b), (a - tf, b), (a - tf, tw / 2), (-a + tf, tw / 2),
-            (-a + tf, b), (-a, b)]
-
-
-def rect_profile(w, h):
-    a, b = w / 2.0, h / 2.0
-    return [(-a, -b), (a, -b), (a, b), (-a, b)]
-
-
 # ================================================================== the wall
-def wall_run(x0, x1, y0, y1):
-    return box(x0, x1, y0, y1, 0.0, L.Z_FENCE, band(L.F_Y0), uv_patch("coping"),
+def wall_run(x0, x1, y0, y1, z0=0.0):
+    return box(x0, x1, y0, y1, z0, L.Z_FENCE, band(L.F_Y0), uv_patch("coping"),
                uv_patch("blank"))
 
 
 def pier(x, y):
-    """A plain pier, the wall's height, its faces on the wall's band so the
-    footing, brick and thin coping run round it."""
+    """A plain pier, PIER_PROUD over the wall's coping, its faces on the
+    wall's band so the footing, brick and thin coping run round it."""
     h = L.PIER_W / 2.0
-    return box(x - h, x + h, y - h, y + h, 0.0, L.Z_FENCE, band(L.F_Y0),
+    return box(x - h, x + h, y - h, y + h, 0.0, L.Z_FENCE + L.PIER_PROUD, band(L.F_Y0),
                uv_patch("coping"), uv_patch("blank"))
 
 
@@ -751,89 +772,308 @@ def transformer(ty, level):
 
 
 # ============================================================== the gantry
-def taper_box(cx, cy, w0, w1, z0, z1, side_uv, top, bottom):
-    """A square column tapering from w0 at z0 to w1 at z1, on axis (cx, cy).
-    side_uv(t, w) is the uv function of the side whose along-face direction
-    is t, given the face's width function w(z)."""
-    B = Builder()
+# A lattice portal, built LEAN: every corner angle, chord and bracing bar is
+# its own closed solid, stopping GAP short of whatever it meets, so the
+# union never cuts one bar with another. Only the columns' legs go into the
+# union, into their pads; the bracing, the chords and the finials join the
+# mesh after it, and build_lod() asserts they touch nothing.
+GAP = L.G_GAP
 
-    def w(z):
-        return w0 + (w1 - w0) * (z - z0) / (z1 - z0)
 
-    corners = [(-1, -1), (1, -1), (1, 1), (-1, 1)]
+class Face:
+    """One braced face of a lattice member, as an affine map from face
+    coordinates: a across the face (0 on its centre line), t along the
+    member, d inward from the face's outer plane. The outer plane lies
+    hn(t) out from the member's axis along unit e_n, its edges (the corner
+    angles' heels) at a = +-ha(t); hn and ha are linear in t, given at t0
+    and t1. *edge* is the corner angles' leg: the bracing stops GAP inside
+    it."""
 
-    def P(k, z):
-        sx, sy = corners[k % 4]
-        return (cx + sx * w(z) / 2.0, cy + sy * w(z) / 2.0, z)
+    def __init__(self, origin, e_t, e_a, e_n, t0, t1, hn, ha, edge):
+        self.o, self.e_t, self.e_a, self.e_n = (Vector(v) for v in (origin, e_t, e_a, e_n))
+        self.t0, self.t1, self.hn, self.ha, self.edge = t0, t1, hn, ha, edge
 
-    for k in range(4):
-        a, b = corners[k], corners[(k + 1) % 4]
-        t = ((b[0] - a[0]) / 2.0, (b[1] - a[1]) / 2.0)
-        B.face([P(k, z0), P(k + 1, z0), P(k + 1, z1), P(k, z1)], side_uv(t, w))
-    B.face([P(k, z1) for k in range(4)], top)
-    B.face([P(k, z0) for k in reversed(range(4))], bottom)
+    def lin(self, pair, t):
+        return pair[0] + (pair[1] - pair[0]) * (t - self.t0) / (self.t1 - self.t0)
+
+    def P(self, a, t, d):
+        return tuple(self.o + self.e_t * t + self.e_a * a
+                     + self.e_n * (self.lin(self.hn, t) - d))
+
+    def inner(self, t):
+        """Half the clear width between the corner angles at t, GAP inside."""
+        return self.lin(self.ha, t) - self.edge - GAP
+
+    def clip(self, p, D, side):
+        """s where p + s D (face coordinates) meets a = side * inner(t)."""
+        k = (self.ha[1] - self.ha[0]) / (self.t1 - self.t0)
+        c0 = self.inner(0.0)
+        return (side * (c0 + k * p[1]) - p[0]) / (D[0] - side * k * D[1])
+
+
+def brace(B, face, p0, p1, uv, w=L.G_BRACE[0], d=L.G_BRACE[1]):
+    """A bracing angle across *face* along the line from p0 to p1 (face
+    coordinates, p0 on the side a < 0), as its hull, a triangular prism:
+    the flange w wide in the face's outer plane, the toe d deep on its centre
+    line. Both ends are cut along the clip lines, GAP inside the corner
+    angles, so the bar touches nothing."""
+    D = Vector((p1[0] - p0[0], p1[1] - p0[1])).normalized()
+    n = Vector((-D.y, D.x))
+    pts = []
+    for off, depth in ((0.5 * w, 0.0), (-0.5 * w, 0.0), (0.0, d)):
+        q = Vector(p0) + n * off
+        pts.append([face.P(*(q + D * face.clip(q, D, sd)), depth) for sd in (-1, 1)])
+    (aL, aR), (bL, bR), (cL, cR) = pts
+    for f in ([aL, aR, bR, bL], [aL, cL, cR, aR], [bL, bR, cR, cL], [aL, bL, cL],
+              [aR, cR, bR]):
+        B.face(f, uv)
+
+
+def bracing(B, face, pts, rails, dirs, uv, railed=None):
+    """One face's bracing between panel points *pts* (t, increasing): a
+    rail across the face at each t in *rails*, and a diagonal in each panel,
+    dirs[k] True running from a < 0 at pts[k] to a > 0 at pts[k + 1]. A
+    diagonal stands off each panel point by half its own width measured
+    along t, plus the rail's half-width where the point is *railed* (rails
+    by default; a rail another section draws counts too), plus a clearance,
+    so it clears the rail or the diagonal meeting it there."""
+    w = L.G_BRACE[0]
+    railed = set(rails if railed is None else railed)
+    for t in rails:
+        brace(B, face, (-face.inner(t), t), (face.inner(t), t), uv)
+    for k, up in enumerate(dirs):
+        if up is None:
+            continue
+        ta, tb = pts[k], pts[k + 1]
+        th = math.atan2(tb - ta, face.inner(ta) + face.inner(tb))
+        ht = 0.5 * w / math.cos(th)
+
+        def off(t):
+            return ht + GAP + 0.003 + (0.5 * w if t in railed else 0.0)
+        a, b = ta + off(ta), tb - off(tb)
+        if up:
+            brace(B, face, (-face.inner(a), a), (face.inner(b), b), uv)
+        else:
+            brace(B, face, (-face.inner(b), b), (face.inner(a), a), uv)
+
+
+def prism(B, rings, uv):
+    """A closed prism through polygon *rings* (each a list of points, all the
+    same length, in order along the member), capped at both ends."""
+    n = len(rings[0])
+    for r0, r1 in zip(rings, rings[1:]):
+        for k in range(n):
+            B.face([r0[k], r0[(k + 1) % n], r1[(k + 1) % n], r1[k]], uv)
+    B.face(list(rings[0]), uv)
+    B.face(list(rings[-1]), uv)
     return B
 
 
-def gantry(level):
-    """The portal: two tapered solid columns on concrete pads, each with a
-    shield-wire peak, the I-beam across them, and a suspension string over
-    each switchgear phase."""
-    md = mode(level)
-    out = []
-    g = L.GALV_R
-    foot = L.G_PAD[1] - 0.05 if md["pads"] else 0.0
-    col_len = L.G_TOP - foot
-    beam_len = 2.0 * L.G_BEAM_Y
-    w0 = L.G_W[0]
+SIDES = ((-1, 0), (0, -1), (1, 0), (0, 1))     # a column's faces' outward normals
 
+
+def column(cx, cy, md, legs, bars):
+    """A lattice column on axis (cx, cy): four corner angles from inside the
+    pad up the shaft and the peak (into *legs*, for the union), each face's
+    bracing and the finial (into *bars*)."""
+    g = uv_patch("galv_paint")
+    a = L.G_LEG
+    zs = (L.G_PAD[1] - 0.05, L.G_TOP, L.G_PEAK_Z)
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            rings = []
+            for z in zs:
+                h = L.g_half(z)
+                x, y = cx + sx * h, cy + sy * h
+                rings.append([(x, y, z), (x - sx * a, y, z), (x, y - sy * a, z)])
+            legs.append(prism(Builder(), rings, g))
+    z0 = L.G_PAD[1]
+    for i, (nx, ny) in enumerate(SIDES):
+        e_n, e_a = (nx, ny, 0.0), (-ny, nx, 0.0)
+        hs = (L.g_half(z0), L.g_half(L.G_TOP))
+        shaft = Face((cx, cy, 0.0), (0, 0, 1), e_a, e_n, z0, L.G_TOP, hs, hs, a)
+        if md["lat"] == "legs":
+            continue
+        if md["lat"] == "full":
+            pts = L.G_SHAFT_PTS
+            bracing(bars, shaft, pts, pts, [i % 2 == 0] * (len(pts) - 1), g)
+            hp = (L.g_half(L.G_TOP), L.g_half(L.G_PEAK_Z))
+            peak = Face((cx, cy, 0.0), (0, 0, 1), e_a, e_n, L.G_TOP, L.G_PEAK_Z, hp, hp, a)
+            bracing(bars, peak, (pts[-1], L.G_PEAK_RAIL), (L.G_PEAK_RAIL,), [i % 2 == 0], g,
+                    railed=(pts[-1], L.G_PEAK_RAIL))
+        else:
+            pts = L.G_SHAFT_PTS1
+            bracing(bars, shaft, pts, (), [(k + i) % 2 == 0 for k in range(len(pts) - 1)], g)
+    sq = [(-1, -1), (1, -1), (1, 1), (-1, 1)]
+    if md["lat"] == "legs":
+        # LOD2: the finial as one plain spike GAP over the legs' tops
+        h, z1 = L.g_half(L.G_PEAK_Z) + 0.01, L.G_PEAK_Z + GAP
+        ring = [(cx + p * h, cy + q * h, z1) for p, q in sq]
+        bars.face(list(reversed(ring)), g)
+        for j in range(4):
+            bars.face([ring[j], ring[(j + 1) % 4], (cx, cy, L.G_TIP)], g)
+        return
+    # the finial: a cap plate over the legs' tops, the shield-wire spike on it
+    h, r = L.g_half(L.G_PEAK_Z) + 0.01, 0.035
+    z1, z2 = L.G_PEAK_Z + GAP, L.G_PEAK_Z + GAP + 0.04
+    outer = [(cx + p * h, cy + q * h) for p, q in sq]
+    inner = [(cx + p * r, cy + q * r) for p, q in sq]
+    bars.face([(x, y, z1) for x, y in reversed(outer)], g)
+    for k in range(4):
+        (ax, ay), (bx, by) = outer[k], outer[(k + 1) % 4]
+        (ix, iy), (jx, jy) = inner[k], inner[(k + 1) % 4]
+        bars.face([(ax, ay, z1), (bx, by, z1), (bx, by, z2), (ax, ay, z2)], g)
+        bars.face([(ax, ay, z2), (bx, by, z2), (jx, jy, z2), (ix, iy, z2)], g)
+        bars.face([(ix, iy, z2), (jx, jy, z2), (cx, cy, L.G_TIP)], g)
+
+
+def truss(md, bars):
+    """The box truss between the columns: four chord angles along Y, each
+    stopping GAP short of the columns' inner faces, and the bracing of its
+    sides, top and bottom; a rail under each string."""
+    g = uv_patch("galv_paint")
+    c = L.G_CHORD
+    hw, hd, zc = L.BEAM_HW, L.BEAM_HD, L.BEAM_ZC
+    for sx in (-1, 1):
+        for sz in (-1, 1):
+            zmin = L.G_BEAM_Z[0] if sz < 0 else L.G_BEAM_Z[1] - c
+            ye = L.G_COL_Y - L.g_half(zmin) - GAP
+            x, z = L.G_X + sx * hw, zc + sz * hd
+            tri = [(x, z), (x - sx * c, z), (x, z - sz * c)]
+            prism(bars, [[(px, y, pz) for px, pz in tri] for y in (-ye, ye)], g)
+    o = (L.G_X, 0.0, zc)
+    side = [Face(o, (0, 1, 0), (0, 0, 1), (s, 0, 0), -1.0, 1.0, (hw, hw), (hd, hd), c)
+            for s in (-1, 1)]
+    top, bottom = (Face(o, (0, 1, 0), (1, 0, 0), (0, 0, s), -1.0, 1.0, (hd, hd), (hw, hw), c)
+                   for s in (1, -1))
+    yp = L.BEAM_YP
+    if md["lat"] == "legs":
+        return
+    if md["lat"] == "full":
+        n = L.BEAM_SIDE_N
+        pts = [-yp + 2 * yp * k / n for k in range(n + 1)]
+        for f in side:
+            bracing(bars, f, pts, (-yp, yp), [k % 2 == 0 for k in range(n)], g)
+        bp = L.BEAM_PTS
+        half = (len(bp) - 1) // 2
+        bracing(bars, bottom, bp, bp, [k < half for k in range(len(bp) - 1)], g)
+        bracing(bars, top, bp, (-yp, yp), [k % 2 == 0 for k in range(len(bp) - 1)], g)
+    else:
+        n = 10
+        pts = [-yp + 2 * yp * k / n for k in range(n + 1)]
+        for f in side:
+            bracing(bars, f, pts, (), [k % 2 == 0 for k in range(n)], g)
+        for t in L.STRING_YS:
+            brace(bars, bottom, (-bottom.inner(t), t), (bottom.inner(t), t), g)
+
+
+def painted_column(cx, cy, foot):
+    """LOD3: a column as one slim tapered solid, G_SOLID[0] of the lattice's
+    width, its peak a pyramid from G_TOP to the finial's tip, the lattice
+    painted on (COL_LAT_R)."""
+    k = L.G_SOLID[0]
+    R = L.COL_LAT_R
+    zs = (foot, L.G_TOP)
+    sq = [(-1, -1), (1, -1), (1, 1), (-1, 1)]
+    B = Builder()
+
+    def uv(t2):
+        def fn(co):
+            if co.z > L.G_TOP + EPS:    # the peak: to a point at G_TIP
+                hz = k * L.g_half(L.G_TOP) * (L.G_TIP - co.z) / (L.G_TIP - L.G_TOP)
+            else:
+                hz = k * L.g_half(co.z)
+            across = (co.x - cx) * t2[0] + (co.y - cy) * t2[1]
+            f = 0.5 if hz < 1e-6 else 0.5 + across / (2.0 * hz)
+            return (R[0] + f * R[2], R[1] + co.z * L.COL_LAT_PPM)
+        return fn
+    rings = [[(cx + p * k * L.g_half(z), cy + q * k * L.g_half(z), z) for p, q in sq] for z in zs]
+    for r0, r1 in zip(rings, rings[1:]):
+        for j in range(4):
+            a, b = sq[j], sq[(j + 1) % 4]
+            t2 = ((b[0] - a[0]) / 2.0, (b[1] - a[1]) / 2.0)
+            B.face([r0[j], r0[(j + 1) % 4], r1[(j + 1) % 4], r1[j]], uv(t2))
+    for j in range(4):
+        a, b = sq[j], sq[(j + 1) % 4]
+        t2 = ((b[0] - a[0]) / 2.0, (b[1] - a[1]) / 2.0)
+        B.face([rings[-1][j], rings[-1][(j + 1) % 4], (cx, cy, L.G_TIP)], uv(t2))
+    B.face(list(reversed(rings[0])), uv_patch("blank"))
+    return B
+
+
+def painted_truss_z():
+    """The slim truss's bottom and top: G_SOLID[2] of the lattice's depth,
+    on its mid-height."""
+    hd = L.G_SOLID[2] * L.BEAM_HD
+    return L.BEAM_ZC - hd, L.BEAM_ZC + hd
+
+
+def painted_truss():
+    """LOD3: the truss as one slim box, G_SOLID[1] of its width and
+    G_SOLID[2] of its depth, on its mid-height, GAP short of the slim
+    columns; the lattice painted on its sides (BEAM_LAT_R) and its top and
+    bottom (BEAM_TOP_R)."""
+    hw = L.G_SOLID[1] * L.BEAM_HW
+    z0, z1 = painted_truss_z()
+    ye = L.G_COL_Y - L.G_SOLID[0] * L.g_half(z0) - GAP
+    S, T = L.BEAM_LAT_R, L.BEAM_TOP_R
+
+    def u(co, R):
+        return R[0] + R[2] / 2.0 + co.y * L.BEAM_LAT_PPM
+
+    def side(a, b):
+        if abs(a[0] - b[0]) < EPS:          # a long side, normal +-x
+            return lambda co: (u(co, S), S[1] + (co.z - z0) / (z1 - z0) * S[3])
+        return uv_patch("galv_paint")
+
+    def flat(co):
+        return (u(co, T), T[1] + (co.x - (L.G_X - hw)) / (2.0 * hw) * T[3])
+    # box() walks the plan; its x is the truss's x, y along the truss
+    return box(L.G_X - hw, L.G_X + hw, -ye, ye, z0, z1, side, flat, flat)
+
+
+def gantry(level):
+    """The portal and its strings: (solids for the union, bars to join after
+    it). Lattice tiers put the legs, pads and strings in the union and every
+    bar after it; painted tiers put the pads, the slim columns' feet and the
+    strings in the union and the slim truss after it."""
+    md = mode(level)
+    union_parts, bars = [], Builder()
     for sy in (-1, 1):
         y = sy * L.G_COL_Y
-
-        def col_uv(t, w, y=y):
-            # U across the face at the foot's scale, V stretched up the column
-            return lambda co: (g[0] + 2.0 + ((co.x - L.G_X) * t[0] + (co.y - y) * t[1])
-                               / w(co.z) * w0 * PPM + w0 * PPM / 2.0,
-                               g[1] + (co.z - foot) / col_len * g[3])
         if md["pads"]:
             p = L.G_PAD[0] / 2.0
-            out.append(box(L.G_X - p, L.G_X + p, y - p, y + p, 0.0, L.G_PAD[1],
-                           band(L.F_Y0, 2.0), uv_patch("pad_top"), uv_patch("blank")))
-        out.append(taper_box(L.G_X, y, L.G_W[0], L.G_W[1], foot, L.G_TOP, col_uv,
-                             uv_patch("galv_paint"), uv_patch("blank")))
-        pk0, pk1, rise = L.G_PEAK
-        out.append(taper_box(L.G_X, y, pk0, pk1, L.G_TOP - 0.05, L.G_TOP + rise,
-                             lambda t, w: uv_patch("galv_paint"), uv_patch("galv_paint"),
-                             uv_patch("galv_paint")))
-    # the beam: an I on its side, flanges top and bottom, swept along Y
-    b0, b1 = L.G_BEAM_Z
-    zc = (b0 + b1) / 2.0
-    prof = h_profile(b1 - b0, L.G_BEAM_W, L.G_TF, L.G_TW) if md["h"] else \
-        rect_profile(b1 - b0, L.G_BEAM_W)
-
-    def beam_side(a, b):
-        # a, b are (u, v) with u vertical, v across X
-        da = math.hypot(b[0] - a[0], b[1] - a[1])
-        tu, tv = (b[0] - a[0]) / da, (b[1] - a[1]) / da
-        return lambda co: (g[0] + 1.0 + ((co.z - zc - a[0]) * tu + (co.x - L.G_X - a[1]) * tv)
-                           * PPM, g[1] + (co.y + L.G_BEAM_Y) / beam_len * g[3])
-    out.append(extrude(prof, lambda u, v, d: (L.G_X + v, d, zc + u),
-                       -L.G_BEAM_Y, L.G_BEAM_Y, beam_side, uv_patch("galv_paint")))
+            union_parts.append(box(L.G_X - p, L.G_X + p, y - p, y + p, 0.0, L.G_PAD[1],
+                                   band(L.F_Y0, 2.0), uv_patch("pad_top"), uv_patch("blank")))
+        if md["lat"] == "painted":
+            foot = L.G_PAD[1] - 0.05 if md["pads"] else 0.0
+            union_parts.append(painted_column(L.G_X, y, foot))
+        else:
+            column(L.G_X, y, md, union_parts, bars)
+    after = [bars]
+    if md["lat"] == "painted":
+        after.append(painted_truss())
+    else:
+        truss(md, bars)
     # strings
     kind, sides = md["string"]
     st = L.STRING_R
     top = string_top()
+    if md["lat"] == "painted":      # from GAP under the slim truss to the same clamp
+        top = painted_truss_z()[0] - GAP
+    length = L.STRING_LEN + top - string_top()
     if kind is not None:
-        for ty in L.T_Y:
-            for k in PH:
-                ys = ty + k * L.SW_PHASE
-                rings = L.string_profile() if kind == "discs" else \
-                    [(0.10, 0.0), (0.10, L.STRING_LEN)]
-                out.append(lathe((L.G_X, ys, top), (0, 0, -1), (1, 0, 0), rings, sides,
-                                 lambda h, frac: (st[0] + frac * st[2], st[1] + h * PPM),
-                                 uv_patch("galv_paint"), uv_patch("galv_paint"),
-                                 phase=math.pi / sides))
-    return out
+        for ys in L.STRING_YS:
+            rings = L.string_profile() if kind == "discs" else \
+                [(0.10, 0.0), (0.10, length)]
+            union_parts.append(lathe((L.G_X, ys, top), (0, 0, -1), (1, 0, 0), rings, sides,
+                                     # the extra length over the painted string
+                                     # samples the cap's paint above it
+                                     lambda h, frac: (st[0] + frac * st[2],
+                                                      st[1] + (h - length + L.STRING_LEN) * PPM),
+                                     uv_patch("galv_paint"), uv_patch("galv_paint"),
+                                     phase=math.pi / sides))
+    return union_parts, [B for B in after if B.bm.faces]
 
 
 # ============================================================ the switchgear
@@ -845,6 +1085,18 @@ def wrapped(rect):
 def galv_box(x0, x1, y0, y1, z0, z1):
     return box(x0, x1, y0, y1, z0, z1, lambda a, b: uv_patch("galv_paint"),
                uv_patch("galv_paint"), uv_patch("blank"))
+
+
+def lattice_leg(x0, x1, y0, y1, z0, z1):
+    """A disconnector table's leg: a solid post with the lattice painted on
+    each face (DIS_LAT_R), U across the face, V up it."""
+    R = L.DIS_LAT_R
+
+    def side(a, b):
+        ln2 = (b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2
+        return lambda co: (R[0] + ((co.x - a[0]) * (b[0] - a[0]) + (co.y - a[1]) * (b[1] - a[1]))
+                           / ln2 * R[2], R[1] + co.z * L.DIS_LAT_PPM)
+    return box(x0, x1, y0, y1, z0, z1, side, uv_patch("galv_paint"), uv_patch("blank"))
 
 
 def switchgear(ty, level):
@@ -864,7 +1116,7 @@ def switchgear(ty, level):
     lx, ly, lo = L.DIS_LEG
     for sgn in (-1, 1):
         yl = ty + sgn * lo
-        out.append(galv_box(xc - lx / 2, xc + lx / 2, yl - ly / 2, yl + ly / 2, 0.0, z0 + 0.05))
+        out.append(lattice_leg(xc - lx / 2, xc + lx / 2, yl - ly / 2, yl + ly / 2, 0.0, z0 + 0.05))
     sides, full = sw["post"]
     prof = L.post_profile(full)
     for y in ys:
@@ -962,6 +1214,56 @@ def conductors(ty, level):
 
 
 # ================================================================ assembly
+def touching(bm, me):
+    """Why the closed shells of mesh *me* do not stand clear of each other
+    and of *bm*, or "" when they do: any two of its shells, or one of them
+    and bm, whose triangles intersect or come within GAP / 4 of each other
+    (probed by intersecting each shell, grown by that much, with the rest)."""
+    from mathutils.bvhtree import BVHTree
+    other = bm.copy()
+    bmesh.ops.triangulate(other, faces=other.faces[:])
+    tree = BVHTree.FromBMesh(other)
+    other.free()
+    mine = bmesh.new()
+    mine.from_mesh(me)
+    bmesh.ops.triangulate(mine, faces=mine.faces[:])
+    mine.faces.index_update()
+    shells, seen = [], set()
+    for f in mine.faces:
+        if f.index in seen:
+            continue
+        stack, shell = [f], []
+        seen.add(f.index)
+        while stack:
+            g = stack.pop()
+            shell.append(g.index)
+            for e in g.edges:
+                for h in e.link_faces:
+                    if h.index not in seen:
+                        seen.add(h.index)
+                        stack.append(h)
+        shells.append(shell)
+    tri = [[tuple(v.co) for v in f.verts] for f in mine.faces]
+    whole = BVHTree.FromPolygons([v for t in tri for v in t],
+                                 [(3 * i, 3 * i + 1, 3 * i + 2) for i in range(len(tri))],
+                                 epsilon=GAP / 4.0)
+    owner = {i: k for k, sh in enumerate(shells) for i in sh}
+    mine.free()
+    for k, sh in enumerate(shells):
+        idx = sh
+        part = BVHTree.FromPolygons([v for i in idx for v in tri[i]],
+                                    [(3 * j, 3 * j + 1, 3 * j + 2) for j in range(len(idx))],
+                                    epsilon=GAP / 4.0)
+        if part.overlap(tree):
+            c = tri[idx[0]][0]
+            return "a bar near (%.3f, %.3f, %.3f) meets the union" % c
+        for _, j in part.overlap(whole):
+            if owner[j] != k:
+                c = tri[idx[0]][0]
+                return "two bars meet near (%.3f, %.3f, %.3f)" % c
+    return ""
+
+
 def build_lod(level):
     md = mode(level)
     base = to_object(house(level), "tmp_house")
@@ -977,14 +1279,24 @@ def build_lod(level):
         solids += conductors(ty, level)
         if md["poles3"]:
             solids += poles3(ty)
-    solids += gantry(level)
+    gparts, after = gantry(level)
+    solids += gparts
     parts = [to_object(B, "tmp_%d" % i) for i, B in enumerate(solids)]
     obj = union(base, parts)
     obj.name = "{}_LOD{}".format(ASSET, level)
     obj.data.name = obj.name + "_mesh"
 
+    # the lattice's bars join after the union: closed solids that touch
+    # nothing, so it would only cost time; asserted here
     bm = bmesh.new()
     bm.from_mesh(obj.data)
+    for i, B in enumerate(after):
+        extra = to_object(B, "tmp_bars_%d" % i)
+        clash = touching(bm, extra.data)
+        if clash:
+            raise ValueError("LOD%d: %s" % (level, clash))
+        bm.from_mesh(extra.data)
+        bpy.data.meshes.remove(extra.data)
     bmesh.ops.remove_doubles(bm, verts=bm.verts[:], dist=1e-5)
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
     if level >= 2:
@@ -1075,8 +1387,6 @@ def check_layout():
     p = L.G_PAD[0] / 2
     if L.G_X - p < west + 0.3 or L.G_COL_Y + p > inner_y - 0.3:
         problems.append("a gantry pad crowds the yard wall")
-    if L.G_BEAM_Y > inner_y - 0.3:
-        problems.append("the beam reaches the yard wall")
     if L.G_TOP <= L.G_BEAM_Z[1] + 0.05:
         problems.append("the columns do not rise above the beam")
     # the switchgear bays: west to east with a walkway between each part,
