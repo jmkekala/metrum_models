@@ -1,0 +1,40 @@
+{
+  "schema": "metrum-model-facts",
+  "version": 1,
+  "name": "tiilimuuri_run_5m",
+  "path": "props/boundary/tiilimuuri_run_5m",
+  "source": {"commit": "8909fdaa55f1c1e0396ffa3da7f28f8909170840", "dirty": true, "blender": "5.3.0"},
+  "license": "CC-BY-4.0",
+  "bounds": {"min": [-2.725, 0.0, -0.225], "max": [2.4, 2.25, 0.225]},
+  "footprint": [
+    [-2.7, -0.2],
+    [-2.3, -0.2],
+    [-2.3, -0.125],
+    [2.4, -0.125],
+    [2.4, 0.125],
+    [-2.3, 0.125],
+    [-2.3, 0.2],
+    [-2.7, 0.2]
+  ],
+  "storeys": [],
+  "dwellings": 0,
+  "doors": [],
+  "lods": [
+    {"file": "tiilimuuri_run_5m_lod0.glb", "triangles": 60, "sha256": "8eac53dc7695424fed014dd18a5f3d2fbe2a09881a96ad00a84549b414f875ec"},
+    {"file": "tiilimuuri_run_5m_lod1.glb", "triangles": 36, "sha256": "73968018b9a411529ceeb043ffb642b1753a94d2efde0cf4c11632447c1e217f"},
+    {"file": "tiilimuuri_run_5m_lod2.glb", "triangles": 28, "sha256": "a3b7b6f34ce0ab57d2d00344be7358fc55334ecc0beb47543a03b82540be062e"},
+    {"file": "tiilimuuri_run_5m_lod3.glb", "triangles": 12, "sha256": "5c39981de80d4c1fdd884594e52216922cd4406b0d151cfeb958d31fa7bde3a1"}
+  ],
+  "textures": {
+    "orm": {"file": "tiilimuuri_run_5m_orm.png", "sha256": "5312f5c808986f1117e8fd259b0e6e0010e6762fc01e93ec8d92230bc1754bbe"},
+    "normal": {"file": "tiilimuuri_run_5m_normal.png", "sha256": "c901fb827f8b29ef106f3ad1e05336087e464df21cb6c116a9b1828c63e72517"}
+  },
+  "variants": [
+    {"id": "red_brick", "albedo": "tiilimuuri_run_5m_albedo_red_brick.png", "sha256": "c4c3e9f52509237559bba486adc45d174c6207b3e3539a4c408fd644e93f3524"},
+    {"id": "yellow_brick", "albedo": "tiilimuuri_run_5m_albedo_yellow_brick.png", "sha256": "1520174927d986bedd5af70cb865315c5686eb3076011ae8363dc6412b687bcb"},
+    {"id": "brown_brick", "albedo": "tiilimuuri_run_5m_albedo_brown_brick.png", "sha256": "7930c4102391a9c33d4ec9c5f38c8313fd03210c2f65c72b6329863131843d85"}
+  ],
+  "default_variant": "red_brick",
+  "preview": {"file": "../preview.png", "sha256": "14b8ce4f2f71c1a9f36d4a59823c048598d2b26a09e2aeecb1ea3a61321d71b3"},
+  "hero": false
+}

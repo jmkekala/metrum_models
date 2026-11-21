@@ -1,0 +1,48 @@
+{
+  "schema": "metrum-model-facts",
+  "version": 1,
+  "name": "tiilimuuri_run_10m",
+  "path": "props/boundary/tiilimuuri_run_10m",
+  "source": {"commit": "8909fdaa55f1c1e0396ffa3da7f28f8909170840", "dirty": true, "blender": "5.3.0"},
+  "license": "CC-BY-4.0",
+  "bounds": {"min": [-5.225, 0.0, -0.225], "max": [4.9, 2.25, 0.225]},
+  "footprint": [
+    [-5.2, -0.2],
+    [-4.8, -0.2],
+    [-4.8, -0.125],
+    [-0.2, -0.125],
+    [-0.2, -0.2],
+    [0.2, -0.2],
+    [0.2, -0.125],
+    [4.9, -0.125],
+    [4.9, 0.125],
+    [0.2, 0.125],
+    [0.2, 0.2],
+    [-0.2, 0.2],
+    [-0.2, 0.125],
+    [-4.8, 0.125],
+    [-4.8, 0.2],
+    [-5.2, 0.2]
+  ],
+  "storeys": [],
+  "dwellings": 0,
+  "doors": [],
+  "lods": [
+    {"file": "tiilimuuri_run_10m_lod0.glb", "triangles": 124, "sha256": "19b01f46ced385bc6bde807e53a0a356f8b1a1965b32638e0f6c6ca046ae8f23"},
+    {"file": "tiilimuuri_run_10m_lod1.glb", "triangles": 76, "sha256": "2e9f2da9fd705826384b2e66db4531c8165a945f260e6da6ed833bfa96bfb6ae"},
+    {"file": "tiilimuuri_run_10m_lod2.glb", "triangles": 60, "sha256": "6c7fee5059b28d247b090b94ceec3c9d32e01499c0230ae6ee020da8ed3a909c"},
+    {"file": "tiilimuuri_run_10m_lod3.glb", "triangles": 12, "sha256": "cdc5f4e856da737df50604ec4f81a9f2cea52304994942e7dd4bec90a086aa91"}
+  ],
+  "textures": {
+    "orm": {"file": "tiilimuuri_run_10m_orm.png", "sha256": "5312f5c808986f1117e8fd259b0e6e0010e6762fc01e93ec8d92230bc1754bbe"},
+    "normal": {"file": "tiilimuuri_run_10m_normal.png", "sha256": "c901fb827f8b29ef106f3ad1e05336087e464df21cb6c116a9b1828c63e72517"}
+  },
+  "variants": [
+    {"id": "red_brick", "albedo": "tiilimuuri_run_10m_albedo_red_brick.png", "sha256": "c4c3e9f52509237559bba486adc45d174c6207b3e3539a4c408fd644e93f3524"},
+    {"id": "yellow_brick", "albedo": "tiilimuuri_run_10m_albedo_yellow_brick.png", "sha256": "1520174927d986bedd5af70cb865315c5686eb3076011ae8363dc6412b687bcb"},
+    {"id": "brown_brick", "albedo": "tiilimuuri_run_10m_albedo_brown_brick.png", "sha256": "7930c4102391a9c33d4ec9c5f38c8313fd03210c2f65c72b6329863131843d85"}
+  ],
+  "default_variant": "red_brick",
+  "preview": {"file": "../preview.png", "sha256": "1e383877540c8f3aaff7161126ca2f66585ab0004a2d6b3c54c7661895f007bb"},
+  "hero": false
+}

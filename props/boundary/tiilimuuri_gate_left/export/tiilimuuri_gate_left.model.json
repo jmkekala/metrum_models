@@ -1,0 +1,36 @@
+{
+  "schema": "metrum-model-facts",
+  "version": 1,
+  "name": "tiilimuuri_gate_left",
+  "path": "props/boundary/tiilimuuri_gate_left",
+  "source": {"commit": "8909fdaa55f1c1e0396ffa3da7f28f8909170840", "dirty": true, "blender": "5.3.0"},
+  "license": "CC-BY-4.0",
+  "bounds": {"min": [-3.105, 0.0, -0.27], "max": [0.0, 2.6, 0.325]},
+  "footprint": [
+    [-0.525, -0.2],
+    [-0.025, -0.2],
+    [-0.025, 0.3],
+    [-0.525, 0.3]
+  ],
+  "storeys": [],
+  "dwellings": 0,
+  "doors": [],
+  "lods": [
+    {"file": "tiilimuuri_gate_left_lod0.glb", "triangles": 58, "sha256": "5a666930ba5bb8e9d3194828b72692fa2c9b2e6b1c37906aa6eb6999b60a51ee"},
+    {"file": "tiilimuuri_gate_left_lod1.glb", "triangles": 44, "sha256": "2f5715e09effbda312bdf6bb7c29c3a31b293bb6ba30ed9760c932c68e16add7"},
+    {"file": "tiilimuuri_gate_left_lod2.glb", "triangles": 24, "sha256": "5742a4a22be1348dcef84bb1226f37329fa3d66c6ad7c9cb536f9413a5f04460"},
+    {"file": "tiilimuuri_gate_left_lod3.glb", "triangles": 24, "sha256": "dd2d0ee3ae60666c91288dc5e836006d8a6ffdd1a4fa9357f53e7fda1de74d61"}
+  ],
+  "textures": {
+    "orm": {"file": "tiilimuuri_gate_left_orm.png", "sha256": "5312f5c808986f1117e8fd259b0e6e0010e6762fc01e93ec8d92230bc1754bbe"},
+    "normal": {"file": "tiilimuuri_gate_left_normal.png", "sha256": "c901fb827f8b29ef106f3ad1e05336087e464df21cb6c116a9b1828c63e72517"}
+  },
+  "variants": [
+    {"id": "red_brick", "albedo": "tiilimuuri_gate_left_albedo_red_brick.png", "sha256": "c4c3e9f52509237559bba486adc45d174c6207b3e3539a4c408fd644e93f3524"},
+    {"id": "yellow_brick", "albedo": "tiilimuuri_gate_left_albedo_yellow_brick.png", "sha256": "1520174927d986bedd5af70cb865315c5686eb3076011ae8363dc6412b687bcb"},
+    {"id": "brown_brick", "albedo": "tiilimuuri_gate_left_albedo_brown_brick.png", "sha256": "7930c4102391a9c33d4ec9c5f38c8313fd03210c2f65c72b6329863131843d85"}
+  ],
+  "default_variant": "red_brick",
+  "preview": {"file": "../preview.png", "sha256": "dd35ba38c525bf8302e2305b5e2784fd2a21dc85f84fcc71c08872ac63b845c4"},
+  "hero": false
+}

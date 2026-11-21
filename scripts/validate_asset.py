@@ -47,9 +47,16 @@ BUDGETS = {
     ("building", True): ((None, 20000), (None, 6000), (None, 2500), (None, 700)),
     ("prop_small", False): ((50, 300), (12, 80), None),
     ("prop_medium", False): ((200, 800), (40, 200), None),
+    # boundary pieces (wall runs, piers, gates) stand in rows of dozens and
+    # are seen as far as the buildings they enclose: four required tiers,
+    # ceilings only, like buildings, and a facts sidecar.
+    ("prop_boundary", False): ((None, 200), (None, 120), (None, 80), (None, 24)),
 }
 TEX_MAX = {("building", False): 1024, ("building", True): 2048,
-           ("prop_small", False): 256, ("prop_medium", False): 512}
+           ("prop_small", False): 256, ("prop_medium", False): 512,
+           ("prop_boundary", False): 512}
+FOUR_TIERS = ("building", "prop_boundary")     # every tier required, sidecar too
+BUDGETS_KINDS = tuple(dict.fromkeys(k for k, _ in BUDGETS))
 
 # Hidden-surface thresholds. A watertight shell must close somewhere — a
 # wall-ring cap, a roof underside, a shaft through the roof, the buried back of
@@ -190,7 +197,7 @@ def check_tier(results, asset, adir, level, kind, hero):
     tag = "LOD{}".format(level)
     path = os.path.join(adir, "export", "{}_lod{}.glb".format(asset, level))
     if not os.path.exists(path):
-        required = (kind == "building") or level < 2
+        required = kind in FOUR_TIERS or level < 2
         results.append(("FAIL" if required else "SKIP", tag,
                         "export missing" if required else "optional tier absent"))
         return
@@ -576,10 +583,28 @@ def check_facts(results, asset, adir, hero):
                         % (doors, "passages, " if "passages" in doc else "")))
 
 
+def check_plan_bounds(results, asset, adir):
+    """Every tier's plan bounds against LOD0's: a boundary piece's plan
+    rectangle is the consumer's obstacle, and its pivot is the attachment
+    point rather than the plan's centre, so a tier that lost an overhang
+    would change the obstacle while each file looked right alone."""
+    edir = os.path.join(adir, "export")
+    paths = [os.path.join(edir, "%s_lod%d.glb" % (asset, lv)) for lv in range(4)]
+    if not all(os.path.isfile(p) for p in paths):
+        return                      # already reported by check_tier
+    stats = [model_facts.glb_stats(p) for p in paths]
+    ref = stats[0]
+    for lv, s in enumerate(stats[1:], 1):
+        off = [abs(s[k][i] - ref[k][i]) for k in ("min", "max") for i in (0, 2)]
+        results.append(("PASS" if max(off) < 1e-3 else "FAIL", "LOD%d" % lv,
+                        "plan bounds x %.3f..%.3f, z %.3f..%.3f%s"
+                        % (s["min"][0], s["max"][0], s["min"][2], s["max"][2],
+                           "" if max(off) < 1e-3 else ", not LOD0's")))
+
+
 def validate(adir, kind="building", hero=False):
-    if kind not in ("building", "prop_small", "prop_medium"):
-        raise ValueError("kind must be building, prop_small or prop_medium, "
-                         "not %r" % kind)
+    if kind not in BUDGETS_KINDS:
+        raise ValueError("kind must be one of %s, not %r" % (", ".join(BUDGETS_KINDS), kind))
     if kind != "building" and hero:
         # The hero/landmark exception is a buildings-only rule; props have no
         # equivalent band, so silently accepting it would validate against a
@@ -594,8 +619,10 @@ def validate(adir, kind="building", hero=False):
     check_notes(results, adir, kind)
     for level in range(len(BUDGETS[(kind, hero)])):
         check_tier(results, asset, adir, level, kind, hero)
+    if kind == "prop_boundary":
+        check_plan_bounds(results, asset, adir)
     check_textures(results, asset, adir, kind, hero)
-    if kind == "building":
+    if kind in FOUR_TIERS:
         check_facts(results, asset, adir, hero)
     for note in ("material palette within the muted/realistic range",
                  "silhouette, roofline and major recesses match across tiers",

@@ -1,0 +1,36 @@
+{
+  "schema": "metrum-model-facts",
+  "version": 1,
+  "name": "tiilimuuri_gate_right",
+  "path": "props/boundary/tiilimuuri_gate_right",
+  "source": {"commit": "8909fdaa55f1c1e0396ffa3da7f28f8909170840", "dirty": true, "blender": "5.3.0"},
+  "license": "CC-BY-4.0",
+  "bounds": {"min": [0.0, 0.0, -0.27], "max": [3.105, 2.6, 0.325]},
+  "footprint": [
+    [0.025, -0.2],
+    [0.525, -0.2],
+    [0.525, 0.3],
+    [0.025, 0.3]
+  ],
+  "storeys": [],
+  "dwellings": 0,
+  "doors": [],
+  "lods": [
+    {"file": "tiilimuuri_gate_right_lod0.glb", "triangles": 58, "sha256": "370b5209a446afe9f5075fd52f9332fe6ab6d5c35c5649e319235ed05b232853"},
+    {"file": "tiilimuuri_gate_right_lod1.glb", "triangles": 44, "sha256": "1d7350eed8c7a4e14ffce16726b950286ae8f5495d7d15cd5e8c95b47089afaa"},
+    {"file": "tiilimuuri_gate_right_lod2.glb", "triangles": 24, "sha256": "f05e1d3c242dbbf00434e1b1cf2dea3e386422e074217e0c9752f3bcffbec9f4"},
+    {"file": "tiilimuuri_gate_right_lod3.glb", "triangles": 24, "sha256": "6517a3b838c54f5ea6dcbef3dce3150c912c4e70afbaabe25f7a5f7e2dd63c2a"}
+  ],
+  "textures": {
+    "orm": {"file": "tiilimuuri_gate_right_orm.png", "sha256": "5312f5c808986f1117e8fd259b0e6e0010e6762fc01e93ec8d92230bc1754bbe"},
+    "normal": {"file": "tiilimuuri_gate_right_normal.png", "sha256": "c901fb827f8b29ef106f3ad1e05336087e464df21cb6c116a9b1828c63e72517"}
+  },
+  "variants": [
+    {"id": "red_brick", "albedo": "tiilimuuri_gate_right_albedo_red_brick.png", "sha256": "c4c3e9f52509237559bba486adc45d174c6207b3e3539a4c408fd644e93f3524"},
+    {"id": "yellow_brick", "albedo": "tiilimuuri_gate_right_albedo_yellow_brick.png", "sha256": "1520174927d986bedd5af70cb865315c5686eb3076011ae8363dc6412b687bcb"},
+    {"id": "brown_brick", "albedo": "tiilimuuri_gate_right_albedo_brown_brick.png", "sha256": "7930c4102391a9c33d4ec9c5f38c8313fd03210c2f65c72b6329863131843d85"}
+  ],
+  "default_variant": "red_brick",
+  "preview": {"file": "../preview.png", "sha256": "9da06b2fbd9336000d6f8bc6aa83af14fceaf2eb66fe064948d54713dba0838e"},
+  "hero": false
+}

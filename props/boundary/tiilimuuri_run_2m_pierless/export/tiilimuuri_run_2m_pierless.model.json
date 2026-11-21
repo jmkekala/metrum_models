@@ -1,0 +1,36 @@
+{
+  "schema": "metrum-model-facts",
+  "version": 1,
+  "name": "tiilimuuri_run_2m_pierless",
+  "path": "props/boundary/tiilimuuri_run_2m_pierless",
+  "source": {"commit": "8909fdaa55f1c1e0396ffa3da7f28f8909170840", "dirty": true, "blender": "5.3.0"},
+  "license": "CC-BY-4.0",
+  "bounds": {"min": [-0.9, 0.0, -0.175], "max": [0.9, 2.1, 0.175]},
+  "footprint": [
+    [-0.9, -0.125],
+    [0.9, -0.125],
+    [0.9, 0.125],
+    [-0.9, 0.125]
+  ],
+  "storeys": [],
+  "dwellings": 0,
+  "doors": [],
+  "lods": [
+    {"file": "tiilimuuri_run_2m_pierless_lod0.glb", "triangles": 28, "sha256": "9101951d03524f985867a3f4b0a2b179be255827a817717a438b78e2e9c6c2cc"},
+    {"file": "tiilimuuri_run_2m_pierless_lod1.glb", "triangles": 28, "sha256": "9071fda22bb662827d890f6ca5cecf37301bcef5675c51dd8c320cd2856f7b27"},
+    {"file": "tiilimuuri_run_2m_pierless_lod2.glb", "triangles": 28, "sha256": "9c2fed51bff7917de6e218c1e8cea24beb75882ca96953efcd90b3e2a193396a"},
+    {"file": "tiilimuuri_run_2m_pierless_lod3.glb", "triangles": 12, "sha256": "a028ef13b0c0607b2a011ccffde1d11279ab1bac16bd3fcf37534bc6344f379b"}
+  ],
+  "textures": {
+    "orm": {"file": "tiilimuuri_run_2m_pierless_orm.png", "sha256": "5312f5c808986f1117e8fd259b0e6e0010e6762fc01e93ec8d92230bc1754bbe"},
+    "normal": {"file": "tiilimuuri_run_2m_pierless_normal.png", "sha256": "c901fb827f8b29ef106f3ad1e05336087e464df21cb6c116a9b1828c63e72517"}
+  },
+  "variants": [
+    {"id": "red_brick", "albedo": "tiilimuuri_run_2m_pierless_albedo_red_brick.png", "sha256": "c4c3e9f52509237559bba486adc45d174c6207b3e3539a4c408fd644e93f3524"},
+    {"id": "yellow_brick", "albedo": "tiilimuuri_run_2m_pierless_albedo_yellow_brick.png", "sha256": "1520174927d986bedd5af70cb865315c5686eb3076011ae8363dc6412b687bcb"},
+    {"id": "brown_brick", "albedo": "tiilimuuri_run_2m_pierless_albedo_brown_brick.png", "sha256": "7930c4102391a9c33d4ec9c5f38c8313fd03210c2f65c72b6329863131843d85"}
+  ],
+  "default_variant": "red_brick",
+  "preview": {"file": "../preview.png", "sha256": "13a12fecb2db9b1fd0302aaae465e717f8a8759e035115f69a259d81ed3712ef"},
+  "hero": false
+}

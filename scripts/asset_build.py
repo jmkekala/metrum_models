@@ -276,10 +276,16 @@ class Asset:
     (a windowless shed, a chimney stack; CLAUDE.md, Output Contract): the
     material has no emission mask wired in, the export leaves out the lit
     state and the factor rewrite, and there is no day/night variants.png.
+
+    pivot is for a prop pivoted on its attachment point (CLAUDE.md, Props)
+    rather than its plan's centre: a build-frame point every tier is moved
+    by instead of LOD0's pivot_offset(). Every tier must then still have
+    LOD0's plan centre, wherever that lies. None (buildings) keeps the
+    plan-centred pivot.
     """
 
     def __init__(self, name, here, variants, default_variant, tint=None,
-                 levels=LEVELS, camera_location=None, night_lit=True):
+                 levels=LEVELS, camera_location=None, night_lit=True, pivot=None):
         self.name, self.here = name, here
         self.export_dir = os.path.join(here, "export")
         self.variants = list(variants)
@@ -289,6 +295,7 @@ class Asset:
         self.camera_location = camera_location
         self.night_lit = bool(night_lit)
         self.pivot = None               # set by build_all(): LOD0's pivot offset
+        self.authored_pivot = None if pivot is None else tuple(pivot)
 
     def lod(self, level):
         return bpy.data.objects["{}_LOD{}".format(self.name, level)]
@@ -397,12 +404,15 @@ class Asset:
         mat = self.material()
         objs = [build_lod(level) for level in self.levels]
         off = pivot_offset(objs[0])
+        if self.authored_pivot is not None:
+            off = Vector(self.authored_pivot)
+        ref = pivot_offset(objs[0]) - off       # zero unless the pivot is authored
         self.pivot = tuple(off)
         stats = {}
         for level, obj in zip(self.levels, objs):
             for v in obj.data.vertices:
                 v.co -= off
-            centre = pivot_offset(obj)
+            centre = pivot_offset(obj) - ref
             if centre.length > 1e-3:
                 raise ValueError("LOD%d's extents differ from LOD0's (centre off "
                                  "by %s)" % (level, tuple(round(c, 4) for c in centre)))
