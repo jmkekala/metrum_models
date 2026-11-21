@@ -26,12 +26,15 @@ A trim sheet. Rows from the bottom:
     y  530 ..  550   EAVE    the eave fascia with its gutter
     y  556 .. 1020   unique  the lane's side walls, ceiling and floor with the
                              tipping grate (32 px/m), the windows, the doors,
-                             the outlet hatch, the louvre and flat patches
+                             the loading hatch, the louvre, the head house's
+                             cladding (CLAD), the conveyor gallery's sides
+                             (GAL_SIDE) and closed end (GAL_END), flat patches
 
 Every wall above the band's top (6.5625 m) samples the brick rows again,
 GABLE_SHIFT or twice that lower, a whole tone period of courses, so the bond
 runs on across the line: the gable triangles, the main walls' strip under
-the eave and the elevator tower to 13.4 m all come from one band.
+the eave and the elevator tower's brick shaft to 12.4 m all come from one
+band.
 Weather that follows height stays below SAMPLE_LO, the lowest row any shifted
 wall samples, so the shift never shows as a seam.
 """
@@ -76,7 +79,7 @@ Z_MOUTH = Z_BAND0       # the portal lintels' soffit: the lane's clear height
 Z_WIN = 4.25            # 272 px: the shed's high windows' sill ...
 WIN_W, WIN_H = 2.8, 1.75  # ... their head under the band at 6.0
 Z_EAVE = 7.2            # the main roof's underside at the long walls' faces
-TAN = 0.25              # 14 degrees, ridge along X
+TAN = 0.12              # 6.8 degrees, a low working-shed gable, ridge along X
 ROOF_T = 0.25
 EAVE_OV, RAKE_OV = 0.40, 0.30
 WALL_INTO = 0.12        # walls run this far up into a roof slab
@@ -105,14 +108,52 @@ A_SLAB_Y0 = Y_R - 0.20  # the lean-to slab's high end, buried in the shed's wall
 SLOPE_FA = math.sqrt(1.0 + TAN_A * TAN_A)
 
 # The elevator tower, housing the bucket elevator from the pit under the
-# grate: 3.4 x 4.0 m in plan, standing 0.4 m proud of the annex's rear face,
-# a flat concrete roof slab at 13.25 .. 13.5 m.
-TX0, TX1 = -1.7, 1.7
+# grate and its stair: a slim brick shaft 2.6 x 4.1 m in plan, standing 0.4 m
+# proud of the annex's rear face, and on it the head house, sheet-clad,
+# oversailing the shaft by HH_OV on the front and both sides and flush with
+# its rear face, where the inclined conveyor gallery leaves it.
+TX0, TX1 = -1.3, 1.3
 TY0, TY1 = AY0, 7.0
-Z_TSLAB = 13.25
+HH_OV = 0.70
+HX0, HX1 = TX0 - HH_OV, TX1 + HH_OV          # the head house: x -2.0 .. 2.0
+HY0, HY1 = TY0 - HH_OV, TY1                  # ... y 2.2 .. 7.0
+HH_Z0 = 12.30           # its floor: the shaft's top, the oversail's soffit
+Z_TSLAB = 16.25         # its flat roof slab, 16.25 .. 16.50
 T_SLAB_T = 0.25
-T_OV = 0.25
-Z_TOWER_TOP = Z_TSLAB + WALL_INTO   # its walls' lid, inside the slab
+T_OV = 0.15
+Z_TOWER_TOP = HH_Z0 + WALL_INTO     # the shaft's lid, inside the head house
+Z_HH_TOP = Z_TSLAB + WALL_INTO      # the head house walls' lid, inside the slab
+
+# The inclined conveyor gallery: an enclosed box 2.6 m wide and 2.8 m tall
+# in vertical section, leaving the head house's rear face (the shaft's rear
+# face plane, TY1) with its centre line at GAL_Z0 and rising at GAL_ANG
+# degrees away from the building, toward +Y, GAL_LEN metres in plan to a
+# closed end. It is carried as a cantilever on two raking steel struts back
+# to the shaft's rear face: nothing of it reaches the ground.
+GAL_W, GAL_H = 2.6, 2.8
+GAL_ANG = 20.0
+GAL_TAN = math.tan(math.radians(GAL_ANG))
+GAL_Z0 = 14.0
+GAL_LEN = 4.0
+GAL_Y1 = TY1 + GAL_LEN                       # its end face's plane, 11.0
+GAL_Z1 = GAL_Z0 + GAL_LEN * GAL_TAN          # its end's centre, 15.456
+GAL_BURY = 0.30                              # it starts this far inside the head house
+GAL_END_RIM = 0.15                           # the end face's rim round its panel
+GAL_END_RECESS = 0.08                        # the panel's set-back at the close tiers
+STRUT_X = (-1.0, 1.0)                        # the two struts, under the gallery
+STRUT_W = 0.20
+STRUT_FOOT = (TY1, 9.80)                     # (y, z) of their axis at the shaft's face
+STRUT_TOP_Y = TY1 + 3.40                     # ... and under the gallery's floor
+# The hoist beam over the head house's loading hatch, east face
+HOIST_Y = 4.6
+HOIST_OUT = 1.10
+HOIST_Z = (15.55, 15.80)
+HOIST_W = 0.16
+
+
+def gal_floor(y):
+    """The gallery's underside over plan y (its floor's outside)."""
+    return GAL_Z0 - GAL_H / 2.0 + (y - TY1) * GAL_TAN
 
 # Walls above the band sample the brick rows lower by these, in bands split
 # at these heights. A shift is a whole tone period (48 courses, 3.75 m).
@@ -121,8 +162,13 @@ SHIFTS = (0.0, 3.75, 7.5)
 SAMPLE_LO = 2.0         # the lowest z any shifted wall samples (checked)
 SAMPLE_HI = 5.88        # ... and the highest
 
-# The tipping grate in the lane's floor, at mid-length on the centre line.
-GRATE_X = (-1.5, 1.5)
+# The lane is used one way, in at the west (-X) mouth and out at the east.
+# A truck stops with its centre at the lane's centre (STOP_X); a rear-tipping
+# truck's tail is then toward the entry, so the tipping grate lies on the
+# centre line 2.5 m toward the west mouth, 3.0 m along the lane.
+STOP_X = 0.0
+GRATE_C = -2.5
+GRATE_X = (GRATE_C - 1.5, GRATE_C + 1.5)
 GRATE_Y = (YC - 2.0, YC + 2.0)
 
 
@@ -155,11 +201,11 @@ OPENINGS = {
     "win": (WIN_W, WIN_H), "win_b": (WIN_W, WIN_H),
     "win_s": (0.9, 1.2), "win_s_b": (0.9, 1.2),
     "door": (1.05, 2.15),       # a 0.95 x 2.10 leaf in a 0.05 m steel frame
-    "hatch": (1.2, 1.2),        # the elevator's outlet hatch
+    "hatch": (1.2, 1.2),        # the head house's loading hatch, under the hoist beam
     "louvre": (1.0, 0.6),
 }
 REVEAL = {"win": 0.20, "win_b": 0.20, "win_s": 0.15, "win_s_b": 0.15,
-          "door": 0.20, "hatch": 0.20, "louvre": 0.15}
+          "door": 0.20, "hatch": 0.12, "louvre": 0.12}
 DOOR_FRAME = 0.05
 LEAF_W, LEAF_H = OPENINGS["door"][0] - 2 * DOOR_FRAME, OPENINGS["door"][1] - DOOR_FRAME
 
@@ -196,14 +242,28 @@ REGION = {
     "hatch": (790.0, 746.0, 1.2 * PPM, 1.2 * PPM),
     "louvre": (790.0, 830.0, 1.0 * PPM, 0.6 * PPM),
 }
+# The light profiled sheet the head house is clad in and the gallery's roof:
+# ribs every RIB_P px across U at 64 px/m, uniform up V, so V is stretched
+# (CLAD_VPM) to fit: U along a wall, V up it from the head house's floor.
+CLAD = (4.0, 908.0, 448.0, 88.0)
+CLAD_H = Z_HH_TOP - HH_Z0 + 0.10                 # metres V covers
+CLAD_VPM = CLAD[3] / CLAD_H
+# The gallery's two sides: U along the gallery in plan from inside the head
+# house (GAL_BURY) at 64 px/m, V up from its floor across its 2.8 m section.
+GAL_SIDE = (716.0, 912.0, (GAL_LEN + GAL_BURY) * PPM, 106.0)
+GAL_VPM = GAL_SIDE[3] / GAL_H
+# The gallery's closed end, at LPM: U across from its west side, V up.
+GAL_END = (914.0, 560.0, GAL_W * LPM, GAL_H * LPM)
 PATCH_NAMES = ("blank", "soffit", "sill", "conc", "barge", "lintel", "beam",
-               "felt", "coping", "slab_under", "reveal")
+               "felt", "coping", "slab_under", "reveal", "hh_soffit", "gal_under",
+               "strut", "clad_rev", "hoist")
 PATCHES = {n: (4.0 + 20.0 * i, 1000.0, 16.0, 16.0) for i, n in enumerate(PATCH_NAMES)}
 
 # ----------------------------------------------------------- material ids
 (ID_BLANK, ID_PLINTH, ID_BRICK, ID_BRICK2, ID_MORTAR, ID_CONC, ID_FRAME,
  ID_GLASS, ID_ROOF, ID_FLASH, ID_DOOR, ID_GUTTER, ID_HANDLE, ID_DARK,
- ID_SOFFIT, ID_SEAL, ID_STEEL, ID_COAL, ID_FLOOR, ID_SHEET, ID_FELT) = range(21)
+ ID_SOFFIT, ID_SEAL, ID_STEEL, ID_COAL, ID_FLOOR, ID_SHEET, ID_FELT,
+ ID_CLAD) = range(22)
 
 # (roughness, metallic). Painted steel stays mostly dielectric; the gutter,
 # downpipes, snow guard and ridge are the catalog's galvanised steel.
@@ -215,16 +275,28 @@ SURFACE = {
     ID_GUTTER: (0.48, 0.60), ID_HANDLE: (0.35, 0.80), ID_DARK: (0.96, 0.0),
     ID_SOFFIT: (0.74, 0.0), ID_SEAL: (0.90, 0.0), ID_STEEL: (0.62, 0.30),
     ID_COAL: (0.92, 0.0), ID_FLOOR: (0.88, 0.0), ID_SHEET: (0.58, 0.25),
-    ID_FELT: (0.90, 0.0),
+    ID_FELT: (0.90, 0.0), ID_CLAD: (0.56, 0.10),
 }
 
 # ---------------------------------------------------------------- palettes
 # The plant's brick trio: one coherent brick per instance, the window steel,
 # the doors and the roof moving with it. Window steel is always lighter than
 # the glass it holds.
+def plant_brick(c, k=0.94):
+    """The plant's shared red-brick tone: each sRGB channel pulled 40 % of
+    the way to the triplet's Rec. 709 luma, then darkened by *k*. All five
+    of the plant's pieces derive their red brick from the same originals by
+    this formula, so they match side by side."""
+    y = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
+    return tuple(int((y + 0.6 * (v - y)) * k + 0.5) for v in c)
+
+
 VARIANTS = {
-    "red_brick": {"brick": (144, 72, 52), "brick2": (114, 58, 45),
-                  "mortar": (150, 145, 136), "frame": (206, 204, 196),
+    # from (144, 72, 52), (114, 58, 45) and (150, 145, 136); the mortar a
+    # further 10 % darker than the brick's 0.94
+    "red_brick": {"brick": plant_brick((144, 72, 52)), "brick2": plant_brick((114, 58, 45)),
+                  "mortar": plant_brick((150, 145, 136), 0.94 * 0.90),
+                  "frame": (206, 204, 196),
                   "door": (66, 82, 76), "roof": (58, 60, 62)},
     "yellow_brick": {"brick": (188, 166, 122), "brick2": (164, 142, 104),
                      "mortar": (160, 156, 148), "frame": (104, 116, 108),
@@ -241,6 +313,7 @@ FIXED = {
     ID_DARK: (24, 24, 24), ID_SOFFIT: (150, 150, 146), ID_SEAL: (34, 34, 34),
     ID_STEEL: (72, 72, 70), ID_COAL: (28, 28, 28), ID_FLOOR: (132, 130, 124),
     ID_SHEET: (124, 126, 126), ID_FELT: (54, 54, 56),
+    ID_CLAD: (184, 186, 180),   # pale grey painted sheet: head house and gallery
 }
 
 # A stray pixel in a tiling band repeats under every surface sampling it.
@@ -274,16 +347,16 @@ GRATE_BAR_H = 0.040     # the grate's bars over the coal between them
 
 # Occlusion in the lane: what its middle keeps of the shade and AO a surface
 # in the open has. Open at both ends, so symmetric about mid-length.
-SIDE_SHADE, SIDE_AO = 0.62, 0.48
-CEIL_SHADE, CEIL_AO = 0.50, 0.38
+SIDE_SHADE, SIDE_AO = 0.52, 0.44
+CEIL_SHADE, CEIL_AO = 0.42, 0.34
 FLOOR_SHADE, FLOOR_AO = 0.70, 0.55
 
 # Coal dust: weathering.py's K field, laid by Weather.coal()
 COAL_DUST = (44, 43, 42)    # sRGB: settled coal fines
-FOOT_COAL = 1.00            # at the walls' foot ...
-FOOT_FALL = 0.60            # ... falling by 1/e every this many metres ...
+FOOT_COAL = 1.30            # at the walls' foot ...
+FOOT_FALL = 1.10            # ... falling by 1/e every this many metres ...
 FOOT_TOP = 1.90             # ... and gone by here, under SAMPLE_LO
-LANE_COAL = 0.30
+LANE_COAL = 0.55
 
 
 def m(v):
@@ -685,9 +758,9 @@ def paint_door(c):
 
 
 def paint_hatch(c):
-    """The elevator head's outlet hatch: a top-hung steel plate in an angle
-    frame, stiffened by a cross of flats, two strap hinges along its head and
-    a lock bar at its foot. Closed and opaque: no conveyor leaves it."""
+    """The head house's loading hatch under the hoist beam: a top-hung
+    steel plate in an angle frame, stiffened by a cross of flats, two strap
+    hinges along its head and a lock bar at its foot. Closed and opaque."""
     x, y, w, h = REGION["hatch"]
     F = 5
     c.paint(x - PAD, x + w + PAD, y - PAD, y + h + PAD, ID_STEEL, 0.9, 0.9, height=0.0)
@@ -723,6 +796,54 @@ def paint_louvre(c):
     c.mul(x + F, x + w - F, y + h - F - 3, y + h - F, 0.80, ao=0.7)
 
 
+def paint_clad(c):
+    """The head house's cladding: pale painted profiled sheet, ribs upright
+    across U, a horizontal end lap 2.0 m up, a drip flashing along the foot
+    and the shadow line under the roof slab's edge along the top."""
+    x0, y0, w, h = CLAD
+    paint_sheet(c, x0 - PAD, x0 + w + PAD, y0 - PAD, y0 + h + PAD, ID_CLAD, seed=61)
+    lap = y0 + 2.0 * CLAD_VPM
+    c.mul(x0 - PAD, x0 + w + PAD, lap, lap + 1, 0.86, ao=0.86)
+    c.paint(x0 - PAD, x0 + w + PAD, y0 - PAD, y0 + 2, ID_FLASH, 0.92, 0.9, height=0.012)
+    top = y0 + (Z_TSLAB - HH_Z0) * CLAD_VPM
+    c.mul(x0 - PAD, x0 + w + PAD, top - 2, y0 + h + PAD, 0.84, ao=0.80)
+
+
+def paint_gal_side(c):
+    """A side of the conveyor gallery, U along it in plan, V up from its
+    floor (GAL_VPM): pale profiled sheet with upright ribs between a steel
+    bottom chord and a flashing along the top, and a row of small steel
+    windows lighting the belt walkway, one every metre."""
+    x0, y0, w, h = GAL_SIDE
+    paint_sheet(c, x0 - PAD, x0 + w + PAD, y0 - PAD, y0 + h + PAD, ID_CLAD, seed=67)
+    v = GAL_VPM
+    c.paint(x0 - PAD, x0 + w + PAD, y0 - PAD, y0 + 0.18 * v, ID_STEEL, 1.0, 0.9, height=0.02)
+    c.mul(x0 - PAD, x0 + w + PAD, y0 + 0.18 * v, y0 + 0.18 * v + 1.5, 0.82, ao=0.84)
+    c.paint(x0 - PAD, x0 + w + PAD, y0 + h - 0.14 * v, y0 + h + PAD, ID_FLASH, 0.95, 0.95,
+            height=0.015)
+    c.mul(x0 - PAD, x0 + w + PAD, y0 + h - 0.14 * v - 1.5, y0 + h - 0.14 * v, 0.85, ao=0.86)
+    for d in (0.55, 1.55, 2.55, 3.55):
+        a = x0 + (GAL_BURY + d - 0.30) * PPM
+        b = a + 0.60 * PPM
+        s0, s1 = y0 + 1.30 * v, y0 + 1.85 * v
+        _bar(c, a, b, s0, s1, h=FRAME_H)
+        _grid(c, a + 3, b - 3, s0 + 3, s1 - 3, 2, 1)
+        c.mul(a, b, s0 - 2, s0, 0.85, ao=0.84)
+
+
+def paint_gal_end(c):
+    """The gallery's closed end: a rim of the side sheet round a dark steel
+    blanking plate, the plate set back at the close tiers."""
+    x0, y0, w, h = GAL_END
+    r = GAL_END_RIM * LPM
+    c.paint(x0 - PAD, x0 + w + PAD, y0 - PAD, y0 + h + PAD, ID_CLAD, 0.95, 1.0, height=0.0)
+    c.paint(x0 + r, x0 + w - r, y0 + r, y0 + h - r, ID_STEEL, 0.62, 0.70, height=0.0)
+    c.mul(x0 + r, x0 + w - r, y0 + h - r - 2, y0 + h - r, 0.80, ao=0.75)
+    for k in range(1, 4):
+        yy = y0 + r + k * (h - 2 * r) / 4.0
+        c.paint(x0 + r, x0 + w - r, yy, yy + 1, ID_STEEL, 0.70, 0.8, height=0.006)
+
+
 def paint_patches(c):
     """Flat cells for surfaces a whole face takes one colour from."""
     spec = {
@@ -731,7 +852,9 @@ def paint_patches(c):
         "barge": (ID_FLASH, 0.94, 0.94), "lintel": (ID_CONC, 0.62, 0.60),
         "beam": (ID_CONC, 0.60, 0.55), "felt": (ID_FELT, 1.0, 1.0),
         "coping": (ID_CONC, 1.0, 1.0), "slab_under": (ID_CONC, 0.78, 0.75),
-        "reveal": (ID_CONC, 0.72, 0.70),
+        "reveal": (ID_CONC, 0.72, 0.70), "hh_soffit": (ID_CLAD, 0.78, 0.72),
+        "gal_under": (ID_STEEL, 0.85, 0.75), "strut": (ID_STEEL, 0.95, 0.90),
+        "clad_rev": (ID_CLAD, 0.84, 0.80), "hoist": (ID_STEEL, 1.0, 0.95),
     }
     for name, (mid, sh, ao) in spec.items():
         x, y, w, h = PATCHES[name]
@@ -745,7 +868,8 @@ def check_regions():
     rects = dict(REGION)
     rects.update(PATCHES)
     rects.update({"lane_side": LANE_SIDE, "lane_ceil": LANE_CEIL,
-                  "lane_floor": LANE_FLOOR})
+                  "lane_floor": LANE_FLOOR, "clad": CLAD, "gal_side": GAL_SIDE,
+                  "gal_end": GAL_END})
     bands_top = EAVE_Y0 + EAVE_H + PAD
     names = sorted(rects)
     problems = []
@@ -810,14 +934,18 @@ def weather(c):
     # coal the trucks throw up, at every wall's foot; gone by FOOT_TOP
     def foot(Y, X, nz):
         z = np.clip((Y - BRICK_Y0) / PPM, 0.0, None)
-        return (FOOT_COAL * np.exp(-z / FOOT_FALL) * (0.6 + 0.4 * nz("blotch"))
-                * atlas.smoothstep(FOOT_TOP, FOOT_TOP - 0.6, z)
-                + 0.05 + 0.04 * nz("big")
-                + 0.08 * atlas.smoothstep(0.4, 1.8, nz("runs")))
+        return (FOOT_COAL * np.exp(-z / FOOT_FALL) * (0.7 + 0.3 * nz("blotch"))
+                * atlas.smoothstep(FOOT_TOP, FOOT_TOP - 0.7, z)
+                + 0.10 + 0.06 * nz("big")
+                + 0.10 * atlas.smoothstep(0.4, 1.8, nz("runs")))
     w.coal(0, xb1, BRICK_Y0, band_top, foot, (ID_PLINTH, ID_CONC) + brick)
     # the plinth: a dull grey-black film all along, the dust it catches
-    w.coal(0, xb1, BRICK_Y0 - PAD, BRICK_Y0 + m(Z_PLINTH), lambda Y, X, nz: 0.25
+    w.coal(0, xb1, BRICK_Y0 - PAD, BRICK_Y0 + m(Z_PLINTH), lambda Y, X, nz: 0.45
            + 0.15 * nz("blotch"), (ID_PLINTH,))
+    # the concrete frame, band and lintels: cast concrete takes the dust
+    # harder than the fired brick face, patchy, nothing that follows height
+    w.coal(0, xb1, BRICK_Y0, band_top, lambda Y, X, nz: 0.30 + 0.12 * nz("blotch"),
+           (ID_CONC,))
     # the roof, its ridge, snow guard, fascia and gutter
     roof = (ID_ROOF,)
     w.roof(0, ATLAS, ROOF_Y0, ROOF_H, ROOF_LEN, roof)
@@ -845,7 +973,7 @@ def weather(c):
         u = (X - x0) / LPM
         jamb = np.clip(1.0 - (np.minimum(u, 2 * HX - u) - WALL_T) / 0.8, 0, 1)
         return (LANE_COAL + 0.10 * nz("blotch")
-                + 0.55 * np.exp(-z / 0.9) + 0.30 * jamb * np.exp(-z / 3.0))
+                + 0.45 * np.exp(-z / 1.2) + 0.40 * jamb * np.exp(-z / 4.0))
     w.coal(x0 - PAD, x0 + lw + PAD, y0 - PAD, y0 + lh + PAD, side)
     # the ceiling: dust thickest over the grate, where it rises when a load
     # is tipped
@@ -854,7 +982,7 @@ def weather(c):
           lambda Y, X, nz: 0.10 + 0.10 * nz("blotch"))
     w.coal(x0 - PAD, x0 + cw + PAD, y0 - PAD, y0 + ch + PAD, lambda Y, X, nz: LANE_COAL
            + 0.08 * nz("blotch")
-           + 0.35 * np.exp(-np.abs((X - x0) / LPM - HX) / 3.0))
+           + 0.35 * np.exp(-np.abs((X - x0) / LPM - (HX + GRATE_C)) / 3.0))
     # the floor: spill round the grate, along the tracks and the walls;
     # rain keeps the mouths cleaner
     x0, y0, fw, fh = LANE_FLOOR
@@ -866,8 +994,8 @@ def weather(c):
         dw = np.minimum(v, (YL1 - YL0) - v)
         vc = YC - YL0
         tracks = sum(np.exp(-((v - t) / 0.40) ** 2) for t in (vc - 0.95, vc + 0.95))
-        return ((0.22 + 0.12 * tracks + 0.65 * np.exp(-d / 1.1)
-                 + 0.30 * np.exp(-dw / 0.5)) * (0.55 + 0.45 * lane_fall(e, 0.0, 3.0))
+        return ((0.38 + 0.12 * tracks + 0.65 * np.exp(-d / 1.1)
+                 + 0.30 * np.exp(-dw / 0.5)) * (0.75 + 0.25 * lane_fall(e, 0.0, 3.0))
                 + 0.10 * nz("blotch"))
     w.add("D", x0 - PAD, x0 + fw + PAD, y0 - PAD, y0 + fh + PAD,
           lambda Y, X, nz: 0.10 + 0.10 * nz("blotch"), (ID_FLOOR, ID_STEEL))
@@ -886,19 +1014,54 @@ def weather(c):
            handle=(x + rw - f - m(0.09), y + m(1.02)))
     w.coal(x - PAD, x + rw + PAD, y - PAD, y + m(0.8),
            lambda Y, X, nz: 0.40 * np.exp(-np.clip(Y - y, 0, None) / m(0.35)))
-    # the hatch: coal dust where the chute's spill blows out of its seals,
-    # rust at the hinges; the louvre: runs down its blades
+    # the loading hatch: dust settled on its foot, rust at the hinges; the
+    # louvre: runs down its blades
     x, y, rw, rh = REGION["hatch"]
-    w.coal(x - PAD, x + rw + PAD, y - PAD, y + rh + PAD, lambda Y, X, nz: 0.15
-           + 0.25 * np.exp(-np.clip(Y - y, 0, None) / m(0.3)))
+    w.coal(x - PAD, x + rw + PAD, y - PAD, y + rh + PAD, lambda Y, X, nz: 0.12
+           + 0.20 * np.exp(-np.clip(Y - y, 0, None) / m(0.3)))
     w.add("R", x, x + rw, y + rh - m(0.4), y + rh, lambda Y, X, nz: 0.12 * nz("blotch"),
           (ID_STEEL, ID_DOOR))
     x, y, rw, rh = REGION["louvre"]
     w.runs(x, x + rw, y, y + rh, (ID_FRAME, ID_CONC), 0.16, fall=rh / 2.0)
     w.coal(x, x + rw, y, y + rh, 0.20, (ID_FRAME,))
-    # patches
-    for name, k in (("lintel", 0.35), ("beam", 0.35), ("felt", 0.15),
-                    ("sill", 0.10), ("reveal", 0.25), ("soffit", 0.10)):
+    # the head house's cladding: the plant's film, heavier toward its foot
+    # (V is height up its walls), runs from under the slab's edge
+    x0, y0, cw, ch = CLAD
+    w.add("D", x0 - PAD, x0 + cw + PAD, y0 - PAD, y0 + ch + PAD,
+          lambda Y, X, nz: 0.06 + 0.06 * nz("blotch"), (ID_CLAD,))
+    w.runs(x0 - PAD, x0 + cw + PAD, y0, y0 + (Z_TSLAB - HH_Z0) * CLAD_VPM, (ID_CLAD,),
+           0.16, fall=0.9 * CLAD_VPM)
+    w.coal(x0 - PAD, x0 + cw + PAD, y0 - PAD, y0 + ch + PAD, lambda Y, X, nz: 0.12
+           + 0.06 * nz("blotch") + 0.25 * np.exp(-np.clip(Y - y0, 0, None)
+                                                 / (0.6 * CLAD_VPM)))
+    # the gallery's sides: the dust the belt throws out of its joints, thick
+    # along the bottom chord and running down from the top flashing and
+    # from every window's sill in dark streaks
+    x0, y0, gw, gh = GAL_SIDE
+    v = GAL_VPM
+    w.add("D", x0 - PAD, x0 + gw + PAD, y0 - PAD, y0 + gh + PAD,
+          lambda Y, X, nz: 0.08 + 0.06 * nz("blotch"), (ID_CLAD, ID_STEEL, ID_FLASH))
+
+    def gal(Y, X, nz):
+        z = np.clip((Y - y0) / v, 0.0, None)
+        streak = atlas.smoothstep(0.3, 1.4, nz("runs"))
+        return (0.20 + 0.06 * nz("blotch") + 0.60 * np.exp(-z / 0.45)
+                + 0.55 * streak * np.exp(-(GAL_H - z) / 1.6))
+    w.coal(x0 - PAD, x0 + gw + PAD, y0 - PAD, y0 + gh + PAD, gal,
+           (ID_CLAD, ID_STEEL, ID_FLASH))
+    for d in (0.55, 1.55, 2.55, 3.55):
+        a = x0 + (GAL_BURY + d - 0.30) * PPM
+        w.add("D", a, a + 0.60 * PPM, y0 + 0.25 * v, y0 + 1.30 * v,
+              lambda Y, X, nz: 0.45 * atlas.smoothstep(0.2, 1.2, nz("runs"))
+              * np.exp(-(y0 + 1.30 * v - Y) / (0.5 * v)), (ID_CLAD,))
+    w.coal(GAL_END[0] - PAD, GAL_END[0] + GAL_END[2] + PAD, GAL_END[1] - PAD,
+           GAL_END[1] + GAL_END[3] + PAD, lambda Y, X, nz: 0.20 + 0.10 * nz("blotch"))
+    # patches: the lintels' soffits and the beams deep in dust, the gallery's
+    # underside and its struts under the belt's spill
+    for name, k in (("lintel", 0.75), ("beam", 0.70), ("felt", 0.15),
+                    ("sill", 0.15), ("reveal", 0.35), ("soffit", 0.15),
+                    ("gal_under", 0.75), ("strut", 0.45), ("hoist", 0.25),
+                    ("hh_soffit", 0.30), ("clad_rev", 0.25)):
         px, py, pw, ph = PATCHES[name]
         w.coal(px - 2, px + pw + 2, py - 2, py + ph + 2, k)
     return w
@@ -924,6 +1087,9 @@ def paint(ss=atlas.SS):
     paint_door(c)
     paint_hatch(c)
     paint_louvre(c)
+    paint_clad(c)
+    paint_gal_side(c)
+    paint_gal_end(c)
     paint_patches(c)
 
     wear = 0.025 * atlas.noise(c, 3, 40.0) + 0.015 * atlas.noise(c, 4, 8.0)
@@ -931,7 +1097,7 @@ def paint(ss=atlas.SS):
     walls = np.isin(c.mid, (ID_BRICK, ID_BRICK2, ID_MORTAR, ID_PLINTH))
     streak = atlas.noise(c, 7, 0.8, 40.0)
     c.shade[walls] *= 1.0 + 0.03 * streak[walls]
-    sheet = np.isin(c.mid, (ID_FLASH, ID_DOOR, ID_FRAME, ID_ROOF, ID_SHEET))
+    sheet = np.isin(c.mid, (ID_FLASH, ID_DOOR, ID_FRAME, ID_ROOF, ID_SHEET, ID_CLAD))
     grain = atlas.noise(c, 5, 0.8, 40.0)
     c.shade[sheet] *= 1.0 + 0.025 * grain[sheet]
     mineral = np.isin(c.mid, (ID_PLINTH, ID_CONC, ID_MORTAR, ID_FLOOR))

@@ -8,36 +8,37 @@ Run standalone to bake the textures into export/:
     python3 facade_atlas.py export
 
 build.py imports this module for every number the mesh and the atlas share --
-the plan, the floor, sill, door, band and eave heights, band rows, opening
-sizes, region rectangles -- so a change here cannot leave the UVs pointing at
-the wrong artwork.
+the plan, the floor, sill, door, band, deck and coping heights, band rows,
+light and opening sizes, region rectangles -- so a change here cannot leave
+the UVs pointing at the wrong artwork.
 
 The atlas is a trim sheet. Four bands run the full width and tile in U:
 
-    y    0 ..  448   BRICK   z 0 .. 7.0 m: concrete plinth, brick, the cast
-                             floor-slab band at the first floor, brick to the
-                             wall head
-    y  464 ..  560   ROOF    batten-seamed bitumen felt, eave edge to ridge,
-                             V stretched up the slope
-    y  568 ..  584   EAVE    the eave fascia with its gutter
-    y  592 ..  608   CANOPY  the entrance canopy's concrete edge
-    y  616 ..  ...   unique  the entrance with its cast surround, the service
-                             door, the office window, the control-room
-                             window, the concrete for the steps and the
-                             canopy, the vent pipes, patches
+    y    0 ..  468   BRICK    z 0 .. 7.3125 m: concrete plinth, brick, the
+                              cast floor-slab band at the first floor, brick
+                              up the parapet into the coping
+    y  480 ..  512   COPING   the galvanised coping: its outer face (8 rows),
+                              then its top (24 rows)
+    y  528 ..  548   UPSTAND  the parapet's inner face: the felt turned up
+                              from the deck
+    y  560 ..  576   CANOPY   the entrance canopy's sheet fascia
+    y  592 ..  ...   unique   the entrance with its cast surround, the service
+                              door, one light of each window band, concrete,
+                              the vent pipe, the ventilation housing's side,
+                              the roof deck, patches
 
 The brick band is the whole wall's height, so every wall samples it by its
 own height from the ground and the plinth, the slab band and the weather at
-the foot line up all round. The battens on the felt run down the slope, so
-the roof band only varies across U and is stretched up the slope in V, the
-way tehdas_brick_gable stretches its profiled sheet.
+the foot line up all round. Every band starts on a 16-row boundary, 12 or
+more rows clear of the one below, so a mip 4 texel never mixes two of them.
 
-The roof and canopy bands start on 16-row boundaries, the roof 16 rows clear
-of the brick: at mip 4 (16 x 16 texels to a texel) a roof band sharing a
-block with the brick's top rows came out with a red rim along every eave.
+The windows are bands of equal lights in white steel, so each band type has
+one region per kind of light (a fixed light, or one with a vent sash), a
+light wide at 64 px/m with half a mullion at each side: the build splits a
+band's glass plane at every mullion and maps each light onto its region, so
+neighbouring lights make up a whole mullion between them.
 
-Every opening is a single window or door, so each type has a region of its
-own at 64 px/m, painted once and sampled by every opening of that type.
+The deck is a region of its own at 32 px/m (DPPM), seen only from above.
 
 Rasterising is scripts/atlas.py's; weathering is scripts/weathering.py's,
 placed by weather() below; glass is scripts/glazing.py's.
@@ -57,6 +58,7 @@ import weathering  # noqa: E402
 ASSET = "voimalan_konttori_brick"
 ATLAS = 1024
 PPM = 64.0
+DPPM = 32.0             # the roof deck's region
 PAD = 2                 # rows each band paints beyond its own edge
 
 # ------------------------------------------------------------------ plan
@@ -72,117 +74,144 @@ Z_FLOOR = 0.5           # 32 px; the ground floor and both thresholds
 Z_FLOOR2 = 3.75         # 240 px; the first floor: 3.25 m storey
 Z_BAND0 = 3.5           # 224 px; the floor slab's cast edge, flush with the
 Z_BAND1 = Z_FLOOR2      # brick, from its underside to the floor
-Z_EAVE = 6.875          # 440 px; roof underside at the wall face, 3.125 m
-                        # over the first floor
-WALL_INTO_ROOF = 0.125  # walls run this far into the roof slab
-Z_WALL_TOP = Z_EAVE + WALL_INTO_ROOF             # 7.0, 448 px
+Z_DECK = 7.0            # 448 px; the roof deck: 3.25 m over the first floor
+# the parapet: brick up from the walls, capped by a galvanised coping that
+# oversails both faces
+PIN = 0.25              # the parapet's thickness: inner face HX - PIN
+COPING_H = 0.125        # 8 px; the coping's face
+COPING_OUT = 0.0625     # 4 px; its oversail past either face of the parapet
+Z_COP = 7.375           # 472 px; the coping's top, 0.375 m over the deck
+Z_COP0 = Z_COP - COPING_H                        # 7.25, the coping's drip
+Z_PAR = Z_COP - 0.0625                           # 7.3125, the brick's top,
+                                                 # inside the coping
 
-# windows: the offices' at desk height on both floors, the control room's a
-# quarter metre lower and taller, every ground-floor head at one line
-Z_SILL = Z_FLOOR + 1.0                           # 1.5
-Z_SILL2 = Z_FLOOR2 + 1.0                         # 4.75
-Z_SILL_CTRL = Z_FLOOR + 0.75                     # 1.25
+# window bands: sills over each floor, every ground-storey head on one line
+# with the entrance's head
+Z_SILL = Z_FLOOR + 1.0                           # 1.5, ground-floor offices
+Z_SILL_CTRL = Z_FLOOR + 0.75                     # 1.25, the control room
+Z_SILL2 = Z_FLOOR2 + 0.875                       # 4.625, the upper ribbon
 # doors: every leaf 2.125 m; the entrance has a transom light above its pair
 Z_LEAF = 2.125          # leaf height over the threshold
 ENTRY_H = 2.6875        # the entrance's opening, threshold to head (3.1875)
 SURROUND = 0.1875       # the entrance's cast surround, each side
 SURROUND_TOP = 0.375    # and above the head, up into the canopy
 
-# the canopy over the entrance: the first-floor slab carried out, its edge
+# the canopy over the entrance: the first-floor slab carried out, its fascia
 # in line with the painted slab band
 Z_CAN0 = Z_BAND0                                 # 3.5, underside
 Z_CAN1 = Z_BAND1                                 # 3.75, top
 
-# the hipped roof: one pitch on all four sides, one overhang all round
-TAN = 0.3125            # 17.4 degrees
-ROOF_T = 0.25           # slab's vertical thickness = the fascia's height
-EAVE_OUT = 0.5          # eave overhang, horizontal, all four sides
-SLOPE_F = float(np.sqrt(1.0 + TAN * TAN))
-SLOPE_LEN = (HY + EAVE_OUT) * SLOPE_F           # eave edge to ridge, 5.238 m
-
 # ------------------------------------------------------------------ openings
-# kind -> (width, height) of the opening in the brick, metres.
+# Window bands: kind -> (light width, band height) in metres. A band of n
+# lights is n light widths long; each light samples one of its kind's
+# regions (LIGHTS).
+BANDS = {
+    "rib": (1.5, 1.4375),           # the upper storey's ribbon
+    "ctrl": (1.5, 1.9375),          # the control room's band
+    "gwin": (0.9375, 1.6875),       # the ground-floor offices' windows
+}
+# Doors: kind -> (width, height) of the opening in the brick.
 OPENINGS = {
-    "win": (1.5, 1.6875),           # the offices' windows, both floors
-    "ctrl": (2.0, 1.9375),          # the control room's
     "entrance": (1.625, ENTRY_H),   # a pair of glazed leaves and a transom light
     "service_door": (1.125, 2.1875),
 }
-REVEAL = {"win": 0.15, "ctrl": 0.15, "entrance": 0.20, "service_door": 0.15}
+REVEAL = {"rib": 0.15, "ctrl": 0.15, "gwin": 0.15, "entrance": 0.20,
+          "service_door": 0.15}
 
 # ------------------------------------------------------------------- bands
-BRICK_Y0, BRICK_H = 0, 448        # z 0 .. Z_WALL_TOP
-ROOF_Y0, ROOF_H = 464, 96         # the slope, eave edge to ridge
-EAVE_Y0, EAVE_H = 568, 16         # the eave fascia, ROOF_T tall
-GUTTER_PX = 9                     # the gutter's rows, across the fascia's top
-# The downpipes' and handrails' sides span the middle five of them
-PIPE_STRIP = (EAVE_Y0 + EAVE_H - GUTTER_PX + 2, EAVE_Y0 + EAVE_H - 2)
-CANE_Y0, CANE_H = 592, 16         # the canopy's edge, 0.25 m
-ROOF_RPM = ROOF_H / SLOPE_LEN     # roof rows per metre up the slope (18.3)
+BRICK_Y0, BRICK_H = 0, 468        # z 0 .. Z_PAR
+COP_Y0, COP_FACE, COP_TOP = 480, 8, 24   # the coping's face, then its top
+UPST_Y0, UPST_H = 528, 20         # the parapet's inner face, Z_DECK .. Z_PAR
+CANE_Y0, CANE_H = 560, 16         # the canopy's fascia, 0.25 m
+# The handrails and the ladder take the coping's galvanised colour: the
+# middle rows of its top, where no joint lies along them.
+PIPE_STRIP = (COP_Y0 + COP_FACE + 6, COP_Y0 + COP_FACE + COP_TOP - 6)
 
 COURSE = 0.078125       # brick course pitch: 5 px
 BRICK_L = 0.25          # stretcher: 16 px, 64 bricks per atlas width
 TONE_COURSES = 24       # brick tone repeats every 1.875 m
-BATTEN = 32             # felt battens every 0.5 m, in px
+COP_JOINT = 128         # coping sheet joints every 2 m, in px
 
 # ------------------------------------------------------------ unique regions
-# (x, y, w, h) in pixels, all at 64 px/m.
-UNI_Y = 616
+# (x, y, w, h) in pixels, at 64 px/m unless noted.
+UNI_Y = 592
 ENTRANCE = (4, UNI_Y, 128, 196)       # surround 2.0 x 3.0625 m round the door
 SERVICE_DOOR = (136, UNI_Y, 72, 140)  # 1.125 x 2.1875 m
-WIN = (212, UNI_Y, 96, 108)           # 1.5 x 1.6875 m
-CTRL = (312, UNI_Y, 128, 124)         # 2.0 x 1.9375 m
-CONC = (444, UNI_Y, 160, 88)          # 2.5 x 1.375 m of cast concrete
-VENT = (608, UNI_Y, 32, 96)           # a pipe's side: across x 1.5 m up
-PIPE_TOP = (644, UNI_Y, 24, 24)       # a pipe's open end, planar
+CTRL = (212, UNI_Y, 96, 124)          # one control-room light, 1.5 x 1.9375 m
+RIB_F = (312, UNI_Y, 96, 92)          # a fixed light of the ribbon
+RIB_V = (412, UNI_Y, 96, 92)          # one with a vent sash
+GWIN = (512, UNI_Y, 60, 108)          # one light of the offices' windows
+CONC = (640, UNI_Y, 168, 128)         # 2.625 x 2.0 m of cast concrete
+VENT = (812, UNI_Y, 32, 96)           # a pipe's side: across x 1.5 m up
+PIPE_TOP = (848, UNI_Y, 24, 24)       # a pipe's open end, planar
+HOUSING = (876, UNI_Y, 96, 60)        # the ventilation housing's side
+DECK = (140, 744, 432, 272)           # the roof deck at DPPM: 13.5 x 8.5 m
 
-REGION = {"entrance": ENTRANCE, "service_door": SERVICE_DOOR, "win": WIN,
-          "ctrl": CTRL}
+REGION = {"entrance": ENTRANCE, "service_door": SERVICE_DOOR, "ctrl": CTRL,
+          "rib_f": RIB_F, "rib_v": RIB_V, "gwin": GWIN}
+# each band's lights, fixed first; a band with one region uses it throughout
+LIGHTS = {"rib": ("rib_f", "rib_v"), "ctrl": ("ctrl",), "gwin": ("gwin",)}
 # where each region's opening sits inside it, (dx, dy) in px: the entrance
 # region carries its surround round the opening
 REGION_OFF = {"entrance": (int(SURROUND * PPM), 0)}
 
-PATCH_NAMES = ("blank", "soffit", "sill", "render", "pipe")
-PATCHES = {n: (4 + 20 * i, 1004, 16, 16) for i, n in enumerate(PATCH_NAMES)}
+# the ventilation housing, a sheet box on the deck: side and height
+HOUSING_W, HOUSING_H = 1.5, 0.9375
+
+PATCH_NAMES = ("blank", "soffit", "sill", "render", "pipe", "post", "housing_top",
+               "drip", "galv")
+PATCHES = {n: (580 + 20 * i, 744, 16, 16) for i, n in enumerate(PATCH_NAMES)}
+
+# internal rainwater outlets on the deck, plan (x, y)
+OUTLETS = [(-3.0, -1.5), (3.0, -1.5)]
 
 # ----------------------------------------------------------- material ids
 ID_BLANK, ID_PLINTH, ID_BRICK, ID_BRICK2, ID_MORTAR = 0, 1, 2, 3, 4
-ID_FRAME, ID_GLASS, ID_ROOF, ID_FLASH, ID_BATTEN = 5, 6, 7, 8, 9
+ID_FRAME, ID_GLASS, ID_DECK, ID_COPING, ID_LAP = 5, 6, 7, 8, 9
 ID_CONC, ID_DOOR, ID_RENDER, ID_STEEL, ID_PIPE = 10, 11, 12, 13, 14
-ID_SOFFIT, ID_GUTTER, ID_HANDLE, ID_DARK, ID_SLAB = 15, 16, 17, 18, 19
-ID_SILL, ID_ENTRY = 20, 21
+ID_SOFFIT, ID_FASCIA, ID_HANDLE, ID_DARK, ID_SLAB = 15, 16, 17, 18, 19
+ID_SILL, ID_ENTRY, ID_LOUVRE, ID_POST = 20, 21, 22, 23
 
-# (roughness, metallic). The felt and its battens are matt bitumen with a
-# mineral surface; the fascia is painted sheet; the gutter bare galvanised.
+# (roughness, metallic). The deck is mineral-surfaced felt; the coping,
+# the housing and the kit galvanised; the canopy's fascia painted sheet.
 SURFACE = {
     ID_BLANK: (0.95, 0.0), ID_PLINTH: (0.92, 0.0), ID_BRICK: (0.84, 0.0),
-    ID_BRICK2: (0.82, 0.0), ID_MORTAR: (0.94, 0.0), ID_FRAME: (0.48, 0.0),
-    ID_GLASS: (glazing.ROUGHNESS, 0.0), ID_ROOF: (0.86, 0.0),
-    ID_FLASH: (0.50, 0.20), ID_BATTEN: (0.80, 0.0), ID_CONC: (0.90, 0.0),
+    ID_BRICK2: (0.82, 0.0), ID_MORTAR: (0.94, 0.0), ID_FRAME: (0.46, 0.0),
+    ID_GLASS: (glazing.ROUGHNESS, 0.0), ID_DECK: (0.92, 0.0),
+    ID_COPING: (0.40, 0.65), ID_LAP: (0.88, 0.0), ID_CONC: (0.90, 0.0),
     ID_DOOR: (0.50, 0.0), ID_RENDER: (0.88, 0.0), ID_STEEL: (0.38, 0.75),
-    ID_PIPE: (0.55, 0.20), ID_SOFFIT: (0.74, 0.0), ID_GUTTER: (0.36, 0.70),
+    ID_PIPE: (0.55, 0.20), ID_SOFFIT: (0.74, 0.0), ID_FASCIA: (0.52, 0.0),
     ID_HANDLE: (0.30, 0.85), ID_DARK: (0.96, 0.0), ID_SLAB: (0.90, 0.0),
-    ID_SILL: (0.62, 0.30), ID_ENTRY: (0.44, 0.0),
+    ID_SILL: (0.62, 0.30), ID_ENTRY: (0.44, 0.0), ID_LOUVRE: (0.46, 0.55),
+    ID_POST: (0.55, 0.10),
 }
 
+
 # ---------------------------------------------------------------- palettes
+def plant_brick(rgb, k=0.94):
+    """The red brick shared by the plant's five pieces: each sRGB channel
+    pulled 40% toward the triplet's Rec.709 luma, then darkened by *k*."""
+    y = 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]
+    return tuple(int(round((y + 0.6 * (c - y)) * k)) for c in rgb)
+
+
 # One coherent treatment per instance, matching the plant's other brick
 # buildings: the brick changes, the frames stay white, the doors move a
-# little with the brick. The felt roof stays near-black, the gutter, pipes
-# and rails galvanised; the plinth, slab band, surround and canopy are
-# fixed concrete.
+# little with the brick. The deck, coping, kit, fascia, plinth, slab band,
+# surround and canopy are fixed. red_brick is plant_brick() of the original
+# red (146, 74, 54) / (116, 60, 47), its mortar (150, 145, 136) a further
+# 10% darker.
 VARIANTS = {
-    "red_brick": {"brick": (146, 74, 54), "brick2": (116, 60, 47),
-                  "mortar": (150, 145, 136), "frame": (222, 220, 212),
-                  "roof": (46, 46, 47), "flash": (60, 62, 64),
+    "red_brick": {"brick": plant_brick((146, 74, 54)),
+                  "brick2": plant_brick((116, 60, 47)),
+                  "mortar": plant_brick((150, 145, 136), 0.94 * 0.90),
+                  "frame": (222, 220, 212),
                   "entry": (98, 70, 50), "door": (86, 94, 90)},
     "yellow_brick": {"brick": (190, 168, 124), "brick2": (166, 144, 104),
                      "mortar": (162, 158, 150), "frame": (226, 224, 216),
-                     "roof": (46, 46, 47), "flash": (58, 60, 62),
                      "entry": (90, 66, 48), "door": (78, 88, 86)},
     "brown_brick": {"brick": (112, 76, 60), "brick2": (90, 62, 50),
                     "mortar": (128, 122, 114), "frame": (214, 210, 198),
-                    "roof": (44, 43, 42), "flash": (56, 54, 52),
                     "entry": (104, 76, 52), "door": (80, 74, 68)},
 }
 DEFAULT_VARIANT = "red_brick"
@@ -192,14 +221,15 @@ FIXED = {
     ID_RENDER: (188, 185, 176), ID_STEEL: (150, 152, 150), ID_PIPE: (62, 62, 64),
     ID_SOFFIT: (200, 198, 192), ID_HANDLE: (168, 168, 166), ID_DARK: (24, 24, 24),
     ID_BLANK: (52, 52, 52), ID_SILL: (128, 130, 130), ID_SLAB: (170, 168, 162),
-    ID_GUTTER: (150, 152, 150),
+    ID_DECK: (92, 91, 88), ID_LAP: (78, 77, 75), ID_COPING: (150, 152, 150),
+    ID_FASCIA: (196, 196, 190), ID_LOUVRE: (140, 142, 141), ID_POST: (70, 72, 72),
 }
 
 BAND_IDS = {
-    "BRICK": ((0, 450), {ID_BRICK, ID_BRICK2, ID_MORTAR, ID_PLINTH, ID_SLAB}),
-    "ROOF": ((462, 562), {ID_ROOF, ID_BATTEN}),
-    "EAVE": ((566, 586), {ID_FLASH, ID_GUTTER}),
-    "CANOPY": ((590, 610), {ID_CONC}),
+    "BRICK": ((0, 470), {ID_BRICK, ID_BRICK2, ID_MORTAR, ID_PLINTH, ID_SLAB}),
+    "COPING": ((478, 514), {ID_COPING}),
+    "UPSTAND": ((526, 550), {ID_DECK, ID_LAP, ID_COPING}),
+    "CANOPY": ((558, 578), {ID_FASCIA}),
 }
 
 # The candidate-glazing mask is the emission map, neutral white.
@@ -210,12 +240,13 @@ LIT_FACTOR = (1.0, 0.88, 0.72)
 
 # ---------------------------------------------------------------- relief
 BRICK_FACE = 0.006      # brick face proud of the recessed mortar
-FRAME_H = 0.030         # window and door frames, proud of the glass
-SASH_H = 0.045          # an opening sash, proud of the frame
+FRAME_H = 0.030         # steel window frames and mullions, proud of the glass
+SASH_H = 0.045          # a vent sash, proud of the frame
 DOOR_FRAME_H = 0.020    # steel door frames
-BATTEN_H = 0.045        # felt-covered batten over the sheet
-GUTTER_R = 0.070        # half-round gutter
 RENDER_H = 0.015        # the cast surround, proud of the brick
+LAP_H = 0.004           # a felt lap's step
+SEAM_H = 0.006          # the coping's joint straps
+LOUVRE_H = 0.020        # a louvre blade's lip
 
 
 def m(v):
@@ -244,7 +275,8 @@ def paint_plinth(c, y0):
 def paint_brick(c):
     """Stretcher-bond facing brick, 0.25 x 0.078125 m, in two tones; the
     mortar recessed and its own id. Tone and bond repeat at the atlas wrap in
-    U, so the bond runs on round every corner."""
+    U, so the bond runs on round every corner. The top course runs on up
+    into the coping, which hides it."""
     y0 = BRICK_Y0 + m(Z_PLINTH)
     top = BRICK_Y0 + BRICK_H + PAD
     c.paint(0, ATLAS, y0, top, ID_BRICK, 1.0, 1.0)
@@ -265,6 +297,10 @@ def paint_brick(c):
     c.height[sy, sx] = np.where(joint, 0.0, BRICK_FACE)
     paint_plinth(c, BRICK_Y0)
     paint_slab(c)
+    # the coping's shadow line on the brick under its drip
+    yd = BRICK_Y0 + m(Z_COP0)
+    c.mul(0, ATLAS, yd - 3, yd, 0.86, ao=0.80)
+    c.mul(0, ATLAS, yd - 6, yd - 3, 0.95, ao=0.92)
 
 
 def paint_slab(c):
@@ -282,66 +318,61 @@ def paint_slab(c):
         c.disc(x, (y0 + y1) / 2.0, 0.9, ID_SLAB, 0.80, 0.85, height=BRICK_FACE - 0.004)
 
 
-def paint_roof(c):
-    """Bitumen felt on battens, the Nordic low-pitch roof of the period:
-    felt strips laid down the slope between battens every 0.5 m, each batten
-    capped by its own strip, so the roof reads as fine ribs from eave to
-    ridge. A darker drip strip at the eave. No ridge or hip cap is painted:
-    the band's top is a ridge on two slopes and a point on the hip ends."""
-    y0, h = ROOF_Y0, ROOF_H
-    c.paint(0, ATLAS, y0 - PAD, y0 + h + PAD, ID_ROOF, 1.0, 1.0, height=0.0)
-    sy, sx, Y, X = c.field(0, ATLAS, y0 - PAD, y0 + h + PAD)
-    d = np.abs(((X % BATTEN) + BATTEN / 2.0) % BATTEN - BATTEN / 2.0)   # to batten
-    w = 2.4                                           # batten half-width, px
-    prof = np.clip((w - d) / 1.2, 0.0, 1.0)
-    height = BATTEN_H * np.sqrt(prof)
-    batten = d < w
-    mid = np.where(batten, ID_BATTEN, ID_ROOF)
-    shade = np.where(batten, 1.04, 1.0)
-    # the cap strip's lapped edge either side of the batten, and the felt
-    # sagging a little into the bay between
-    lap = (d >= w) & (d < w + 1.6)
-    shade = np.where(lap, 0.88, shade)
-    ao = np.where(lap, 0.84, 1.0)
-    bay = np.clip((d - w) / (BATTEN / 2.0 - w), 0.0, 1.0)
-    height = height - np.where(batten, 0.0, 0.004 * np.sin(np.pi * bay))
-    v = Y - y0
-    shade = np.where(v < 1.5, shade * 0.80, shade)    # eave drip strip
-    c.mid[sy, sx], c.height[sy, sx] = mid, height
-    c.shade[sy, sx], c.ao[sy, sx] = shade, ao
+def paint_coping(c):
+    """The parapet's galvanised coping: its outer face with a folded drip at
+    the foot, then its top falling slightly inward. Sheets two metres long,
+    joined by a lapped strap across face and top."""
+    y0 = COP_Y0
+    y1 = y0 + COP_FACE + COP_TOP
+    c.paint(0, ATLAS, y0 - PAD, y1 + PAD, ID_COPING, 1.0, 1.0, height=0.0)
+    # the face: the drip fold at its foot, the arris at its top
+    c.paint(0, ATLAS, y0 - PAD, y0 + 1, ID_COPING, 0.84, 0.86)
+    c.bevel(0, ATLAS, y0 + 1, y0 + COP_FACE, 0.006, 1.0, axes="y")
+    # the top: lighter, as a horizontal sheet weathers, a crease at the arris
+    c.paint(0, ATLAS, y0 + COP_FACE, y1 + PAD, ID_COPING, 1.06, 1.0, height=0.0)
+    c.mul(0, ATLAS, y0 + COP_FACE, y0 + COP_FACE + 1, 0.92)
+    # joint straps every two metres, across face and top
+    sy, sx, _, X = c.field(0, ATLAS, y0 - PAD, y1 + PAD)
+    d = np.abs(((X % COP_JOINT) + COP_JOINT / 2.0) % COP_JOINT - COP_JOINT / 2.0)
+    strap = d < 2.0
+    c.height[sy, sx] = np.where(strap, c.height[sy, sx] + SEAM_H, c.height[sy, sx])
+    c.shade[sy, sx] = np.where(strap, c.shade[sy, sx] * 0.95, c.shade[sy, sx])
+    edge = (d >= 2.0) & (d < 3.0)
+    c.ao[sy, sx] = np.where(edge, np.minimum(c.ao[sy, sx], 0.86), c.ao[sy, sx])
 
 
-def paint_eave(c):
-    """The eave's vertical edge: a sheet fascia with a half-round galvanised
-    gutter hung across its top, hangers every metre."""
-    y0 = EAVE_Y0
-    top = y0 + EAVE_H
-    c.paint(0, ATLAS, y0 - PAD, top + PAD, ID_FLASH, 1.0, 1.0, height=0.0)
-    c.paint(0, ATLAS, y0 - PAD, y0 + 1, ID_FLASH, 0.86, 0.9)       # drip edge
-    gh = float(GUTTER_PX)
-    g0 = top - gh
-    c.paint(0, ATLAS, g0, top + PAD, ID_GUTTER, 1.0, 1.0)
-    sy, sx, Y, _ = c.field(0, ATLAS, g0, top)
-    u = 2.0 * (Y - g0) / gh - 1.0
-    c.height[sy, sx] = GUTTER_R * np.sqrt(np.clip(1.0 - u * u, 0.0, 1.0))
-    c.paint(0, ATLAS, g0, g0 + 1, ID_GUTTER, 0.82, 0.86)
-    for k, f in enumerate((0.80, 0.88, 0.95)):             # under the gutter
-        c.mul(0, ATLAS, g0 - 1 - k, g0 - k, f, ao=0.84)
-    sy, sx, _, X = c.field(0, ATLAS, g0 + 1, top)           # hangers, 1 m
-    hang = (X % 64.0) < 2.0
-    c.shade[sy, sx] = np.where(hang, c.shade[sy, sx] * 0.84, c.shade[sy, sx])
-    c.height[sy, sx] = np.where(hang, c.height[sy, sx] + 0.004, c.height[sy, sx])
+def paint_upstand(c):
+    """The parapet's inner face from the deck up: the deck's felt turned up
+    over a cant at the foot, dressed to a metal termination bar under the
+    coping."""
+    y0, h = UPST_Y0, UPST_H
+    c.paint(0, ATLAS, y0 - PAD, y0 + h + PAD, ID_DECK, 0.96, 1.0, height=0.0)
+    sy, sx, Y, _ = c.field(0, ATLAS, y0 - PAD, y0 + h + PAD)
+    z = np.clip((Y - y0) / PPM, 0.0, None)
+    c.shade[sy, sx] *= 0.82 + 0.18 * np.clip(z / 0.10, 0.0, 1.0)     # the cant
+    c.ao[sy, sx] = np.minimum(c.ao[sy, sx], 0.72 + 0.28 * np.clip(z / 0.12, 0, 1))
+    yb = y0 + m(Z_COP0 - Z_DECK) - 4                    # the termination bar
+    c.paint(0, ATLAS, yb, yb + 2, ID_COPING, 0.9, 0.9, height=0.006)
+    c.mul(0, ATLAS, yb - 1, yb, 0.85, ao=0.85)
+    c.paint(0, ATLAS, yb + 2, y0 + h + PAD, ID_COPING, 0.7, 0.7, height=0.0)
+    # vertical laps of the upstand strips, a metre apart
+    sy, sx, _, X = c.field(0, ATLAS, y0, yb)
+    lap = (X % 64.0) < 1.0
+    c.mid[sy, sx] = np.where(lap, ID_LAP, c.mid[sy, sx])
+    c.height[sy, sx] = np.where((X % 64.0) < 4.0, LAP_H, c.height[sy, sx])
 
 
 def paint_canopy_edge(c):
-    """The canopy slab's cast edge: concrete, an arris at the top, a drip
-    groove near the foot."""
+    """The canopy slab's fascia: a painted sheet edge, a lighter fold at its
+    top, a drip at its foot."""
     y0, h = CANE_Y0, CANE_H
-    c.paint(0, ATLAS, y0 - PAD, y0 + h + PAD, ID_CONC, 1.0, 1.0, height=0.0)
-    c.bevel(0, ATLAS, y0 - PAD, y0 + h, 0.006, 1.5, axes="y")
-    c.mul(0, ATLAS, y0 + 2, y0 + 3, 0.84, ao=0.82)
-    c.lift(0, ATLAS, y0 + 2, y0 + 3, -0.004)
-    c.mul(0, ATLAS, y0 - PAD, y0 + 2, 0.92)
+    c.paint(0, ATLAS, y0 - PAD, y0 + h + PAD, ID_FASCIA, 1.0, 1.0, height=0.0)
+    c.bevel(0, ATLAS, y0 + 1, y0 + h - 1, 0.006, 1.0, axes="y")
+    c.paint(0, ATLAS, y0 - PAD, y0 + 1, ID_FASCIA, 0.80, 0.84)
+    c.paint(0, ATLAS, y0 + h - 1, y0 + h + PAD, ID_FASCIA, 1.04, 1.0)
+    sy, sx, _, X = c.field(0, ATLAS, y0 - PAD, y0 + h + PAD)
+    joint = (X % 128.0) < 1.0
+    c.shade[sy, sx] = np.where(joint, c.shade[sy, sx] * 0.86, c.shade[sy, sx])
 
 
 # ================================================================= regions
@@ -365,10 +396,48 @@ def _light(c, a0, a1, b0, b1):
 
 
 def _sash(c, a0, a1, b0, b1, inset=3):
-    """An opening sash, proud of the frame, glazed inside its rails."""
+    """A vent sash, proud of the frame, glazed inside its rails."""
     c.paint(a0, a1, b0, b1, ID_FRAME, 0.88)
     c.bevel(a0, a1, b0, b1, SASH_H, 1.0, base=FRAME_H)
     _light(c, a0 + inset, a1 - inset, b0 + inset + 1, b1 - inset)
+
+
+MULL = 3                # half a mullion at each side of a light, px
+HEAD, FOOT = 4, 6       # the band's head and bottom rails, px
+
+
+def paint_band_light(c, rect, vent=None, vent_w=0.0):
+    """One light of a window band: white steel, half a mullion either side so
+    two neighbours make a whole one, a head rail and a heavier bottom rail,
+    the glass between. *vent* "side" adds a side-hung vent sash *vent_w*
+    metres wide at the light's left; "top" a top-hung one *vent_w* tall
+    across its head, so a band of them reads as one line of vents."""
+    x, y, w, h = rect
+    c.paint(x, x + w, y, y + h, ID_FRAME, 1.0, 1.0, height=FRAME_H)
+    c.bevel(x - 2, x + w + 2, y, y + h, FRAME_H, 1.0, axes="y")
+    for a in (x, x + w):                                 # mullion arrises
+        c.mul(a - 0.5, a + 0.5, y + FOOT, y + h - HEAD, 0.92, ao=0.9)
+    a0, a1, b0, b1 = x + MULL, x + w - MULL, y + FOOT, y + h - HEAD
+    if vent == "side":
+        s1 = a0 + m(vent_w)
+        _sash(c, a0, s1, b0, b1)
+        _bar(c, s1, s1 + 3, b0, b1, axes="x")
+        _light(c, s1 + 3, a1, b0, b1)
+    elif vent == "top":
+        yt = b1 - m(vent_w)
+        _light(c, a0, a1, b0, yt)
+        _bar(c, a0 - MULL, a1 + MULL, yt, yt + 3, axes="y")
+        _sash(c, a0, a1, yt + 3, b1)
+    else:
+        _light(c, a0, a1, b0, b1)
+    c.mul(x, x + w, y, y + 2, 0.90, ao=0.86)
+
+
+def paint_windows(c):
+    paint_band_light(c, RIB_F)
+    paint_band_light(c, RIB_V, "side", 0.4375)
+    paint_band_light(c, CTRL, "top", 0.375)
+    paint_band_light(c, GWIN, "top", 0.375)
 
 
 def paint_entrance(c):
@@ -437,44 +506,6 @@ def paint_service_door(c):
     c.stroke((hx, hy + 2), (hx - 8, hy + 2), 2.2, ID_HANDLE, 1.0, 0.9, height=0.04)
 
 
-def paint_window(c):
-    """The offices' window: a top-hung vent light over the full width, and
-    below a transom a narrow opening casement beside a wide fixed light, all
-    in one white frame with a heavier bottom rail."""
-    x, y, w, h = WIN
-    c.paint(x, x + w, y, y + h, ID_FRAME, 1.0, 1.0, height=FRAME_H)
-    c.bevel(x, x + w, y, y + h, FRAME_H, 1.0)
-    F, B = 5, 6
-    yt = y + h - F - m(0.45)                                # transom
-    mx = x + F + 30
-    _sash(c, x + F, mx, y + B, yt)
-    _bar(c, mx, mx + 5, y + B, yt, axes="x")                # the mullion
-    _light(c, mx + 5, x + w - F, y + B, yt)
-    _bar(c, x + F, x + w - F, yt, yt + 5, axes="y")         # the transom
-    _sash(c, x + F, x + w - F, yt + 5, y + h - F)
-    c.mul(x, x + w, y, y + 2, 0.90, ao=0.86)
-
-
-def paint_ctrl(c):
-    """The control room's window: wider and taller, three fixed lights over
-    a sill-high rail with a row of top-hung vent sashes above a transom, so
-    the room reads as a band of glass from the yard."""
-    x, y, w, h = CTRL
-    c.paint(x, x + w, y, y + h, ID_FRAME, 1.0, 1.0, height=FRAME_H)
-    c.bevel(x, x + w, y, y + h, FRAME_H, 1.0)
-    F, B, M = 5, 6, 5
-    yt = y + h - F - m(0.4375)
-    inner = (w - 2 * F - 2 * M) / 3.0
-    xs = [x + F + k * (inner + M) for k in range(3)]
-    for k, a0 in enumerate(xs):
-        _light(c, a0, a0 + inner, y + B, yt)
-        _sash(c, a0, a0 + inner, yt + 4, y + h - F)
-        if k < 2:
-            _bar(c, a0 + inner, a0 + inner + M, y + B, y + h - F, axes="x")
-    _bar(c, x + F, x + w - F, yt, yt + 4, axes="y")
-    c.mul(x, x + w, y, y + 2, 0.90, ao=0.86)
-
-
 def paint_conc(c):
     """Cast concrete for the steps and the canopy's top: board-float
     texture, pores."""
@@ -502,6 +533,59 @@ def paint_vent(c):
     c.disc(cx, cy, w / 2.0 - 4.0, ID_DARK, 0.6, 0.3, height=-0.04)
 
 
+def paint_housing(c):
+    """The ventilation housing's side: galvanised sheet with folded corners,
+    and a louvred intake panel, its blades 6 cm apart, dark between."""
+    x, y, w, h = HOUSING
+    c.paint(x, x + w, y, y + h, ID_COPING, 0.96, 1.0, height=0.0)
+    c.bevel(x, x + w, y, y + h, 0.004, 2.0, axes="x")       # folded corners
+    c.paint(x, x + w, y, y + 3, ID_COPING, 0.80, 0.80)      # the foot, flashed
+    c.paint(x, x + w, y + h - 3, y + h, ID_COPING, 1.04, 1.0, height=0.006)
+    p0, p1, q0, q1 = x + 10, x + w - 10, y + 10, y + h - 12
+    _bar(c, p0 - 2, p1 + 2, q0 - 2, q1 + 2, ID_COPING, 0.012, 0.88, 0.9)
+    c.paint(p0, p1, q0, q1, ID_DARK, 0.5, 0.5, height=-0.01)
+    sy, sx, Y, X = c.field(p0, p1, q0, q1)
+    t = ((Y - q0) % 4.0) / 4.0                              # blade profile
+    blade = t > 0.35
+    c.mid[sy, sx] = np.where(blade, ID_LOUVRE, ID_DARK)
+    c.shade[sy, sx] = np.where(blade, 0.80 + 0.25 * t, 0.5)
+    c.height[sy, sx] = np.where(blade, LOUVRE_H * t, -0.01)
+    c.ao[sy, sx] = np.where(blade, 0.85, 0.45)
+
+
+def paint_deck(c):
+    """The roof deck at DPPM: mineral-surfaced bitumen felt in one-metre
+    strips laid across the fall, each lapped over the next, their end laps
+    staggered; the felt dressed up a cant at the parapet all round; two
+    internal rainwater outlets with ponding stains round them."""
+    x, y, w, h = DECK
+    p = DPPM
+    c.paint(x - PAD, x + w + PAD, y - PAD, y + h + PAD, ID_DECK, 1.0, 1.0, height=0.0)
+    sy, sx, Y, X = c.field(x - PAD, x + w + PAD, y - PAD, y + h + PAD)
+    # strips across the fall: a lap every metre, a short step up over it
+    v = (Y - y) / p
+    f = v - np.floor(v)
+    lap = f < 1.0 / p
+    c.height[sy, sx] = np.where(f < 0.10, LAP_H * (1.0 - f / 0.10), 0.0)
+    c.mid[sy, sx] = np.where(lap, ID_LAP, ID_DECK)
+    row = np.floor(v).astype(np.int64)
+    u = (X - x) / p + 2.5 * (row % 2)
+    endlap = ((u % 5.0) < 1.0 / p) & ~lap
+    c.mid[sy, sx] = np.where(endlap, ID_LAP, c.mid[sy, sx])
+    # the cant and the upstand's foot at the parapet, all round
+    d = np.minimum(np.minimum(X - x, x + w - X), np.minimum(Y - y, y + h - Y)) / p
+    edge = np.clip(d / 0.18, 0.0, 1.0)
+    c.shade[sy, sx] *= 0.84 + 0.16 * edge
+    c.ao[sy, sx] = np.minimum(c.ao[sy, sx], 0.70 + 0.30 * edge)
+    c.height[sy, sx] += 0.02 * (1.0 - edge)
+    # the outlets: a dark bowl and a grating
+    for ox, oy in OUTLETS:
+        cx, cy = x + (ox + HX - PIN) * p, y + (oy + HY - PIN) * p
+        c.disc(cx, cy, 0.22 * p, ID_LAP, 0.8, 0.8, height=-0.006)
+        c.disc(cx, cy, 0.12 * p, ID_DARK, 1.0, 0.5, height=-0.02)
+        c.disc(cx, cy, 0.12 * p, ID_COPING, 0.7, 0.7, inner=0.09 * p, height=-0.01)
+
+
 def paint_patches(c):
     """Flat cells for surfaces a whole face takes one colour from."""
     spec = {
@@ -510,6 +594,10 @@ def paint_patches(c):
         "sill": (ID_SILL, 0.96, 0.92),
         "render": (ID_RENDER, 0.94, 0.88),
         "pipe": (ID_PIPE, 1.0, 0.95),
+        "post": (ID_POST, 1.0, 0.95),
+        "housing_top": (ID_COPING, 1.02, 1.0),
+        "drip": (ID_COPING, 0.62, 0.70),
+        "galv": (ID_COPING, 1.0, 1.0),
     }
     for name, (mid, sh, ao) in spec.items():
         x, y, w, h = PATCHES[name]
@@ -517,17 +605,25 @@ def paint_patches(c):
 
 
 # ------------------------------------------------------------------ checks
-def region_size_m(kind):
-    x, y, w, h = REGION[kind]
-    dx, dy = REGION_OFF.get(kind, (0, 0))
-    return (w - 2 * dx) / PPM, (h - dy) / PPM
+def light_kind(band, k, n):
+    """The region light *k* of an *n*-light band of kind *band* samples. A
+    band with one region (its vents a row across every light's head) uses
+    it throughout; the ribbon has a side vent in every other light, and its
+    two-light end windows are two fixed lights: a vent between them made a
+    house's casement and fixed light of them."""
+    names = LIGHTS[band]
+    if len(names) == 1 or n == 2:
+        return names[0]
+    return names[k % 2]
 
 
 def check_regions():
     """Fail the bake if two unique regions overlap, collide with the bands, or
-    run off the sheet, or if a region does not fit its opening."""
-    rects = {"entrance": ENTRANCE, "service_door": SERVICE_DOOR, "win": WIN,
-             "ctrl": CTRL, "conc": CONC, "vent": VENT, "pipe_top": PIPE_TOP}
+    run off the sheet, or if a region does not fit its light or opening."""
+    rects = {"entrance": ENTRANCE, "service_door": SERVICE_DOOR, "ctrl": CTRL,
+             "rib_f": RIB_F, "rib_v": RIB_V, "gwin": GWIN,
+             "conc": CONC, "vent": VENT, "pipe_top": PIPE_TOP, "housing": HOUSING,
+             "deck": DECK}
     rects.update(PATCHES)
     bands_top = CANE_Y0 + CANE_H + PAD
     names = sorted(rects)
@@ -543,18 +639,30 @@ def check_regions():
             if (ax - 4 < bx + bw and bx - 4 < ax + aw
                     and ay - 4 < by + bh and by - 4 < ay + ah):
                 problems.append("%s and %s overlap" % (a, b))
+    for band, (lw, lh) in BANDS.items():
+        for name in LIGHTS[band]:
+            _x, _y, w, h = REGION[name]
+            if abs(w / PPM - lw) > 1e-6 or abs(h / PPM - lh) > 1e-6:
+                problems.append("%s region is not one %s light" % (name, band))
     for kind, (w, h) in OPENINGS.items():
-        rw, rh = region_size_m(kind)
+        x, y, rw, rh = REGION[kind]
+        dx, _dy = REGION_OFF.get(kind, (0, 0))
         top = SURROUND_TOP if kind == "entrance" else 0.0
-        if abs(rw - w) > 0.02 or abs(rh - top - h) > 0.02:
-            problems.append("%s region is %.3f x %.3f m for a %.3f x %.3f m "
-                            "opening" % (kind, rw, rh, w, h))
-    if abs(m(Z_WALL_TOP) - BRICK_H) > 1e-6:
-        problems.append("the brick band does not reach the wall head")
-    if ATLAS % BATTEN or ATLAS % 64:
-        problems.append("the roof's battens do not divide the atlas width")
-    for z in (Z_PLINTH, Z_FLOOR, Z_FLOOR2, Z_BAND0, Z_EAVE, Z_SILL, Z_SILL2,
-              Z_SILL_CTRL, Z_LEAF, ENTRY_H):
+        if abs((rw - 2 * dx) / PPM - w) > 0.02 or abs(rh / PPM - top - h) > 0.02:
+            problems.append("%s region does not fit its opening" % kind)
+    dx, dy, dw, dh = DECK
+    if abs(dw / DPPM - 2 * (HX - PIN)) > 1e-6 or abs(dh / DPPM - 2 * (HY - PIN)) > 1e-6:
+        problems.append("the deck region is not the deck inside the parapet")
+    if abs(HOUSING[2] / PPM - HOUSING_W) > 1e-6 or abs(HOUSING[3] / PPM - HOUSING_H) > 1e-6:
+        problems.append("the housing region does not fit the housing")
+    if abs(m(Z_PAR) - BRICK_H) > 1e-6:
+        problems.append("the brick band does not reach the parapet's top")
+    if abs(m(Z_PAR - Z_DECK) - UPST_H) > 1e-6:
+        problems.append("the upstand band is not the parapet's inner face")
+    if abs(m(COPING_H) - COP_FACE) > 1e-6 or abs(m(PIN + 2 * COPING_OUT) - COP_TOP) > 1e-6:
+        problems.append("the coping band does not fit the coping")
+    for z in (Z_PLINTH, Z_FLOOR, Z_FLOOR2, Z_BAND0, Z_DECK, Z_COP, Z_COP0, Z_PAR,
+              Z_SILL, Z_SILL2, Z_SILL_CTRL, Z_LEAF, ENTRY_H):
         if abs(m(z) - round(m(z))) > 1e-6:
             problems.append("height %.4f is not a whole texel" % z)
     if problems:
@@ -570,11 +678,10 @@ def weather(c):
     round, and so do the runs from the slab band's top arris.
     """
     brick = (ID_BRICK, ID_BRICK2, ID_MORTAR)
-    steel = (ID_ROOF, ID_BATTEN, ID_FLASH, ID_GUTTER, ID_STEEL, ID_PIPE,
-             ID_DOOR, ID_HANDLE)
+    steel = (ID_COPING, ID_STEEL, ID_PIPE, ID_DOOR, ID_HANDLE, ID_LOUVRE, ID_POST)
     w = weathering.Weather(c, clean=(ID_GLASS,), steel=steel)
     w.grime()
-    w.fade((ID_FRAME, ID_DOOR, ID_ENTRY, ID_FLASH, ID_ROOF, ID_BATTEN))
+    w.fade((ID_FRAME, ID_DOOR, ID_ENTRY, ID_FASCIA, ID_DECK, ID_LAP, ID_POST))
     w.wash(brick)
     w.plinth(0, ATLAS, BRICK_Y0, BRICK_Y0 + m(Z_PLINTH), (ID_PLINTH,))
     w.splash(0, ATLAS, BRICK_Y0 + m(Z_PLINTH), BRICK_Y0 + BRICK_H + PAD, brick)
@@ -585,22 +692,37 @@ def weather(c):
     w.add("D", 0, ATLAS, yb0, yb1, lambda Y, X, nz: 0.05 + 0.08 * nz("blotch")
           + 0.10 * atlas.smoothstep(yb1 - 4, yb1, Y), (ID_SLAB,))
     w.runs(0, ATLAS, yb0 - 24, yb0, brick, 0.06, fall=10.0)
-    # under the eave: the wall's head sheltered from rain
-    w.shelter(0, ATLAS, BRICK_Y0 + m(Z_EAVE) - 40, BRICK_Y0 + BRICK_H + PAD, brick)
-    # the roof: runs down the slope, dirt toward the gutter, chalking up top
-    w.roof(0, ATLAS, ROOF_Y0, ROOF_H, SLOPE_LEN, (ID_ROOF, ID_BATTEN))
-    # the gutter and the fascia under it
-    w.add("D", 0, ATLAS, EAVE_Y0 + EAVE_H - 9, EAVE_Y0 + EAVE_H,
-          lambda Y, X, nz: 0.08 + 0.10 * nz("blotch"), (ID_GUTTER,))
-    w.runs(0, ATLAS, EAVE_Y0 - PAD, EAVE_Y0 + EAVE_H - 9, (ID_FLASH,), 0.12,
-           fall=6.0, noise="short")
-    # the canopy's edge: runs from its top
-    w.runs(0, ATLAS, CANE_Y0, CANE_Y0 + CANE_H, (ID_CONC,), 0.12, fall=8.0,
+    # the parapet: sheltered under the coping's drip, faint runs from it
+    yd = BRICK_Y0 + m(Z_COP0)
+    w.shelter(0, ATLAS, yd - 24, yd, brick, amount=0.06, top=BRICK_Y0 + BRICK_H + PAD)
+    w.runs(0, ATLAS, yd - 40, yd, brick, 0.05, fall=14.0)
+    # the coping: dust on its top, runs down its face
+    w.add("D", 0, ATLAS, COP_Y0 + COP_FACE, COP_Y0 + COP_FACE + COP_TOP + PAD,
+          lambda Y, X, nz: 0.06 + 0.08 * nz("blotch"), (ID_COPING,))
+    w.runs(0, ATLAS, COP_Y0 - PAD, COP_Y0 + COP_FACE, (ID_COPING,), 0.08, fall=5.0,
            noise="short")
+    # the upstand: dirt at its foot where water stands
+    w.add("D", 0, ATLAS, UPST_Y0 - PAD, UPST_Y0 + UPST_H, lambda Y, X, nz: 0.14
+          * np.exp(-np.clip(Y - UPST_Y0, 0, None) / 4.0) * (0.6 + 0.4 * nz("blotch")),
+          (ID_DECK, ID_LAP))
+    # the canopy's fascia: runs from its top
+    w.runs(0, ATLAS, CANE_Y0, CANE_Y0 + CANE_H, (ID_FASCIA,), 0.10, fall=8.0,
+           noise="short")
+    # the deck: blotchy dirt, darker in the hollows round each outlet and
+    # along the parapet's foot, where water stands longest
+    x, y, rw, rh = DECK
+    w.add("D", x, x + rw, y, y + rh, lambda Y, X, nz: 0.06 + 0.10 * nz("big")
+          + 0.06 * nz("blotch"), (ID_DECK, ID_LAP))
+    for ox, oy in OUTLETS:
+        cx, cy = x + (ox + HX - PIN) * DPPM, y + (oy + HY - PIN) * DPPM
+        r = 1.4 * DPPM
+        w.add("D", cx - r, cx + r, cy - r, cy + r, lambda Y, X, nz, cx=cx, cy=cy, r=r:
+              0.20 * np.exp(-((X - cx) ** 2 + (Y - cy) ** 2) / (0.45 * r) ** 2)
+              * (0.6 + 0.4 * nz("blotch")), (ID_DECK, ID_LAP))
     # the windows: dirt standing on the bottom rails
-    for rect in (WIN, CTRL):
+    for rect in (RIB_F, RIB_V, CTRL, GWIN):
         x, y, rw, rh = rect
-        w.add("D", x, x + rw, y, y + 7, lambda Y, X, nz: 0.10
+        w.add("D", x, x + rw, y, y + FOOT + 1, lambda Y, X, nz: 0.10
               + 0.12 * atlas.smoothstep(0.2, 1.4, nz("short")), (ID_FRAME,))
     # the doors: their feet and handles; the surround's foot splashed
     x, y, rw, rh = ENTRANCE
@@ -624,6 +746,10 @@ def weather(c):
     w.runs(x, x + rw, y, y + rh, (ID_PIPE,), 0.14, fall=rh / 2.0)
     w.add("R", x, x + rw, y, y + rh, lambda Y, X, nz: 0.10 * atlas.smoothstep(
         0.4, 1.6, nz("runs")), (ID_PIPE,))
+    # the housing: dirt at its foot, runs under its lid
+    x, y, rw, rh = HOUSING
+    w.splash(x, x + rw, y, y + rh, (ID_COPING, ID_LOUVRE), amount=0.12, fall=0.15)
+    w.runs(x, x + rw, y, y + rh - 3, (ID_COPING,), 0.08, fall=8.0, noise="short")
     return w
 
 
@@ -633,16 +759,17 @@ def paint(ss=atlas.SS):
     check_regions()
     c = atlas.Canvas(ATLAS, ss, PPM)
     paint_brick(c)
-    paint_roof(c)
-    paint_eave(c)
+    paint_coping(c)
+    paint_upstand(c)
     paint_canopy_edge(c)
     c.check_bands(BAND_IDS)
     paint_entrance(c)
     paint_service_door(c)
-    paint_window(c)
-    paint_ctrl(c)
+    paint_windows(c)
     paint_conc(c)
     paint_vent(c)
+    paint_housing(c)
+    paint_deck(c)
     paint_patches(c)
 
     # Tone wear, grain and pores. Every field is periodic, so the bands wrap.
@@ -651,12 +778,14 @@ def paint(ss=atlas.SS):
     walls = np.isin(c.mid, (ID_BRICK, ID_BRICK2, ID_MORTAR, ID_PLINTH, ID_SLAB))
     streak = atlas.noise(c, 7, 0.8, 40.0)
     c.shade[walls] *= 1.0 + 0.03 * streak[walls]
-    sheet = np.isin(c.mid, (ID_FLASH, ID_DOOR, ID_ENTRY))
+    sheet = np.isin(c.mid, (ID_FASCIA, ID_DOOR, ID_ENTRY, ID_COPING))
     grain = atlas.noise(c, 5, 60.0, 0.35)
     c.shade[sheet] *= 1.0 + 0.016 * grain[sheet]
-    roof = np.isin(c.mid, (ID_ROOF, ID_BATTEN))
-    mottle = atlas.noise(c, 6, 3.0, 12.0)
-    c.shade[roof] *= 1.0 + 0.05 * mottle[roof]
+    deck = np.isin(c.mid, (ID_DECK, ID_LAP))
+    mottle = atlas.noise(c, 6, 6.0, 6.0)
+    gravel = atlas.noise(c, 11, 0.6)
+    c.shade[deck] *= 1.0 + 0.05 * mottle[deck] + 0.07 * gravel[deck]
+    c.height[deck] += 0.0008 * gravel[deck]
     mineral = np.isin(c.mid, (ID_PLINTH, ID_CONC, ID_MORTAR, ID_RENDER, ID_SLAB))
     pores = atlas.noise(c, 9, 0.8)
     c.shade[mineral] *= 1.0 + 0.035 * pores[mineral]
@@ -675,9 +804,6 @@ def lut(variant):
     t[ID_BRICK2] = pal["brick2"]
     t[ID_MORTAR] = pal["mortar"]
     t[ID_FRAME] = pal["frame"]
-    t[ID_ROOF] = pal["roof"]
-    t[ID_BATTEN] = pal["roof"]
-    t[ID_FLASH] = pal["flash"]
     t[ID_DOOR] = pal["door"]
     t[ID_ENTRY] = pal["entry"]
     return t

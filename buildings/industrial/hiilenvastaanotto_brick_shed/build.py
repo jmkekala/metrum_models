@@ -20,20 +20,26 @@ tipping shed and tip their coal through a steel grate in the floor into the
 pit, from which a bucket elevator lifts it toward the boiler house's bunkers.
 
 The shed is 14.0 x 6.4 m, red brick on a concrete plinth between the columns
-of a concrete frame, under a 14 degree profiled-sheet gable roof whose ridge
-runs along X. The truck lane runs through it along X, level and doorless,
-5.60 m between its walls and 14.0 m from the west mouth's wall plane to the
-east one's. Each gable is a concrete portal: two 0.4 m piers and a lintel at
-6.00 m, the band that runs round the shed as its ring beam, brick and the
-gable triangle above. Inside, two tie beams cross the lane at 6.20 m under a
-pitched sheet ceiling, and the tipping grate lies in the floor at mid-length.
-Three tall steel windows light the shed high on its front (-Y) wall.
+of a concrete frame, under a low 6.8 degree profiled-sheet gable roof whose
+ridge runs along X. The truck lane runs through it along X, level and
+doorless, 5.60 m between its walls and 14.0 m from the west mouth's wall
+plane to the east one's, used one way, in at the west mouth. Each gable is a
+concrete portal: two 0.4 m piers and a lintel at 6.00 m, the band that runs
+round the shed as its ring beam, brick and the shallow gable above. Inside,
+two tie beams cross the lane at 6.20 m under a pitched sheet ceiling, and the
+tipping grate lies in the floor 2.5 m west of mid-length, under the tail of a
+truck stopped at the lane's centre. Three tall steel windows light the shed
+high on its front (-Y) wall.
 
 Behind it (+Y), the side that faces the hall's coal side: a brick lean-to
 with the attendant's room (a window onto the lane, its door in the lean-to's
-east end) and the drive room, and through it the elevator tower, 3.4 x 4.0 m
-and 13.5 m tall under a flat concrete slab, a closed steel outlet hatch high
-on its rear face.
+east end) and the drive room, and through it the elevator tower: a slim
+brick shaft 2.6 x 4.1 m with its stair's windows stacked up its east face,
+under a sheet-clad head house 4.0 x 4.8 x 4.2 m that oversails it on three
+sides, a loading hatch and hoist beam on its east face. From the head
+house's rear face the inclined conveyor gallery rises at 20 degrees away from
+the building, 4.0 m in plan to a closed end, on two raking struts back to
+the shaft: nothing of it stands on the ground behind the tower.
 
 Construction. The shed is one closed box with the lane cut out of it by an
 exact boolean difference (asset_build.difference): the lane's void, extended
@@ -42,8 +48,9 @@ the cutters, so the box
 keeps a 0.02 m floor slab under the lane, the lane's floor face, and the
 void's own faces become the lane's walls, ceiling, the lintels' soffits and
 the gables' inner faces over them, with the void's UVs. Then the lean-to and
-tower (one hand-built solid), the two roof slabs, the tower slab, the tie
-beams and the downpipes are unioned in (asset_build.union).
+shaft (one hand-built solid), the head house, the two roof slabs, the head
+house's slab, the gallery, its struts, the hoist beam, the tie beams and the
+downpipes are unioned in (asset_build.union).
 """
 
 import importlib
@@ -638,18 +645,20 @@ ANNEX_WALLS = [
     dict(name="a_rear_e", p0=(AX1, AY1), p1=(TX1, AY1), s_lo=0.0, s_hi=AX1 - TX1,
          top=[(AX1 - TX1, AT1), (0.0, AT1)],
          items=[("win_s_b", 3.0, 1.0)], u_off=2.0),
+    # the stair's windows, one a flight, stacked up the shaft's east face
     dict(name="t_east", p0=(TX1, AY1), p1=(TX1, TY1), s_lo=0.0, s_hi=TY1 - AY1,
          top=[(TY1 - AY1, ZT), (AY0 - AY1, ZT), (AY0 - AY1, AT0), (0.0, AT1)],
-         items=[("win_s_b", 4.8, 10.2)], u_off=5.0),
+         items=[("win_s", 4.8, 4.6), ("win_s_b", 4.8, 7.6), ("win_s", 4.8, 10.6)],
+         u_off=5.0),
     dict(name="t_rear", p0=(TX1, TY1), p1=(TX0, TY1), s_lo=0.0, s_hi=TX1 - TX0,
          top=[(TX1 - TX0, ZT), (0.0, ZT)],
-         items=[("door", 0.0, 0.0), ("hatch", 0.0, 10.6)], u_off=9.6),
+         items=[("door", 0.0, 0.0)], u_off=9.6),
     dict(name="t_west", p0=(TX0, TY1), p1=(TX0, AY1), s_lo=0.0, s_hi=TY1 - AY1,
          top=[(TY1 - AY1, AT1), (TY1 - AY0, AT0), (TY1 - AY0, ZT), (0.0, ZT)],
-         items=[("louvre", 4.8, 11.0)], u_off=0.4),
+         items=[], u_off=0.4),
     dict(name="a_rear_w", p0=(TX0, AY1), p1=(AX0, AY1), s_lo=0.0, s_hi=TX0 - AX0,
          top=[(TX0 - AX0, AT1), (0.0, AT1)],
-         items=[("win_s", -3.0, 1.0)], u_off=12.0),
+         items=[("win_s", -3.0, 1.0)], u_off=11.5),
     dict(name="a_west", p0=(AX0, AY1), p1=(AX0, AY0), s_lo=0.0, s_hi=AY1 - AY0,
          top=[(AY1 - AY0, AT0), (0.0, AT1)], items=[], u_off=5.5),
 ]
@@ -741,9 +750,162 @@ def box(x0, x1, y0, y1, z0, z1, side, top, bottom):
 
 
 def tower_slab():
+    """The head house's flat concrete roof slab, overhanging T_OV all round."""
     o = L.T_OV
-    return box(TX0 - o, TX1 + o, L.TY0 - o, TY1 + o, L.Z_TSLAB, L.Z_TSLAB + L.T_SLAB_T,
-               uv_patch("coping"), uv_patch("felt"), uv_patch("slab_under"))
+    return box(L.HX0 - o, L.HX1 + o, L.HY0 - o, L.HY1 + o, L.Z_TSLAB,
+               L.Z_TSLAB + L.T_SLAB_T, uv_patch("coping"), uv_patch("felt"),
+               uv_patch("slab_under"))
+
+
+# ------------------------------------------------------------- head house
+# Its four walls, walked anticlockwise from above as every wall here is;
+# items as the brick walls' (kind, plan centre, sill). u_off places each
+# wall's U in the cladding region, inside its 7.0 m.
+HH_WALLS = [
+    dict(name="h_front", p0=(L.HX0, L.HY0), p1=(L.HX1, L.HY0),
+         items=[("win_s", -0.8, 13.5), ("win_s_b", 0.8, 13.5)], u_off=0.2),
+    dict(name="h_east", p0=(L.HX1, L.HY0), p1=(L.HX1, L.HY1),
+         items=[("win_s", 3.1, 13.5), ("hatch", L.HOIST_Y, 12.6)], u_off=1.0),
+    dict(name="h_rear", p0=(L.HX1, L.HY1), p1=(L.HX0, L.HY1), items=[], u_off=2.6),
+    dict(name="h_west", p0=(L.HX0, L.HY1), p1=(L.HX0, L.HY0),
+         items=[("louvre", L.HOIST_Y, 14.6), ("win_s_b", 3.1, 13.5)], u_off=2.0),
+]
+
+
+def uv_clad(fr, u_off):
+    x0, y0 = L.CLAD[:2]
+    return lambda co: (x0 + (fr.s_of(co) + u_off) * PPM, y0 + (co.z - L.HH_Z0) * L.CLAD_VPM)
+
+
+def head_house(level):
+    """The head house as one closed box: four sheet-clad walls from its
+    floor (the oversail's soffit, which the shaft runs up into) to a lid
+    inside the roof slab, each wall's openings recessed at the close tiers
+    and flush after, as the brick walls' are."""
+    B = Builder()
+    z0, z1 = L.HH_Z0, L.Z_HH_TOP
+    for spec in HH_WALLS:
+        fr = Frame(spec["p0"], spec["p1"])
+        holes = []
+        for kind, c, zs in spec["items"]:
+            s0, s1, a, b = item_rect(fr, kind, c, zs)
+            poly = [(s0, a), (s1, a), (s1, b), (s0, b)]
+            holes.append(poly)
+            closing = uv_region(fr, kind, s0, a)
+            if opening_mode(level) == "flush":
+                B.face([fr.P(s, z) for s, z in poly], closing)
+                continue
+            d = L.REVEAL[kind]
+            rev = uv_patch("clad_rev")
+            for (a0, b0), (a1, b1) in zip(poly, poly[1:] + poly[:1]):
+                B.face([fr.P(a0, b0), fr.P(a1, b1), fr.P(a1, b1, -d), fr.P(a0, b0, -d)], rev)
+            B.face([fr.P(s, z, -d) for s, z in poly], closing)
+        fill_region(B, fr.P, [(0.0, z0), (fr.L, z0), (fr.L, z1), (0.0, z1)], holes,
+                    uv_clad(fr, spec["u_off"]))
+    ring = [(L.HX0, L.HY0), (L.HX1, L.HY0), (L.HX1, L.HY1), (L.HX0, L.HY1)]
+    B.face([(x, y, z0) for x, y in reversed(ring)], uv_patch("hh_soffit"))
+    B.face([(x, y, z1) for x, y in ring], uv_patch("blank"))
+    return B
+
+
+def hoist_beam():
+    """The steel hoist beam over the loading hatch, out from the head
+    house's east face under the slab, its inner end inside the wall."""
+    w = L.HOIST_W / 2.0
+    return box(L.HX1 - 0.25, L.HX1 + L.HOIST_OUT, L.HOIST_Y - w, L.HOIST_Y + w,
+               L.HOIST_Z[0], L.HOIST_Z[1], uv_patch("hoist"), uv_patch("hoist"),
+               uv_patch("hoist"))
+
+
+# ---------------------------------------------------------------- gallery
+GAL_YA = TY1 - L.GAL_BURY           # its start, inside the head house
+GAL_XW = L.GAL_W / 2.0
+
+
+def gal_end_recessed(level):
+    return level < 2
+
+
+def uv_gal_side(co):
+    x0, y0 = L.GAL_SIDE[:2]
+    return (x0 + (co.y - GAL_YA) * PPM, y0 + (co.z - L.gal_floor(co.y)) * L.GAL_VPM)
+
+
+def uv_gal_roof(co):
+    """The gallery's roof on the cladding: ribs across U run down the slope;
+    V up the slope, squeezed into the cladding's clean rows."""
+    x0, y0, _w, _h = L.CLAD
+    run = (L.GAL_Y1 - GAL_YA) / math.cos(math.radians(L.GAL_ANG))
+    rows = (L.Z_TSLAB - L.HH_Z0) * L.CLAD_VPM - 8.0
+    return (x0 + (co.x + GAL_XW + 0.5) * PPM,
+            y0 + 4.0 + (co.y - GAL_YA) / math.cos(math.radians(L.GAL_ANG)) / run * rows)
+
+
+def uv_gal_end(co):
+    x0, y0 = L.GAL_END[:2]
+    return (x0 + (co.x + GAL_XW) * LPM, y0 + (co.z - L.gal_floor(L.GAL_Y1)) * LPM)
+
+
+def gallery(level):
+    """The inclined conveyor gallery as one closed box: its vertical section
+    GAL_W x GAL_H, centre line at GAL_Z0 on the shaft's rear face plane
+    rising at GAL_ANG toward +Y to its closed end at GAL_Y1, started
+    GAL_BURY inside the head house so the union cuts its mouth there. The
+    end is a rim round a blanking plate, set back at the close tiers."""
+    B = Builder()
+    ya, yb = GAL_YA, L.GAL_Y1
+    xw, H = GAL_XW, L.GAL_H
+    za, zb = L.gal_floor(ya), L.gal_floor(yb)
+    # sides, floor, roof
+    B.face([(xw, ya, za), (xw, yb, zb), (xw, yb, zb + H), (xw, ya, za + H)], uv_gal_side)
+    B.face([(-xw, ya, za), (-xw, ya, za + H), (-xw, yb, zb + H), (-xw, yb, zb)], uv_gal_side)
+    B.face([(-xw, ya, za), (-xw, yb, zb), (xw, yb, zb), (xw, ya, za)], uv_patch("gal_under"))
+    B.face([(-xw, ya, za + H), (xw, ya, za + H), (xw, yb, zb + H), (-xw, yb, zb + H)],
+           uv_gal_roof)
+    B.face([(-xw, ya, za), (xw, ya, za), (xw, ya, za + H), (-xw, ya, za + H)],
+           uv_patch("blank"))
+    # the end: in the plane y = yb, (s, z) with s = x
+    outline = [(-xw, zb), (xw, zb), (xw, zb + H), (-xw, zb + H)]
+    to3d = lambda s, z: (s, yb, z)  # noqa: E731
+    flip = lambda s, z: (-s, yb, z)  # noqa: E731  (walked so its normal is +Y)
+    if not gal_end_recessed(level):
+        B.face([to3d(s, z) for s, z in reversed(outline)], uv_gal_end)
+        return B
+    r, d = L.GAL_END_RIM, L.GAL_END_RECESS
+    inner = [(-xw + r, zb + r), (xw - r, zb + r), (xw - r, zb + H - r), (-xw + r, zb + H - r)]
+    # fill_region winds its triangles anticlockwise in (s, z); mirrored in s
+    # they face +Y, out of the end
+    fill_region(B, flip, [(-s, z) for s, z in reversed(outline)],
+                [[(-s, z) for s, z in reversed(inner)]], uv_gal_end)
+    rev = uv_patch("clad_rev")
+    for (s0, z0), (s1, z1) in zip(inner, inner[1:] + inner[:1]):
+        B.face([(s0, yb, z0), (s1, yb, z1), (s1, yb - d, z1), (s0, yb - d, z0)], rev)
+    B.face([(s, yb - d, z) for s, z in reversed(inner)], uv_gal_end)
+    return B
+
+
+def strut(x):
+    """One raking strut: a square steel member from inside the shaft's rear
+    face at STRUT_FOOT up and out to the gallery's floor at STRUT_TOP_Y,
+    both ends run on into the solids it joins."""
+    (fy, fz), ty = L.STRUT_FOOT, L.STRUT_TOP_Y
+    tz = L.gal_floor(ty)
+    a = Vector((0.0, ty - fy, tz - fz)).normalized()
+    p = Vector((0.0, a.z, -a.y))                    # across the axis, in y-z
+    q = Vector((1.0, 0.0, 0.0))
+    h = L.STRUT_W / 2.0
+    A = Vector((x, fy, fz)) - a * 0.25
+    Bp = Vector((x, ty, tz)) + a * 0.20
+    ring = [(-h, -h), (h, -h), (h, h), (-h, h)]
+    r0 = [tuple(A + q * u + p * v) for u, v in ring]
+    r1 = [tuple(Bp + q * u + p * v) for u, v in ring]
+    B = Builder()
+    fn = uv_patch("strut")
+    for k in range(4):
+        B.face([r0[k], r0[(k + 1) % 4], r1[(k + 1) % 4], r1[k]], fn)
+    B.face(list(reversed(r0)), fn)
+    B.face(list(r1), fn)
+    return B
 
 
 # ---------------------------------------------------------------- downpipes
@@ -768,6 +930,18 @@ PIPE_WALLS = ["front", "front", "rear", "rear", "a_rear_e", "a_rear_w"]
 
 
 # ================================================================ assembly
+def keeps_downpipes(level):
+    """LOD3 drops the six downpipes to pay for the gallery and the head
+    house: past 120 m a pipe is under two pixels wide against its wall."""
+    return level < 3
+
+
+def keeps_fittings(level):
+    """The hoist beam and the gallery's two struts, 0.16-0.20 m steel, go at
+    LOD3 with the downpipes: past 120 m they are under two pixels across."""
+    return level < 3
+
+
 def build_lod(level):
     house = to_object(shed_box(level), "tmp_shed")
     cutters = [to_object(lane_void(level), "tmp_lane")]
@@ -777,11 +951,17 @@ def build_lod(level):
     parts = [to_object(annex_body(level), "tmp_annex"),
              to_object(gable_slab(), "tmp_roof"),
              to_object(lean_to_slab(), "tmp_lean_to"),
-             to_object(tower_slab(), "tmp_tower_slab")]
+             to_object(tower_slab(), "tmp_tower_slab"),
+             to_object(head_house(level), "tmp_head_house"),
+             to_object(gallery(level), "tmp_gallery")]
+    if keeps_fittings(level):
+        parts.append(to_object(hoist_beam(), "tmp_hoist"))
+        parts += [to_object(strut(x), "tmp_strut%d" % i) for i, x in enumerate(L.STRUT_X)]
     if keeps_beams(level):
         parts += [to_object(tie_beam(x), "tmp_beam%d" % i) for i, x in enumerate(L.FRAME_X)]
-    parts += [to_object(B, name) for B, name in
-              DP.solids(DOWNPIPES, *DP.MODES[level], L.PIPE_STRIP, L.ATLAS)]
+    if keeps_downpipes(level):
+        parts += [to_object(B, name) for B, name in
+                  DP.solids(DOWNPIPES, *DP.MODES[level], L.PIPE_STRIP, L.ATLAS)]
     obj = union(house, parts)
     obj.name = "{}_LOD{}".format(ASSET, level)
     obj.data.name = obj.name + "_mesh"
@@ -815,6 +995,7 @@ def build_lod(level):
 
 # ================================================================== checks
 LANE_BAND = 1.0         # nothing beyond a mouth's plane within this of the lane
+UNDER_GALLERY_MIN = 4.6     # nothing lower than this over the strip behind the tower
 
 
 def ground_parts():
@@ -823,7 +1004,14 @@ def ground_parts():
     out = [("lean-to", AX0, AX1, AY0, AY1, 0.0),
            ("tower", TX0, TX1, L.TY0, TY1, 0.0),
            ("lean-to slab", AXE0, AXE1, L.A_SLAB_Y0, L.A_SLAB_Y1, L.annex_under(L.A_SLAB_Y1)),
-           ("tower slab", TX0 - L.T_OV, TX1 + L.T_OV, L.TY0 - L.T_OV, TY1 + L.T_OV, L.Z_TSLAB),
+           ("head house", L.HX0, L.HX1, L.HY0, L.HY1, L.HH_Z0),
+           ("head house slab", L.HX0 - L.T_OV, L.HX1 + L.T_OV, L.HY0 - L.T_OV,
+            L.HY1 + L.T_OV, L.Z_TSLAB),
+           ("hoist beam", L.HX1, L.HX1 + L.HOIST_OUT, L.HOIST_Y - L.HOIST_W / 2.0,
+            L.HOIST_Y + L.HOIST_W / 2.0, L.HOIST_Z[0]),
+           ("gallery", -GAL_XW, GAL_XW, TY1, L.GAL_Y1, L.gal_floor(TY1)),
+           ("struts", L.STRUT_X[0] - L.STRUT_W / 2.0, L.STRUT_X[1] + L.STRUT_W / 2.0, TY1,
+            L.STRUT_TOP_Y + 0.15, L.STRUT_FOOT[1] - 0.2),
            ("main roof's rakes", -XE, XE, YE0, YE1, L.roof_under(YE0))]
     for p, w in zip(DOWNPIPES, PIPE_WALLS):
         pts = [p.point(a, out, z) for out, z in p.path(True) for a in (-DP.A, DP.A)]
@@ -874,8 +1062,41 @@ def check_layout():
                 bad.append("%s: %s runs up under the lean-to's roof" % (spec["name"], k))
             if not ground and r[2] < AT0 + 0.5:
                 bad.append("%s: %s is not clear above the lean-to's roof" % (spec["name"], k))
-            if not ground and r[3] > L.Z_TSLAB - 0.4:
-                bad.append("%s: %s runs up under the tower's slab" % (spec["name"], k))
+            if not ground and r[3] > L.HH_Z0 - 0.4:
+                bad.append("%s: %s runs up under the head house" % (spec["name"], k))
+    # the head house's openings: on their walls, clear of its ends, its floor,
+    # its slab and each other; the hoist beam over the hatch
+    for spec in HH_WALLS:
+        fr = Frame(spec["p0"], spec["p1"])
+        rects = [(k, item_rect(fr, k, c, z)) for k, c, z in spec["items"]]
+        for k, r in rects:
+            if r[0] < 0.3 or r[1] > fr.L - 0.3:
+                bad.append("%s: %s within 0.3 m of the wall's end" % (spec["name"], k))
+            if r[2] < L.HH_Z0 + 0.2 or r[3] > L.Z_TSLAB - 0.3:
+                bad.append("%s: %s crowds the floor or the slab" % (spec["name"], k))
+        for i in range(len(rects)):
+            for j in range(i + 1, len(rects)):
+                a, b = rects[i][1], rects[j][1]
+                if a[0] < b[1] + 0.3 and b[0] < a[1] + 0.3 and a[2] < b[3] + 0.3 \
+                        and b[2] < a[3] + 0.3:
+                    bad.append("%s: two openings within 0.3 m" % spec["name"])
+    hatch_top = next(z + L.OPENINGS[k][1] for k, c, z in HH_WALLS[1]["items"] if k == "hatch")
+    if L.HOIST_Z[0] < hatch_top + 0.5 or L.HOIST_Z[1] > L.Z_TSLAB - 0.2:
+        bad.append("the hoist beam is not between the hatch and the slab")
+    # the gallery: its mouth inside the head house's rear face, its end
+    # centre where the plant hall's stub expects it
+    za, zt = L.gal_floor(TY1), L.gal_floor(TY1) + L.GAL_H
+    if za < L.HH_Z0 + 0.2 or zt > L.Z_TSLAB - 0.3:
+        bad.append("the gallery's mouth is not inside the head house's rear face")
+    if GAL_XW > L.HX1 - 0.3:
+        bad.append("the gallery's mouth crowds the head house's corners")
+    if abs(L.GAL_Z1 - 15.456) > 0.001:
+        bad.append("the gallery's end centre is at %.3f m, not 15.456" % L.GAL_Z1)
+    for x in L.STRUT_X:
+        if abs(x) + L.STRUT_W / 2.0 > TX1 - 0.15 or abs(x) + L.STRUT_W / 2.0 > GAL_XW - 0.1:
+            bad.append("a strut is not on the shaft's rear face under the gallery")
+    if L.STRUT_FOOT[1] < L.OPENINGS["door"][1] + 2.0:
+        bad.append("the struts' feet crowd the elevator door")
     # the tower front's window, above the shed's roof
     if 10.2 < L.roof_under(L.TY0) + L.ROOF_T + 1.0:
         bad.append("the tower's front window is not clear of the shed's roof")
@@ -900,6 +1121,10 @@ def check_layout():
         beside = y0 < YL1 + LANE_BAND and YL0 - LANE_BAND < y1
         if beyond and beside and zlo < L.Z_MOUTH:
             bad.append("%s stands beyond a mouth's plane beside the lane" % name)
+        # the strip under the gallery, behind the tower's rear face, is clear
+        # ground: nothing there under UNDER_GALLERY_MIN
+        if y1 > TY1 + EPS and zlo < UNDER_GALLERY_MIN:
+            bad.append("%s reaches into the strip under the gallery" % name)
     if AX0 - L.A_RAKE_OV < -HX or AX1 + L.A_RAKE_OV > HX:
         bad.append("the lean-to runs past the shed's gables")
     # the void and the floor slab, the window recesses inside the walls
@@ -1013,6 +1238,33 @@ def measure_lane(path=None, inset=1e-3):
     return {"floor": floor, "lowest": low, "lowest_at": low_at}
 
 
+def measure_strip(path=None, inset=1e-3):
+    """The strip under the gallery as the exported LOD0 mesh has it, in the
+    build frame: the LOD0 plan bounds, and the lowest point of every
+    triangle clipped to the strip's plan -- from the shaft's rear face, the
+    rearmost thing that stands on the ground, to the gallery's far end,
+    across the whole width of the bounds -- inset a millimetre so the
+    shaft's face and the gallery's end plane drop out."""
+    path = path or os.path.join(BUILD.export_dir, "%s_lod0.glb" % ASSET)
+    px, py, pz = BUILD.pivot
+    tris = [[(gx + px, -gz + py, gy + pz) for gx, gy, gz in t] for t in glb_triangles(path)]
+    xs = [p[0] for t in tris for p in t]
+    ys = [p[1] for t in tris for p in t]
+    lo_x, hi_x = min(xs), max(xs)
+    low, low_at = 1e9, None
+    for pts in tris:
+        poly = pts
+        for axis, val, ge in ((1, TY1 + inset, True), (1, L.GAL_Y1 - inset, False)):
+            if poly:
+                poly = _clip_poly3(poly, axis, val, ge)
+        if len(poly) < 3:
+            continue
+        p = min(poly, key=lambda q: q[2])
+        if p[2] < low:
+            low, low_at = p[2], p
+    return {"x": (lo_x, hi_x), "y": (min(ys), max(ys)), "lowest": low, "lowest_at": low_at}
+
+
 def facts():
     """The geometry facts sidecar's per-asset half (scripts/model_facts.py),
     in the build frame.
@@ -1026,13 +1278,19 @@ def facts():
     inside 0.3 m walls; the lane is open and not a storey. The lane's mouths
     have no leaf and are not doors.
 
-    The lane is the one passage, stated from the west mouth (glTF -X): it
-    works both ways and nothing makes either mouth the entry, so the brief's
-    default stands. Its centre on the west gable's outer plane, forward +X,
-    width between the side walls, length gable plane to gable plane, open at
-    the far end. Its clear height is measured on the exported LOD0 mesh
-    (measure_lane): the lowest geometry over the lane, from the floor slab's
-    top the trucks run on."""
+    The lane is the first passage, used one way and stated from its entry,
+    the west mouth (glTF -X): its centre on the west gable's outer plane,
+    forward +X, width between the side walls, length gable plane to gable
+    plane, open at the far end. Its clear height is measured on the exported
+    LOD0 mesh (measure_lane): the lowest geometry over the lane, from the
+    floor slab's top the trucks run on. A truck stops with its centre at the
+    lane's centre, its tail over the grate (GRATE_C).
+
+    The second passage is the clear ground under the gallery: the strip from
+    the shaft's rear face to the gallery's far end, across the LOD0 plan
+    bounds' whole width, stated from their -X edge along +X; nothing stands
+    on it, and its clear height is the lowest geometry over it, measured on
+    the exported LOD0 mesh (measure_strip)."""
     def door(door_id, kind, wall, main=False):
         spec = next(s for s in ANNEX_WALLS if s["name"] == wall)
         fr = Frame(spec["p0"], spec["p1"])
@@ -1042,6 +1300,8 @@ def facts():
 
     lane = measure_lane()
     clear = lane["lowest"] - lane["floor"]
+    strip = measure_strip()
+    sx0, sx1 = strip["x"]
     rooms = ((AX1 - 0.3) - (AX0 + 0.3)) * ((AY1 - 0.3) - L.Y_R) \
         + ((TX1 - 0.3) - (TX0 + 0.3)) * ((TY1 - 0.3) - (AY1 - 0.3))
     return {
@@ -1055,6 +1315,10 @@ def facts():
                   door("elevator", "service", "t_rear")],
         "passages": [model_facts.lane_passage(
             "truck_lane", (-HX, YC), (1.0, 0.0), YL1 - YL0, 2 * HX, round(clear, 3),
+            through=True),
+            model_facts.lane_passage(
+            "under_gallery", (sx0, (TY1 + L.GAL_Y1) / 2.0), (1.0, 0.0),
+            round(L.GAL_Y1 - TY1, 3), round(sx1 - sx0, 3), round(strip["lowest"], 3),
             through=True)],
     }
 

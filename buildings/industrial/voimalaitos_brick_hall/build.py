@@ -14,27 +14,30 @@ Regenerate the textures first (python3 facade_atlas.py export): the UVs index
 into the atlas, and the renders read it.
 
 The boiler and turbine hall of a small mid-century Nordic town heat-and-power
-plant: one block of two volumes in red facing brick infilling an exposed
-concrete frame, on a concrete plinth, under flat roofs behind a concrete
-roof-edge beam and parapet. The boiler house, 14 x 17 m and 19.5 m to its
-coping, is the west block, with a louvred roof monitor; the turbine hall,
-18 x 16 m and 11.6 m, abuts its east face. Tall steel multi-pane hall windows
-fill the front bays of both. The boiler house's rear wall carries a closed
-flue stub toward the chimney, its west end the coal intake hatch high up;
-the turbine hall's east end, toward the transformer yard, is nearly blank
-round a cable bushing panel.
+plant: one block of two volumes in continuous red facing brick on a concrete
+plinth, under flat roofs behind a low parapet with a light concrete coping.
+The boiler house, 14 x 17 m and 19.5 m to its coping, is the west block, a
+raised coal bunker bay along the rear half of its roof (to 24 m) and two
+steel stub stacks in front of it; its front carries one tall central band
+of narrow lights in three tiers on light spandrels. The turbine hall,
+18 x 16 m and 11.6 m, abuts its east face: four tall hall windows and the
+machinery door on the front, the lettering in the brick above them. The
+boiler house's rear wall carries a closed flue stub toward the chimney, its
+west wall the head of the coal conveyor's gallery; the turbine hall's east
+end, toward the transformer yard, is nearly blank round a cable bushing
+panel.
 
 Construction. The walls of both volumes are one closed shell, meshed
-directly: each wall is a rectangle less its columns and openings, cut into
+directly: each wall is a rectangle less its openings and panels, cut into
 4 m slabs of brick (facade_atlas.CUTS) whose outlines are traced from a grid
 of cells; every face is then given every vertex that lies on its edges
 (tjunctions()), so neighbours meet on shared vertices. Recessed openings
-add their concrete reveals and the closing plane, made of the window
-region's sections. The shell is capped by a floor and two lids, which the
-roof slabs bury. The roof slabs (edge beam, parapet and sunk deck), the
-roof monitor, the ventilators, the flue stub, the entrance canopy, the
-downpipes and the ladders are closed solids of their own, unioned with
-Blender's exact boolean.
+add their concrete reveals and the closing plane. On LOD0-LOD2 the shell
+also carries both roofs' parapets and sunk decks, so it closes with its
+floor alone; on LOD3 two flat lids close it. The copings, the bunker bay,
+the gallery, the stacks, the ventilators, the flue stub, the entrance
+canopy and the wall ladders with their cages are closed solids of their
+own, unioned with Blender's exact boolean.
 
 Every number the mesh and the atlas share is imported from facade_atlas.py.
 """
@@ -59,7 +62,6 @@ ASSET = L.ASSET
 EXPORT_DIR = os.path.join(HERE, "export")
 sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "scripts"))
 import asset_build  # noqa: E402
-import downpipes as DP  # noqa: E402
 import model_facts  # noqa: E402
 import roof_safety as RS  # noqa: E402
 from asset_build import bounds as _bounds, open_stack, to_object, union  # noqa: E402
@@ -82,20 +84,22 @@ LADDER_HANG = 0.30      # the upper wall ladder's foot, above the hall's deck
 def opening_mode(level):
     """Recessed with concrete reveals to 70 m; flush, the same rectangles
     painted, at LOD2; at LOD3 the walls are single faces carrying the
-    6 px/m elevations, every opening and column painted on them."""
+    6 px/m elevations, every opening and panel painted on them."""
     return ("cut", "cut", "flush", "elevation")[level]
 
 
 def roof_flat(level):
-    """LOD3 draws each roof as a box to the coping: the parapet's profile
-    stays, the sunk deck behind it, invisible from the ground, goes."""
-    return level >= 3
+    """From LOD2 each roof closes with a lid under a coping box: the
+    roofline stays; the deck sunk 0.875 m behind the parapet, a pixel or two
+    deep past 70 m and hidden from the ground, goes."""
+    return level >= 2
 
 
 def vents_kept(level):
-    """The two 0.8 m ventilators are hollow to LOD2 and go at LOD3, where
-    they are about seven pixels over a roof seen from below its edge."""
-    return level < 3
+    """The two 0.8 m ventilators are hollow to LOD1 and go from LOD2: they
+    stand 0.3 m over the coping, under three pixels past 70 m, and the
+    parapet hides the rest from the ground."""
+    return level < 2
 
 
 # ============================================================== mesh builder
@@ -194,33 +198,25 @@ def uv_patch(name):
     return lambda co: c
 
 
-U_OFF = {}
-_u = 0.0
-for _n in L.WALL_ORDER[:-1]:
-    U_OFF[_n] = _u
-    _u += L.wall_len(_n)
-U_OFF["step"] = 0.0
-
-
 def uv_brick(fr, u_off, shift):
     """The brick band from the wall's foot, *shift* metres lower above it."""
     return lambda co: ((fr.s_of(co) + u_off) * PPM,
                        L.BRICK_Y0 + (co.z - shift) * PPM)
 
 
-def uv_column(fr, s0, u0):
-    """A column: the concrete band with U up the column and V across it."""
-    return lambda co: ((co.z + u0) * PPM, L.COL_Y0 + (fr.s_of(co) - s0) * PPM)
+def uv_conc(fr, z0):
+    """A concrete panel: the concrete band, V up from the panel's foot."""
+    return lambda co: (fr.s_of(co) * PPM, L.CONC_Y0 + (co.z - z0) * PPM)
 
 
 def uv_jamb(fr):
     """A reveal's side: concrete, U up it, V the depth from the wall face."""
-    return lambda co: (co.z * PPM, L.COL_Y0 + (-fr.out_of(co)) * PPM)
+    return lambda co: (co.z * PPM, L.CONC_Y0 + (-fr.out_of(co)) * PPM)
 
 
 def uv_head(fr):
     """A reveal's head or sill: U along the wall, V the depth."""
-    return lambda co: (fr.s_of(co) * PPM, L.COL_Y0 + (-fr.out_of(co)) * PPM)
+    return lambda co: (fr.s_of(co) * PPM, L.CONC_Y0 + (-fr.out_of(co)) * PPM)
 
 
 def uv_region(fr, rect, s0, z0):
@@ -228,12 +224,20 @@ def uv_region(fr, rect, s0, z0):
     return lambda co: (x + (fr.s_of(co) - s0) * PPM, y + (co.z - z0) * PPM)
 
 
-def uv_elevation(fr, name):
-    ename, off = L.WALL_ELEV[name]
+def uv_elevation(fr, ename, off, zb):
     ex, ey, ew, eh = L.ELEV[ename]
-    zb = L.ELEV_ZB[ename]
-    return lambda co: (ex + (fr.s_of(co) + off) * L.LPPM,
-                       ey + (co.z - zb) * L.LPPM)
+    return lambda co: (ex + (fr.s_of(co) + off) * L.LPPM, ey + (co.z - zb) * L.LPPM)
+
+
+def uv_cope(fr, z0):
+    """The coping band along an edge, V up from the coping's foot."""
+    return lambda co: (fr.s_of(co) * PPM, L.COPE_Y0 + (co.z - z0) * PPM)
+
+
+def uv_deck(rect, origin):
+    x, y, w, h = rect
+    ox, oy = origin
+    return lambda co: (x + (co.x - ox) * L.DPPM, y + (co.y - oy) * L.DPPM)
 
 
 # ========================================================== polygon faces
@@ -429,6 +433,11 @@ def brick_regions(L_, zb, zt, inserts):
     return out
 
 
+# where the two 0.5 m returns sample the LOD3 elevations: a blank strip of
+# the neighbouring wall's brick at the same corner
+RETURN_ELEV = {"bh_ret_front": ("front", 13.5), "bh_ret_rear": ("rear", 18.0)}
+
+
 def wall_polys(name, level):
     """Every face of wall *name* at *level*, as Polys."""
     fr = wall_frame(name)
@@ -442,23 +451,39 @@ def wall_polys(name, level):
     mode = opening_mode(level)
     if mode == "elevation":
         loop = [(0.0, zb), (Lw, zb), (Lw, zt), (0.0, zt)]
-        fn = (uv_column(fr, 0.0, 0.0) if name.startswith("bh_ret")
-              else uv_elevation(fr, name))
+        if name in RETURN_ELEV:
+            ename, off = RETURN_ELEV[name]
+            fn = uv_elevation(fr, ename, off, 0.0)
+        else:
+            ename, off = L.WALL_ELEV[name]
+            fn = uv_elevation(fr, ename, off, L.ELEV_ZB[ename])
         return [Poly([P3(loop)], fn)]
 
     inserts = []
-    for k, (s0, s1, z0, z1) in enumerate(L.column_rects(name)):
-        inserts.append((s0, s1, z0, z1))
-        polys.append(Poly([P3([(s0, z0), (s1, z0), (s1, z1), (s0, z1)])],
-                          uv_column(fr, s0, 0.37 * k + 0.11 * len(name))))
+    if name == "step" and not roof_flat(level):
+        # between the hall's parapets the boiler house's face runs on down
+        # to the hall's deck; behind the parapets' ends it is buried
+        zb = L.Z_TD
+        inserts += [(0.0, L.PIN, zb, L.Z_TWT), (Lw - L.PIN, Lw, zb, L.Z_TWT)]
     for item in L.ITEMS[name]:
         rect = L.item_rect(name, item)
         inserts.append(rect)
-        polys += opening_polys(fr, item, rect, mode)
+        polys += item_polys(fr, item, rect, mode)
     for slab, outline, holes in brick_regions(Lw, zb, zt, inserts):
         polys.append(Poly([P3(outline)] + [P3(h) for h in holes],
-                          uv_brick(fr, U_OFF[name], L.SLAB * slab)))
+                          uv_brick(fr, L.U_OFF[name], L.SLAB * slab)))
     return polys
+
+
+def item_polys(fr, item, rect, mode):
+    """One opening or flush panel's faces."""
+    kind = item[0]
+    s0, s1, z0, z1 = rect
+    if kind in L.FLUSH:
+        quad = [fr.P(s0, z0), fr.P(s1, z0), fr.P(s1, z1), fr.P(s0, z1)]
+        fn = uv_conc(fr, z0) if kind == "conc" else uv_region(fr, L.REGION[kind], s0, z0)
+        return [Poly([quad], fn)]
+    return opening_polys(fr, item, rect, mode)
 
 
 def opening_polys(fr, item, rect, mode):
@@ -485,9 +510,9 @@ def opening_polys(fr, item, rect, mode):
         polys.append(Poly([[fr.P(s0, z0, out), fr.P(s1, z0, out), fr.P(s1, z1, out),
                             fr.P(s0, z1, out)]], uv_region(fr, L.REGION[kind], s0, z0)))
         return polys
-    cols, periods = item[3]
+    cols, rows = item[3]
     wx, wy = L.WINDOW[:2]
-    sec_s, sec_z = L.window_sections(cols, periods)
+    sec_s, sec_z = L.window_sections(cols, rows)
     for a0, a1, ru in sec_s:
         for b0, b1, rv in sec_z:
             def fn(co, a0=a0, b0=b0, ru=ru, rv=rv):
@@ -499,9 +524,46 @@ def opening_polys(fr, item, rect, mode):
     return polys
 
 
-def cap_loops(B):
-    """Close the shell: a floor and the two lids, one n-gon per rim loop,
-    every one of them buried by the ground or a roof slab."""
+def roof_polys(level):
+    """Both roofs' parapets and sunk decks as part of the shell: the
+    parapet's top at the wall tops (inside the coping), its inner faces in
+    brick down to the deck, and the deck. The turbine hall's parapet is a U
+    open to the boiler house, its deck running to the step face."""
+    if roof_flat(level):
+        return []
+    polys = []
+    blank = uv_patch("blank")
+    x0, x1, y0, y1 = L.BH
+    p = L.PIN
+    outer = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
+    inner = [(x0 + p, y0 + p), (x1 - p, y0 + p), (x1 - p, y1 - p), (x0 + p, y1 - p)]
+    zt, zd = L.Z_BWT, L.Z_BD
+    polys.append(Poly([[q + (zt,) for q in outer], [q + (zt,) for q in inner]], blank))
+    for k in range(4):
+        a, b = inner[k], inner[(k + 1) % 4]
+        fr = Frame(b, a)                        # out faces into the deck
+        polys.append(Poly([[a + (zd,), b + (zd,), b + (zt,), a + (zt,)]],
+                          uv_brick(fr, 0.0, L.SLAB * L.slab_of(zd))))
+    polys.append(Poly([[q + (zd,) for q in inner]], uv_deck(L.DECK_B, L.DECK_B_O)))
+
+    x0, x1, y0, y1 = L.TH
+    zt, zd = L.Z_TWT, L.Z_TD
+    ring = [(x0, y0), (x1, y0), (x1, y1), (x0, y1), (x0, y1 - p), (x1 - p, y1 - p),
+            (x1 - p, y0 + p), (x0, y0 + p)]
+    polys.append(Poly([[q + (zt,) for q in ring]], blank))
+    for a, b in ((ring[7], ring[6]), (ring[6], ring[5]), (ring[5], ring[4])):
+        fr = Frame(b, a)
+        polys.append(Poly([[a + (zd,), b + (zd,), b + (zt,), a + (zt,)]],
+                          uv_brick(fr, 0.0, L.SLAB * L.slab_of(zd))))
+    deck = [ring[7], ring[6], ring[5], ring[4]]
+    polys.append(Poly([[q + (zd,) for q in deck]], uv_deck(L.DECK_T, L.DECK_T_O)))
+    return polys
+
+
+def cap_loops(B, expect):
+    """Close the shell: the floor, and on a flat-roofed tier the two lids,
+    one n-gon per rim loop, every one of them buried by the ground or a
+    coping."""
     bm = B.bm
     bm.edges.index_update()
     order = [e for e in bm.edges if len(e.link_faces) == 1]
@@ -526,9 +588,10 @@ def cap_loops(B):
             rim.discard(e)
             cur = e.other_vert(cur)
         loops.append(loop)
-    if len(loops) != 3:
-        raise ValueError("expected a floor and two lids, got %d rim loops: a "
-                         "T-junction somewhere" % len(loops))
+    if len(loops) != expect:
+        c = loops[-1][0].co if loops else Vector()
+        raise ValueError("expected %d rim loops, got %d: a T-junction somewhere, "
+                         "e.g. near (%.3f, %.3f, %.3f)" % (expect, len(loops), c.x, c.y, c.z))
     blank = uv_patch("blank")
     for lp in loops:
         zs = {round(v.co.z, 4) for v in lp}
@@ -541,73 +604,72 @@ def shell(level):
     polys = []
     for name in L.WALL_ORDER:
         polys += wall_polys(name, level)
+    polys += roof_polys(level)
     tjunctions(polys)
     B = Builder()
     for p in polys:
         emit(B, p)
-    cap_loops(B)
+    cap_loops(B, 3 if roof_flat(level) else 1)
     return B
 
 
-# ================================================================== roofs
-def uv_fascia(axis, zs):
-    return lambda co: ((co.x if axis == "x" else co.y) * PPM,
-                       L.FASCIA_Y0 + (co.z - zs) * PPM)
-
-
-def uv_deck(x0, y0):
-    x, y, w, h = L.DECK
-    return lambda co: (x + (co.x - x0) * L.DPPM, y + (co.y - y0) * L.DPPM)
-
-
-def parapet_roof(box, zs, zc, zd, open_west=False, flat=False):
-    """A flat roof as one closed solid: the concrete edge beam oversailing
-    the walls by O, from the soffit zs to the coping zc, and inside the
-    parapet the deck sunk to zd. *open_west* leaves the west side without a
-    parapet and runs the roof BURY into the boiler house, which trims it;
-    *flat* draws the whole roof as a box to the coping."""
-    x0, x1, y0, y1 = box
-    xo0 = x0 - (L.BURY if open_west else L.O)
-    xo1, yo0, yo1 = x1 + L.O, y0 - L.O, y1 + L.O
-    B = Builder()
-    outer = [(xo0, yo0), (xo1, yo0), (xo1, yo1), (xo0, yo1)]
-    for k in range(4):
-        (ax, ay), (bx, by) = outer[k], outer[(k + 1) % 4]
-        if open_west and k == 3:
-            continue
-        axis = "x" if abs(ay - by) < EPS else "y"
-        B.face([(ax, ay, zs), (bx, by, zs), (bx, by, zc), (ax, ay, zc)],
-               uv_fascia(axis, zs))
-    B.face([(x, y, zs) for x, y in reversed(outer)], uv_patch("soffit"))
-    if flat:
-        B.face([(x, y, zc) for x, y in outer], uv_patch("felt"))
-        if open_west:
-            B.face([(xo0, yo1, zs), (xo0, yo0, zs), (xo0, yo0, zc), (xo0, yo1, zc)],
-                   uv_patch("blank"))
-        return B
-    xi0 = xo0 if open_west else x0 + L.PIN
-    xi1, yi0, yi1 = x1 - L.PIN, y0 + L.PIN, y1 - L.PIN
-    inner = [(xi0, yi0), (xi1, yi0), (xi1, yi1), (xi0, yi1)]
-    for k in range(4):
-        if open_west and k == 3:
-            continue
-        o0, o1 = outer[k], outer[(k + 1) % 4]
-        i0, i1 = inner[k], inner[(k + 1) % 4]
-        B.face([o0 + (zc,), o1 + (zc,), i1 + (zc,), i0 + (zc,)], uv_patch("coping"))
-        B.face([i0 + (zc,), i1 + (zc,), i1 + (zd,), i0 + (zd,)], uv_patch("parapet_in"))
-    B.face([(x, y, zd) for x, y in inner], uv_deck(xi0, yi0))
-    if open_west:
-        sec = [(yo0, zs), (yo0, zc), (yi0, zc), (yi0, zd), (yi1, zd), (yi1, zc),
-               (yo1, zc), (yo1, zs)]
-        B.face([(xo0, y, z) for y, z in reversed(sec)], uv_patch("blank"))
+# ================================================================ copings
+def prism(B, ring, z0, z1, side_fns, top, bottom):
+    """A closed prism over plan polygon *ring* (outer loop, optional holes
+    as further loops) from z0 to z1; *side_fns* maps each loop's edge index
+    to a UV function."""
+    for li, lp in enumerate(ring):
+        for k in range(len(lp)):
+            a, b = lp[k], lp[(k + 1) % len(lp)]
+            B.face([a + (z0,), b + (z0,), b + (z1,), a + (z1,)], side_fns(li, k, a, b))
+    emit(B, Poly([[q + (z1,) for q in lp] for lp in ring], top))
+    emit(B, Poly([[q + (z0,) for q in reversed(lp)] for lp in ring], bottom))
     return B
 
 
-def roofs(level):
-    flat = roof_flat(level)
-    return [(parapet_roof(L.BH, L.Z_BS, L.Z_BC, L.Z_BD, flat=flat), "tmp_bh_roof"),
-            (parapet_roof(L.TH, L.Z_TS, L.Z_TC, L.Z_TD, open_west=True, flat=flat),
-             "tmp_th_roof")]
+def coping_side(z0, blank_edges=()):
+    def fn(li, k, a, b):
+        if (li, k) in blank_edges:
+            return uv_patch("blank")
+        return uv_cope(Frame(a, b), z0)
+    return fn
+
+
+def copings(level):
+    """The parapets' copings: a ring 0.375 m tall over each parapet, CO
+    proud of the brick outside and CO_IN inside, the walls running WALL_IN
+    up into it; on LOD3 a box over the whole roof, its top the deck. The
+    turbine hall's runs BURY into the boiler house at both ends."""
+    co, ci, p = L.CO, L.CO_IN, L.PIN
+    out = []
+    x0, x1, y0, y1 = L.BH
+    o = [(x0 - co, y0 - co), (x1 + co, y0 - co), (x1 + co, y1 + co), (x0 - co, y1 + co)]
+    zs, zc = L.Z_BS, L.Z_BC
+    if roof_flat(level):
+        B = prism(Builder(), [o], zs, zc, coping_side(zs),
+                  uv_deck(L.DECK_B, L.DECK_B_O), uv_patch("soffit"))
+    else:
+        i = [(x0 + p + ci, y0 + p + ci), (x0 + p + ci, y1 - p - ci),
+             (x1 - p - ci, y1 - p - ci), (x1 - p - ci, y0 + p + ci)]
+        B = prism(Builder(), [o, i], zs, zc, coping_side(zs), uv_patch("cope_top"),
+                  uv_patch("soffit"))
+    out.append((B, "tmp_bh_coping"))
+
+    x0, x1, y0, y1 = L.TH
+    xb = x0 - L.BURY
+    zs, zc = L.Z_TS, L.Z_TC
+    if roof_flat(level):
+        o = [(xb, y0 - co), (x1 + co, y0 - co), (x1 + co, y1 + co), (xb, y1 + co)]
+        B = prism(Builder(), [o], zs, zc, coping_side(zs, ((0, 3),)),
+                  uv_deck(L.DECK_T, L.DECK_T_O), uv_patch("soffit"))
+    else:
+        q = p + ci
+        u = [(xb, y0 - co), (x1 + co, y0 - co), (x1 + co, y1 + co), (xb, y1 + co),
+             (xb, y1 - q), (x1 - q, y1 - q), (x1 - q, y0 + q), (xb, y0 + q)]
+        B = prism(Builder(), [u], zs, zc, coping_side(zs, ((0, 3), (0, 7))),
+                  uv_patch("cope_top"), uv_patch("soffit"))
+    out.append((B, "tmp_th_coping"))
+    return out
 
 
 # ============================================================ other solids
@@ -624,32 +686,101 @@ def box(x0, x1, y0, y1, z0, z1, sides, top, bottom):
     return B
 
 
-def monitor():
-    """The boiler house's roof monitor: a box standing MON_H above the deck,
-    its foot buried in the roof slab, every side a row of 2 m louvre
-    modules under a sheet lid."""
-    x0, x1, y0, y1 = L.MONITOR
-    zb, zt = L.Z_BD - 0.2, L.Z_BD + L.MON_H
+def bunker():
+    """The raised coal bunker bay: one box on the boiler house's roof, its
+    foot buried in the deck, each face four bands: brick, the window row
+    (a window centred on the face, the rest every BUNKER_PITCH), brick, the
+    coping."""
+    x0, x1, y0, y1 = L.BUNKER
+    zb = L.Z_BD - 0.2
+    w0, w1 = L.BUNKER_WIN
+    bands = ((zb, w0, "brick"), (w0, w1, "band"), (w1, L.BUNKER_COPE, "brick"),
+             (L.BUNKER_COPE, L.BUNKER_TOP, "cope"))
     ring = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
-    rx, ry, rw, rh = L.LOUVRE
-    pts = []
     B = Builder()
     for k in range(4):
-        (ax, ay), (bx, by) = ring[k], ring[(k + 1) % 4]
-        length = math.hypot(bx - ax, by - ay)
-        n = int(round(length / L.MOD))
-        for i in range(n):
-            t0, t1 = i / n, (i + 1) / n
-            p = (ax + (bx - ax) * t0, ay + (by - ay) * t0)
-            q = (ax + (bx - ax) * t1, ay + (by - ay) * t1)
-            pts.append(p)
+        a, b = ring[k], ring[(k + 1) % 4]
+        fr = Frame(a, b)
+        half = fr.L / 2.0
+        for z0, z1, what in bands:
+            if what == "brick":
+                fn = uv_brick(fr, 0.37 * k, L.SLAB * L.slab_of(z0))
+            elif what == "band":
+                fn = (lambda co, fr=fr, half=half: (
+                    L.ATLAS + (fr.s_of(co) - half + L.BUNKER_PITCH / 2.0) * PPM,
+                    L.BUNK_Y0 + (co.z - w0) * PPM))
+            else:
+                fn = uv_cope(fr, z0)
+            B.face([a + (z0,), b + (z0,), b + (z1,), a + (z1,)], fn)
+    B.face([q + (L.BUNKER_TOP,) for q in ring], uv_deck(L.DECK_B, L.DECK_B_O))
+    B.face([q + (zb,) for q in reversed(ring)], uv_patch("blank"))
+    return B
 
-            def fn(co, p=p, d=((bx - ax) / length, (by - ay) / length)):
-                t = (co.x - p[0]) * d[0] + (co.y - p[1]) * d[1]
-                return (rx + t * PPM, ry + (co.z - L.Z_BD) * PPM)
-            B.face([p + (zb,), q + (zb,), q + (zt,), p + (zt,)], fn)
-    B.face([p + (zt,) for p in pts], uv_patch("lid"))
-    B.face([p + (zb,) for p in reversed(pts)], uv_patch("blank"))
+
+def gal_centre(x):
+    """The gallery's centre-line height at plan x, west of the wall."""
+    return L.GAL_ZM - (L.GAL_X0 - x) * L.GAL_TAN
+
+
+def gallery():
+    """The coal conveyor's gallery head: an enclosed sloping box leaving the
+    west wall, GAL_W wide and GAL_H tall, down at GAL_SLOPE to its closed
+    end GAL_LEN out; its back runs GAL_BURY into the parapet's brick."""
+    ya, yb = L.GAL_Y - L.GAL_W / 2.0, L.GAL_Y + L.GAL_W / 2.0
+    xa, xb = L.GAL_X0 + L.GAL_BURY, L.GAL_X1
+    h = L.GAL_H / 2.0
+    cos = math.cos(math.radians(L.GAL_SLOPE))
+    za, zb = gal_centre(xa), gal_centre(xb)
+
+    def side(co):
+        x, y, w, hh = L.GAL_SIDE
+        return (x + (co.x - xb) / cos * L.GPPM,
+                y + (co.z - (gal_centre(co.x) - h)) * L.GPPM)
+
+    def top(co):
+        x, y, w, hh = L.GAL_TOP
+        return (x + (co.x - xb) / cos * L.GPPM, y + (co.y - ya) * L.GPPM)
+
+    def end(co):
+        x, y, w, hh = L.GAL_END
+        return (x + (yb - co.y) * L.GPPM, y + (co.z - (zb - h)) * L.GPPM)
+    B = Builder()
+    A = [(xa, ya, za - h), (xa, yb, za - h), (xa, yb, za + h), (xa, ya, za + h)]
+    E = [(xb, ya, zb - h), (xb, yb, zb - h), (xb, yb, zb + h), (xb, ya, zb + h)]
+    B.face([E[0], A[0], A[3], E[3]], side)
+    B.face([E[1], E[2], A[2], A[1]], side)
+    B.face([E[3], A[3], A[2], E[2]], top)
+    B.face([E[0], E[1], A[1], A[0]], uv_patch("gal_under"))
+    B.face([E[0], E[3], E[2], E[1]], end)
+    B.face([A[0], A[1], A[2], A[3]], uv_patch("blank"))
+    return B
+
+
+def stub_stack(cx, cy):
+    """A steel stub stack on the boiler house's deck: an octagon STACK_R to
+    its corners, open at the top round a flue sunk STACK_DEPTH and sooted,
+    its foot buried in the deck."""
+    n = 8
+    r = L.STACK_R
+    ri = r - L.STACK_WALL / math.cos(math.pi / n)
+    zb, zt = L.Z_BD - 0.2, L.STACK_TOP
+    zf = zt - L.STACK_DEPTH
+    ang = [2.0 * math.pi * (k + 0.5) / n for k in range(n)]
+    ring = [(cx + r * math.cos(a), cy + r * math.sin(a)) for a in ang]
+    flue = [(cx + ri * math.cos(a), cy + ri * math.sin(a)) for a in ang]
+    sx, sy, sw, sh = L.STACK
+    B = Builder()
+    rim, soot = uv_patch("rim"), uv_patch("soot")
+    for k in range(n):
+        a, b = ring[k], ring[(k + 1) % n]
+        fr = Frame(a, b)
+        B.face([a + (zb,), b + (zb,), b + (zt,), a + (zt,)],
+               lambda co, fr=fr: (sx + fr.s_of(co) * L.SPPM, sy + (co.z - L.Z_BD) * L.SPPM))
+        B.face([a + (zt,), b + (zt,), flue[(k + 1) % n] + (zt,), flue[k] + (zt,)], rim)
+        fa, fb = flue[(k + 1) % n], flue[k]
+        B.face([fa + (zf,), fb + (zf,), fb + (zt,), fa + (zt,)], soot)
+    B.face([q + (zf,) for q in flue], soot)
+    B.face([q + (zb,) for q in reversed(ring)], uv_patch("blank"))
     return B
 
 
@@ -669,12 +800,15 @@ def flue_stub():
     x0, x1, proj, z0, hgt = L.FLUE
     y0, y1 = L.BH[3] - 0.2, L.BH[3] + proj
     fx, fy, fw, fh = L.FLUE_END
+    sx, sy, sw, sh = L.FLUE_SIDE
 
     def end(co):
         return (fx + (x1 - co.x) * PPM, fy + (co.z - z0) * PPM)
-    conc = uv_patch("conc")
-    return box(x0, x1, y0, y1, z0, z0 + hgt, [uv_patch("blank"), conc, end, conc],
-               conc, uv_patch("soffit"))
+
+    def side(co):
+        return (sx + (co.z - z0) * PPM, sy + max(0.0, co.y - L.BH[3]) * PPM)
+    return box(x0, x1, y0, y1, z0, z0 + hgt, [uv_patch("blank"), side, end, side],
+               uv_patch("conc"), uv_patch("soffit"))
 
 
 def canopy():
@@ -685,65 +819,69 @@ def canopy():
 
     def edge(axis):
         return lambda co: ((co.x if axis == "x" else co.y) * PPM,
-                           L.COL_Y0 + (co.z - z0) * PPM)
+                           L.CONC_Y0 + (co.z - z0) * PPM)
     return box(x0, x1, y0, y1, z0, z0 + t,
                [edge("x"), edge("y"), uv_patch("blank"), edge("y")],
                uv_patch("conc"), uv_patch("soffit"))
 
 
-# ---------------------------------------------------------------- downpipes
-# Two from each roof: on a column between bays on the front and the rear,
-# running straight up into the edge beam's soffit, fed through the parapet.
-DOWNPIPE_SPOTS = [("bh_front", -6.75), ("bh_rear", -11.25),
-                  ("th_front", 11.25), ("th_rear", 2.25)]
-DOWNPIPES = [DP.slab_pipe(*L.WALLS[w][:2], L.wall_s(w, c), L.SOFFIT[w])
-             for w, c in DOWNPIPE_SPOTS]
-
-
-def downpipes(level):
-    return DP.solids(DOWNPIPES, *DP.MODES[level], L.PIPE_STRIP, L.ATLAS)
-
-
 # ---------------------------------------------------------------- ladders
-# A flat roof needs only the wall ladder up to it (CLAUDE.md): one from the
-# ground up the turbine hall's rear wall, on a column, and one from the
-# hall's deck up the boiler house's east face, in its rear bay.
+# The roofs are flat decks, so CLAUDE.md asks only for a wall ladder up to
+# each, and the two make one route: from the ground up the turbine hall's
+# rear wall, across the hall's deck, and up the boiler house's east face to
+# its deck, where the stacks stand. Nothing serviced stands on the bunker
+# bay's roof, so no third ladder. Both run more than 8 m and carry a cage.
 PAINT = RS.Paint(L.ATLAS, strip=L.PIPE_STRIP)
 LADDER1_X = 11.25
-LADDER2_Y = 5.5
-EAVE1 = RS.Eave(*L.WALLS["th_rear"][:2], L.Z_TS, L.O, L.Z_TC, 0.0)
-WALL1 = RS.WallLadder(EAVE1, L.wall_s("th_rear", LADDER1_X))
-EAVE2 = RS.Eave(*L.WALLS["step"][:2], L.Z_BS, L.O, L.Z_BC, 0.0)
-WALL2 = RS.WallLadder(EAVE2, L.wall_s("step", LADDER2_Y), foot=L.Z_TD + LADDER_HANG)
+LADDER2_Y = 0.0
+BRACKET_PITCH = 2.4     # the most between two wall brackets
 
 
-# Rungs every 0.28 m to 35 m, every other one to 70 m, as roof_safety's
-# MODES; past 70 m the two ladders cost 430 triangles for rungs under half a
-# pixel, so LOD2 keeps only their bare rails, touching nothing, appended
-# after the cleanup, and LOD3 has no kit.
-LADDER_MODES = (RS.MODES[0], RS.MODES[1], (None, False), (None, False))
+def brackets(eave, foot):
+    top = eave.z_wall - RS.SOFFIT_CLEAR - foot
+    n = max(1, int(math.ceil((top - 0.6) / BRACKET_PITCH - 1e-9)))
+    return [0.6 + (top - 0.6) * k / n for k in range(n + 1)]
+
+
+EAVE1 = RS.Eave(*L.WALLS["th_rear"][:2], L.Z_TS, L.CO, L.Z_TC, 0.0)
+WALL1 = RS.WallLadder(EAVE1, L.wall_s("th_rear", LADDER1_X), brackets=brackets(EAVE1, 0.0))
+EAVE2 = RS.Eave(*L.WALLS["step"][:2], L.Z_BS, L.CO, L.Z_BC, 0.0)
+FOOT2 = L.Z_TD + LADDER_HANG
+WALL2 = RS.WallLadder(EAVE2, L.wall_s("step", LADDER2_Y), foot=FOOT2,
+                      brackets=brackets(EAVE2, FOOT2))
+# Rungs: every one to 35 m; every third, without brackets, to 70 m; past
+# that bare rails and the cages' back straps (LOD2, appended after the
+# cleanup); LOD3 has no kit. Cage hoops: every one, then every third.
+LADDER_MODES = ((1, True), (3, False), (None, False), (None, False))
+CAGE_MODES = (1, 3, None, None)
+CAGE1 = RS.Cage(WALL1, modes=CAGE_MODES)
+CAGE2 = RS.Cage(WALL2, modes=CAGE_MODES)
+KIT = [WALL1, CAGE1, WALL2, CAGE2]
 
 
 def ladders(level):
-    return RS.solids([WALL1, WALL2], level, PAINT, modes=LADDER_MODES)
+    return RS.solids(KIT, level, PAINT, modes=LADDER_MODES) if level < 2 else []
 
 
 def ladder_rails(level):
-    return (RS.solids([WALL1, WALL2], level, PAINT, extents=True, modes=LADDER_MODES)
+    return (RS.solids(KIT, level, PAINT, extents=True, modes=LADDER_MODES)
             if level == 2 else [])
 
 
 # ================================================================ assembly
 def build_lod(level):
     base = to_object(shell(level), "tmp_shell")
-    parts = [to_object(B, n) for B, n in roofs(level)]
-    parts.append(to_object(monitor(), "tmp_monitor"))
+    parts = [to_object(B, n) for B, n in copings(level)]
+    parts.append(to_object(bunker(), "tmp_bunker"))
+    parts.append(to_object(gallery(), "tmp_gallery"))
+    for i, (px, py) in enumerate(L.STACKS):
+        parts.append(to_object(stub_stack(px, py), "tmp_stack%d" % i))
     parts.append(to_object(flue_stub(), "tmp_flue"))
     parts.append(to_object(canopy(), "tmp_canopy"))
     if vents_kept(level):
         for i, (px, py) in enumerate(L.VENTS):
             parts.append(to_object(ventilator(px, py), "tmp_vent%d" % i))
-    for M, name in downpipes(level) + ladders(level):
+    for M, name in ladders(level):
         parts.append(to_object(M, name))
     obj = union(base, parts)
     obj.name = "{}_LOD{}".format(ASSET, level)
@@ -772,60 +910,95 @@ def _overlap(a, b, gap=0.0):
     return a[0] < b[1] + gap and b[0] < a[1] + gap and a[2] < b[3] + gap and b[2] < a[3] + gap
 
 
+def _avoid(wall):
+    return [(it[0], *L.item_rect(wall, it)[:2]) for it in L.ITEMS[wall]
+            if it[0] not in ("conc",)]
+
+
 def check_layout():
     """Numbers that have to agree before any geometry is worth looking at."""
     bad = []
     for name in L.WALL_ORDER:
         Lw = L.wall_len(name)
         zb, zt = L.WALLS[name][2:4]
-        cols = L.column_rects(name)
         rects = [(it, L.item_rect(name, it)) for it in L.ITEMS[name]]
         for it, r in rects:
-            tag = "%s: %s at %.2f" % (name, it[0], it[1])
+            tag = "%s: %s at %.2f, %.2f" % (name, it[0], it[1], it[2])
             if r[0] < 0.3 or r[1] > Lw - 0.3:
                 bad.append(tag + " is within 0.3 m of a corner")
-            if r[2] < zb - EPS or r[3] > L.SOFFIT[name] - 0.3:
+            top = L.SOFFIT[name] - (0.25 if it[0] in L.FLUSH else 0.3)
+            if r[2] < zb - EPS or r[3] > top:
                 bad.append(tag + " leaves the wall")
             if EPS < r[2] < 0.5:
                 bad.append(tag + " leaves a sliver of plinth under it")
             if any(abs(z - c) < 0.1 for z in r[2:] for c in L.CUTS):
                 bad.append(tag + " has an edge within 0.1 m of a slab line")
-            for c in cols:
-                if _overlap(r, c, 0.2):
-                    bad.append(tag + " crowds a column")
         for i, (a, ra) in enumerate(rects):
             for b, rb in rects[i + 1:]:
-                if _overlap(ra, rb, 0.3):
-                    bad.append("%s: %s and %s within 0.3 m" % (name, a[0], b[0]))
+                # the window band's lights stand on its concrete strips by
+                # design; the lettering may come 0.25 m over a window head
+                kinds = {a[0], b[0]}
+                if kinds == {"win", "conc"} or kinds == {"conc"}:
+                    gap = -EPS
+                elif "letters" in kinds:
+                    gap = 0.2
+                else:
+                    gap = 0.3
+                if _overlap(ra, rb, gap):
+                    bad.append("%s: %s at %.2f and %s at %.2f within %.2f m"
+                               % (name, a[0], a[1], b[0], b[1], gap))
     for kind, top in L.LEAF_TOP.items():
         if not 2.0 <= top <= 2.4:
             bad.append("the %s leaf is %.3f m" % (kind, top))
-    # downpipes clear of the corners, the openings and the ladders
-    for (w, c), pipe in zip(DOWNPIPE_SPOTS, DOWNPIPES):
-        avoid = [(it[0], *L.item_rect(w, it)[:2]) for it in L.ITEMS[w]]
-        for wall, ladder, x in (("th_rear", WALL1, LADDER1_X), ("step", WALL2, LADDER2_Y)):
-            if wall == w:
-                avoid.append(("ladder", *ladder.span()))
-        if w == "bh_front":
-            avoid.append(("canopy", L.wall_s(w, L.CANOPY[0]), L.wall_s(w, L.CANOPY[1])))
-        bad += DP.problems(pipe, "the %s downpipe" % w, avoid)
-    for wall, ladder in (("th_rear", WALL1), ("step", WALL2)):
-        avoid = [(it[0], *L.item_rect(wall, it)[:2]) for it in L.ITEMS[wall]]
-        avoid += [("downpipe", p.s - DP.A, p.s + DP.A)
-                  for (w, c), p in zip(DOWNPIPE_SPOTS, DOWNPIPES) if w == wall]
+    # the ladders and their cages clear of the corners and the openings
+    for wall, ladder, cage in (("th_rear", WALL1, CAGE1), ("step", WALL2, CAGE2)):
+        avoid = _avoid(wall)
         bad += RS.problems(ladder, "the %s wall ladder" % wall, avoid)
+        bad += RS.problems(cage, "the %s ladder's cage" % wall, avoid)
+    # the upper ladder lands on the boiler house's deck clear of the bay
+    c0, c1 = CAGE2.span()
+    if L.wall_s("step", L.BUNKER[2]) < c1 + 0.8:
+        bad.append("the upper ladder lands against the bunker bay")
+    # the gallery under the coping, its back inside the parapet, and the
+    # west wall's windows clear of it
+    if gal_centre(L.GAL_X0) + L.GAL_H / 2.0 > L.Z_BS - 0.05:
+        bad.append("the gallery's top meets the coping")
+    if gal_centre(L.GAL_X0 + L.GAL_BURY) + L.GAL_H / 2.0 > L.Z_BWT - 0.05 \
+            or L.GAL_BURY >= L.PIN:
+        bad.append("the gallery's back leaves the parapet's brick")
+    g0 = L.wall_s("bh_west", L.GAL_Y + L.GAL_W / 2.0)
+    g1 = L.wall_s("bh_west", L.GAL_Y - L.GAL_W / 2.0)
+    gz = gal_centre(L.GAL_X0) - L.GAL_H / 2.0
+    for it in L.ITEMS["bh_west"]:
+        s0, s1, z0, z1 = L.item_rect("bh_west", it)
+        if it[0] != "mouth" and s0 < g1 and g0 < s1 and z1 > gz - 0.5:
+            bad.append("a west wall window crowds the gallery")
+        if it[0] == "mouth" and not (s0 < g0 and g1 < s1 and z0 < gz < z1):
+            bad.append("the dusted panel does not reach round the gallery's foot")
     # roof things clear of each other and the parapets
-    mx0, mx1, my0, my1 = L.MONITOR
-    if mx0 < L.BH[0] + 1.0 or mx1 > L.BH[1] - 1.0 or my0 < L.BH[2] + 1.0 or my1 > L.BH[3] - 1.0:
-        bad.append("the roof monitor crowds the boiler house's parapet")
+    bx0, bx1, by0, by1 = L.BUNKER
+    if not (L.BH[0] < bx0 < L.BH[0] + L.PIN - 0.05 and L.BH[1] - L.PIN + 0.05 < bx1 < L.BH[1]
+            and L.BH[3] - L.PIN + 0.05 < by1 < L.BH[3]):
+        bad.append("the bunker bay's faces do not stand within the parapets")
+    for px, py in L.STACKS:
+        r = L.STACK_R
+        if py + r > by0 - 0.5 or py - r < L.BH[2] + 1.0 or px - r < L.BH[0] + 1.0 \
+                or px + r > L.BH[1] - 1.0:
+            bad.append("the stack at (%.1f, %.1f) crowds the bay or a parapet" % (px, py))
+        if L.STACK_TOP - L.STACK_DEPTH < L.Z_BD + 0.3:
+            bad.append("a stack's flue floor is in the deck")
+    if abs(L.STACKS[0][0] - L.STACKS[1][0]) < 2 * L.STACK_R + 0.5:
+        bad.append("the stacks crowd each other")
     for px, py in L.VENTS:
         h = L.VENT_W / 2.0
         if px - h < L.TH[0] + 0.8 or px + h > L.TH[1] - 0.8 or abs(py) + h > L.TH[3] - 0.8:
             bad.append("the ventilator at (%.1f, %.1f) crowds a parapet" % (px, py))
         if abs(px - LADDER1_X) < 1.0 and py > L.TH[3] - 2.0:
             bad.append("the ventilator at (%.1f, %.1f) blocks the ladder" % (px, py))
-    if L.Z_BD + L.MON_H < WALL2.eave.z_edge + RS.LADDER_TOP + 0.05:
-        bad.append("the upper ladder, not the monitor, would set the height")
+        if px - h < L.TH[0] + 1.5 and abs(py - LADDER2_Y) < 1.5:
+            bad.append("the ventilator at (%.1f, %.1f) blocks the upper ladder" % (px, py))
+    if L.STACK_TOP < WALL2.eave.z_edge + RS.LADDER_TOP + 0.05:
+        bad.append("the upper ladder, not the stacks, would set the height")
     return bad
 
 
@@ -846,14 +1019,35 @@ LEAF = {
 }
 
 
+def under_gallery():
+    """The clear ground under the gallery head, as a lane along the west
+    wall over the LOD0 plan bounds' full depth: from the furthest-west
+    surface of the wall at any height (the coping's oversail) to the
+    gallery's far end, and as high as the lowest geometry over it, both read
+    from the built LOD0 in the build frame."""
+    obj = BUILD.lod(0)
+    off = Vector(BUILD.pivot)
+    vs = [v.co + off for v in obj.data.vertices]
+    ymin, ymax = min(v.y for v in vs), max(v.y for v in vs)
+    x_end = min(v.x for v in vs)
+    x_wall = L.BH[0] - L.CO
+    over = [v.z for v in vs if v.x < x_wall - 1e-4 and v.z > 0.01]
+    if any(v.x < x_wall - 1e-4 and v.z < 6.0 for v in vs):
+        raise ValueError("something stands under the gallery below 6 m")
+    return model_facts.lane_passage(
+        "under_gallery", ((x_end + x_wall) / 2.0, ymin), (0.0, 1.0),
+        x_wall - x_end, ymax - ymin, min(over), through=True)
+
+
 def facts():
     """The geometry facts sidecar's per-asset half (scripts/model_facts.py),
     in the build frame. The footprint is the outer wall outline at the
     ground: the boiler house's 14 x 17 m and the turbine hall's 18 x 16 m,
-    without the roof edges, the canopy, the flue stub, the pipes and the
-    ladders. One storey: both halls' floors at the ground, which every door
-    opens onto level; its area is inside the outer wall faces. The coal
-    hatch high in the west wall is not a door."""
+    without the copings, the canopy, the flue stub, the gallery, the stacks
+    and the ladders. Two storeys: both halls' floors at the ground, which
+    every door opens onto level, inside the outer wall faces; and the
+    bunker bay's floor on the boiler house's deck, inside its faces. The
+    ground under the gallery head is a clear lane (under_gallery())."""
     def door(door_id, kind, wall, item, main=False):
         p0, p1 = L.WALLS[wall][:2]
         it, = [i for i in L.ITEMS[wall] if i[0] == item]
@@ -863,14 +1057,16 @@ def facts():
 
     bh = (L.BH[1] - L.BH[0]) * (L.BH[3] - L.BH[2])
     th = (L.TH[1] - L.TH[0]) * (L.TH[3] - L.TH[2])
+    bay = (L.BUNKER[1] - L.BUNKER[0]) * (L.BUNKER[3] - L.BUNKER[2])
     return {
         "hero": False,
         "dwellings": 0,
         "footprint": [L.WALLS[n][0] for n in L.WALL_ORDER[:-1]],
-        "storeys": [(0.0, bh + th)],
+        "storeys": [(0.0, bh + th), (L.Z_BD, bay)],
         "doors": [door("entrance", "entrance", "bh_front", "entrance", main=True),
                   door("machinery", "vehicle", "th_front", "bigdoor"),
                   door("service", "service", "th_rear", "service")],
+        "passages": [under_gallery()],
     }
 
 
@@ -879,14 +1075,16 @@ def render_views(out_dir, level=0, res=(1400, 1000)):
     """The six working views CLAUDE.md asks for before export: four
     orthographic elevations, a plan from above, and a raised three-quarter
     aerial off the front corner; plus aerials off the other corners and eye
-    views at the doors, the flue and the coal side. Working views only, not
-    committed."""
+    views at the doors, the flue, the gallery and the boiler house's east
+    face. Working views only, not committed."""
     preview_studio()
     _show_only(level)
     scn = bpy.context.scene
     saved = (scn.camera, scn.render.resolution_x, scn.render.resolution_y)
     scn.render.resolution_x, scn.render.resolution_y = res
-    centre, radius = _bounds(bpy.data.objects["{}_LOD{}".format(ASSET, level)])
+    obj = bpy.data.objects["{}_LOD{}".format(ASSET, level)]
+    centre, radius = _bounds(obj)
+    off = Vector(BUILD.pivot) if BUILD.pivot else Vector()
     cam = bpy.data.objects.get("_view_cam")
     if cam is None:
         cam = bpy.data.objects.new("_view_cam", bpy.data.cameras.new("_view_cam"))
@@ -908,15 +1106,19 @@ def render_views(out_dir, level=0, res=(1400, 1000)):
         scn.render.filepath = os.path.join(out_dir, "L%d_%s.png" % (level, name))
         bpy.ops.render.render(write_still=True)
         written.append(scn.render.filepath)
+
+    def B(x, y, z):                     # a build-frame point in the pivoted scene
+        return Vector((x, y, z)) - off
     persp = [("aerial", centre, Vector((1.0, -1.0, math.sqrt(2.0))), 2.6),
              ("aerial_rear", centre, Vector((-1.0, 1.0, math.sqrt(2.0))), 2.6),
              ("aerial_west", centre, Vector((-1.0, -1.0, math.sqrt(2.0))), 2.6),
              ("aerial_east_rear", centre, Vector((1.0, 1.0, math.sqrt(2.0))), 2.6),
-             ("eye_entrance", Vector((-9.0, -8.5, 3.0)), Vector((0.3, -1.0, 0.05)), 0.9),
-             ("eye_bigdoor", Vector((13.5, -8.0, 3.5)), Vector((0.2, -1.0, 0.05)), 1.0),
-             ("eye_flue", Vector((-9.0, 8.5, 12.0)), Vector((-0.6, 1.0, 0.1)), 1.0),
-             ("eye_coal", Vector((-16.0, 0.0, 12.0)), Vector((-1.0, -0.4, -0.1)), 1.0),
-             ("eye_step", Vector((-2.0, 3.0, 15.0)), Vector((1.0, 0.6, 0.35)), 0.8)]
+             ("eye_entrance", B(-9.0, -8.5, 3.0), Vector((0.3, -1.0, 0.05)), 0.9),
+             ("eye_bigdoor", B(13.5, -8.0, 3.5), Vector((0.2, -1.0, 0.05)), 1.0),
+             ("eye_flue", B(-9.0, 8.5, 12.0), Vector((-0.6, 1.0, 0.1)), 1.0),
+             ("eye_gallery", B(-18.0, 4.5, 15.0), Vector((-1.0, -0.6, -0.25)), 0.9),
+             ("eye_roof", B(-7.0, 0.0, 20.0), Vector((1.0, -0.8, 0.6)), 0.9),
+             ("eye_step", B(-2.0, 3.0, 15.0), Vector((1.0, 0.6, 0.35)), 0.8)]
     for name, target, d, k in persp:
         cam.data.type = 'PERSP'
         cam.data.lens = 35.0

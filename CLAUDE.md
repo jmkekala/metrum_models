@@ -374,8 +374,9 @@ thumbnail, so the index is browsable without opening asset folders.
     the hero status, and the name, triangle count and SHA-256 of every
     exported file, with the commit and Blender version it was written from.
     A structure without doors or occupied floors (a chimney) states none.
-  - Optionally, every drivable lane through the building: one mouth's centre
-    on the wall plane, the horizontal direction into the building, width,
+  - Optionally, every drivable lane through or under the building: one
+    mouth's centre on the wall plane (under an overhanging part, on the edge
+    of the plan bounds), the horizontal direction into the building, width,
     length, clear height, and whether it is open at the far end.
   - Geometry and files only: no zones, lots, capacities, anchors or other
     consumer terms.

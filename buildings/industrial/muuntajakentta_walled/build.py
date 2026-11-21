@@ -15,22 +15,27 @@ Regenerate the textures first (python3 facade_atlas.py export): the UVs index
 into the atlas, and the renders read it.
 
 The walled transformer yard of a small mid-century Nordic coal-fired heat
-and power plant: a 16.0 x 12.0 m compound behind a 2.0 m brick wall on brick
-piers, closed at the front by a sheet-steel double gate. Inside, two power
-transformers stand on concrete plinths either side of a brick fire wall,
-their high-voltage bushings toward a galvanised H-section portal on the west
-(incoming) side, from whose beam a suspension string over each phase holds a
-rigid tubular bus down to its bushing. The small red brick switchgear house
-stands in the front-east corner, its front and east walls in the yard wall's
-outer planes, its steel door on the street.
+and power plant: a 20.0 x 12.0 m compound behind a plain 1.7 m brick
+perimeter wall with plain piers every 4-6 m, closed at the front by a
+sheet-steel double gate. Inside, two power transformers stand on concrete
+plinths either side of a concrete fire wall, their high-voltage bushings
+toward the west (incoming) side. There, a solid galvanised portal with
+shield-wire peaks carries a suspension string over each phase, and between
+it and each transformer stands that transformer's switchgear bay: a
+disconnector on a tall steel table, three minimum-oil breaker poles on a
+steel stand and three current transformers on a concrete table, joined by
+slack flexible conductors. The small red brick switchgear house stands in
+the front-east corner, its front and east walls in the yard wall's outer
+planes, its steel door on the street.
 
 Construction is a set of closed solids unioned with Blender's exact boolean
 (asset_build.union): the switchgear house (one solid with its openings, slab
 edge and roof), the wall's runs, its piers and the gate; per transformer the
 plinth, tank, two radiator banks, the conservator and its saddles, three
-bushings and the cable box; the fire wall; the gantry's two columns, beam and
-foundation pads, six insulator strings and six bus tubes. There is no ground:
-every solid stands on z = 0 or on another solid.
+bushings and the cable box; the fire wall; the gantry's two columns, peaks,
+beam and foundation pads and six insulator strings; per bay the switchgear's
+frames, posts, poles and current transformers and twelve conductors. There
+is no ground: every solid stands on z = 0 or on another solid.
 
 The yard has no glazing, so it has no emission map (CLAUDE.md, Output
 Contract); BUILD below is asset_build.Asset with night_lit=False.
@@ -67,10 +72,11 @@ EPS = 1e-6
 LEVELS = (0, 1, 2, 3)
 
 # ------------------------------------------------------------------ the wall
-# Pier centres along each run of the yard wall. The front run stops at the
-# gate's west pier; the gate's east pier stands against the house's front
-# corner; the east run starts at a pier against the house's north wall.
-WCX, WCY = L.WCX, L.WCY
+# Plain pier centres along each run of the yard wall, at the corners, the
+# gate and every 4-6 m between. The front run stops at the gate's west
+# pier; the gate's east pier stands against the house's front corner; the
+# east run starts at a pier against the house's north wall.
+WCX0, WCX1, WCY = L.WCX0, L.WCX1, L.WCY
 HW = L.WALL_T / 2.0
 GATE_W_PIER = L.GATE_OPEN[0] - L.PIER_W / 2.0
 GATE_E_PIER = L.GATE_OPEN[1] + L.PIER_W / 2.0
@@ -81,30 +87,30 @@ def spaced(a, b, n):
     return [a + (b - a) * i / n for i in range(n + 1)]
 
 
-PIERS_FRONT = [(x, -WCY) for x in spaced(-WCX, GATE_W_PIER, 3)] + [(GATE_E_PIER, -WCY)]
-PIERS_WEST = [(-WCX, y) for y in spaced(-WCY, WCY, 4)[1:-1]]
-PIERS_NORTH = [(x, WCY) for x in spaced(-WCX, WCX, 5)]
-PIERS_EAST = [(WCX, y) for y in spaced(WCY, JUNCTION_Y, 3)[1:]]
+PIERS_FRONT = [(x, -WCY) for x in spaced(WCX0, GATE_W_PIER, 2)] + [(GATE_E_PIER, -WCY)]
+PIERS_WEST = [(WCX0, y) for y in spaced(-WCY, WCY, 2)[1:-1]]
+PIERS_NORTH = [(x, WCY) for x in spaced(WCX0, WCX1, 4)]
+PIERS_EAST = [(WCX1, y) for y in spaced(WCY, JUNCTION_Y, 2)[1:]]
 PIERS = PIERS_FRONT + PIERS_WEST + PIERS_NORTH + PIERS_EAST
-# The piers LOD3 keeps: the gate's two and the junction pier. Its wall is
-# one pier thick (RUNS_THICK), so the other piers' faces fold into the
-# wall's and the plan bounds stay the piers' outer faces.
-PIERS_KEPT = [(GATE_W_PIER, -WCY), (GATE_E_PIER, -WCY), (WCX, JUNCTION_Y)]
 
 # Wall runs as (x0, x1, y0, y1), each ending inside a pier (or, the east
 # run, inside the house) so no end face is left in the open.
 RUNS = [
-    (-WCX, GATE_W_PIER, -WCY - HW, -WCY + HW),          # front, west of the gate
-    (-WCX - HW, -WCX + HW, -WCY, WCY),                  # west
-    (-WCX, WCX, WCY - HW, WCY + HW),                    # north
-    (WCX - HW, WCX + HW, JUNCTION_Y - 0.10, WCY),       # east
+    (WCX0, GATE_W_PIER, -WCY - HW, -WCY + HW),          # front, west of the gate
+    (WCX0 - HW, WCX0 + HW, -WCY, WCY),                  # west
+    (WCX0, WCX1, WCY - HW, WCY + HW),                   # north
+    (WCX1 - HW, WCX1 + HW, JUNCTION_Y - 0.10, WCY),     # east
 ]
-FX, FY, PW = L.FX, L.FY, L.PIER_W
+# LOD3's wall is one pier thick, its outer faces the piers', so the piers
+# fold into it and the plan bounds stay theirs; the gate's east pier and the
+# junction pier become the short run into the house and the east run's foot.
+FX0, FX1, FY, PW = L.FX0, L.FX1, L.FY, L.PIER_W
 RUNS_THICK = [
-    (-FX, GATE_W_PIER, -FY, -FY + PW),
-    (-FX, -FX + PW, -FY, FY),
-    (-FX, FX, FY - PW, FY),
-    (FX - PW, FX, JUNCTION_Y, FY),
+    (FX0, L.GATE_OPEN[0], -FY, -FY + PW),
+    (L.GATE_OPEN[1], L.HX0 + 0.04, -FY, -FY + PW),
+    (FX0, FX0 + PW, -FY, FY),
+    (FX0, FX1, FY - PW, FY),
+    (FX1 - PW, FX1, JUNCTION_Y - PW / 2.0, FY),
 ]
 
 # ----------------------------------------------------------------- the house
@@ -126,7 +132,8 @@ H_WALLS = [
 
 # ------------------------------------------------------------ the transformers
 TX = L.T_X
-PH = (-1, 0, 1)                  # phases, as multiples of L.PHASE across Y
+PH = (-1, 0, 1)                  # phases: multiples of L.PHASE (bushings) or
+                                 # L.SW_PHASE (switchgear) across Y
 
 
 def bushing_xy(ty, k):
@@ -138,13 +145,35 @@ def string_top():
     return L.G_BEAM_Z[0] + 0.02
 
 
-def bus_ends(ty, k):
-    """The tubular bus from the foot of a string to its bushing's terminal:
-    each end 0.05 m inside the clamp or the terminal, on its axis."""
+# Terminal heights the conductors join, each inside its part on every tier.
+Z_CLAMP = L.G_BEAM_Z[0] + 0.02 - L.STRING_LEN + 0.04
+Z_POST_TOP = L.POST_Z0 + L.POST_H - 0.05
+Z_BRK_TOP = L.BRK_Z0 + (L.Z_BRK[2] + L.Z_BRK[3]) / 2.0
+Z_BRK_MID = L.BRK_Z0 + (L.Z_BRK[0] + L.Z_BRK[1]) / 2.0
+Z_CT_HEAD = L.CT_Z0 + (L.Z_CT[1] + L.Z_CT[2]) / 2.0
+Z_TERM = L.TANK_Z[1] - 0.05 + L.BUSH_H - 0.05
+
+
+def spans(ty, k):
+    """One phase's conductors, (p0, p1, sag, kind): the slack drop from the
+    string's clamp to the disconnector's incoming post, then near-level
+    spans from its outgoing post to the breaker's top head, from the
+    breaker's mid head to the current transformer's head, and from there to
+    the transformer's bushing. Each end is buried in the part it joins."""
+    ys = ty + k * L.SW_PHASE
     bx, by = bushing_xy(ty, k)
-    z_term = L.TANK_Z[1] - 0.05 + L.BUSH_H - 0.05
-    z_clamp = string_top() - L.STRING_LEN + 0.04
-    return Vector((L.G_X, by, z_clamp)), Vector((bx, by, z_term))
+    return [
+        (Vector((L.G_X, ys, Z_CLAMP)), Vector((L.DIS_X[0], ys, Z_POST_TOP)), 0.35, "drop"),
+        (Vector((L.DIS_X[1], ys, Z_POST_TOP)), Vector((L.BRK_X - 0.04, ys, Z_BRK_TOP)),
+         0.14, "span"),
+        (Vector((L.BRK_X + 0.04, ys, Z_BRK_MID)), Vector((L.CT_X - 0.06, ys, Z_CT_HEAD)),
+         0.12, "span"),
+        (Vector((L.CT_X + 0.06, ys, Z_CT_HEAD + 0.08)), Vector((bx, by, Z_TERM)), 0.18, "span"),
+    ]
+
+
+def sag_point(p0, p1, sag, t):
+    return p0.lerp(p1, t) - Vector((0.0, 0.0, 4.0 * sag * t * (1.0 - t)))
 
 
 # ------------------------------------------------------------------ tiers
@@ -155,26 +184,39 @@ def mode(level):
             recess the size of the casing), flush (a painted rect)
     runs    the wall one brick thick between piers, or one pier thick
     louvres the house walls whose louvres are kept (None: all)
-    piers   all, or only the gate's and the junction's
-    h       the gantry's members as H-sections, or as boxes
+    piers   the plain piers, or none (LOD3's pier-thick wall)
+    h       the gantry's beam as an I-section, or as a box
     bush    sides of a bushing, and whether its full profile is turned
     string  "discs" (turned profile), sides of a plain prism, or 0 (none)
-    bus     sides of the tubular bus, 0 for none
     cons    sides of the conservator; saddles kept or not
     trench  the cable trench covers, or none
+    sw      the switchgear, or None: (sides, profile) of the breaker poles,
+            the disconnector posts and the current transformers, and
+            whether the disconnector's blades and the breaker's operating
+            cabinet are kept
+    cond    the conductors, or None: (segments, sides) of the drop and of
+            the spans; a kind left out is not built
+    poles3  LOD3's stand-in for the switchgear: the breaker poles alone,
+            one prism each from the ground (poles3())
     """
     return [
-        dict(item="ring", runs=RUNS, louvres=None, piers=PIERS, h=True, bush=(8, True), string=("discs", 6),
-             bus=4, cons=(8, True), cable=True, pads=True, rad=True, trench=True),
-        dict(item="cut", runs=RUNS, louvres=None, piers=PIERS, h=True, bush=(6, True), string=("prism", 6),
-             bus=4, cons=(6, True), cable=True, pads=True, rad=True, trench=True),
-        dict(item="flush", runs=RUNS, louvres=None, piers=PIERS, h=False, bush=(4, False),
-             string=("prism", 4), bus=3, cons=(4, False), cable=True, pads=True, rad=True,
-             trench=True),
+        dict(item="ring", runs=RUNS, louvres=None, piers=PIERS, h=True, bush=(8, True),
+             string=("discs", 6), cons=(8, True), cable=True, pads=True, rad=True, trench=True,
+             sw=dict(pole=(8, True), post=(6, True), ct=(8, True), blades=True, cab=True),
+             cond=dict(drop=(6, 4), span=(4, 4)), poles3=False),
+        dict(item="cut", runs=RUNS, louvres=None, piers=PIERS, h=True, bush=(6, False),
+             string=("prism", 6), cons=(6, True), cable=True, pads=True, rad=True, trench=True,
+             sw=dict(pole=(6, True), post=(3, False), ct=(6, "mid"), blades=False, cab=True),
+             cond=dict(drop=(3, 3), span=(2, 3)), poles3=False),
+        dict(item="flush", runs=RUNS_THICK, louvres=None, piers=[], h=False, bush=(4, None),
+             string=("prism", 4), cons=(4, False), cable=True, pads=True, rad=True,
+             trench=True,
+             sw=dict(pole=(4, False), post=(3, False), ct=(4, False), blades=False, cab=False),
+             cond=dict(drop=(1, 3)), poles3=False),
         dict(item="flush", runs=RUNS_THICK, louvres=("front", "east"),
-             piers=PIERS_KEPT, h=False, bush=(3, None), string=(None, 0),
-             bus=0, cons=(4, False), cable=False, pads=False, rad="one",
-             trench=False),
+             piers=[], h=False, bush=(0, None), string=(None, 0),
+             cons=(4, False), cable=False, pads=False, rad="one",
+             trench=False, sw=None, cond=None, poles3=True),
     ][level]
 
 
@@ -374,8 +416,10 @@ def wall_run(x0, x1, y0, y1):
 
 
 def pier(x, y):
+    """A plain pier, the wall's height, its faces on the wall's band so the
+    footing, brick and thin coping run round it."""
     h = L.PIER_W / 2.0
-    return box(x - h, x + h, y - h, y + h, 0.0, L.Z_PIER, region(L.PIER_R, 0.0),
+    return box(x - h, x + h, y - h, y + h, 0.0, L.Z_FENCE, band(L.F_Y0),
                uv_patch("coping"), uv_patch("blank"))
 
 
@@ -662,8 +706,21 @@ def transformer(ty, level):
 
     def cons_end(co):
         return (ce[0] + ce[2] / 2 + (co.x - cx) * PPM, ce[1] + ce[3] / 2 + (co.z - cz) * PPM)
-    out.append(lathe((cx, ty - td / 2, cz), (0, 1, 0), (0, 0, 1), [(r, 0.0), (r, td)],
-                     sides, cons_uv, cons_end, cons_end, phase=math.pi / sides))
+    if saddles:
+        out.append(lathe((cx, ty - td / 2, cz), (0, 1, 0), (0, 0, 1), [(r, 0.0), (r, td)],
+                         sides, cons_uv, cons_end, cons_end, phase=math.pi / sides))
+    else:
+        # without saddles the drum comes down into the cover as a box of
+        # the square drum's width, so it does not float over the tank
+        h = r * math.cos(math.pi / 4)
+        y0 = ty - td / 2
+
+        def drum_side(a, b, y0=y0):
+            if abs(a[0] - b[0]) < EPS:
+                return lambda co: cons_uv(co.y - y0, 0.25)
+            return cons_end
+        out.append(box(cx - h, cx + h, y0, ty + td / 2, z1 - 0.05, cz + h, drum_side,
+                       lambda co, y0=y0: cons_uv(co.y - y0, 0.0), uv_patch("steel_dark")))
     if saddles:
         for dy in (-0.55, 0.55):
             out.append(box(cx - 0.06, cx + 0.06, ty + dy - 0.06, ty + dy + 0.06,
@@ -671,14 +728,16 @@ def transformer(ty, level):
                            uv_patch("steel_dark"), uv_patch("steel_dark")))
     # bushings
     bs, full = md["bush"]
-    if full:
+    if bs == 0:
+        prof = None
+    elif full:
         prof = L.bushing_profile()
     elif full is None:          # LOD3: one tapered prism, turret and porcelain
         prof = [(0.14, 0.0), (0.06, L.BUSH_H)]
     else:
         prof = [(0.15, 0.0), (0.15, 0.27), (0.10, 0.27), (0.06, L.BUSH_H)]
     br = L.BUSH_R
-    for k in PH:
+    for k in (PH if prof else ()):
         bx, by = bushing_xy(ty, k)
         out.append(lathe((bx, by, z1 - 0.05), (0, 0, 1), (1, 0, 0), prof, bs,
                          lambda h, frac: (br[0] + frac * br[2], br[1] + h * PPM),
@@ -692,35 +751,61 @@ def transformer(ty, level):
 
 
 # ============================================================== the gantry
+def taper_box(cx, cy, w0, w1, z0, z1, side_uv, top, bottom):
+    """A square column tapering from w0 at z0 to w1 at z1, on axis (cx, cy).
+    side_uv(t, w) is the uv function of the side whose along-face direction
+    is t, given the face's width function w(z)."""
+    B = Builder()
+
+    def w(z):
+        return w0 + (w1 - w0) * (z - z0) / (z1 - z0)
+
+    corners = [(-1, -1), (1, -1), (1, 1), (-1, 1)]
+
+    def P(k, z):
+        sx, sy = corners[k % 4]
+        return (cx + sx * w(z) / 2.0, cy + sy * w(z) / 2.0, z)
+
+    for k in range(4):
+        a, b = corners[k], corners[(k + 1) % 4]
+        t = ((b[0] - a[0]) / 2.0, (b[1] - a[1]) / 2.0)
+        B.face([P(k, z0), P(k + 1, z0), P(k + 1, z1), P(k, z1)], side_uv(t, w))
+    B.face([P(k, z1) for k in range(4)], top)
+    B.face([P(k, z0) for k in reversed(range(4))], bottom)
+    return B
+
+
 def gantry(level):
-    """The portal: two columns on concrete pads, the beam across their tops,
-    a suspension string over each phase and the tubular bus from each string
-    down to its bushing."""
+    """The portal: two tapered solid columns on concrete pads, each with a
+    shield-wire peak, the I-beam across them, and a suspension string over
+    each switchgear phase."""
     md = mode(level)
     out = []
     g = L.GALV_R
-    col_len = L.G_TOP - L.G_PAD[1] + 0.05
+    foot = L.G_PAD[1] - 0.05 if md["pads"] else 0.0
+    col_len = L.G_TOP - foot
     beam_len = 2.0 * L.G_BEAM_Y
-
-    def col_uv(a, b, x0, y0):
-        tx, ty = _along(a, b)
-        return lambda co: (g[0] + 2.0 + ((co.x - x0 - a[0]) * tx + (co.y - y0 - a[1]) * ty) * PPM,
-                           g[1] + (co.z - L.G_PAD[1]) / col_len * g[3])
+    w0 = L.G_W[0]
 
     for sy in (-1, 1):
         y = sy * L.G_COL_Y
+
+        def col_uv(t, w, y=y):
+            # U across the face at the foot's scale, V stretched up the column
+            return lambda co: (g[0] + 2.0 + ((co.x - L.G_X) * t[0] + (co.y - y) * t[1])
+                               / w(co.z) * w0 * PPM + w0 * PPM / 2.0,
+                               g[1] + (co.z - foot) / col_len * g[3])
         if md["pads"]:
             p = L.G_PAD[0] / 2.0
             out.append(box(L.G_X - p, L.G_X + p, y - p, y + p, 0.0, L.G_PAD[1],
                            band(L.F_Y0, 2.0), uv_patch("pad_top"), uv_patch("blank")))
-        prof = h_profile(L.G_H, L.G_H, L.G_TF, L.G_TW) if md["h"] else \
-            rect_profile(L.G_H, L.G_H)
-        foot = L.G_PAD[1] - 0.05 if md["pads"] else 0.0
-        out.append(extrude(prof, lambda u, v, d, y=y: (L.G_X + u, y + v, d),
-                           foot, L.G_TOP,
-                           lambda a, b, y=y: col_uv(a, b, L.G_X, y),
-                           uv_patch("galv_paint")))
-    # the beam: an H on its side, swept along Y
+        out.append(taper_box(L.G_X, y, L.G_W[0], L.G_W[1], foot, L.G_TOP, col_uv,
+                             uv_patch("galv_paint"), uv_patch("blank")))
+        pk0, pk1, rise = L.G_PEAK
+        out.append(taper_box(L.G_X, y, pk0, pk1, L.G_TOP - 0.05, L.G_TOP + rise,
+                             lambda t, w: uv_patch("galv_paint"), uv_patch("galv_paint"),
+                             uv_patch("galv_paint")))
+    # the beam: an I on its side, flanges top and bottom, swept along Y
     b0, b1 = L.G_BEAM_Z
     zc = (b0 + b1) / 2.0
     prof = h_profile(b1 - b0, L.G_BEAM_W, L.G_TF, L.G_TW) if md["h"] else \
@@ -730,31 +815,149 @@ def gantry(level):
         # a, b are (u, v) with u vertical, v across X
         da = math.hypot(b[0] - a[0], b[1] - a[1])
         tu, tv = (b[0] - a[0]) / da, (b[1] - a[1]) / da
-        return lambda co: (g[0] + 2.0 + ((co.z - zc - a[0]) * tu + (co.x - L.G_X - a[1]) * tv) * PPM,
-                           g[1] + (co.y + L.G_BEAM_Y) / beam_len * g[3])
+        return lambda co: (g[0] + 1.0 + ((co.z - zc - a[0]) * tu + (co.x - L.G_X - a[1]) * tv)
+                           * PPM, g[1] + (co.y + L.G_BEAM_Y) / beam_len * g[3])
     out.append(extrude(prof, lambda u, v, d: (L.G_X + v, d, zc + u),
                        -L.G_BEAM_Y, L.G_BEAM_Y, beam_side, uv_patch("galv_paint")))
-    # strings and bus
+    # strings
     kind, sides = md["string"]
     st = L.STRING_R
     top = string_top()
-    for ty in L.T_Y:
-        for k in PH:
-            by = ty + k * L.PHASE
-            if kind is not None:
+    if kind is not None:
+        for ty in L.T_Y:
+            for k in PH:
+                ys = ty + k * L.SW_PHASE
                 rings = L.string_profile() if kind == "discs" else \
                     [(0.10, 0.0), (0.10, L.STRING_LEN)]
-                out.append(lathe((L.G_X, by, top), (0, 0, -1), (1, 0, 0), rings, sides,
+                out.append(lathe((L.G_X, ys, top), (0, 0, -1), (1, 0, 0), rings, sides,
                                  lambda h, frac: (st[0] + frac * st[2], st[1] + h * PPM),
                                  uv_patch("galv_paint"), uv_patch("galv_paint"),
                                  phase=math.pi / sides))
-            if md["bus"]:
-                p0, p1 = bus_ends(ty, k)
-                ax = p1 - p0
-                e1 = Vector((0, 1, 0))
-                out.append(lathe(p0, ax, e1, [(L.BUS_R, 0.0), (L.BUS_R, ax.length)],
-                                 md["bus"], lambda h, frac: L.PATCHES["alu"][:2],
-                                 uv_patch("alu"), uv_patch("alu"), phase=math.pi / md["bus"]))
+    return out
+
+
+# ============================================================ the switchgear
+def wrapped(rect):
+    """uv for a turned part wrapped once round its region, V metres up."""
+    return lambda h, frac: (rect[0] + frac * rect[2], rect[1] + h * PPM)
+
+
+def galv_box(x0, x1, y0, y1, z0, z1):
+    return box(x0, x1, y0, y1, z0, z1, lambda a, b: uv_patch("galv_paint"),
+               uv_patch("galv_paint"), uv_patch("blank"))
+
+
+def switchgear(ty, level):
+    """One transformer's switchgear bay, west to east: the disconnector on
+    its tall steel table, the breaker poles on their stand, the current
+    transformers on their concrete table."""
+    sw = mode(level)["sw"]
+    if sw is None:
+        return []
+    out = []
+    H = L.SW_HALF
+    ys = [ty + k * L.SW_PHASE for k in PH]
+    # the disconnector: deck, two plate legs, six posts, three closed blades
+    x0, x1, z0, z1 = L.DIS_DECK
+    xc = (x0 + x1) / 2.0
+    out.append(galv_box(x0, x1, ty - H, ty + H, z0, z1))
+    lx, ly, lo = L.DIS_LEG
+    for sgn in (-1, 1):
+        yl = ty + sgn * lo
+        out.append(galv_box(xc - lx / 2, xc + lx / 2, yl - ly / 2, yl + ly / 2, 0.0, z0 + 0.05))
+    sides, full = sw["post"]
+    prof = L.post_profile(full)
+    for y in ys:
+        for px in L.DIS_X:
+            out.append(lathe((px, y, L.POST_Z0), (0, 0, 1), (1, 0, 0), prof, sides,
+                             wrapped(L.POST_R), uv_patch("blank"), uv_patch("galv_paint"),
+                             phase=math.pi / sides))
+        if sw["blades"]:
+            zt = L.POST_Z0 + L.POST_H
+            out.append(galv_box(L.DIS_X[0], L.DIS_X[1], y - 0.03, y + 0.03, zt - 0.06, zt + 0.01))
+    # the breaker: stand deck and legs, the operating cabinet, three poles
+    w, z0, z1 = L.BRK_DECK
+    out.append(galv_box(L.BRK_X - w / 2, L.BRK_X + w / 2, ty - H, ty + H, z0, z1))
+    side, lo = L.BRK_LEG
+    for sgn in (-1, 1):
+        yl = ty + sgn * lo
+        out.append(galv_box(L.BRK_X - side / 2, L.BRK_X + side / 2, yl - side / 2, yl + side / 2,
+                            0.0, z0 + 0.05))
+    if sw["cab"]:
+        out.append(box(L.BRK_X - 0.20, L.BRK_X + 0.20, ty - 0.30, ty + 0.30, 1.15, z0 + 0.05,
+                       region(L.CABLE_R, -0.10), uv_patch("tank_paint"), uv_patch("steel_dark")))
+    sides, full = sw["pole"]
+    prof = L.breaker_profile(full)
+    for y in ys:
+        out.append(lathe((L.BRK_X, y, L.BRK_Z0), (0, 0, 1), (1, 0, 0), prof, sides,
+                         wrapped(L.BREAKER_R), uv_patch("blank"), uv_patch("head"),
+                         phase=math.pi / sides))
+    # the current transformers: concrete table, three on it
+    w, z0, z1 = L.CT_TABLE
+    conc = region(L.FIRE_R, 0.0)
+    out.append(box(L.CT_X - w / 2, L.CT_X + w / 2, ty - H, ty + H, z0, z1, conc,
+                   uv_patch("conc"), uv_patch("blank")))
+    side, lo = L.CT_LEG
+    for sgn in (-1, 1):
+        yl = ty + sgn * lo
+        out.append(box(L.CT_X - side / 2, L.CT_X + side / 2, yl - side / 2, yl + side / 2,
+                       0.0, z0 + 0.05, conc, uv_patch("conc"), uv_patch("blank")))
+    sides, full = sw["ct"]
+    prof = L.ct_profile(full)
+    for y in ys:
+        out.append(lathe((L.CT_X, y, L.CT_Z0), (0, 0, 1), (1, 0, 0), prof, sides,
+                         wrapped(L.CT_R), uv_patch("blank"), uv_patch("tank_paint"),
+                         phase=math.pi / sides))
+    return out
+
+
+def poles3(ty):
+    """LOD3's switchgear: each breaker pole one 3-sided prism from the
+    ground to its top head, its stand painted at its foot, standing alone."""
+    r = L.POLE3_R
+    return [lathe((L.BRK_X, ty + k * L.SW_PHASE, 0.0), (0, 0, 1), (1, 0, 0),
+                  [(0.13, 0.0), (0.12, L.BRK_Z0 + L.Z_BRK[3])], 3,
+                  lambda h, frac: (r[0] + frac * r[2], r[1] + h * L.POLE3_PPM),
+                  uv_patch("blank"), uv_patch("head"), phase=math.pi / 3)
+            for k in PH]
+
+
+def tube(points, r, sides):
+    """A closed tube through *points* (all in one vertical plane), rings
+    square to the local tangent, the aluminium patch all over."""
+    B = Builder()
+    pts = [Vector(p) for p in points]
+    chord = pts[-1] - pts[0]
+    s = Vector((chord.y, -chord.x, 0.0))
+    s = s.normalized() if s.length > 1e-6 else Vector((1.0, 0.0, 0.0))
+    rings = []
+    for i, p in enumerate(pts):
+        t = (pts[min(i + 1, len(pts) - 1)] - pts[max(i - 1, 0)]).normalized()
+        e2 = t.cross(s).normalized()
+        rings.append([tuple(p + (s * math.cos(th) + e2 * math.sin(th)) * r)
+                      for th in (math.pi / sides + 2.0 * math.pi * k / sides
+                                 for k in range(sides))])
+    fn = uv_patch("alu")
+    for a, b in zip(rings, rings[1:]):
+        for k in range(sides):
+            B.face([a[k], a[(k + 1) % sides], b[(k + 1) % sides], b[k]], fn)
+    B.face(list(reversed(rings[0])), fn)
+    B.face(rings[-1], fn)
+    return B
+
+
+def conductors(ty, level):
+    cond = mode(level)["cond"]
+    if cond is None:
+        return []
+    out = []
+    for k in PH:
+        for p0, p1, sag, kind in spans(ty, k):
+            if kind not in cond:
+                continue
+            n, sides = cond[kind]
+            pts = [sag_point(p0, p1, sag, i / n) for i in range(n + 1)]
+            out.append(tube(pts, L.COND_R, sides))
     return out
 
 
@@ -770,6 +973,10 @@ def build_lod(level):
         solids += trenches()
     for ty in L.T_Y:
         solids += transformer(ty, level)
+        solids += switchgear(ty, level)
+        solids += conductors(ty, level)
+        if md["poles3"]:
+            solids += poles3(ty)
     solids += gantry(level)
     parts = [to_object(B, "tmp_%d" % i) for i, B in enumerate(solids)]
     obj = union(base, parts)
@@ -806,7 +1013,7 @@ def check_layout():
     # under the slab
     blocked = {"front": [(0.0, GATE_E_PIER + L.PIER_W / 2 - HX0 + 0.10)],
                "east": [(JUNCTION_Y - L.PIER_W / 2 - HY0 - 0.10, 4.0)],
-               "north": [(0.0, HX1 - (WCX - L.PIER_W / 2) + 0.10)],
+               "north": [(0.0, HX1 - (WCX1 - L.PIER_W / 2) + 0.10)],
                "west": [(HY1 - (-WCY + L.PIER_W / 2) - 0.10, 4.0)]}
     for spec in H_WALLS:
         fr = Frame(spec["p0"], spec["p1"])
@@ -839,12 +1046,12 @@ def check_layout():
         problems.append("the gate's east pier does not stand against the house")
     if L.GATE_Y[0] < -WCY - HW or L.GATE_Y[1] > -WCY + HW:
         problems.append("the gate leaves stand outside the wall's thickness")
-    if abs(HX1 - (WCX + HW)) > EPS or abs(HY0 + WCY + HW) > EPS:
+    if abs(HX1 - (WCX1 + HW)) > EPS or abs(HY0 + WCY + HW) > EPS:
         problems.append("the house's front and east walls are not in the wall's planes")
-    inner_x, inner_y = WCX - HW, WCY - HW
+    west, inner_y = WCX0 + HW, WCY - HW
     px, py, _ = L.PLINTH
     for ty in L.T_Y:
-        if TX - px / 2 < -inner_x + 0.8 or abs(ty) + py / 2 > inner_y - 0.6:
+        if abs(ty) + py / 2 > inner_y - 0.6:
             problems.append("a plinth crowds the yard wall")
         if abs(ty) - py / 2 < L.FIRE[2] + 0.5:
             problems.append("a plinth crowds the fire wall")
@@ -856,7 +1063,7 @@ def check_layout():
             bx, by = bushing_xy(ty, k)
             if abs(by - ty) + 0.15 > L.TANK[1] / 2 or bx - 0.15 < TX - L.TANK[0] / 2:
                 problems.append("a bushing's turret overhangs the cover")
-            if abs(by) > L.G_COL_Y - 0.5:
+            if abs(ty + k * L.SW_PHASE) > L.G_COL_Y - 0.5:
                 problems.append("a string is within 0.5 m of a gantry column")
     if L.FIRE[0] > TX - L.TANK[0] / 2 - 0.5 + EPS or L.FIRE[1] < TX + L.TANK[0] / 2 + 0.5 - EPS:
         problems.append("the fire wall does not run 0.5 m past both tank ends")
@@ -866,27 +1073,56 @@ def check_layout():
     if abs(L.CONS_X) + L.CONS_R > L.TANK[0] / 2 or L.CONS_X - L.CONS_R < L.BUSH_X + 0.3:
         problems.append("the conservator overhangs the cover or crowds the bushings")
     p = L.G_PAD[0] / 2
-    if L.G_X - p < -inner_x + 0.3 or L.G_COL_Y + p > inner_y - 0.3:
+    if L.G_X - p < west + 0.3 or L.G_COL_Y + p > inner_y - 0.3:
         problems.append("a gantry pad crowds the yard wall")
     if L.G_BEAM_Y > inner_y - 0.3:
         problems.append("the beam reaches the yard wall")
     if L.G_TOP <= L.G_BEAM_Z[1] + 0.05:
         problems.append("the columns do not rise above the beam")
-    # the bus: its ends inside the clamp and the terminal, clear of every
-    # cover, radiator and conservator in between
+    # the switchgear bays: west to east with a walkway between each part,
+    # clear of the yard wall and the fire wall, phases apart
+    order = [("gantry pad", L.G_X + p), ("disconnector", L.DIS_DECK[0]),
+             ("disconnector", L.DIS_DECK[1]), ("breaker stand", L.BRK_X - L.BRK_DECK[0] / 2),
+             ("breaker stand", L.BRK_X + L.BRK_DECK[0] / 2),
+             ("current transformers", L.CT_X - L.CT_TABLE[0] / 2),
+             ("current transformers", L.CT_X + L.CT_TABLE[0] / 2), ("plinth", TX - px / 2)]
+    for (na, xa), (nb, xb) in zip(order[0::2], order[1::2]):
+        if xb - xa < 0.6:
+            problems.append("%s and %s are %.2f m apart, under 0.6" % (na, nb, xb - xa))
+    for ty in L.T_Y:
+        if abs(ty) + L.SW_HALF > inner_y - 0.5:
+            problems.append("a switchgear frame crowds the yard wall")
+        if abs(ty) - L.SW_HALF < 1.0:
+            problems.append("the two bays' frames are under 2 m apart")
+    if L.SW_PHASE - 2 * 0.17 < 0.6:
+        problems.append("the breaker heads are under 0.6 m apart")
+    if abs(L.DIS_LEG[2]) + L.DIS_LEG[1] / 2 > L.SW_HALF or L.BRK_LEG[1] > L.SW_HALF or \
+            L.CT_LEG[1] + L.CT_LEG[0] / 2 > L.SW_HALF:
+        problems.append("a leg stands outside its frame")
+    if L.POST_Z0 + L.POST_H > L.BRK_Z0 + L.Z_BRK[3] + 0.2:
+        problems.append("the disconnector stands over the breakers' tops")
+    # the conductors: the spans near level, clear of the covers; the drop
+    # well under the strings
     for ty in L.T_Y:
         for k in PH:
-            p0, p1 = bus_ends(ty, k)
-            for x in (TX - L.TANK[0] / 2, TX - L.TANK[0] / 2 + 0.3):
-                f = (x - p0.x) / (p1.x - p0.x)
-                z = p0.z + f * (p1.z - p0.z)
-                if z < L.TANK_Z[1] + 0.4:
-                    problems.append("the bus passes within 0.4 m of a cover")
-            slope = math.degrees(math.atan2(p0.z - p1.z, p1.x - p0.x))
-            if not 15.0 < slope < 50.0:
-                problems.append("the bus slopes at %.0f degrees" % slope)
-    if string_top() - L.STRING_LEN < L.TANK_Z[1] + L.BUSH_H + 1.5:
-        problems.append("the strings hang within 1.5 m of the bushings' tips")
+            for p0, p1, sag, kind in spans(ty, k):
+                if kind == "span":
+                    run = math.hypot(p1.x - p0.x, p1.y - p0.y)
+                    slope = math.degrees(math.atan2(abs(p1.z - p0.z), run))
+                    if slope > 15.0:
+                        problems.append("a span slopes at %.0f degrees" % slope)
+                low = min(sag_point(p0, p1, sag, i / 20.0).z for i in range(21))
+                if low < min(p0.z, p1.z) - 0.25:
+                    problems.append("a conductor sags %.2f m under its lower end"
+                                    % (min(p0.z, p1.z) - low))
+            p0, p1, sag, _ = spans(ty, k)[-1]
+            for i in range(21):
+                q = sag_point(p0, p1, sag, i / 20.0)
+                if TX - L.TANK[0] / 2 - 0.1 < q.x and q.z < L.TANK_Z[1] + 0.6:
+                    problems.append("a conductor passes within 0.6 m of a cover")
+                    break
+    if Z_CLAMP - Z_POST_TOP < 2.0:
+        problems.append("the strings hang within 2 m of the disconnector")
     # the house band and fire wall
     if L.FIRE[3] > L.H_TOP:
         problems.append("the fire wall rises above the house band")

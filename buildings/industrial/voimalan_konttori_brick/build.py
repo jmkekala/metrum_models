@@ -15,25 +15,26 @@ into the atlas, and the renders read it.
 
 The office and control building of a small town's coal-fired heat and power
 plant (*voimalan konttori*: the power plant's office), 1950s-60s: two storeys
-of red facing brick on a cast concrete plinth, 14 x 9 m, under a low hipped
-roof of bitumen felt on battens with a 0.5 m eave all round. A light cast
-band marks the first floor right round the building. The plant's main
-entrance is on the front, west of the middle: a pair of glazed leaves and a
-transom light in a cast surround, under a thin concrete canopy carried out
-from the first-floor slab, up three steps with a handrail. East of it the
-control room's three larger windows run on as a band, round the east corner
-and along the rear; the offices upstairs have one regular row of white
-framed windows on every side. Staff go out to the boiler house by a steel
-door on the rear, up three steps of their own. A galvanised gutter is painted
-round the whole eave with four modelled downpipes, and two plain vent pipes
-stand on the rear slope.
+of red facing brick on a cast concrete plinth, 14 x 9 m, under a flat roof
+behind a low brick parapet with a galvanised coping, drained inside. A light
+cast band marks the first floor right round the building. Upstairs one
+continuous ribbon of white steel lights runs along each long side, brick only
+at its ends; downstairs the control room's taller band fills the east half of
+front and rear, and the offices have smaller windows in the same language.
+The plant's main entrance is on the front, west of the middle: a pair of
+glazed leaves and a transom light in a cast surround, under a thin slab
+canopy carried out 2.75 m on two slim steel posts, up three steps with a
+handrail. Staff go out to the boiler house by a steel door on the rear, up
+three steps of their own. On the deck a ventilation housing, a short radio
+mast and two vent pipes; a caged wall ladder at the west end's rear corner
+serves the housing.
 
 Construction is a set of closed solids unioned with Blender's exact boolean:
 the wall ring, capped as one solid with the building's whole volume (its lid
-a hipped tent inside the roof slab), the hipped roof slab, the canopy, the
-two flights of steps, their handrails, the downpipes and the vents. The
-union trims the wall tops into the roof and the rest into the walls, and
-leaves the boundary of one empty volume, so interior geometry cannot occur.
+the deck sunk inside the parapet), the coping ring, the canopy and its posts,
+the two flights of steps, their handrails, the roof plant, the ladder and its
+cage. The union leaves the boundary of one empty volume, so interior
+geometry cannot occur.
 
 Every number the mesh and the atlas share is imported from facade_atlas.py
 rather than written here a second time.
@@ -61,7 +62,6 @@ sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "scripts"))
 import asset_build  # noqa: E402
 import model_facts  # noqa: E402
 from asset_build import bounds as _bounds, to_object, union  # noqa: E402
-import downpipes as DP  # noqa: E402
 import handrails as HR  # noqa: E402
 import roof_safety as RS  # noqa: E402
 
@@ -78,44 +78,34 @@ LEVELS = (0, 1, 2, 3)
 
 # ================================================================== massing
 HX, HY = L.HX, L.HY                     # 7 x 4.5: a 14 x 9 m shell
-XE = HX + L.EAVE_OUT                    # the roof's own extent
-PE = HY + L.EAVE_OUT
-RIDGE_X = HX - HY                       # the ridge runs x = -2.5 .. 2.5
+XI, YI = HX - L.PIN, HY - L.PIN         # the parapet's inner faces: the deck
 
-
-def roof_under(x, y):
-    """The hipped roof's underside over plan position (x, y): one pitch on
-    every side, so its height is set by the nearest wall line."""
-    return L.Z_EAVE + min(HY - abs(y), HX - abs(x)) * L.TAN
-
-
-def roof_top(x, y):
-    return roof_under(x, y) + L.ROOF_T
-
-
-# Openings, per wall, as (kind, centre in plan x or y, sill z). One grid of
-# 2.625 m bays on the long walls: upstairs a window in every bay; downstairs
-# the office window and the entrance in the two west bays, the control
-# room's windows in the three east bays, which on the rear become two and an
-# office window, with the staff door in the entrance's bay. On the 9 m ends
-# one window to a storey, the control room's at the east.
+# Openings, per wall, as (kind, centre in plan x or y, sill z, lights). The
+# window bands are n lights long (facade_atlas.BANDS); a door is one.
+# Upstairs one ribbon of eight lights on each long side, x = -6 .. 6, brick
+# only at its ends. Downstairs the control room's band of four lights fills
+# the east half of front and rear, x = 0 .. 6; the offices' two-light window
+# is in each long side's west bay, with the entrance (front) or the staff
+# door (rear) east of it. On the 9 m ends one two-light window to a storey,
+# the control room's at the east.
 FL, S1, S2, SC = L.Z_FLOOR, L.Z_SILL, L.Z_SILL2, L.Z_SILL_CTRL
-BAYS = (-5.25, -2.625, 0.0, 2.625, 5.25)
 ENTRANCE_X = -2.625
 SERVICE_X = -2.625
-UPPER = [("win", x, S2) for x in BAYS]
-FRONT_ITEMS = ([("win", -5.25, S1), ("entrance", ENTRANCE_X, FL)]
-               + [("ctrl", x, SC) for x in (0.0, 2.625, 5.25)] + UPPER)
-REAR_ITEMS = ([("ctrl", x, SC) for x in (5.25, 2.625)]
-              + [("win", 0.0, S1), ("service_door", SERVICE_X, FL), ("win", -5.25, S1)]
-              + UPPER[::-1])
-EAST_ITEMS = [("ctrl", 0.0, SC), ("win", 0.0, S2)]
-WEST_ITEMS = [("win", 0.0, S1), ("win", 0.0, S2)]
+OFFICE_X = -5.3125                      # -6.25 .. -4.375
+RIBBON = ("rib", 0.0, S2, 8)
+FRONT_ITEMS = [("gwin", OFFICE_X, S1, 2), ("entrance", ENTRANCE_X, FL, 1),
+               ("ctrl", 3.0, SC, 4), RIBBON]
+REAR_ITEMS = [("ctrl", 3.0, SC, 4), ("service_door", SERVICE_X, FL, 1),
+              ("gwin", OFFICE_X, S1, 2), RIBBON]
+EAST_ITEMS = [("ctrl", 0.0, SC, 2), ("rib", 0.0, S2, 2)]
+WEST_ITEMS = [("gwin", 0.0, S1, 2), ("rib", 0.0, S2, 2)]
 
 # The canopy over the entrance: (centre x, width, projection), sunk into the
-# wall CANOPY_BURY.
-CANOPY = (ENTRANCE_X, 2.6, 1.5)
+# wall CANOPY_BURY; its outer corners on two square steel posts, POST_IN in
+# from the slab's edges.
+CANOPY = (ENTRANCE_X, 2.9, 2.75)
 CANOPY_BURY = 0.1
+POST_W, POST_IN = 0.08, 0.15
 
 # Steps up to the doors, as (out from the wall, z) profiles extruded across
 # the door: a landing 3 cm under the threshold, then two steps, so three
@@ -144,23 +134,34 @@ def _flight(spec, wall_y, outward):
 
 HANDRAILS = [_flight(FRONT_STEPS, -HY, -1.0), _flight(REAR_STEPS, HY, 1.0)]
 
-# Vent pipes on the rear slope, over the toilets and the stair: (x, y,
-# diameter, height above the felt). Plain vents, not serviced items, so no
-# roof safety kit.
+# On the deck: the ventilation housing over the stair, (centre x, y), its
+# side and height facade_atlas's; the control room's radio mast, (x, y,
+# height above the deck); and two plain vent pipes, (x, y, diameter, height
+# above the deck), which are not serviced items.
+HOUSING = (-3.25, 1.75)
+MAST = (3.0, 2.5, 2.75)
+MAST_W = 0.06
 VENTS = [(-1.6, 2.3, 0.25, 0.85), (1.2, 2.6, 0.16, 0.60)]
+
+# The wall ladder up to the deck, which the housing is serviced from: at the
+# back, and the rear wall's ribbon leaves it no run clear of openings, so on
+# the blank west end next to its rear corner, LADDER_S along that wall from
+# the corner. Over CAGE_LADDER long, so it carries a cage.
+PAINT = RS.Paint(L.ATLAS, strip=L.PIPE_STRIP)
+LADDER_S = 1.2
 
 
 # ----------------------------------------------------------------- tiers
 def opening_mode(level):
     """LOD0/1 cut every opening into its wall with brick reveals; LOD2/3 paint
     the same rectangle flat. The 0.15-0.2 m reveals are under two pixels past
-    70 m, and the window rhythm is the painted rectangle's to keep."""
+    70 m, and the window rhythm is the painted lights' to keep."""
     return "cut" if level < 2 else "flush"
 
 
 def vent_sides(level, dia):
     """Eight sides up close, six to 70 m, four past it; past 120 m only the
-    0.25 m exhaust stays, as a four-sided stub over the ridge line."""
+    0.25 m exhaust stays, as a four-sided stub."""
     if level == 0:
         return 8
     if level == 1:
@@ -170,11 +171,15 @@ def vent_sides(level, dia):
     return 4 if dia >= 0.2 else 0
 
 
-def downpipe_mode(level):
-    """(sides, bent) of the downpipes at each tier: scripts/downpipes.py's
-    MODES unchanged. Their galvanised line at each corner of the long walls
-    is what tells the gutter is there."""
-    return DP.MODES[level]
+def mast_kept(level):
+    """The 6 cm mast is a pixel wide at 70 m: LOD0 and LOD1 only."""
+    return level < 2
+
+
+def posts_kept(level):
+    """The canopy's posts stand under the slab, inside the plan's extents;
+    8 cm, under a pixel past 120 m, so LOD3 drops them."""
+    return level < 3
 
 
 # ============================================================== mesh builder
@@ -356,11 +361,22 @@ def fill_region(B, fr, outline, holes, uvfn, out=0.0):
     fill_planar(B, [outline] + list(holes), lambda s, z: fr.P(s, z, out), uvfn)
 
 
-def item_rect(fr, kind, centre, z0):
+def item_width(kind, n):
+    """Width of an opening: a band of *n* lights, or a door."""
+    if kind in L.BANDS:
+        return L.BANDS[kind][0] * n
+    return L.OPENINGS[kind][0]
+
+
+def item_height(kind):
+    return L.BANDS[kind][1] if kind in L.BANDS else L.OPENINGS[kind][1]
+
+
+def item_rect(fr, kind, centre, z0, n=1):
     """(s0, s1, z0, z1) of an opening centred on plan coordinate *centre*."""
-    w, h = L.OPENINGS[kind]
+    w = item_width(kind, n)
     s = fr.s_at(centre)
-    return (s - w / 2.0, s + w / 2.0, z0, z0 + h)
+    return (s - w / 2.0, s + w / 2.0, z0, z0 + item_height(kind))
 
 
 def surround_rect(rect):
@@ -369,10 +385,16 @@ def surround_rect(rect):
     return (s0 - L.SURROUND, s1 + L.SURROUND, z0, z1 + L.SURROUND_TOP)
 
 
-def build_opening(B, fr, kind, rect, level, u_off):
+def build_opening(B, fr, kind, rect, level, u_off, n=1):
     """One opening: reveals round it and the closing plane set back in it
     while it is cut, the same rectangle painted flat after. Returns the
     outline in (s, z) the wall region takes as a hole.
+
+    A window band's closing plane is split at every mullion into its lights,
+    each mapped onto its own light's region (facade_atlas.light_kind), and
+    the band's outline carries those split points along its sill and head,
+    so the sill and head reveals and the wall around meet the lights on
+    shared vertices.
 
     The entrance carries its cast surround: a U of concrete on the wall face
     round three sides of the opening, which is the hole the wall takes, and
@@ -380,42 +402,53 @@ def build_opening(B, fr, kind, rect, level, u_off):
     together, so the flush tiers draw both as one quad.
     """
     s0, s1, z0, z1 = rect
-    poly = [(s0, z0), (s1, z0), (s1, z1), (s0, z1)]
-    dx, _dy = L.REGION_OFF.get(kind, (0, 0))
-    rs0 = s0 - dx / PPM
-    closing = uv_region(fr, L.REGION[kind], rs0, z0)
+    band = kind in L.BANDS
+    if band:
+        pitch = L.BANDS[kind][0]
+        cuts = [s0 + k * pitch for k in range(n + 1)]
+        lights = [(cuts[k], cuts[k + 1], uv_region(
+            fr, L.REGION[L.light_kind(kind, k, n)], cuts[k], z0)) for k in range(n)]
+        poly = [(s, z0) for s in cuts] + [(s, z1) for s in reversed(cuts)]
+    else:
+        dx, _dy = L.REGION_OFF.get(kind, (0, 0))
+        lights = [(s0, s1, uv_region(fr, L.REGION[kind], s0 - dx / PPM, z0))]
+        poly = [(s0, z0), (s1, z0), (s1, z1), (s0, z1)]
     entrance = kind == "entrance"
     if entrance:
         S0, S1, _z0, Z1 = surround_rect(rect)
     if opening_mode(level) == "flush":
         if entrance:
             poly = [(S0, z0), (S1, z0), (S1, Z1), (S0, Z1)]
-        B.face([fr.P(s, z) for s, z in poly], closing)
+            B.face([fr.P(s, z) for s, z in poly], lights[0][2])
+            return poly
+        for a, b, fn in lights:
+            B.face([fr.P(a, z0), fr.P(b, z0), fr.P(b, z1), fr.P(a, z1)], fn)
         return poly
     depth = L.REVEAL[kind]
-    for k, edge in enumerate(zip(poly, poly[1:] + poly[:1])):
-        (a0, b0), (a1, b1) = edge
-        if k == 0:
+    for (a0, b0), (a1, b1) in zip(poly, poly[1:] + poly[:1]):
+        if abs(b0 - z0) < EPS and abs(b1 - z0) < EPS:
             fn = uv_patch("sill")
         elif entrance:
             fn = uv_patch("render")
         else:
-            fn = uv_reveal(fr, edge, u_off)
+            fn = uv_reveal(fr, ((a0, b0), (a1, b1)), u_off)
         B.face([fr.P(a0, b0), fr.P(a1, b1), fr.P(a1, b1, -depth),
                 fr.P(a0, b0, -depth)], fn)
-    B.face([fr.P(s, z, -depth) for s, z in poly], closing)
+    for a, b, fn in lights:
+        B.face([fr.P(a, z0, -depth), fr.P(b, z0, -depth), fr.P(b, z1, -depth),
+                fr.P(a, z1, -depth)], fn)
     if not entrance:
         return poly
     ring = [(S0, z0), (s0, z0), (s0, z1), (s1, z1), (s1, z0), (S1, z0),
             (S1, Z1), (S0, Z1)]
-    fill_region(B, fr, ring, [], closing)
+    fill_region(B, fr, ring, [], lights[0][2])
     # the wall's hole: the surround's outline, with the opening's foot
     # corners on it, which the threshold shares
     return [(S0, z0), (s0, z0), (s1, z0), (S1, z0), (S1, Z1), (S0, Z1)]
 
 
 def rects_for(fr, items):
-    return [(kind, item_rect(fr, kind, c, z)) for kind, c, z in items]
+    return [(kind, item_rect(fr, kind, c, z, n), n) for kind, c, z, n in items]
 
 
 # ------------------------------------------------------------- the shell
@@ -426,6 +459,7 @@ MAIN_WALLS = {
     "rear": ((HX, HY), (-HX, HY)),
     "west": ((-HX, HY), (-HX, -HY)),
 }
+ORDER = ("front", "east", "rear", "west")
 # u offsets run on round the corners so the bond continues
 U_OFF = {"front": 0.0, "east": 2 * HX, "rear": 2 * HX + 2 * HY,
          "west": 4 * HX + 2 * HY}
@@ -434,92 +468,86 @@ ITEMS = {"front": FRONT_ITEMS, "east": EAST_ITEMS, "rear": REAR_ITEMS,
 
 
 def build_wall(B, name, level):
-    """One wall, ground to its head inside the roof slab, every opening in
-    it built and holed. The hip roof leaves all four walls level-headed."""
+    """One wall, ground to the parapet's top inside the coping, every
+    opening in it built and holed."""
     fr = Frame(*MAIN_WALLS[name])
     uo = U_OFF[name]
     L_ = fr.L
-    outline = [(0.0, 0.0), (L_, 0.0), (L_, L.Z_WALL_TOP), (0.0, L.Z_WALL_TOP)]
-    holes = [build_opening(B, fr, kind, rect, level, uo)
-             for kind, rect in rects_for(fr, ITEMS[name])]
+    outline = [(0.0, 0.0), (L_, 0.0), (L_, L.Z_PAR), (0.0, L.Z_PAR)]
+    holes = [build_opening(B, fr, kind, rect, level, uo, n)
+             for kind, rect, n in rects_for(fr, ITEMS[name])]
     fill_region(B, fr, outline, holes, uv_brick(fr, uo))
 
 
+def _ring(x, y):
+    return [(-x, -y), (x, -y), (x, y), (-x, y)]
+
+
+def _along(p, q, u0):
+    """Metres along the edge p -> q from p, plus *u0*, for a vertex."""
+    ln = math.hypot(q[0] - p[0], q[1] - p[1])
+    tx, ty = (q[0] - p[0]) / ln, (q[1] - p[1]) / ln
+    return lambda co: u0 + (co.x - p[0]) * tx + (co.y - p[1]) * ty
+
+
 def main_body(level):
-    """The wall ring capped as one solid: a floor on the ground and a lid
-    that is a hipped tent WALL_INTO_ROOF above the roof's underside, so both
-    caps are buried (the floor in the ground plane, the lid in the slab) and
-    the union removes them."""
+    """The wall ring capped as one solid: a floor on the ground, the
+    parapet's top (inside the coping, which the union removes), the
+    parapet's inner faces down to the deck, and the deck. The deck is the
+    flat roof's felt, sunk Z_COP - Z_DECK below the coping."""
     B = Builder()
-    for name in ("front", "east", "rear", "west"):
+    for name in ORDER:
         build_wall(B, name, level)
     blank = uv_patch("blank")
-    zt = L.Z_WALL_TOP
-    zr = zt + HY * L.TAN
-    a, b, c, d = (-HX, -HY, zt), (HX, -HY, zt), (HX, HY, zt), (-HX, HY, zt)
-    r0, r1 = (-RIDGE_X, 0.0, zr), (RIDGE_X, 0.0, zr)
-    B.face([a, b, r1, r0], blank)
-    B.face([b, c, r1], blank)
-    B.face([c, d, r0, r1], blank)
-    B.face([d, a, r0], blank)
-    B.face([(-HX, -HY, 0.0), (-HX, HY, 0.0), (HX, HY, 0.0), (HX, -HY, 0.0)], blank)
+    zp, zd = L.Z_PAR, L.Z_DECK
+    outer, inner = _ring(HX, HY), _ring(XI, YI)
+    run = 0.0
+    for k in range(4):
+        o0, o1 = outer[k], outer[(k + 1) % 4]
+        i0, i1 = inner[k], inner[(k + 1) % 4]
+        B.face([o0 + (zp,), o1 + (zp,), i1 + (zp,), i0 + (zp,)], blank)
+        along = _along(i0, i1, run)
+        B.face([i1 + (zd,), i0 + (zd,), i0 + (zp,), i1 + (zp,)],
+               lambda co, along=along: (along(co) * PPM,
+                                        L.UPST_Y0 + (co.z - zd) * PPM))
+        run += math.hypot(i1[0] - i0[0], i1[1] - i0[1])
+    dx, dy, _dw, _dh = L.DECK
+    B.face([p + (zd,) for p in inner],
+           lambda co: (dx + (co.x + XI) * L.DPPM, dy + (co.y + YI) * L.DPPM))
+    B.face([(x, y, 0.0) for x, y in reversed(outer)], blank)
     return B
 
 
-# ================================================================== roof
-def uv_slope(axis, sign):
-    """A roof slope: U along its eave at 64 px/m, V up the slope from the
-    eave edge, stretched to the band (the battens run down the slope)."""
-    k = L.SLOPE_F * L.ROOF_RPM
-    if axis == "y":         # front (sign -1) or rear (+1) slope
-        return lambda co: ((sign * -co.x + XE) * PPM,
-                           L.ROOF_Y0 + (PE - sign * co.y) * k)
-    return lambda co: ((sign * co.y + PE) * PPM, L.ROOF_Y0 + (XE - sign * co.x) * k)
-
-
-def uv_eave(z0, along):
-    return lambda co: (along(co) * PPM, L.EAVE_Y0 + (co.z - z0) * PPM)
-
-
-def hip_slab():
-    """The roof as one closed slab: the hipped underside, the same surface
-    ROOF_T higher as the felt, and the four vertical eave edges as fascias
-    with the gutter. Its underside meets the walls' faces at Z_EAVE, so once
-    it is unioned with the shell the part outside the walls is the soffit and
-    the part inside disappears."""
+# ================================================================ coping
+def coping():
+    """The parapet's galvanised coping as one closed ring: COPING_H deep,
+    oversailing both faces of the parapet by COPING_OUT, its faces and top
+    on the coping band, its underside the drip patch."""
     B = Builder()
-    T = L.ROOF_T
-    zu = L.Z_EAVE - L.EAVE_OUT * L.TAN
-    zr = zu + PE * L.TAN
-    corners = [(-XE, -PE), (XE, -PE), (XE, PE), (-XE, PE)]
-    ridge = [(-RIDGE_X, 0.0), (RIDGE_X, 0.0)]
-
-    def top(p, z):
-        return (p[0], p[1], z + T)
-
-    def bot(p, z):
-        return (p[0], p[1], z)
-    a, b, c, d = corners
-    r0, r1 = ridge
-    slopes = [([a, b], [r1, r0], uv_slope("y", -1)),
-              ([b, c], [r1], uv_slope("x", 1)),
-              ([c, d], [r0, r1], uv_slope("y", 1)),
-              ([d, a], [r0], uv_slope("x", -1))]
-    soffit = uv_patch("soffit")
-    for eave, rid, fn in slopes:
-        B.face([top(p, zu) for p in eave] + [top(p, zr) for p in rid], fn)
-        B.face(list(reversed([bot(p, zu) for p in eave] + [bot(p, zr) for p in rid])),
-               soffit)
-    # fascias, U running on round the perimeter
+    co, z0, z1 = L.COPING_OUT, L.Z_COP0, L.Z_COP
+    outer = _ring(HX + co, HY + co)
+    inner = _ring(XI - co, YI - co)
+    y_top = L.COP_Y0 + L.COP_FACE
+    drip = uv_patch("drip")
     run = 0.0
     for k in range(4):
-        p, q = corners[k], corners[(k + 1) % 4]
-        ln = math.hypot(q[0] - p[0], q[1] - p[1])
-        u0 = run
+        o0, o1 = outer[k], outer[(k + 1) % 4]
+        i0, i1 = inner[k], inner[(k + 1) % 4]
+        along = _along(o0, o1, run)
+        # inward normal of this edge, to measure the top across from o0-o1
+        ln = math.hypot(o1[0] - o0[0], o1[1] - o0[1])
+        nx, ny = -(o1[1] - o0[1]) / ln, (o1[0] - o0[0]) / ln
 
-        def along(co, p=p, q=q, ln=ln, u0=u0):
-            return u0 + ((co.x - p[0]) * (q[0] - p[0]) + (co.y - p[1]) * (q[1] - p[1])) / ln
-        B.face([bot(p, zu), bot(q, zu), top(q, zu), top(p, zu)], uv_eave(zu, along))
+        def face_uv(c, along=along):
+            return (along(c) * PPM, L.COP_Y0 + (c.z - z0) * PPM)
+
+        def top_uv(c, along=along, o0=o0, nx=nx, ny=ny):
+            return (along(c) * PPM,
+                    y_top + ((c.x - o0[0]) * nx + (c.y - o0[1]) * ny) * PPM)
+        B.face([o0 + (z0,), o1 + (z0,), o1 + (z1,), o0 + (z1,)], face_uv)
+        B.face([i1 + (z0,), i0 + (z0,), i0 + (z1,), i1 + (z1,)], face_uv)
+        B.face([o0 + (z1,), o1 + (z1,), i1 + (z1,), i0 + (z1,)], top_uv)
+        B.face([i0 + (z0,), i1 + (z0,), o1 + (z0,), o0 + (z0,)], drip)
         run += ln
     return B
 
@@ -539,22 +567,44 @@ def box(x0, x1, y0, y1, z0, z1, sides, top, bottom):
 
 
 def uv_cane(axis, z0):
-    """The canopy's edge band, U along the edge, V from its underside."""
+    """The canopy's fascia band, U along the edge, V from its underside."""
     return lambda co: ((co.x if axis == "x" else co.y) * PPM,
                        L.CANE_Y0 + (co.z - z0) * PPM)
 
 
 def canopy():
-    """The flat concrete canopy over the entrance, the first-floor slab
-    carried out through the wall: its edges the cast-edge band, its top the
-    concrete region, its underside the soffit."""
+    """The thin concrete canopy over the entrance, the first-floor slab
+    carried out through the wall, edged with a painted sheet fascia: its
+    edges the fascia band, its top the concrete region, its underside the
+    soffit."""
     cx, w, proj = CANOPY
     x0, x1 = cx - w / 2.0, cx + w / 2.0
     y0, y1 = -HY - proj, -HY + CANOPY_BURY
     fx, fy = uv_cane("x", L.Z_CAN0), uv_cane("y", L.Z_CAN0)
-    top = uv_conc(lambda co: co.x - x0, lambda co: co.y - y0)
+    # the concrete region is 2.625 x 2.0 m: the 2.9 x 2.85 m top samples
+    # it shrunk, which its board-float texture does not show
+    top = uv_conc(lambda co: (co.x - x0) * 0.88, lambda co: (co.y - y0) * 0.68)
     return box(x0, x1, y0, y1, L.Z_CAN0, L.Z_CAN1, [fx, fy, uv_patch("blank"), fy],
                top, uv_patch("soffit"))
+
+
+def canopy_posts():
+    """The canopy's two square steel posts at its outer corners, from the
+    ground into the slab."""
+    cx, w, proj = CANOPY
+    y = -HY - proj + POST_IN
+    h = POST_W / 2.0
+    out = []
+    for x in (cx - w / 2.0 + POST_IN, cx + w / 2.0 - POST_IN):
+        out.append(box(x - h, x + h, y - h, y + h, 0.0, L.Z_CAN0 + 0.08,
+                       uv_patch("post"), uv_patch("post"), uv_patch("blank")))
+    return out
+
+
+def post_spots():
+    cx, w, proj = CANOPY
+    y = -HY - proj + POST_IN
+    return [(cx - w / 2.0 + POST_IN, y), (cx + w / 2.0 - POST_IN, y)]
 
 
 def steps(spec, wall_y, outward):
@@ -589,67 +639,107 @@ def steps(spec, wall_y, outward):
     return B
 
 
-# -------------------------------------------------------------------- vents
+# -------------------------------------------------------------- roof plant
+SUNK = 0.10                             # roof plant runs this far into the deck
+
+
 def vent(px, py, dia, height, sides):
-    """A vent pipe on the roof: its foot is a slice of the roof plane inside
-    the slab, so it is buried everywhere rather than only at its middle. The
-    open end is painted as a bore."""
+    """A vent pipe on the deck, its foot sunk into it. The open end is
+    painted as a bore."""
     B = Builder()
     r = dia / 2.0
-
-    def foot(x, y):
-        return roof_under(x, y) + 0.10
-
-    z1 = roof_top(px, py) + height
+    base, z1 = L.Z_DECK - SUNK, L.Z_DECK + height
     ring = [(px + r * math.cos(a), py + r * math.sin(a))
             for a in [(i + 0.5) * 2.0 * math.pi / sides for i in range(sides)]]
-    base = min(foot(x, y) for x, y in ring)
     rx, ry, rw, rh = L.VENT
     for (ax, ay), (bx, by) in zip(ring, ring[1:] + ring[:1]):
         def fn(co, ax=ax, ay=ay, bx=bx, by=by):
             t = ((co.x - ax) * (bx - ax) + (co.y - ay) * (by - ay)) / \
                 ((bx - ax) ** 2 + (by - ay) ** 2)
-            return (rx + t * rw, ry + (co.z - base) * PPM)
-        B.face([(ax, ay, foot(ax, ay)), (bx, by, foot(bx, by)), (bx, by, z1),
-                (ax, ay, z1)], fn)
+            return (rx + t * rw, ry + (co.z - L.Z_DECK) * PPM)
+        B.face([(ax, ay, base), (bx, by, base), (bx, by, z1), (ax, ay, z1)], fn)
     tx, ty, tw, th = L.PIPE_TOP
     B.face([(x, y, z1) for x, y in ring],
            lambda co: (tx + tw * (0.5 + (co.x - px) / dia),
                        ty + th * (0.5 + (co.y - py) / dia)))
-    B.face([(x, y, foot(x, y)) for x, y in reversed(ring)], uv_patch("blank"))
+    B.face([(x, y, base) for x, y in reversed(ring)], uv_patch("blank"))
     return B
 
 
-# ---------------------------------------------------------------- downpipes
-# (wall, plan x along it). Two to each long wall, 0.25 m in from the
-# corners, where the hip's gutters meet; the shape, the UVs and the placing
-# rules are scripts/downpipes.py's.
-DOWNPIPE_SPOTS = [("front", -6.75), ("front", 6.75), ("rear", 6.75), ("rear", -6.75)]
+def housing():
+    """The ventilation housing: a galvanised box on the deck, louvred on
+    every side, a sheet lid."""
+    hx, hy = HOUSING
+    h = L.HOUSING_W / 2.0
+    x0, x1, y0, y1 = hx - h, hx + h, hy - h, hy + h
+    rx, ry, _rw, _rh = L.HOUSING
+    z0 = L.Z_DECK
+
+    def side(axis, start, sign):
+        return lambda co: (rx + sign * ((co.x if axis == "x" else co.y) - start) * PPM,
+                           ry + (co.z - z0) * PPM)
+    sides = [side("x", x0, 1), side("y", y0, 1), side("x", x1, -1), side("y", y1, -1)]
+    return box(x0, x1, y0, y1, z0 - SUNK, z0 + L.HOUSING_H, sides,
+               uv_patch("housing_top"), uv_patch("blank"))
 
 
-def _pipe(name, x):
-    wall = MAIN_WALLS[name]
-    s = Frame(*wall).s_at(x)
-    return DP.eave_pipe(*wall, s, L.Z_EAVE, L.TAN, L.EAVE_OUT)
+def mast():
+    """The control room's radio mast: a galvanised pole on the deck carrying
+    a small directional aerial at its top, a boom pointing out across the
+    yard with three elements across it."""
+    mx, my, mh = MAST
+    h = MAST_W / 2.0
+    galv = uv_patch("galv")
+    zt = L.Z_DECK + mh
+    out = [box(mx - h, mx + h, my - h, my + h, L.Z_DECK - SUNK, zt + 0.03,
+               galv, galv, galv),
+           box(mx - 0.02, mx + 0.02, my - 0.55, my + 0.25, zt - 0.03, zt + 0.01,
+               galv, galv, galv)]
+    for dy in (-0.5, -0.2, 0.15):
+        out.append(box(mx - 0.22, mx + 0.22, my + dy - 0.012, my + dy + 0.012,
+                       zt - 0.02, zt, galv, galv, galv))
+    return out
 
 
-DOWNPIPES = [_pipe(*spot) for spot in DOWNPIPE_SPOTS]
+# ----------------------------------------------------------------- the kit
+WEST = MAIN_WALLS["west"]
+EAVE = RS.Eave(*WEST, L.Z_COP0, L.COPING_OUT, L.Z_COP, 0.0)
+WALL_LADDER = RS.WallLadder(EAVE, LADDER_S)
+CAGE = RS.Cage(WALL_LADDER) if WALL_LADDER.length > RS.CAGE_LADDER else None
+KIT = [WALL_LADDER] + ([CAGE] if CAGE else [])
 
 
-def downpipes(level):
-    return DP.solids(DOWNPIPES, *downpipe_mode(level), L.PIPE_STRIP, L.ATLAS)
+def kit(level):
+    """The ladder and its cage, roof_safety's MODES and CAGE_MODES
+    unchanged."""
+    return RS.solids(KIT, level, PAINT)
+
+
+def kit_extents(level):
+    """On the tier that drops the kit, its bare rails and the cage's back
+    strap, which set the plan's west extent, appended after the cleanup."""
+    if RS.MODES[level][0] is not None:
+        return []
+    return RS.solids(KIT, level, PAINT, extents=True)
 
 
 # ================================================================ assembly
 def build_lod(level):
     base = to_object(main_body(level), "tmp_body")
-    parts = [to_object(hip_slab(), "tmp_roof"),
+    parts = [to_object(coping(), "tmp_coping"),
              to_object(canopy(), "tmp_canopy"),
              to_object(steps(FRONT_STEPS, -HY, -1), "tmp_steps_front"),
-             to_object(steps(REAR_STEPS, HY, +1), "tmp_steps_rear")]
-    for B, name in downpipes(level):
+             to_object(steps(REAR_STEPS, HY, +1), "tmp_steps_rear"),
+             to_object(housing(), "tmp_housing")]
+    if posts_kept(level):
+        for i, B in enumerate(canopy_posts()):
+            parts.append(to_object(B, "tmp_post%d" % i))
+    if mast_kept(level):
+        for i, B in enumerate(mast()):
+            parts.append(to_object(B, "tmp_mast%d" % i))
+    for B, name in HR.solids(HANDRAILS, level, PAINT):
         parts.append(to_object(B, name))
-    for B, name in HR.solids(HANDRAILS, level, RS.Paint(L.ATLAS, strip=L.PIPE_STRIP)):
+    for B, name in kit(level):
         parts.append(to_object(B, name))
     for i, (px, py, dia, h) in enumerate(VENTS):
         n = vent_sides(level, dia)
@@ -674,6 +764,9 @@ def build_lod(level):
             delimit={'UV', 'MATERIAL'})
     bm.to_mesh(obj.data)
     bm.free()
+    extents = kit_extents(level)
+    if extents:
+        RS.append(obj, extents)
     return obj
 
 
@@ -688,15 +781,16 @@ def check_layout():
     for name, (p0, p1) in MAIN_WALLS.items():
         fr = Frame(p0, p1)
         rects = []
-        for k, c, z in ITEMS[name]:
-            r = item_rect(fr, k, c, z)
+        for k, c, z, n in ITEMS[name]:
+            r = item_rect(fr, k, c, z, n)
             if k == "entrance":
                 r = surround_rect(r)
             rects.append(r)
             if r[0] < 0.4 or r[1] > fr.L - 0.4:
                 bad.append("%s: %s at %.2f is within 0.4 m of a corner" % (name, k, c))
-            if r[3] > L.Z_EAVE - 0.3:
-                bad.append("%s: %s at %.2f runs too close to the wall head" % (name, k, c))
+            # the roof slab and a lintel over every upper head
+            if r[3] > L.Z_DECK - 0.4:
+                bad.append("%s: %s at %.2f runs into the roof slab" % (name, k, c))
             if r[2] < L.Z_FLOOR - EPS:
                 bad.append("%s: %s at %.2f is below the floor" % (name, k, c))
             # the slab band: ground-storey heads under it, upper sills over
@@ -707,7 +801,15 @@ def check_layout():
             for b in rects[i + 1:]:
                 if _overlap(a, b, 0.3):
                     bad.append("%s: two openings within 0.3 m of each other" % name)
-    # the human scale: door leaves, the transom, sills against both
+    # every band's lights 1.2-1.5 m apart on the long walls' ribbons
+    for kind, (lw, lh) in L.BANDS.items():
+        if kind != "gwin" and not 1.2 <= lw <= 1.5:
+            bad.append("the %s band's mullions are not 1.2-1.5 m apart" % kind)
+    if not 1.3 <= L.BANDS["rib"][1] <= 1.45:
+        bad.append("the upper ribbon is not 1.3-1.45 m tall")
+    if L.BANDS["ctrl"][1] <= L.BANDS["gwin"][1]:
+        bad.append("the control room's band is not taller than the offices' windows")
+    # the human scale: door leaves, the transom, sills against both floors
     if not 2.0 <= L.Z_LEAF <= 2.4:
         bad.append("door leaf %.3f m is outside 2.0-2.4" % L.Z_LEAF)
     if L.ENTRY_H <= L.Z_LEAF + 0.15:
@@ -715,15 +817,19 @@ def check_layout():
     if not 2.0 <= L.OPENINGS["service_door"][1] - 0.0625 <= 2.4:
         bad.append("the service door's leaf is outside 2.0-2.4")
     for z, floor, what in ((L.Z_SILL, L.Z_FLOOR, "ground office"),
-                           (L.Z_SILL2, L.Z_FLOOR2, "upper office"),
+                           (L.Z_SILL2, L.Z_FLOOR2, "upper ribbon"),
                            (L.Z_SILL_CTRL, L.Z_FLOOR, "control room")):
         if not 0.7 <= z - floor <= 1.05:
             bad.append("the %s sills are not at desk height" % what)
     if not 3.0 <= L.Z_FLOOR2 - L.Z_FLOOR <= 3.3:
         bad.append("the ground storey is outside 3.0-3.3 m")
-    if not 3.0 <= L.Z_EAVE - L.Z_FLOOR2 <= 3.3:
-        bad.append("the upper storey is outside 3.0-3.3 m to the eave")
-    # the canopy: on the surround, wider than it, clear of the windows
+    if not 3.0 <= L.Z_DECK - L.Z_FLOOR2 <= 3.3:
+        bad.append("the upper storey is outside 3.0-3.3 m to the deck")
+    # the parapet: 0.3-0.5 m over the deck, on every tier
+    if not 0.3 <= L.Z_COP - L.Z_DECK <= 0.5:
+        bad.append("the parapet is not 0.3-0.5 m over the deck")
+    # the canopy: on the surround, wider than it, clear of the windows,
+    # 2.5-3 m out, its posts clear of the steps and the handrail
     if abs(L.Z_CAN0 - (L.Z_FLOOR + L.ENTRY_H + L.SURROUND_TOP)) > 0.0626:
         bad.append("the canopy does not sit on the entrance surround")
     cx, w, proj = CANOPY
@@ -731,11 +837,17 @@ def check_layout():
     srd = surround_rect(item_rect(fr, "entrance", ENTRANCE_X, L.Z_FLOOR))
     if w < srd[1] - srd[0] + 0.4:
         bad.append("the canopy is not wider than the entrance surround")
-    for k, c, z in FRONT_ITEMS:
+    if not 2.5 <= proj <= 3.0:
+        bad.append("the canopy is not 2.5-3 m out")
+    for k, c, z, n in FRONT_ITEMS:
         if k != "entrance" and z < L.Z_FLOOR2:
-            hw = L.OPENINGS[k][0] / 2.0
+            hw = item_width(k, n) / 2.0
             if c + hw > cx - w / 2.0 - 0.25 and c - hw < cx + w / 2.0 + 0.25:
                 bad.append("the canopy runs within 0.25 m of the %s at %.2f" % (k, c))
+    step_out = FRONT_STEPS[2][-1][0]
+    for px, py in post_spots():
+        if -HY - py < step_out + 0.3:
+            bad.append("a canopy post at x %.2f stands within 0.3 m of the steps" % px)
     if proj < FRONT_STEPS[2][2][0] + 0.2:
         bad.append("the canopy does not cover the landing")
     # the steps: as wide as the surround, risers of a stair
@@ -748,27 +860,28 @@ def check_layout():
                        door_c=ENTRANCE_X)
     bad += HR.problems(HANDRAILS[1], "the rear handrail",
                        door_w=L.OPENINGS["service_door"][0], door_c=SERVICE_X)
-    # vents on the rear slope, clear of the ridge, the eave and the hips
-    for px, py, dia, h in VENTS:
-        if py < dia / 2.0 + 0.3 or py > HY - 1.0:
-            bad.append("the vent at (%.1f, %.1f) is on the ridge or the eave" % (px, py))
-        if HY - abs(py) > HX - abs(px) - 0.5:
-            bad.append("the vent at (%.1f, %.1f) is on or near a hip" % (px, py))
-    # downpipes clear of corners, openings, the canopy and the steps
-    for (name, x), pipe in zip(DOWNPIPE_SPOTS, DOWNPIPES):
-        fr = Frame(*MAIN_WALLS[name])
-
-        def span(what, a, b):
-            return (what, min(fr.s_at(a), fr.s_at(b)), max(fr.s_at(a), fr.s_at(b)))
-        avoid = [span(k, oc - L.OPENINGS[k][0] / 2.0, oc + L.OPENINGS[k][0] / 2.0)
-                 for k, oc, z in ITEMS[name]]
-        if name == "front":
-            avoid.append(span("canopy", cx - w / 2.0, cx + w / 2.0))
-            st = FRONT_STEPS
-        else:
-            st = REAR_STEPS
-        avoid.append(span("steps", st[0] - st[1] / 2.0, st[0] + st[1] / 2.0))
-        bad += DP.problems(pipe, "the %s downpipe at %.2f" % (name, x), avoid)
+    # the roof plant on the deck, clear of the parapet and of one another
+    plant = [(HOUSING[0], HOUSING[1], L.HOUSING_W / 2.0), (MAST[0], MAST[1], 0.55)]
+    plant += [(px, py, dia / 2.0) for px, py, dia, h in VENTS]
+    for i, (px, py, r) in enumerate(plant):
+        if abs(px) + r > XI - 0.4 or abs(py) + r > YI - 0.4:
+            bad.append("roof plant at (%.1f, %.1f) crowds the parapet" % (px, py))
+        for qx, qy, q in plant[i + 1:]:
+            if abs(px - qx) < r + q + 0.3 and abs(py - qy) < r + q + 0.3:
+                bad.append("roof plant at (%.1f, %.1f) crowds another" % (px, py))
+        for ox, oy in L.OUTLETS:
+            if abs(px - ox) < r + 0.4 and abs(py - oy) < r + 0.4:
+                bad.append("roof plant at (%.1f, %.1f) stands on an outlet" % (px, py))
+    # the wall ladder and its cage clear of the west end's corners and
+    # windows; only a ladder this long has a cage
+    fr = Frame(*WEST)
+    avoid = []
+    for k, c, z, n in WEST_ITEMS:
+        r = item_rect(fr, k, c, z, n)
+        avoid.append((k, r[0], r[1]))
+    bad += RS.problems(WALL_LADDER, "the wall ladder", avoid)
+    if CAGE:
+        bad += RS.problems(CAGE, "the ladder's cage", avoid)
     return bad
 
 
@@ -788,14 +901,15 @@ LEAF_W = {"entrance": (L.ENTRANCE[2] - 2 * L.REGION_OFF["entrance"][0] - 8) / PP
 def facts():
     """The geometry facts sidecar's per-asset half (scripts/model_facts.py),
     in the build frame. The footprint is the outer wall faces, 14 x 9 m; the
-    eaves, the canopy, the two flights of steps with their rails and the
-    downpipes stand outside it. Two storeys, at 0.5 and 3.75 m, each the
-    whole plate inside the outer wall faces (the upper one under a flat
-    ceiling, 3.125 m to the eave). The main door is the front entrance; the
-    rear door is the staff's, a service door."""
+    coping's 6 cm oversail, the canopy and its posts, the two flights of
+    steps with their rails and the caged ladder stand outside it. Two
+    storeys, at 0.5 and 3.75 m, each the whole plate inside the outer wall
+    faces (the upper one under the flat roof, 3.25 m to the deck). The main
+    door is the front entrance; the rear door is the staff's, a service
+    door."""
     def door(door_id, kind, wall, item, main=False):
         p0, p1 = MAIN_WALLS[wall]
-        (c, z), = [(c, z) for k, c, z in ITEMS[wall] if k == item]
+        (c, z), = [(c, z) for k, c, z, n in ITEMS[wall] if k == item]
         return model_facts.wall_door(door_id, kind, p0, p1, Frame(p0, p1).s_at(c), z,
                                      LEAF_W[item], L.Z_LEAF, main)
 

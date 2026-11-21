@@ -19,13 +19,15 @@ The atlas is a trim sheet. Two bands run the full width and tile in U:
     y    0 ..  248   HOUSE   z 0 .. 3.80 m: concrete plinth, then facing
                              brick; the switchgear house's walls and the
                              fire wall between the transformers
-    y  252 ..  384   FENCE   z 0 .. 2.00 m: concrete footing, the yard wall's
-                             brick, its concrete coping
+    y  252 ..  384   FENCE   z 0 .. 1.70 m: concrete footing, the yard wall's
+                             brick, its thin concrete coping; the piers too
     y  390 .. 1024   unique  tank, radiator, conservator, bushing and
-                             insulator regions, the gate, the door, the
-                             louvre, a pier face, the gravel bed on the
-                             plinths, the roof, the slab edge, the gantry's
-                             galvanised steel and flat patches
+                             insulator regions, the switchgear's breaker
+                             poles, disconnector posts and current
+                             transformers, the gate, the door, the louvre,
+                             the gravel bed on the plinths, the roof, the
+                             slab edge, the gantry's galvanised steel and
+                             flat patches
 
 Rasterising is scripts/atlas.py's; dirt, algae, rust and faded paint are
 scripts/weathering.py's fields, placed by weather() below.
@@ -47,29 +49,31 @@ PPM = 64.0
 PAD = 2                 # rows each band paints beyond its own edge
 
 # ------------------------------------------------------------------ plan
-# Metres, Blender frame, front toward -Y, origin at the compound's centre.
-# The yard wall's brick piers stand on the compound's outline; their outer
-# faces are the asset's plan bounds, 16.0 x 12.0 m.
-FX, FY = 8.0, 6.0               # the piers' outer faces
+# Metres, Blender frame, front toward -Y. The origin is the first build's
+# compound centre, kept when the compound grew 4 m west for the switchgear,
+# so the house and the transformers keep their numbers; the pivot is the
+# plan's centre (asset_build), x -2.0 in this frame. The yard wall's plain
+# brick piers stand on the compound's outline; their outer faces are the
+# asset's plan bounds, 20.0 x 12.0 m.
+FX0, FX1, FY = -12.0, 8.0, 6.0  # the piers' outer faces: west, east, +-Y
 PIER_W = 0.36                   # a brick pier, square (one and a half bricks)
 WALL_T = 0.24                   # the wall between them (one brick)
-WCX, WCY = FX - PIER_W / 2.0, FY - PIER_W / 2.0      # wall centre lines
-Z_FENCE = 2.0                   # wall top, coping included
-Z_PIER = 2.2                    # pier top, cap included
+WCX0, WCX1 = FX0 + PIER_W / 2.0, FX1 - PIER_W / 2.0   # wall centre lines
+WCY = FY - PIER_W / 2.0
+Z_FENCE = 1.70                  # wall and pier top, coping included
 Z_FOOT_F = 0.3125               # the wall's concrete footing (20 px)
-Z_COPING = Z_FENCE - 6.0 / PPM  # the coping's foot, 1.906 m
-Z_CAP = Z_PIER - 6.0 / PPM      # the pier cap's foot
+Z_COPING = Z_FENCE - 4.0 / PPM  # the thin coping's foot, 1.6375 m
 
 # The gate: an opening in the front wall between two piers, closed by a
 # sheet-steel double gate set back in the wall's thickness.
 GATE_OPEN = (-0.80, 2.62)       # x of the two piers' inner faces
 GATE_Y = (-WCY - 0.04, -WCY + 0.02)   # the leaves' 0.06 m thickness
-GATE_Z = (0.04, 2.04)
+GATE_Z = (0.04, 1.66)
 GATE_INTO = 0.05                # the leaves' box runs this far into the piers
 
 # The switchgear house: in the compound's front-east corner, its front and
 # east walls in the yard wall's outer planes, so the wall stops on it.
-HX1 = WCX + WALL_T / 2.0        # 7.94, the east wall line
+HX1 = WCX1 + WALL_T / 2.0       # 7.94, the east wall line
 HX0 = HX1 - 5.0
 HY0 = -(WCY + WALL_T / 2.0)     # -5.94, the front wall line
 HY1 = HY0 + 4.0
@@ -103,20 +107,42 @@ TRENCH_W, TRENCH_H = 0.60, 0.08
 TRENCH_X0 = 0.10                # inside the plinths' east edge (0.20)
 TRENCH_TURN_X = 4.70            # the north trench's leg toward the house
 
-# The gantry: a portal of H-section steel on the west side, its beam along
-# Y, with a suspension string over each phase and a rigid tubular bus down
-# to each bushing.
-G_X = -6.5
+# The gantry: a portal of solid galvanised steel on the west side, two
+# tapered box columns and an I-beam along Y, a shield-wire peak on each
+# column, a suspension string over each switchgear phase.
+G_X = -10.6
 G_COL_Y = 4.6
-G_H = 0.30                      # H-section depth and width
+G_W = (0.40, 0.22)              # column width at the pad and at the top
+G_TOP = 9.70                    # column tops, just over the beam's
+G_BEAM_Z = (9.00, 9.60)         # the I-beam: 0.60 m deep
+G_BEAM_W = 0.30                 # its flanges' width
 G_TF, G_TW = 0.03, 0.02         # flange and web thickness
-G_TOP = 7.45                    # column tops
-G_BEAM_Z = (7.00, 7.30)
-G_BEAM_W = 0.24
 G_BEAM_Y = 4.90
-G_PAD = (0.70, 0.30)            # concrete foundation pad: side, height
+G_PAD = (0.80, 0.30)            # concrete foundation pad: side, height
+G_PEAK = (0.16, 0.0, 1.20)      # shield-wire peak: foot, tip (a point), rise
 STRING_LEN = 0.85               # top hardware to the bottom clamp
-BUS_R = 0.03                    # the tubular bus's radius
+
+# The switchgear: one bay per transformer between the gantry and its plinth,
+# phases SW_PHASE apart across Y about the transformer's centre line. From
+# west to east: the disconnector, its six posts on a tall steel table; the
+# three minimum-oil breaker poles on a steel stand; the three current
+# transformers on a concrete table. Each frame runs SW_HALF either side of
+# the bay's centre line.
+SW_PHASE = 1.0
+SW_HALF = 1.35
+DIS_X = (-9.3, -8.7)            # the disconnector's two rows of posts
+DIS_DECK = (-9.45, -8.55, 4.05, 4.20)   # deck x0, x1, z0, z1
+DIS_LEG = (0.24, 0.24, 1.10)    # leg x, y, centre's y offset from the bay's
+BRK_X = -7.0                    # breaker poles' axis
+BRK_DECK = (0.30, 1.85, 2.00)   # stand deck: x width, z0, z1
+BRK_LEG = (0.14, 1.25)          # stand legs: side, y offset
+BRK_Z0 = 1.97                   # a pole's foot, inside the deck
+CT_X = -5.3
+CT_TABLE = (0.50, 1.85, 2.20)   # concrete table: beam x width, z0, z1
+CT_LEG = (0.35, 1.05)           # its legs: side, y offset
+CT_Z0 = 2.17                    # a current transformer's foot
+POST_Z0 = DIS_DECK[3] - 0.03    # a disconnector post's foot
+COND_R = 0.025                  # the flexible conductors' radius
 
 # ------------------------------------------------------------------ openings
 # kind -> (width, height, casing side, casing bottom, casing top), metres.
@@ -143,8 +169,7 @@ TONE_COURSES = 48
 # run off the sheet.
 UNI_Y = 390
 TANK_R = (4, UNI_Y, 168, 168)            # tank side: U along, V = z - plinth top
-GATE_R = (180, UNI_Y, 226, 130)          # the gate's face, 3.52 x 2.0 m
-PIER_R = (494, UNI_Y, 24, 142)           # a pier face, 0.36 x 2.2 m
+GATE_R = (180, UNI_Y, 226, 130)          # the gate's face, 3.52 x 1.62 m
 RAD_R = (526, UNI_Y, 128, 120)           # radiator bank's outer face
 RAD_END_R = (662, UNI_Y, 36, 120)        # its end
 CONS_R_ = (706, UNI_Y, 104, 122)         # conservator: U along, V round
@@ -163,11 +188,16 @@ CABLE_R = (712, 592, 60, 142)
 CONS_END_R = (780, 592, 40, 40)
 FIRE_R = (256, 770, 232, 246)            # the fire wall's face, board-marked
 TRENCH_R = (500, 770, 336, 40)           # trench covers: U along, V across
+BREAKER_R = (4, 770, 48, 216)            # a breaker pole: U round, V up
+POST_R = (60, 770, 32, 66)               # a disconnector post: U round, V up
+CT_R = (100, 770, 48, 116)               # a current transformer: U round, V up
+POLE3_R = (500, 820, 16, 172)            # LOD3's breaker pole from the ground, V at POLE3_PPM
+POLE3_PPM = 32.0
 
 ITEM_ORIGIN = {"door": (414.0, float(UNI_Y)), "louvre": (488.0, 592.0)}
 
 PATCH_NAMES = ("blank", "coping", "conc", "reveal", "alu", "tank_paint", "galv_paint",
-               "porcelain", "steel_dark", "gate", "felt", "pad_top")
+               "porcelain", "steel_dark", "gate", "felt", "pad_top", "head")
 PATCHES = {n: (4 + 20 * i, 740, 12, 12) for i, n in enumerate(PATCH_NAMES)}
 
 # ----------------------------------------------------------- material ids
@@ -175,7 +205,7 @@ ID_BLANK, ID_PLINTH, ID_BRICK, ID_BRICK2, ID_MORTAR = 0, 1, 2, 3, 4
 ID_CONC, ID_PAINT, ID_HW, ID_SIGN_Y, ID_SIGN_K = 5, 6, 7, 8, 9
 ID_TANK, ID_TANK_DK, ID_GALV, ID_PORC, ID_ALU = 10, 11, 12, 13, 14
 ID_GRAVEL, ID_FELT, ID_FLASH, ID_DARK, ID_LOUVRE = 15, 16, 17, 18, 19
-ID_PLATE = 20
+ID_PLATE, ID_HEAD = 20, 21
 
 # (roughness, metallic). Painted steel is dielectric to the light: the
 # paint is what it sees. The gantry is hot-dip galvanised, as the catalog's
@@ -188,16 +218,20 @@ SURFACE = {
     ID_GALV: (0.48, 0.60), ID_PORC: (0.16, 0.0), ID_ALU: (0.42, 0.75),
     ID_GRAVEL: (0.96, 0.0), ID_FELT: (0.90, 0.0), ID_FLASH: (0.50, 0.25),
     ID_DARK: (0.92, 0.0), ID_LOUVRE: (0.55, 0.0), ID_PLATE: (0.40, 0.50),
+    ID_HEAD: (0.50, 0.0),
 }
 
 # ---------------------------------------------------------------- palettes
 # The plant's brick, as nostokonehuone_brick and the hall: the house, the
 # wall and the fire wall change with it, and the painted steel of the gate
 # and the door moves with the brick. The electrical plant is the same in
-# every variant: grey-green tank paint, galvanised gantry, brown porcelain.
+# every variant: grey-green tank paint, galvanised gantry, brown porcelain,
+# the breakers' red-brown heads. red_brick is the plant's shared, muted red:
+# each brick face colour c of the earlier red goes to Y + 0.6 (c - Y), Y its
+# Rec. 709 luma, then times 0.94, and the mortar 10% darker again.
 VARIANTS = {
-    "red_brick": {"brick": (144, 72, 52), "brick2": (114, 58, 45),
-                  "mortar": (150, 145, 136), "paint": (66, 82, 76)},
+    "red_brick": {"brick": (114, 73, 62), "brick2": (90, 59, 51),
+                  "mortar": (127, 123, 115), "paint": (66, 82, 76)},
     "yellow_brick": {"brick": (188, 166, 122), "brick2": (164, 142, 104),
                      "mortar": (160, 156, 148), "paint": (104, 56, 44)},
     "brown_brick": {"brick": (98, 68, 54), "brick2": (78, 54, 44),
@@ -211,7 +245,7 @@ FIXED = {
     ID_TANK: (104, 114, 104), ID_TANK_DK: (70, 76, 70), ID_GALV: (134, 137, 137),
     ID_PORC: (98, 54, 36), ID_ALU: (150, 152, 150), ID_GRAVEL: (128, 124, 116),
     ID_FELT: (56, 56, 58), ID_FLASH: (96, 98, 100), ID_DARK: (26, 26, 26),
-    ID_LOUVRE: (112, 114, 110), ID_PLATE: (170, 170, 166),
+    ID_LOUVRE: (112, 114, 110), ID_PLATE: (170, 170, 166), ID_HEAD: (144, 66, 44),
 }
 
 BAND_IDS = {
@@ -303,19 +337,6 @@ def paint_fence_band(c):
 
 
 # ================================================================= regions
-def paint_pier(c):
-    """A pier face, 0.36 m across, the wall's footing and brick run on up
-    to the precast cap."""
-    x, y, w, h = PIER_R
-    paint_brick(c, x - PAD, x + w + PAD, y, Z_FOOT_F, Z_CAP, seed=53)
-    paint_footing(c, x - PAD, x + w + PAD, y, Z_FOOT_F)
-    paint_coping(c, x - PAD, x + w + PAD, y + m(Z_CAP), y + m(Z_PIER) + PAD, axes="xy")
-    # the pier's arrises: a touch lighter brick at its edges, a shadow line
-    # where the wall runs into it is the mesh's
-    c.mul(x, x + 1, y + m(Z_FOOT_F), y + m(Z_CAP), 0.94)
-    c.mul(x + w - 1, x + w, y + m(Z_FOOT_F), y + m(Z_CAP), 0.94)
-
-
 def _bar(c, a0, a1, b0, b1, mid, h, shade=1.0, ao=0.9, axes="xy"):
     c.paint(a0, a1, b0, b1, mid, shade, ao)
     c.bevel(a0, a1, b0, b1, h, 1.0, axes=axes)
@@ -376,12 +397,12 @@ def paint_gate(c):
         r = (X - a0) % m(0.15)
         c.height[sy, sx] = np.where(r < 3.0, RIB_H * np.sin(np.pi * np.clip(r / 3.0, 0, 1)), 0.0)
         c.shade[sy, sx] = np.where((r >= 3.0) & (r < 4.0), 0.92, 1.0)
-        for b0, b1 in ((y, y + F), (y + m(0.95), y + m(0.95) + F), (top - F, top)):
+        for b0, b1 in ((y, y + F), (y + m(0.80), y + m(0.80) + F), (top - F, top)):
             _bar(c, a0, a1, b0, b1, ID_PAINT, FRAME_H, 1.0, 0.9, "y")
             c.mul(a0, a1, b0 - 2, b0, 0.88, ao=0.84)
         _bar(c, a0, a0 + F, y, top, ID_PAINT, FRAME_H, 1.0, 0.9, "x")
         _bar(c, a1 - F, a1, y, top, ID_PAINT, FRAME_H, 1.0, 0.9, "x")
-        for zz in (0.30, 1.65):
+        for zz in (0.28, 1.38):
             hy = y + m(zz)
             hx0 = hinge - 2 if hinge == l0 else hinge - 12
             c.paint(hx0, hx0 + 14, hy - 3, hy + 3, ID_HW, 0.80, 0.86, height=0.040)
@@ -389,10 +410,10 @@ def paint_gate(c):
     # meeting stiles, drop bolt, hasp and padlock
     c.paint(mid - 0.6, mid + 0.6, y, top, ID_DARK, 1.0, 0.5, height=-0.004)
     c.paint(mid + 2, mid + 4, y + 2, y + m(0.55), ID_HW, 0.85, 0.85, height=0.03)
-    c.paint(mid - 7, mid + 7, y + m(1.10), y + m(1.16), ID_HW, 0.9, 0.85, height=0.035)
-    c.paint(mid - 3, mid + 1, y + m(1.02), y + m(1.10), ID_DARK, 1.0, 0.8, height=0.045)
-    # the warning plate, 0.42 m, at eye height on the left leaf
-    paint_warning(c, (l0 + mid) / 2.0, y + m(1.45), m(0.42))
+    c.paint(mid - 7, mid + 7, y + m(1.00), y + m(1.06), ID_HW, 0.9, 0.85, height=0.035)
+    c.paint(mid - 3, mid + 1, y + m(0.92), y + m(1.00), ID_DARK, 1.0, 0.8, height=0.045)
+    # the warning plate, 0.38 m, high on the left leaf
+    paint_warning(c, (l0 + mid) / 2.0, y + m(1.24), m(0.38))
     # the leaves' foot is just off the ground: dark under the bottom rail
     c.mul(l0, l1, y, y + 1.5, 0.80, ao=0.8)
 
@@ -620,6 +641,115 @@ def paint_bushing(c):
     c.mul(x - PAD, x + w + PAD, p1, p1 + 1.5, 0.86, ao=0.85)
 
 
+def porcelain(c, x0, x1, a, b, pitch=0.07):
+    """Brown glazed porcelain from row a to b: a shed every *pitch* m, the
+    deep shadow under each shed a third of the pitch, so a column of sheds
+    reads darker than the bushings' short ones and its cast heads stand
+    out. The light on the sheds' upper faces is the normal map's."""
+    c.paint(x0, x1, a, b, ID_PORC, 0.86, 1.0)
+    sy, sx, Y, _ = c.field(x0, x1, a, b)
+    t = ((Y - a) % m(pitch)) / m(pitch)
+    c.height[sy, sx] = SHED_H * np.where(t < 0.55, np.sin(np.pi * t / 0.55), 0.0)
+    c.shade[sy, sx] = np.where(t >= 0.66, 0.42, 0.86)
+    c.ao[sy, sx] = np.where(t >= 0.66, 0.50, 1.0)
+
+
+# (radius, h) rings of the switchgear's turned parts, h up from each foot in
+# metres; build.py turns them and the paint below reads their breaks.
+Z_BRK = (1.25, 1.60, 2.95, 3.30)        # mid head foot, top; top head foot, top
+
+
+def breaker_profile(full=True):
+    """A minimum-oil breaker pole: the support porcelain, the red-brown mid
+    head (the interrupter's lower terminal), the chamber's porcelain and
+    the red-brown top head. *full* steps the heads out; otherwise one
+    taper carries them in paint."""
+    a, b, c_, d = Z_BRK
+    if not full:
+        return [(0.14, 0.0), (0.12, d)]
+    return [(0.12, 0.0), (0.12, a), (0.17, a), (0.17, b), (0.12, b), (0.11, c_),
+            (0.16, c_), (0.16, d)]
+
+
+Z_POST = 0.88                           # a disconnector post's cap foot
+POST_H = 0.98                           # and its top
+
+
+def post_profile(full=True):
+    if not full:
+        return [(0.09, 0.0), (0.075, POST_H)]
+    return [(0.09, 0.0), (0.075, Z_POST), (0.10, Z_POST), (0.10, POST_H)]
+
+
+Z_CT = (0.21, 1.35, 1.75)               # base top, head foot, head top
+
+
+def ct_profile(full=True):
+    """A current transformer: steel base, porcelain, the oil head. *full*
+    True turns them all; "mid" folds the base into the porcelain's taper;
+    False is one taper carrying all three in paint."""
+    a, b, t = Z_CT
+    if full is True:
+        return [(0.15, 0.0), (0.15, a), (0.12, a), (0.10, b), (0.19, b), (0.19, t)]
+    if full == "mid":
+        return [(0.15, 0.0), (0.11, b), (0.19, b), (0.19, t)]
+    return [(0.14, 0.0), (0.17, t)]
+
+
+def paint_breaker(c):
+    """A breaker pole wrapped once round, V = metres up from its foot:
+    porcelain with its sheds, the two red-brown cast heads with a bolted
+    flange at each end, a darker vent cap on the top."""
+    x, y, w, h = BREAKER_R
+    a, b, c_, d = (y + m(v) for v in Z_BRK)
+    porcelain(c, x - PAD, x + w + PAD, y - PAD, a)
+    porcelain(c, x - PAD, x + w + PAD, b, c_)
+    for h0, h1 in ((a, b), (c_, y + h + PAD)):
+        c.paint(x - PAD, x + w + PAD, h0 - 1, h1, ID_HEAD, 1.0, 1.0, height=0.0)
+        c.paint(x - PAD, x + w + PAD, h0 - 1, h0 + 3, ID_HEAD, 0.86, 0.9, height=0.012)
+        c.mul(x - PAD, x + w + PAD, h0 - 3, h0 - 1, 0.70, ao=0.7)
+    c.paint(x - PAD, x + w + PAD, b - 3, b, ID_HEAD, 0.86, 0.9, height=0.012)
+    c.paint(x - PAD, x + w + PAD, d - 4, y + h + PAD, ID_HW, 0.80, 0.9, height=0.01)
+    c.paint(x + 4, x + 12, a + 6, a + 14, ID_PLATE, 1.0, 1.0, height=0.004)
+
+
+def paint_pole3(c):
+    """LOD3's breaker pole, one prism from the ground at POLE3_PPM: the
+    galvanised stand, then the pole's porcelain and red-brown heads with
+    the sheds averaged into a darker brown, as they read from 120 m on."""
+    x, y, w, h = POLE3_R
+    k = POLE3_PPM
+    z = lambda v: y + (BRK_Z0 + v) * k
+    c.paint(x - PAD, x + w + PAD, y - PAD, y + BRK_Z0 * k, ID_GALV, 0.95, 1.0, height=0.0)
+    c.paint(x - PAD, x + w + PAD, y + BRK_Z0 * k, y + h + PAD, ID_PORC, 0.68, 0.8, height=0.0)
+    for h0, h1 in ((Z_BRK[0], Z_BRK[1]), (Z_BRK[2], Z_BRK[3] + 1.0)):
+        c.paint(x - PAD, x + w + PAD, z(h0), z(h1), ID_HEAD, 1.0, 1.0, height=0.0)
+
+
+def paint_post(c):
+    """A disconnector post insulator: porcelain, a galvanised cap."""
+    x, y, w, h = POST_R
+    porcelain(c, x - PAD, x + w + PAD, y - PAD, y + m(Z_POST), pitch=0.08)
+    c.paint(x - PAD, x + w + PAD, y + m(Z_POST), y + h + PAD, ID_GALV, 0.92, 0.9, height=0.0)
+    c.mul(x - PAD, x + w + PAD, y + m(Z_POST), y + m(Z_POST) + 2, 0.80, ao=0.8)
+    c.paint(x - PAD, x + w + PAD, y - PAD, y + 3, ID_GALV, 0.85, 0.9, height=0.01)
+
+
+def paint_ct(c):
+    """A current transformer: its steel base in tank paint, porcelain, the
+    oil head with a sight glass and a bolted flange."""
+    x, y, w, h = CT_R
+    a, b, t = (y + m(v) for v in Z_CT)
+    c.paint(x - PAD, x + w + PAD, y - PAD, a, ID_TANK_DK, 1.0, 0.9, height=0.0)
+    c.paint(x - PAD, x + w + PAD, a - 3, a, ID_TANK_DK, 0.9, 0.9, height=0.012)
+    porcelain(c, x - PAD, x + w + PAD, a, b)
+    c.paint(x - PAD, x + w + PAD, b, y + h + PAD, ID_TANK, 1.0, 1.0, height=0.0)
+    c.paint(x - PAD, x + w + PAD, b, b + 4, ID_TANK, 0.88, 0.9, height=0.015)
+    c.mul(x - PAD, x + w + PAD, b - 2, b, 0.75, ao=0.7)
+    c.disc(x + w * 0.5, b + m(0.22), 3.0, ID_DARK, 0.9, 0.8, height=0.0)
+    c.paint(x - PAD, x + w + PAD, t - 3, y + h + PAD, ID_TANK, 0.90, 0.9, height=0.01)
+
+
 def string_profile():
     """(radius, z) rings of a suspension string, z downward from its top in
     metres: the cap and pin, four discs at 0.146 m, the clamp."""
@@ -746,6 +876,7 @@ def paint_patches(c):
         "galv_paint": (ID_GALV, 1.0, 1.0), "porcelain": (ID_PORC, 1.0, 1.0),
         "steel_dark": (ID_TANK_DK, 1.0, 0.9), "gate": (ID_PAINT, 0.94, 0.95),
         "felt": (ID_FELT, 1.0, 1.0), "pad_top": (ID_CONC, 0.96, 1.0),
+        "head": (ID_HEAD, 0.94, 1.0),
     }
     for name, (mid, sh, ao) in spec.items():
         x, y, w, h = PATCHES[name]
@@ -754,12 +885,13 @@ def paint_patches(c):
 
 # ------------------------------------------------------------------ checks
 def regions():
-    r = {"tank": TANK_R, "gate": GATE_R, "pier": PIER_R, "rad": RAD_R,
+    r = {"tank": TANK_R, "gate": GATE_R, "rad": RAD_R,
          "rad_end": RAD_END_R, "cons": CONS_R_, "gravel": GRAVEL_R,
          "tank_top": TANK_TOP_R, "roof": ROOF_R, "fascia": FASCIA_R,
          "rad_top": RAD_TOP_R, "bush": BUSH_R, "string": STRING_R,
          "galv": GALV_R, "cable": CABLE_R, "cons_end": CONS_END_R,
-         "fire": FIRE_R, "trench": TRENCH_R}
+         "fire": FIRE_R, "trench": TRENCH_R, "breaker": BREAKER_R, "post": POST_R,
+         "ct": CT_R, "pole3": POLE3_R}
     for kind, (x, y) in ITEM_ORIGIN.items():
         w, h = item_size_px(kind)
         r[kind] = (x, y, w, h)
@@ -784,13 +916,17 @@ def check_regions():
             if (ax - 4 < bx + bw and bx - 4 < ax + aw
                     and ay - 4 < by + bh and by - 4 < ay + ah):
                 problems.append("%s and %s overlap" % (a, b))
-    need = {"tank": (TANK[0], TANK_Z[1] - PLINTH[2]), "pier": (PIER_W, Z_PIER),
+    need = {"tank": (TANK[0], TANK_Z[1] - PLINTH[2]),
             "rad": (RAD_X, RAD_Z[1] - RAD_Z[0]), "rad_end": (RAD_D, RAD_Z[1] - RAD_Z[0]),
             "tank_top": TANK, "fascia": (HX1 - HX0, Z_TOP - Z_WALL),
             "rad_top": (RAD_X, RAD_D), "bush": (0.0, BUSH_H), "string": (0.0, STRING_LEN),
             "cable": (2 * CABLE_Y, CABLE_TOP - PLINTH[2]),
             "cons": (TANK[1], 0.0), "fire": (FIRE[1] - FIRE[0], FIRE[3]),
-            "trench": (HX0 + TRENCH_W / 2 + 0.05 - TRENCH_X0, TRENCH_W)}
+            "trench": (HX0 + TRENCH_W / 2 + 0.05 - TRENCH_X0, TRENCH_W),
+            "breaker": (0.0, Z_BRK[3] + 0.03), "post": (0.0, POST_H + 0.02),
+            "ct": (0.0, Z_CT[2] + 0.03)}
+    if (BRK_Z0 + Z_BRK[3]) * POLE3_PPM > POLE3_R[3] + 0.01:
+        problems.append("the LOD3 pole overruns its region")
     for k, (wm, hm) in need.items():
         x, y, w, h = rects[k]
         if wm * PPM > w + 0.01 or hm * PPM > h + 0.01:
@@ -830,10 +966,10 @@ def weather(c):
     """
     brick = (ID_BRICK, ID_BRICK2, ID_MORTAR)
     steel = (ID_PAINT, ID_HW, ID_TANK, ID_TANK_DK, ID_GALV, ID_ALU, ID_FLASH,
-             ID_LOUVRE, ID_PLATE)
+             ID_LOUVRE, ID_PLATE, ID_HEAD)
     w = weathering.Weather(c, steel=steel)
     w.grime()
-    w.fade((ID_PAINT, ID_TANK, ID_LOUVRE, ID_FLASH))
+    w.fade((ID_PAINT, ID_TANK, ID_LOUVRE, ID_FLASH, ID_HEAD))
     w.wash(brick)
     # house band and fire wall
     w.plinth(0, ATLAS, H_Y0, H_Y0 + m(Z_PLINTH), (ID_PLINTH,))
@@ -847,13 +983,6 @@ def weather(c):
     w.add("D", 0, ATLAS, cop, F_Y0 + m(Z_FENCE) + PAD,
           lambda Y, X, nz: 0.08 + 0.10 * nz("blotch"), (ID_CONC,))
     w.runs(0, ATLAS, cop - m(0.45), cop, brick, 0.12, fall=10.0)
-    # piers: as the wall
-    x, y, wd, hd = PIER_R
-    w.plinth(x - PAD, x + wd + PAD, y, y + m(Z_FOOT_F), (ID_PLINTH,))
-    w.splash(x - PAD, x + wd + PAD, y + m(Z_FOOT_F), y + m(Z_CAP), brick)
-    w.runs(x - PAD, x + wd + PAD, y + m(Z_CAP) - m(0.45), y + m(Z_CAP), brick, 0.12, fall=10.0)
-    w.add("D", x - PAD, x + wd + PAD, y + m(Z_CAP), y + hd + PAD,
-          lambda Y, X, nz: 0.08 + 0.10 * nz("blotch"), (ID_CONC,))
     # the gate and the door: kicked dirt at the foot, grime at the hasp
     x, y, wd, hd = GATE_R
     w.door(gate_u(GATE_OPEN[0]), gate_u(GATE_OPEN[1]), y, y + hd, (ID_PAINT,),
@@ -896,9 +1025,18 @@ def weather(c):
               lambda Y, X, nz: 0.06 + 0.06 * nz("blotch"), (ID_TANK, ID_TANK_DK))
     # porcelain stays nearly clean (rain washes the glaze); a little dust
     # under the sheds
-    x, y, wd, hd = BUSH_R
-    w.add("D", x - PAD, x + wd + PAD, y - PAD, y + hd + PAD,
-          lambda Y, X, nz: 0.03 * nz("blotch"), (ID_PORC,))
+    for r in (BUSH_R, BREAKER_R, POST_R, CT_R):
+        x, y, wd, hd = r
+        w.add("D", x - PAD, x + wd + PAD, y - PAD, y + hd + PAD,
+              lambda Y, X, nz: 0.03 * nz("blotch"), (ID_PORC,))
+    # the breakers' cast heads and the current transformers' oil heads:
+    # dust on the heads, a little oil and rust at the flanges
+    for r in (BREAKER_R, CT_R):
+        x, y, wd, hd = r
+        w.add("D", x - PAD, x + wd + PAD, y - PAD, y + hd + PAD,
+              lambda Y, X, nz: 0.06 + 0.06 * nz("blotch"), (ID_HEAD, ID_TANK, ID_TANK_DK))
+    w.runs(BREAKER_R[0] - PAD, BREAKER_R[0] + BREAKER_R[2] + PAD, BREAKER_R[1] + m(Z_BRK[0]),
+           BREAKER_R[1] + m(Z_BRK[1]), (ID_HEAD,), 0.10, fall=12.0)
     # the gravel bed and curb: dust and oil
     x, y, wd, hd = GRAVEL_R
     w.add("D", x - PAD, x + wd + PAD, y - PAD, y + hd + PAD,
@@ -927,7 +1065,6 @@ def paint(ss=atlas.SS):
     paint_house_band(c)
     paint_fence_band(c)
     c.check_bands(BAND_IDS)
-    paint_pier(c)
     paint_gate(c)
     paint_door(c)
     paint_louvre(c)
@@ -940,6 +1077,10 @@ def paint(ss=atlas.SS):
     paint_radiator_top(c)
     paint_conservator(c)
     paint_bushing(c)
+    paint_breaker(c)
+    paint_post(c)
+    paint_ct(c)
+    paint_pole3(c)
     paint_string(c)
     paint_galv(c)
     paint_cable_box(c)
@@ -953,7 +1094,7 @@ def paint(ss=atlas.SS):
     walls = np.isin(c.mid, (ID_BRICK, ID_BRICK2, ID_MORTAR, ID_PLINTH))
     streak = atlas.noise(c, 7, 0.8, 40.0)
     c.shade[walls] *= 1.0 + 0.03 * streak[walls]
-    sheet = np.isin(c.mid, (ID_PAINT, ID_TANK, ID_LOUVRE))
+    sheet = np.isin(c.mid, (ID_PAINT, ID_TANK, ID_LOUVRE, ID_HEAD))
     grain = atlas.noise(c, 5, 60.0, 0.35)
     c.shade[sheet] *= 1.0 + 0.016 * grain[sheet]
     galv = c.mid == ID_GALV
