@@ -318,7 +318,8 @@ def paint_bands(c):
     paint_brick(c, P_Y0, Z_PLINTH, GATE_SHAFT, seed=43)
     paint_plinth(c, P_Y0)
     paint_coping_side(c, P_Y0 + m(GATE_SHAFT), BAND_ROWS["PIER"][1], joints=False)
-    # the coping's top across the wall, brick tops past it (LOD3's box)
+    # the coping's top across the wall, brick tops past it (a former LOD3
+    # box's; no tier samples them now)
     y0, y1 = BAND_ROWS["TOP"]
     c.paint(0, ATLAS, y0, y1, ID_BRICK, 0.90, 0.92, height=0.0)
     sy, sx, Y, X = c.field(0, ATLAS, y0, y1)
@@ -688,13 +689,28 @@ def parts_for(piece, level):
     if isinstance(piece, Gate):
         return gate_parts(piece, level), level <= 1
     x0, x1 = piece.wall
-    if level == 3:
-        xa = min([x0] + [p - HCAP for p in piece.piers])
-        hy = HCAP if piece.piers else HC
 
-        def side(a, b):
-            return along(a, b, W_Y0)
-        return [box(xa, x1, -hy, hy, 0.0, WALL_H, side, top_strip, patch("blank"))], False
+    def side(a, b):
+        return along(a, b, W_Y0)
+    if level == 3 and not piece.piers:
+        # the pierless run: one box of its plan, the coping's width
+        return [box(x0, x1, -HC, HC, 0.0, WALL_H, side, top_strip, patch("blank"))], False
+    if level == 3:
+        # The piers stay (a consumer switching by screen size shows LOD3 at
+        # ~25 m): LOD2's pier boxes, and the wall body as boxes between them,
+        # each abutting a pier's face, so every solid is a separate closed
+        # box and none passes into another. The +X end stays END_INSET short
+        # of the joint, in the next piece's pier, 0.15 under its top and
+        # 0.10 inside its faces: nothing coplanar with a neighbour.
+        spans, a = [], x0
+        for p in sorted(piece.piers):
+            if p - HCAP > a + EPS:
+                spans.append((a, p - HCAP))
+            a = max(a, p + HCAP)
+        spans.append((a, x1))
+        walls = [box(s0, s1, -HW, HW, 0.0, WALL_H, side, top_strip, patch("blank"))
+                 for s0, s1 in spans]
+        return walls + [run_pier(p, level) for p in piece.piers], False
     # a pierless run keeps its coping on every tier: it sets the run's plan
     prof = T_PROFILE if level == 0 or not piece.piers else RECT_PROFILE
     return [wall(x0, x1, prof)] + [run_pier(p, level) for p in piece.piers], bool(piece.piers)

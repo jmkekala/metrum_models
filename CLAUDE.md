@@ -709,7 +709,8 @@ orientation, budgets and variants differ:
 - **Glass on a prop** (e.g. a lamp cover) follows the building glass rules.
 - **Boundary pieces** fence a lot as a building's neighbours, seen as far:
   - All four tiers, `LOD0`–`LOD3`. Provisional ceilings, no floors: `LOD0`
-    200, `LOD1` 120, `LOD2` 80, `LOD3` 24. Texture 512.
+    200, `LOD1` 120, `LOD2` 80, `LOD3` 48. Texture 512. Every tier keeps
+    the piers: a consumer switching by screen size shows `LOD3` near.
   - Long axis along `X`, the outer (street) face toward the front, the
     pivot on the ground on the wall's centre line, midway between the
     piece's two joint planes (a gate piece: on the opening's edge plane).

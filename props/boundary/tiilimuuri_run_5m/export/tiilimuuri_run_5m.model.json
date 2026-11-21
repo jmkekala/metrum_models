@@ -3,7 +3,7 @@
   "version": 1,
   "name": "tiilimuuri_run_5m",
   "path": "props/boundary/tiilimuuri_run_5m",
-  "source": {"commit": "c92ea00140c23e1078f58786abe78fb30d398558", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "b5660bbf01c0e1b2f89ed419a69dfab1dd106c40", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-2.725, 0.0, -0.225], "max": [2.4, 2.25, 0.225]},
   "footprint": [
@@ -23,7 +23,7 @@
     {"file": "tiilimuuri_run_5m_lod0.glb", "triangles": 60, "sha256": "8eac53dc7695424fed014dd18a5f3d2fbe2a09881a96ad00a84549b414f875ec"},
     {"file": "tiilimuuri_run_5m_lod1.glb", "triangles": 36, "sha256": "73968018b9a411529ceeb043ffb642b1753a94d2efde0cf4c11632447c1e217f"},
     {"file": "tiilimuuri_run_5m_lod2.glb", "triangles": 28, "sha256": "a3b7b6f34ce0ab57d2d00344be7358fc55334ecc0beb47543a03b82540be062e"},
-    {"file": "tiilimuuri_run_5m_lod3.glb", "triangles": 12, "sha256": "5c39981de80d4c1fdd884594e52216922cd4406b0d151cfeb958d31fa7bde3a1"}
+    {"file": "tiilimuuri_run_5m_lod3.glb", "triangles": 24, "sha256": "cb0374a4f01b30f46f884d4048c122501966e98d898dce0e4843c05f3f996eab"}
   ],
   "textures": {
     "orm": {"file": "tiilimuuri_run_5m_orm.png", "sha256": "5312f5c808986f1117e8fd259b0e6e0010e6762fc01e93ec8d92230bc1754bbe"},

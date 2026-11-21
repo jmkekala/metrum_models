@@ -50,7 +50,7 @@ BUDGETS = {
     # boundary pieces (wall runs, piers, gates) stand in rows of dozens and
     # are seen as far as the buildings they enclose: four required tiers,
     # ceilings only, like buildings, and a facts sidecar.
-    ("prop_boundary", False): ((None, 200), (None, 120), (None, 80), (None, 24)),
+    ("prop_boundary", False): ((None, 200), (None, 120), (None, 80), (None, 48)),
 }
 TEX_MAX = {("building", False): 1024, ("building", True): 2048,
            ("prop_small", False): 256, ("prop_medium", False): 512,

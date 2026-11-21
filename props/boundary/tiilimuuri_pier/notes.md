@@ -86,21 +86,23 @@ up, +Z toward the street (Blender −Y), origin at the pivot.
 | `LOD0` | 28 | 200 |
 | `LOD1` | 20 | 120 |
 | `LOD2` | 12 | 80 |
-| `LOD3` | 12 | 24 |
+| `LOD3` | 12 | 48 |
 
 - `LOD0`: brick shaft under its overhanging cap.
 - `LOD1`: one box of the cap's plan, an edge ring at 2.17 m.
-- `LOD2`, `LOD3`: one box of the cap's plan, the band stretched so the cap's paint lands on its top. A box cannot be reduced further, so the two tiers are the same mesh; it keeps the pier matching the runs' piers at each tier.
+- `LOD2`, `LOD3`: one box of the cap's plan, the band stretched so the cap's paint lands on its top. A box cannot be reduced further, so the two tiers are the same mesh; it keeps the pier matching the runs' piers at each tier. `LOD3` is the cap's outline, 0.45 m square, to the cap's top at 2.25 m: `LOD0`'s plan and height bounds.
 
 Geometry only where it changes the outline: the coping's and caps' overhangs (shadow lines), the piers' projection and rise, the leaf and its post. Brick, mortar, the plinth course, coping joints, the leaf's frame, ribs, hinges and plate are texture.
 
 ## LOD review
 
-Intended switches (prop scale, the catalog's review camera: perspective, 50° vertical FOV, 1920 × 1080): `LOD0` under ~25 m, `LOD1` ~25–50 m, `LOD2` ~50–150 m, `LOD3` beyond ~150 m. A 0.40 m pier spans ~3.6 px at 120 m and its 0.15 m rise over the coping ~1.3 px, which is why `LOD3`, which drops the piers on the runs, should switch no nearer than ~150 m; the cap and coping overhangs (0.025 and 0.05 m) are under a pixel past ~35 m.
+Intended switches (prop scale, the catalog's review camera: perspective, 50° vertical FOV, 1920 × 1080): `LOD0` under ~25 m, `LOD1` ~25–50 m, `LOD2` ~50–150 m, `LOD3` beyond ~150 m by distance. The consumer picks a tier by the piece's size on screen, not by distance, so on these small pieces `LOD3` shows from about 25 m; every tier therefore keeps the piers (a 0.40 m pier spans ~18 px at 25 m and its 0.15 m rise over the coping ~7 px). The cap and coping overhangs (0.025 and 0.05 m) are under a pixel past ~35 m.
 
-Reviewed for `tiilimuuri_run_10m` and `tiilimuuri_gate_left` at 10, 20, 40 and 80 m, front and oblique, noon sun, every tier (`review/boundary_wall_2026_11_21/lod_*`, `lod_sheet_*.png`): `LOD0`–`LOD2` hold the silhouette, pier rhythm, coping line and cap colour; the gate's tiers are indistinguishable from 20 m. `LOD3` of the runs loses the piers (a known limitation at its budget); the gate keeps pier and leaf on every tier.
+Reviewed for `tiilimuuri_run_10m` and `tiilimuuri_gate_left` at 10, 20, 40 and 80 m, front and oblique, noon sun, every tier (`review/boundary_wall_2026_11_21/lod_*`, `lod_sheet_*.png`): `LOD0`–`LOD2` hold the silhouette, pier rhythm, coping line and cap colour; the gate's tiers are indistinguishable from 20 m. The gate keeps pier and leaf on every tier.
 
-Assembled lots at `LOD3` (`assembly/L3_*`): adjacent `LOD3` boxes overlap by 0.125 m at every joint with coplanar faces (the box must span the −X cap). Not visible in the renders; at ≥150 m it is ~1 px of one brick colour over another. Pending in the consumer: real switching, culling distances, z-fighting at those overlaps under its depth precision.
+`LOD3` at the consumer's ~25 m (`review/followups_2026_11_21/wall_lod3/`): `pairs_*.png` set `LOD0`, `LOD2` and `LOD3` side by side at 25 and 40 m, street and yard side, for `tiilimuuri_run_10m`, `tiilimuuri_run_5m`, `tiilimuuri_gate_left` and `tiilimuuri_run_2m_pierless`; `cmp_*.png` the assembled lots at `LOD0`, the new `LOD3` and the former `LOD3` box without piers. The runs' `LOD3` reads as the same wall with its piers and caps and is indistinguishable from `LOD2` at both distances; the pierless run's box and the gate's two boxes are indistinguishable from their `LOD0` at 25 m.
+
+Assembled lots at `LOD3` (the closed 30 × 20 m lot, the gate cell with a free end, a corner with a free end; `review/followups_2026_11_21/wall_lod3/L3_*`, at 25, 40 and 80 m, top and aerial): one pier at every joint and corner, no gaps. A run's `LOD3` wall stops where its `LOD0` wall does, 0.10 m short of its +X joint plane inside the next piece's pier, 0.10 m inside that pier's faces and 0.15 m under its top, so no two neighbours' faces are coplanar: a triangle-by-triangle check of the assembled files finds no coplanar overlap above the ground (the former `LOD3` had 8.9 m² of it), only the bottoms meeting on the ground plane, as at `LOD0`. Renders from two camera positions 5 mm apart show no change at the joints, but Blender's rasteriser does not shimmer even on the former overlaps, so that is no proof; depth fighting is pending in the consumer.
 
 ## Texture set
 
@@ -109,7 +111,7 @@ One 512 × 512 atlas at 64 texels/m, shared by all seven pieces (painted once by
 - rows 0–140, **WALL** band, tiling in U (8 m period), V = height from the ground: plinth course 0–0.25 m, stretcher-bond brick (0.25 × 0.078 m courses) to 2.02 m, the coping's sides 2.02–2.10 m with a joint every 1.00 m.
 - rows 142–314, **PIER** band, same brick and plinth to 2.48 m, then the gate cap's sides to 2.60 m (run caps map their 0.08 m onto its first rows).
 - rows 318–460, unique: the leaf (192 × 128 px, U from the hinge end), the hinge post, a cap top, patches (blank, soffit, paint, concrete).
-- rows 466–502, **TOP** strip, tiling in U, V across the wall: the coping's top ±0.175 m with 1 m joints, brick tops to ±0.225 m for `LOD3`'s box.
+- rows 466–502, **TOP** strip, tiling in U, V across the wall: the coping's top ±0.175 m with 1 m joints, brick tops to ±0.225 m, which no tier samples since `LOD3` keeps the piers.
 
 Relief heights for the normal map: brick faces 6 mm over the mortar, coping and cap arrises 20 mm, leaf frame 25 mm, pressed ribs 8 mm, hinges 30–40 mm. Weathering (`scripts/weathering.py`, moderate): soil and algae at the plinth, splash-back and a little salt bloom above it, light runs under the coping and the gate cap, dust on coping and cap tops, kicked-up dirt and grime at the leaf's foot and latch, rust at the steel's feet.
 
@@ -149,9 +151,14 @@ Done here:
 - Front, top and oblique views (`review/boundary_wall_2026_11_21/views/`), the catalog preview.
 - Test assemblies from the exported `LOD0` and `LOD3` files by the joint rule alone: a closed 30 × 20 m lot of 10 m and 5 m runs, a 6 m gate in a 10 m cell between 10 m runs, a free end and a corner (`assembly/`). One pier at every joint and corner, no gaps, no step in the coping line, no wall end showing.
 - LOD comparisons at 10–80 m for the 10 m run and gate_left.
+- `LOD3` against the consumer's screen-size switching (2026-11-21): the seven pieces rebuilt and validated (0 FAIL; the three runs' rewritten sidecars warn `source.dirty` until rewritten from a commit), the textures not rebaked, the `LOD0`–`LOD2` files and the other four pieces' `LOD3` byte-identical, every `preview.png` pixel-identical (the committed files kept), the assemblies and LOD pairs above at 25 and 40 m, a coplanarity check of the assembled `LOD3` and `LOD0` files.
 
-Pending in the consumer: switch and cull distances, mip filtering, depth precision at the `LOD3` joint overlaps, the obstacle rectangles against its pathing.
+Pending in the consumer: switch and cull distances, mip filtering, depth fighting at the joints (none expected: no coplanar faces above the ground), the obstacle rectangles against its pathing.
 
 ## Tooling versions
 
 Blender 5.3.0 (hash 02f0899d78e3), headless; the MCP addon was not used. System Python 3 with numpy 2.5.5, scipy 1.18.1, Pillow 13.0.0 for the atlas.
+
+## Revision log
+
+- 2026-11-21: `LOD3` reviewed against the consumer's screen-size switching (~25 m) and kept (12 triangles); `prop_boundary`'s `LOD3` ceiling 24 → 48 for the runs, whose `LOD3` now keeps the piers.
