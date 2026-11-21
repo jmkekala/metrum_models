@@ -13,7 +13,7 @@ own importer is not used, because it reads COLOR_0 as an sRGB byte colour.
     1  class box, ground contact, wheels resting, plan box kept by every tier
     2  wheel and lamp pairs mirror in x
     3  ids: COLOR_0 as normalised UNSIGNED_BYTE VEC4, A = 255, whole ids from
-       the allowed sets, one R and one G per triangle, R = B = 0 on lamps
+       the allowed sets, one R, G and B per triangle, R = B = 0 on lamps
        and glass, B 0 or 1
     4  per tier: wheel parts, required and listed lamp and glass ids
     5  wheel vertices inside their sidecar cylinders, no body vertex inside
@@ -287,7 +287,7 @@ def check_ids(R, level, t, doc):
     if stray:
         bad.append("G holds ids outside 0, 1..15, 32..47: %s" % stray)
     tri = t["triangles"]
-    for ch, name in ((part, "R"), (surf, "G")):
+    for ch, name in ((part, "R"), (surf, "G"), (paint, "B")):
         c = ch[tri]
         mixed = np.flatnonzero((c[:, 0] != c[:, 1]) | (c[:, 0] != c[:, 2]))
         if len(mixed):
@@ -301,8 +301,8 @@ def check_ids(R, level, t, doc):
         for b in bad:
             R("FAIL", tag, "ids: " + b)
     else:
-        R("PASS", tag, "ids: COLOR_0 normalised UNSIGNED_BYTE VEC4, A 255, whole ids, one R "
-                       "and G per triangle, lamps and glass unpainted body")
+        R("PASS", tag, "ids: COLOR_0 normalised UNSIGNED_BYTE VEC4, A 255, whole ids, one R, "
+                       "G and B per triangle, lamps and glass unpainted body")
     tp = part[tri[:, 0]]
     ts = surf[tri[:, 0]]
     tpaint = np.all(paint[tri] == 255, axis=1)
