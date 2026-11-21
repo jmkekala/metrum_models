@@ -3,7 +3,7 @@
   "version": 1,
   "name": "voimalan_konttori_brick",
   "path": "buildings/industrial/voimalan_konttori_brick",
-  "source": {"commit": "36373cf1ef9cf9c10b729e515f9548710029df14", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "3e3e93de0a47297473217212bea0db141eb777b5", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-7.4525, 0.0, -6.675], "max": [7.4525, 9.78, 6.675]},
   "footprint": [
