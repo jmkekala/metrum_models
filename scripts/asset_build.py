@@ -38,6 +38,7 @@ import model_facts
 from glb_images import strip_embedded_images
 from variant_previews import render_sheet
 from window_emission import LIT_FACTOR, attach, rewrite_glb_emission, set_state
+from vehicle_ids import convert_color0_to_ubyte
 
 # ------------------------------------------------------------ toolchain
 # Too old: the newest of the catalog's source.blend files are saved by Blender
@@ -50,6 +51,12 @@ BLENDER_MIN = (5, 3)
 GLTF_EXPORT_FLAGS = (
     "export_format", "use_selection", "export_yup", "export_apply",
     "export_keep_originals", "export_cameras", "export_lights",
+    # an asset that declares an id attribute (Asset.id_attribute, the
+    # vehicles) exports it as COLOR_0 and nothing else as a colour, with
+    # mesh compression held off: the ids must reach the bytes exactly
+    "export_vertex_color", "export_vertex_color_name",
+    "export_all_vertex_colors", "export_draco_mesh_compression_enable",
+    "export_meshopt_compression_enable",
 )
 LEVELS = (0, 1, 2, 3)
 
@@ -330,7 +337,17 @@ class Asset:
     by instead of LOD0's pivot_offset(). Every tier must then still have
     LOD0's plan centre, wherever that lies. None (buildings) keeps the
     plan-centred pivot.
+
+    id_attribute names a FLOAT_COLOR corner attribute that the export
+    writes as COLOR_0 (and no other colour), with Draco and meshopt held
+    off; COLOR_0 is then rewritten as exact normalised bytes
+    (vehicle_ids.convert_color0_to_ubyte()), which a consumer that
+    truncates floats to bytes needs. None, the default and every
+    building's and prop's, exports exactly as before: a subclass sets it
+    (scripts/vehicle_build.py's VehicleAsset).
     """
+
+    id_attribute = None
 
     def __init__(self, name, here, variants, default_variant, tint=None,
                  levels=LEVELS, camera_location=None, night_lit=True, pivot=None):
@@ -524,14 +541,23 @@ class Asset:
                 obj.select_set(True)
                 bpy.context.view_layer.objects.active = obj
                 path = os.path.join(self.export_dir, "{}_lod{}.glb".format(self.name, level))
+                ids = {}
+                if self.id_attribute:
+                    ids = dict(export_vertex_color='NAME',
+                               export_vertex_color_name=self.id_attribute,
+                               export_all_vertex_colors=False,
+                               export_draco_mesh_compression_enable=False,
+                               export_meshopt_compression_enable=False)
                 bpy.ops.export_scene.gltf(
                     filepath=path, export_format='GLB', use_selection=True,
                     export_yup=True, export_apply=True, export_keep_originals=True,
-                    export_cameras=False, export_lights=False)
+                    export_cameras=False, export_lights=False, **ids)
                 obj.select_set(False)
                 strip_embedded_images(path)
                 if saved is not None:
                     rewrite_glb_emission(path, (0, 0, 0))
+                if self.id_attribute:
+                    convert_color0_to_ubyte(path)
                 written.append(os.path.basename(path))
         finally:
             if saved is not None:

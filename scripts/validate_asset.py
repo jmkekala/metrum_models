@@ -5,6 +5,12 @@
 Run inside Blender, because the interior-geometry check needs a BVH:
 
     blender -b -P scripts/validate_asset.py -- buildings/service/brick_clocktower_hall
+    blender -b -P scripts/validate_asset.py -- vehicles/car/estate_compact vehicle_car
+
+The vehicle classes (vehicle_car, vehicle_van, vehicle_truck, vehicle_bus)
+add the contract's ten vehicle checks from scripts/vehicle_checks.py, which
+read the exported accessors, the sidecar, the PNGs and glass_texels.png
+directly.
 
 This validates what actually ships — the contents of ``export/`` — rather than
 the authoring scene, so a stale or hand-edited export cannot pass.
@@ -34,6 +40,8 @@ from mathutils.bvhtree import BVHTree
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import model_facts  # noqa: E402
+import vehicle_checks  # noqa: E402
+import vehicle_ids  # noqa: E402
 
 # Per-tier triangle bands (floor, ceiling), from CLAUDE.md's budgets. Buildings
 # run LOD0..LOD3 across a free camera's ~20-150 m; props run LOD0..LOD2 with the
@@ -56,6 +64,13 @@ TEX_MAX = {("building", False): 1024, ("building", True): 2048,
            ("prop_small", False): 256, ("prop_medium", False): 512,
            ("prop_boundary", False): 512}
 FOUR_TIERS = ("building", "prop_boundary")     # every tier required, sidecar too
+# Vehicles: four required tiers with the class's ceilings and atlas size
+# (scripts/vehicle_ids.py), one material, a version 2 sidecar and the
+# vehicle checks; kind -> body class.
+VEHICLE_KINDS = {"vehicle_" + c: c for c in vehicle_ids.CLASSES}
+for _kind, _cls in VEHICLE_KINDS.items():
+    BUDGETS[(_kind, False)] = tuple((None, c) for c in vehicle_ids.CLASSES[_cls]["ceilings"])
+    TEX_MAX[(_kind, False)] = vehicle_ids.CLASSES[_cls]["texture"]
 BUDGETS_KINDS = tuple(dict.fromkeys(k for k, _ in BUDGETS))
 
 # Hidden-surface thresholds. A watertight shell must close somewhere — a
@@ -79,6 +94,15 @@ NOTES_ORDER = (
     "Glazing treatment", "Variant list", "Night lighting", "Export",
     "Review status", "Tooling versions", "Revision log",
 )
+# A vehicle's notes: the prop sections it shares, and its own for the
+# contract's parts (CLAUDE.md, Vehicles); its own order, so a building's
+# notes never accept a vehicle heading or the other way round.
+VEHICLE_NOTES_ORDER = (
+    "Style brief", "Body class", "Dimensions", "Construction", "Wheels", "Ids",
+    "Lamps", "Glass", "Paint", "Per-tier triangle counts", "LOD review",
+    "Interior geometry", "Known simplifications", "Texture set", "Variant list",
+    "Export", "Review status", "Tooling versions", "Revision log",
+)
 # A prop has no storeys, doors, eaves or night windows to record, so those
 # sections are absent rather than a column of "n/a"; glazing is required only
 # of the props that actually carry glass, which this cannot decide.
@@ -88,6 +112,7 @@ NOTES_REQUIRED = {
              "Construction", "Per-tier triangle counts", "LOD review",
              "Texture set", "Variant list", "Export", "Review status",
              "Tooling versions"),
+    "vehicle": tuple(s for s in VEHICLE_NOTES_ORDER if s != "Revision log"),
 }
 
 HIDDEN_WARN = (0.15, 150)
@@ -197,7 +222,7 @@ def check_tier(results, asset, adir, level, kind, hero):
     tag = "LOD{}".format(level)
     path = os.path.join(adir, "export", "{}_lod{}.glb".format(asset, level))
     if not os.path.exists(path):
-        required = kind in FOUR_TIERS or level < 2
+        required = kind in FOUR_TIERS or kind in VEHICLE_KINDS or level < 2
         results.append(("FAIL" if required else "SKIP", tag,
                         "export missing" if required else "optional tier absent"))
         return
@@ -277,7 +302,8 @@ def check_tier(results, asset, adir, level, kind, hero):
         results.append(("PASS", tag, "images referenced externally, uri only"))
 
     mats = js.get("materials", [])
-    results.append((("PASS" if 1 <= len(mats) <= 2 else "FAIL"), tag,
+    most = 1 if kind in VEHICLE_KINDS else 2
+    results.append((("PASS" if 1 <= len(mats) <= most else "FAIL"), tag,
                     "material slots: %d" % len(mats)))
     for mm in mats:
         if mm.get("doubleSided", False):
@@ -387,7 +413,8 @@ def check_textures(results, asset, adir, kind, hero):
     if not any(("_orm" in p) for p in pngs):
         results.append(("FAIL", "tex", "no ORM texture present"))
     check_normal(results, asset, edir, pngs, kind, Image)
-    check_glazing(results, asset, edir, pngs, Image)
+    if kind not in VEHICLE_KINDS:       # a vehicle's emission holds lamps too:
+        check_glazing(results, asset, edir, pngs, Image)   # vehicle_checks measures its glass
     results.append(("MANUAL", "tex", "colour space (albedo sRGB, ORM/normal "
                                      "linear) is set in Blender, not readable "
                                      "from the PNG"))
@@ -513,18 +540,21 @@ def check_notes(results, adir, kind):
             elif not fence and line.startswith("## "):
                 found.append(line[3:].strip())
 
-    required = NOTES_REQUIRED["building" if kind == "building" else "prop"]
+    family = ("building" if kind == "building" else
+              "vehicle" if kind in VEHICLE_KINDS else "prop")
+    order = VEHICLE_NOTES_ORDER if family == "vehicle" else NOTES_ORDER
+    required = NOTES_REQUIRED[family]
     missing = [s for s in required if s not in found]
     if missing:
         results.append(("FAIL", "notes", "missing required section%s: %s"
                         % ("" if len(missing) == 1 else "s", ", ".join(missing))))
 
     for head in found:
-        if head in NOTES_ORDER:
+        if head in order:
             continue
         # A dated or qualified revision heading keeps the section name it
         # supersedes, so name that section rather than only rejecting the line.
-        owner = next((s for s in NOTES_ORDER if head.startswith(s)), None)
+        owner = next((s for s in order if head.startswith(s)), None)
         results.append(("FAIL", "notes", "unrecognised section %r; %s" % (
             head, "fold it into %r" % owner if owner else
             "asset-specific material belongs in a ### subsection")))
@@ -535,15 +565,15 @@ def check_notes(results, adir, kind):
                             "notes describe current state once"
                             % (head, found.count(head))))
 
-    known = [s for s in found if s in NOTES_ORDER]
-    ranks = [NOTES_ORDER.index(s) for s in known]
+    known = [s for s in found if s in order]
+    ranks = [order.index(s) for s in known]
     out = next((known[i] for i in range(1, len(ranks))
                 if ranks[i] < ranks[i - 1]), None)
     if out:
         results.append(("WARN", "notes", "sections out of schema order, first "
                                          "at %r" % out))
     if not missing and out is None and len(set(found)) == len(found) \
-            and all(s in NOTES_ORDER for s in found):
+            and all(s in order for s in found):
         results.append(("PASS", "notes", "notes.md sections complete, unique "
                                          "and in order"))
 
@@ -637,12 +667,20 @@ def validate(adir, kind="building", hero=False):
     check_notes(results, adir, kind)
     for level in range(len(BUDGETS[(kind, hero)])):
         check_tier(results, asset, adir, level, kind, hero)
-    if kind != "building":
+    if kind != "building" and kind not in VEHICLE_KINDS:
         check_plan_bounds(results, asset, adir, kind)
     check_textures(results, asset, adir, kind, hero)
     if kind in FOUR_TIERS:
         check_facts(results, asset, adir, hero)
-    if kind == "building":
+    if kind in VEHICLE_KINDS:
+        vehicle_checks.check(results, asset, adir, VEHICLE_KINDS[kind])
+        notes = ("palette: muted, realistic trim; painted panels grey, no body colour "
+                 "baked",
+                 "silhouette, roofline, wheels and lamp layout hold across tiers at "
+                 "30, 100 and 400 m (the review sheet)",
+                 "a generic composite: no recognisable make, badge or real livery",
+                 "the review sheet has been looked at (scripts/review_vehicle.py)")
+    elif kind == "building":
         notes = ("material palette within the muted/realistic range",
                  "silhouette, roofline and major recesses match across tiers",
                  "front faces -Y",

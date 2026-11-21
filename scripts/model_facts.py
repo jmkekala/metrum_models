@@ -38,6 +38,12 @@ read from the build and the exported files. Triangle counts and bounds are
 read from the .glb files themselves, so the sidecar describes what ships.
 
 Pure Python, no bpy: scripts/validate_asset.py runs check() on what is on disk.
+
+Vehicles write version 2 with "kind": "vehicle" (compose_vehicle(), the
+helpers under "vehicles" below); buildings and boundary props stay version
+1, unchanged. dumps(), write() and check() take either version. A vehicle
+build.py's facts() is completed by scripts/vehicle_build.py's VehicleAsset,
+which measures the wheels, lamps, glass and body from the LOD0 build.
 """
 
 import hashlib
@@ -317,6 +323,9 @@ def compose(name, here, variants, default_variant, levels, pivot, facts, blender
 def dumps(doc):
     """The file's text: one key per line, short arrays on one line, and an
     empty list (no doors, no storeys) as [] on its key's line."""
+    if doc.get("kind") == VEHICLE_KIND:
+        return _dumps_vehicle(doc)
+
     def flat(v):
         return json.dumps(v, ensure_ascii=False)
 
@@ -391,7 +400,11 @@ def check(doc, export_dir):
     every door of a DOOR_KINDS kind, on a footprint edge
     (within DOOR_TOL) or inside the outline, facing out along a unit
     horizontal normal. Passages, when present, are checked by _passages().
+    A version 2 vehicle document is checked by check_vehicle().
     """
+    if isinstance(doc, dict) and (doc.get("kind") == VEHICLE_KIND
+                                  or doc.get("version") == VEHICLE_VERSION):
+        return check_vehicle(doc, export_dir)
     problems = []
     if tuple(doc) != schema_keys(doc):
         problems.append("keys are %s, not the schema's %s"
@@ -592,3 +605,553 @@ def check_file(path):
     except ValueError as exc:
         return ["%s does not parse: %s" % (os.path.basename(path), exc)]
     return check(doc, os.path.dirname(path))
+
+
+# ================================================================= vehicles
+# Version 2, "kind": "vehicle" (CLAUDE.md, Vehicles). The field order is the
+# contract's example's. numpy and scripts/vehicle_ids.py are imported inside
+# the functions that need them, so the version 1 path stays standard-library.
+VEHICLE_VERSION = 2
+VEHICLE_KIND = "vehicle"
+VEHICLE_KEYS = ("schema", "version", "kind", "name", "path", "source", "license",
+                "bounds", "body", "axles", "wheels", "attributes", "lamps", "glass",
+                "cargo", "coupling", "interior", "lods", "textures", "variants",
+                "default_variant", "preview")
+BODY_KEYS = ("class", "length_m", "width_m", "width_mirrors_m", "height_m",
+             "wheelbase_m", "front_overhang_m", "rear_overhang_m",
+             "ground_clearance_m")
+AXLE_KEYS = ("z", "track_m", "steer", "twin")
+WHEEL_KEYS = ("id", "part", "axle", "side", "centre", "radius_m", "width_m", "steer")
+ATTRIBUTES = {"set": "COLOR_0", "r": "part", "g": "surface", "b": "paint", "version": 1}
+LAMP_KEYS = ("group", "lamp", "side", "position", "centre", "facing", "width_m",
+             "height_m")
+GLASS_KEYS = ("group", "id", "area_m2")
+CARGO_KEYS = ("min", "max", "door")
+CARGO_DOORS = ("rear", "side", "top")
+INTERIOR_KEYS = ("file", "triangles", "sha256")
+VEHICLE_LOD_KEYS = ("file", "triangles", "sha256", "wheel_parts", "lamp_ids", "glass_ids")
+VARIANT_KEYS = ("name", "albedo", "paint")
+AXLE_TOL = 0.01          # wheels whose centres lie this close in z share an axle
+GEOM_TOL = 1e-3
+
+
+# ---------------------------------------------------------- build frame
+def wheel_part(part, centre, radius, width, steer, twin=False):
+    """One wheel part, in the build frame: *centre* the wheel's centre
+    (its object's origin), *radius* and *width* the tyre's (both tyres of a
+    twin pair), *steer* whether the game turns it."""
+    return {"part": int(part), "centre": tuple(centre), "radius": float(radius),
+            "width": float(width), "steer": bool(steer), "twin": bool(twin)}
+
+
+def lamp_lens(lamp, points, facing):
+    """One lens of lamp id *lamp* from its faces' vertices *points* and
+    their outward *facing* (the area-weighted normal), in the build frame.
+
+    The rectangle is the faces' bounding rectangle in the plane across the
+    facing: width along up x facing (horizontal), height along facing x
+    width; a lens facing straight up takes width along X. Its centre is the
+    rectangle's centre, on the plane through the points' mean depth."""
+    import numpy as np
+    import vehicle_ids as vi
+    f = np.asarray(vi.to_gltf(facing), float)
+    f /= np.linalg.norm(f)
+    p = np.array([vi.to_gltf(q) for q in points], float)
+    u, v = vi.lens_axes(f)
+    pu, pv, pf = p @ u, p @ v, p @ f
+    cu, cv = (pu.min() + pu.max()) / 2.0, (pv.min() + pv.max()) / 2.0
+    c = u * cu + v * cv + f * pf.mean()
+    return {"lamp": int(lamp), "centre": vi.to_build(c), "facing": vi.to_build(f),
+            "width": float(pu.max() - pu.min()), "height": float(pv.max() - pv.min())}
+
+
+def glass_group(glass_id, area):
+    """One glass group present: its id and its area in square metres."""
+    return {"id": int(glass_id), "area": float(area)}
+
+
+def cargo_box(lo, hi, door="rear"):
+    """The load box of a van or truck, build-frame corners, and its door."""
+    return {"lo": tuple(lo), "hi": tuple(hi), "door": door}
+
+
+def interior_file(here, name):
+    """The optional interior mesh, export/<name>_interior.glb, once one is
+    built: its file, triangle count and hash. None until then."""
+    fn = name + "_interior.glb"
+    path = os.path.join(here, "export", fn)
+    if not os.path.isfile(path):
+        return None
+    return {"file": fn, "triangles": glb_stats(path)["triangles"], "sha256": sha256(path)}
+
+
+def wheel_name(axle, axles, side):
+    where = "front" if axle == 0 else "rear" if axle == axles - 1 else "axle%d" % axle
+    return "%s_%s" % (where, side)
+
+
+# --------------------------------------------------------------- compose
+def tier_ids(path):
+    """(parts, surfaces) present in one exported tier, read from COLOR_0."""
+    import vehicle_ids as vi
+    part, surf, _paint, _off = vi.decode(vi.tier(path)["color"])
+    return set(part.tolist()), set(surf.tolist())
+
+
+def compose_vehicle(name, here, variants, default_variant, levels, facts, blender):
+    """The version 2 document, from the vehicle facts and the files on disk.
+
+    *variants* is [(name, paint), ...]: paint false for a livery that paints
+    its panels in full colour. *facts* (build frame) holds "class", "body"
+    (measured: "lo"/"hi" the plan-and-height box without mirrors,
+    "width_mirrors", "ground_clearance"), "wheels" (wheel_part()), "lamps"
+    (lamp_lens()), "glass" (glass_group()), "cargo" (cargo_box() or None),
+    "coupling" (None) and "interior" (interior_file()). Bounds, triangle
+    counts, per-tier id flags and hashes are read from the exported files.
+    """
+    import vehicle_ids as vi
+    edir = os.path.join(here, "export")
+    unknown = set(facts) - {"class", "body", "wheels", "lamps", "glass", "cargo",
+                            "coupling", "interior"}
+    if unknown:
+        raise ValueError("vehicle facts have unknown keys: %s" % sorted(unknown))
+    cls = facts["class"]
+    if cls not in vi.CLASSES:
+        raise ValueError("class %r is not one of %s" % (cls, list(vi.CLASSES)))
+
+    def g(p):
+        return [_r(c) for c in vi.to_gltf(p)]
+
+    def entry(fn):
+        return {"file": fn, "sha256": sha256(os.path.join(edir, fn))}
+
+    # wheels and axles, front axle first, left before right
+    wheels = sorted(facts["wheels"], key=lambda w: w["part"])
+    if [w["part"] for w in wheels] != list(range(1, len(wheels) + 1)):
+        raise ValueError("wheel parts are %s, not 1..n" % [w["part"] for w in wheels])
+    zs = []
+    for w in wheels:
+        z = vi.to_gltf(w["centre"])[2]
+        if not any(abs(z - a) < AXLE_TOL for a in zs):
+            zs.append(z)
+    zs.sort(reverse=True)
+
+    def axle_of(w):
+        z = vi.to_gltf(w["centre"])[2]
+        return next(i for i, a in enumerate(zs) if abs(z - a) < AXLE_TOL)
+
+    axles = []
+    for i, z in enumerate(zs):
+        on = [w for w in wheels if axle_of(w) == i]
+        left = [w["centre"][0] for w in on if w["centre"][0] > 0]
+        right = [w["centre"][0] for w in on if w["centre"][0] < 0]
+        if len(left) != 1 or len(right) != 1:
+            raise ValueError("axle %d has %d left and %d right wheel parts"
+                             % (i, len(left), len(right)))
+        zz = sum(vi.to_gltf(w["centre"])[2] for w in on) / len(on)
+        axles.append({"z": _r(zz), "track_m": _r(left[0] - right[0]),
+                      "steer": any(w["steer"] for w in on),
+                      "twin": any(w["twin"] for w in on)})
+    wheel_docs = []
+    for w in wheels:
+        a = axle_of(w)
+        side = "left" if w["centre"][0] > 0 else "right"
+        wheel_docs.append({"id": wheel_name(a, len(axles), side), "part": w["part"],
+                           "axle": a, "side": side, "centre": g(w["centre"]),
+                           "radius_m": _r(w["radius"]), "width_m": _r(w["width"]),
+                           "steer": bool(w["steer"])})
+
+    b = facts["body"]
+    lo, hi = vi.to_gltf(b["lo"]), vi.to_gltf(b["hi"])
+    zmin, zmax = min(lo[2], hi[2]), max(lo[2], hi[2])
+    body = {"class": cls, "length_m": _r(zmax - zmin),
+            "width_m": _r(abs(hi[0] - lo[0])),
+            "width_mirrors_m": _r(b["width_mirrors"]),
+            "height_m": _r(max(lo[1], hi[1])),
+            "wheelbase_m": _r(axles[0]["z"] - axles[-1]["z"]) if axles else 0.0,
+            "front_overhang_m": _r(zmax - axles[0]["z"]) if axles else 0.0,
+            "rear_overhang_m": _r(axles[-1]["z"] - zmin) if axles else 0.0,
+            "ground_clearance_m": _r(b["ground_clearance"])}
+
+    order = {p: i for i, p in enumerate(vi.POSITIONS)}
+    sides = {s: i for i, s in enumerate(vi.SIDES)}
+    lamps = []
+    for ln in facts["lamps"]:
+        c, f = vi.to_gltf(ln["centre"]), vi.to_gltf(ln["facing"])
+        n = math.sqrt(sum(x * x for x in f))
+        f = [x / n for x in f]
+        lamps.append({"group": vi.LAMPS[ln["lamp"]][0], "lamp": int(ln["lamp"]),
+                      "side": vi.lens_side(c[0]), "position": vi.lens_position(f),
+                      "centre": [_r(x) for x in c], "facing": [_r(x) for x in f],
+                      "width_m": _r(ln["width"]), "height_m": _r(ln["height"])})
+    lamps.sort(key=lambda d: (d["lamp"], order[d["position"]], sides[d["side"]],
+                              -d["centre"][2], -d["centre"][1], -d["centre"][0]))
+    glass = [{"group": vi.GLASS.get(gl["id"], "glass_reserved_%d" % gl["id"]),
+              "id": int(gl["id"]), "area_m2": round(float(gl["area"]), 3)}
+             for gl in sorted(facts["glass"], key=lambda d: d["id"])]
+    cargo = facts.get("cargo")
+    if cargo is not None:
+        a, bb = vi.to_gltf(cargo["lo"]), vi.to_gltf(cargo["hi"])
+        cargo = {"min": [_r(min(p, q)) for p, q in zip(a, bb)],
+                 "max": [_r(max(p, q)) for p, q in zip(a, bb)],
+                 "door": cargo["door"]}
+
+    lods = []
+    for level in levels:
+        fn = "%s_lod%d.glb" % (name, level)
+        path = os.path.join(edir, fn)
+        parts, surfs = tier_ids(path)
+        lods.append({"file": fn, "triangles": glb_stats(path)["triangles"],
+                     "sha256": sha256(path),
+                     "wheel_parts": any(p > 0 for p in parts),
+                     "lamp_ids": any(s in vi.LAMP_IDS for s in surfs),
+                     "glass_ids": any(s in vi.GLASS_IDS for s in surfs)})
+    lod0 = glb_stats(os.path.join(edir, lods[0]["file"]))
+    normal = name + "_normal.png"
+    textures = {"orm": entry(name + "_orm.png"),
+                "emission": entry(name + "_emission.png"),
+                "normal": entry(normal) if os.path.isfile(os.path.join(edir, normal))
+                else None}
+    rel, src = source(here, name, blender)
+    doc = {
+        "schema": SCHEMA, "version": VEHICLE_VERSION, "kind": VEHICLE_KIND,
+        "name": name, "path": rel, "source": src, "license": LICENSE,
+        "bounds": {"min": [_r(v) for v in lod0["min"]],
+                   "max": [_r(v) for v in lod0["max"]]},
+        "body": body, "axles": axles, "wheels": wheel_docs,
+        "attributes": dict(ATTRIBUTES), "lamps": lamps, "glass": glass,
+        "cargo": cargo, "coupling": facts.get("coupling"),
+        "interior": facts.get("interior"),
+        "lods": lods, "textures": textures,
+        "variants": [{"name": v, "albedo": entry("%s_albedo_%s.png" % (name, v)),
+                      "paint": bool(p)} for v, p in variants],
+        "default_variant": default_variant,
+        "preview": {"file": "preview.png",
+                    "sha256": sha256(os.path.join(here, "preview.png"))},
+    }
+    return {k: doc[k] for k in VEHICLE_KEYS}
+
+
+def _dumps_vehicle(doc):
+    """One key per line; each entry of a list on its own line; body,
+    attributes and textures one member per line."""
+    def flat(v):
+        return json.dumps(v, ensure_ascii=False)
+
+    out = ["{"]
+    items = list(doc.items())
+    for i, (k, v) in enumerate(items):
+        comma = "," if i + 1 < len(items) else ""
+        if isinstance(v, list) and v and k in ("axles", "wheels", "lamps", "glass",
+                                               "lods", "variants"):
+            out.append("  %s: [" % flat(k))
+            out += ["    %s%s" % (flat(e), "," if j + 1 < len(v) else "")
+                    for j, e in enumerate(v)]
+            out.append("  ]" + comma)
+        elif isinstance(v, dict) and k in ("body", "textures"):
+            out.append("  %s: {" % flat(k))
+            sub = list(v.items())
+            out += ["    %s: %s%s" % (flat(a), flat(b), "," if j + 1 < len(sub) else "")
+                    for j, (a, b) in enumerate(sub)]
+            out.append("  }" + comma)
+        else:
+            out.append("  %s: %s%s" % (flat(k), flat(v), comma))
+    out.append("}")
+    return "\n".join(out) + "\n"
+
+
+# ----------------------------------------------------------------- check
+def _vec(v, n=3):
+    return isinstance(v, list) and len(v) == n and all(map(_number, v))
+
+
+def check_vehicle(doc, export_dir):
+    """Every problem with a version 2 vehicle document against the files
+    beside it: the schema's keys in order, each record's keys, ids and
+    names against the tables in scripts/vehicle_ids.py, the body block
+    against the bounds and the axles, wheels resting on the ground, the
+    hashes, triangle counts and id flags of the tiers, the variants against
+    the albedo files, and the lamp and glass lists against LOD0's ids both
+    ways. Whether a lens lies on its faces is scripts/vehicle_checks.py's."""
+    import vehicle_ids as vi
+    problems = []
+    if not isinstance(doc, dict) or tuple(doc) != VEHICLE_KEYS:
+        return ["keys are %s, not the vehicle schema's %s"
+                % (list(doc) if isinstance(doc, dict) else doc, list(VEHICLE_KEYS))]
+    if (doc["schema"], doc["version"], doc["kind"]) != (SCHEMA, VEHICLE_VERSION,
+                                                        VEHICLE_KIND):
+        problems.append("schema %r version %r kind %r"
+                        % (doc["schema"], doc["version"], doc["kind"]))
+    name = doc["name"]
+    if os.path.basename(doc["path"]) != name:
+        problems.append("path %r does not end in the name %r" % (doc["path"], name))
+    src = doc["source"]
+    if not isinstance(src, dict) or tuple(src) != ("commit", "dirty", "blender"):
+        problems.append("source keys are %s" % list(src))
+    elif len(src["commit"]) != 40 or set(src["commit"]) - set("0123456789abcdef"):
+        problems.append("source.commit is not a 40-hex commit")
+    if doc["license"] != LICENSE:
+        problems.append("license is %r" % doc["license"])
+
+    def hashed(what, fn, digest, base=export_dir):
+        path = os.path.normpath(os.path.join(base, fn))
+        if not os.path.isfile(path):
+            problems.append("%s: %s is missing" % (what, fn))
+        elif sha256(path) != digest:
+            problems.append("%s: %s does not match its recorded sha256" % (what, fn))
+
+    def keyed(what, rec, keys):
+        if not isinstance(rec, dict) or tuple(rec) != keys:
+            problems.append("%s: keys %s, not %s" % (
+                what, list(rec) if isinstance(rec, dict) else rec, list(keys)))
+            return False
+        return True
+
+    lo, hi = doc["bounds"]["min"], doc["bounds"]["max"]
+    if abs(lo[1]) > GEOM_TOL:
+        problems.append("bounds.min.y is %s, not 0" % lo[1])
+
+    body = doc["body"]
+    cls = None
+    if keyed("body", body, BODY_KEYS):
+        cls = body["class"]
+        if cls not in vi.CLASSES:
+            problems.append("body.class %r is not one of %s" % (cls, list(vi.CLASSES)))
+            cls = None
+        nums = [body[k] for k in BODY_KEYS[1:]]
+        if not all(_number(x) and x >= 0 for x in nums):
+            problems.append("body sizes must be numbers, not negative: %s" % nums)
+        else:
+            if abs(body["height_m"] - hi[1]) > GEOM_TOL:
+                problems.append("body.height_m %s is not bounds.max.y %s"
+                                % (body["height_m"], hi[1]))
+            if body["width_mirrors_m"] + GEOM_TOL < body["width_m"]:
+                problems.append("width_mirrors_m is under width_m")
+            if abs(body["width_mirrors_m"] - (hi[0] - lo[0])) > GEOM_TOL:
+                problems.append("width_mirrors_m %s is not the bounds' x extent %.4f"
+                                % (body["width_mirrors_m"], hi[0] - lo[0]))
+            if abs(body["length_m"] - (hi[2] - lo[2])) > GEOM_TOL:
+                problems.append("length_m %s is not the bounds' z extent %.4f"
+                                % (body["length_m"], hi[2] - lo[2]))
+            total = body["front_overhang_m"] + body["wheelbase_m"] + body["rear_overhang_m"]
+            if abs(total - body["length_m"]) > 2 * GEOM_TOL:
+                problems.append("overhangs and wheelbase add up to %.4f, not length_m %s"
+                                % (total, body["length_m"]))
+
+    axles = doc["axles"]
+    if not isinstance(axles, list) or not axles:
+        problems.append("axles must be a non-empty list")
+        axles = []
+    for i, a in enumerate(axles):
+        if not keyed("axles[%d]" % i, a, AXLE_KEYS):
+            continue
+        if not (_number(a["z"]) and _number(a["track_m"]) and a["track_m"] > 0
+                and isinstance(a["steer"], bool) and isinstance(a["twin"], bool)):
+            problems.append("axles[%d] is malformed: %s" % (i, a))
+    zs = [a.get("z") for a in axles if isinstance(a, dict)]
+    if zs != sorted(zs, reverse=True):
+        problems.append("axles are not front first: z %s" % zs)
+    if axles and body.get("wheelbase_m") is not None and _number(zs[0]) and \
+            abs(zs[0] - zs[-1] - body["wheelbase_m"]) > GEOM_TOL:
+        problems.append("wheelbase_m %s is not the first to the last axle, %.4f"
+                        % (body["wheelbase_m"], zs[0] - zs[-1]))
+
+    wheels = doc["wheels"]
+    if not isinstance(wheels, list) or not 4 <= len(wheels) <= vi.MAX_WHEELS:
+        problems.append("wheels must list 4..%d wheel parts" % vi.MAX_WHEELS)
+        wheels = wheels if isinstance(wheels, list) else []
+    for i, w in enumerate(wheels):
+        if not keyed("wheels[%d]" % i, w, WHEEL_KEYS):
+            continue
+        if w["part"] != i + 1:
+            problems.append("wheels[%d] is part %r, not %d (part order)" % (i, w["part"], i + 1))
+        if not (isinstance(w["axle"], int) and 0 <= w["axle"] < len(axles)):
+            problems.append("wheel %r: axle %r" % (w["id"], w["axle"]))
+            continue
+        if w["side"] not in ("left", "right") or not _vec(w["centre"]):
+            problems.append("wheel %r: side %r, centre %r" % (w["id"], w["side"], w["centre"]))
+            continue
+        if w["id"] != wheel_name(w["axle"], len(axles), w["side"]):
+            problems.append("wheel id %r is not %r" % (
+                w["id"], wheel_name(w["axle"], len(axles), w["side"])))
+        if (w["centre"][0] > 0) != (w["side"] == "left"):
+            problems.append("wheel %r: side %s but x %s (+x is the driver's left)"
+                            % (w["id"], w["side"], w["centre"][0]))
+        if abs(w["centre"][1] - w["radius_m"]) > GEOM_TOL:
+            problems.append("wheel %r: centre.y %s is not radius_m %s"
+                            % (w["id"], w["centre"][1], w["radius_m"]))
+        if not (w["radius_m"] > 0 and w["width_m"] > 0):
+            problems.append("wheel %r: radius and width must be positive" % w["id"])
+        ax = axles[w["axle"]]
+        if isinstance(ax, dict) and _number(ax.get("z")) and \
+                abs(w["centre"][2] - ax["z"]) > AXLE_TOL:
+            problems.append("wheel %r is not on axle %d's z" % (w["id"], w["axle"]))
+        if isinstance(ax, dict) and w["steer"] and not ax.get("steer"):
+            problems.append("wheel %r steers on an axle that does not" % w["id"])
+    if wheels and not any(isinstance(w, dict) and w.get("steer") for w in wheels):
+        problems.append("no wheel steers")
+
+    if doc["attributes"] != ATTRIBUTES:
+        problems.append("attributes are %s, not %s" % (doc["attributes"], ATTRIBUTES))
+
+    lamp_ids = set()
+    for i, ln in enumerate(doc["lamps"]):
+        if not keyed("lamps[%d]" % i, ln, LAMP_KEYS):
+            continue
+        lid = ln["lamp"]
+        if lid not in vi.LAMPS or ln["group"] != vi.LAMPS[lid][0]:
+            problems.append("lamps[%d]: group %r lamp %r" % (i, ln["group"], lid))
+            continue
+        lamp_ids.add(lid)
+        if ln["side"] not in vi.SIDES or ln["position"] not in vi.POSITIONS:
+            problems.append("lamps[%d]: side %r position %r" % (i, ln["side"], ln["position"]))
+        if not (_vec(ln["centre"]) and _vec(ln["facing"])):
+            problems.append("lamps[%d]: centre or facing is not [x, y, z]" % i)
+            continue
+        if abs(math.sqrt(sum(x * x for x in ln["facing"])) - 1.0) > GEOM_TOL:
+            problems.append("lamps[%d]: facing %s is not a unit vector" % (i, ln["facing"]))
+        if ln["side"] in vi.SIDES and vi.lens_side(ln["centre"][0]) != ln["side"]:
+            problems.append("lamps[%d] (%s): side %s but x %s"
+                            % (i, ln["group"], ln["side"], ln["centre"][0]))
+        if not (_number(ln["width_m"]) and _number(ln["height_m"])
+                and ln["width_m"] >= 0 and ln["height_m"] >= 0):
+            problems.append("lamps[%d]: width and height must be numbers" % i)
+    if cls:
+        missing = vi.required_lamps(cls, lamp_ids)
+        if missing:
+            problems.append("lamps: required lamp ids missing: %s" % missing)
+        if cls == "car" and not any(isinstance(ln, dict) and ln.get("lamp") == 2
+                                    and ln.get("side") == "centre" for ln in doc["lamps"]):
+            problems.append("lamps: a car has a high-mounted brake lamp (2, centre)")
+
+    glass_ids = []
+    for i, gl in enumerate(doc["glass"]):
+        if not keyed("glass[%d]" % i, gl, GLASS_KEYS):
+            continue
+        gid = gl["id"]
+        if gid not in vi.GLASS_IDS or gl["group"] != vi.GLASS.get(
+                gid, "glass_reserved_%d" % gid):
+            problems.append("glass[%d]: group %r id %r" % (i, gl["group"], gid))
+        if not (_number(gl["area_m2"]) and gl["area_m2"] > 0):
+            problems.append("glass[%d]: area %r" % (i, gl["area_m2"]))
+        glass_ids.append(gid)
+    if len(set(glass_ids)) != len(glass_ids) or glass_ids != sorted(glass_ids):
+        problems.append("glass groups repeat or are out of id order: %s" % glass_ids)
+    if cls:
+        missing = vi.required_glass(cls, set(glass_ids))
+        if missing:
+            problems.append("glass: required glass ids missing: %s" % missing)
+
+    cargo = doc["cargo"]
+    if cargo is not None:
+        if keyed("cargo", cargo, CARGO_KEYS):
+            if not (_vec(cargo["min"]) and _vec(cargo["max"]) and
+                    all(a < b for a, b in zip(cargo["min"], cargo["max"]))):
+                problems.append("cargo min/max are not a box")
+            if cargo["door"] not in CARGO_DOORS:
+                problems.append("cargo door %r is not one of %s" % (cargo["door"], CARGO_DOORS))
+    elif cls in ("van", "truck"):
+        problems.append("cargo is null; a %s states its load box" % cls)
+    if doc["coupling"] is not None:
+        problems.append("coupling must be null (reserved for trailers)")
+    interior = doc["interior"]
+    if interior is not None and keyed("interior", interior, INTERIOR_KEYS):
+        hashed("interior", interior["file"], interior["sha256"])
+
+    lods = doc["lods"]
+    if not isinstance(lods, list) or len(lods) != len(vi.LEVELS):
+        problems.append("lods must list all four tiers")
+        lods = lods if isinstance(lods, list) else []
+    lod0_ids = None
+    for i, lod in enumerate(lods):
+        if not keyed("lods[%d]" % i, lod, VEHICLE_LOD_KEYS):
+            continue
+        fn = lod["file"]
+        if fn != "%s_lod%d.glb" % (name, i):
+            problems.append("lods[%d] is %r" % (i, fn))
+        hashed("lods", fn, lod["sha256"])
+        path = os.path.join(export_dir, fn)
+        if not os.path.isfile(path):
+            continue
+        stats = glb_stats(path)
+        if stats["triangles"] != lod["triangles"]:
+            problems.append("%s has %d triangles, the sidecar says %d"
+                            % (fn, stats["triangles"], lod["triangles"]))
+        try:
+            parts, surfs = tier_ids(path)
+        except ValueError as exc:
+            problems.append("%s: %s" % (fn, exc))
+            continue
+        flags = {"wheel_parts": any(p > 0 for p in parts),
+                 "lamp_ids": any(s in vi.LAMP_IDS for s in surfs),
+                 "glass_ids": any(s in vi.GLASS_IDS for s in surfs)}
+        for k, v in flags.items():
+            if lod[k] is not v:
+                problems.append("lods[%d].%s is %r, the tier says %r" % (i, k, lod[k], v))
+        if i == 0:
+            lod0_ids = (parts, surfs)
+            for key in ("min", "max"):
+                if any(abs(a - b) > GEOM_TOL for a, b in zip(stats[key], doc["bounds"][key])):
+                    problems.append("bounds.%s %s is not %s's %s"
+                                    % (key, doc["bounds"][key], fn, stats[key]))
+            albedo = "%s_albedo_%s.png" % (name, doc["default_variant"])
+            if albedo not in stats["uris"]:
+                problems.append("%s references %s, not the default variant's %s"
+                                % (fn, stats["uris"], albedo))
+    if lod0_ids is not None:
+        parts, surfs = lod0_ids
+        listed = lamp_ids | set(glass_ids)
+        in_mesh = {s for s in surfs if s}
+        if in_mesh - listed:
+            problems.append("LOD0 carries surface ids no list names: %s"
+                            % sorted(in_mesh - listed))
+        if listed - in_mesh:
+            problems.append("listed lamp or glass ids missing from LOD0: %s"
+                            % sorted(listed - in_mesh))
+        want = set(range(len(wheels) + 1))
+        if parts != want:
+            problems.append("LOD0 parts are %s, the wheels list says %s"
+                            % (sorted(parts), sorted(want)))
+
+    tex = doc["textures"]
+    if not isinstance(tex, dict) or tuple(tex) != ("orm", "emission", "normal"):
+        problems.append("textures keys are %s, not orm, emission, normal"
+                        % (list(tex) if isinstance(tex, dict) else tex))
+    else:
+        for key, t in tex.items():
+            if t is None:
+                if key != "normal":
+                    problems.append("textures.%s is required" % key)
+                elif os.path.isfile(os.path.join(export_dir, "%s_normal.png" % name)):
+                    problems.append("textures.normal is null but %s_normal.png exists" % name)
+                continue
+            if tuple(t) != ("file", "sha256") or t["file"] != "%s_%s.png" % (name, key):
+                problems.append("textures.%s is %r" % (key, t))
+                continue
+            hashed("textures." + key, t["file"], t["sha256"])
+
+    names = []
+    for i, v in enumerate(doc["variants"]):
+        if not keyed("variants[%d]" % i, v, VARIANT_KEYS):
+            continue
+        names.append(v["name"])
+        a = v["albedo"]
+        if not isinstance(a, dict) or tuple(a) != ("file", "sha256") or \
+                a["file"] != "%s_albedo_%s.png" % (name, v["name"]):
+            problems.append("variant %r albedo is %r" % (v["name"], a))
+        else:
+            hashed("variants", a["file"], a["sha256"])
+        if not isinstance(v["paint"], bool):
+            problems.append("variant %r: paint %r is not a boolean" % (v["name"], v["paint"]))
+    on_disk = sorted(f[len(name) + 8:-4] for f in os.listdir(export_dir)
+                     if f.startswith(name + "_albedo_") and f.endswith(".png"))
+    if sorted(names) != on_disk or len(set(names)) != len(names):
+        problems.append("variants %s are not the albedo files %s" % (names, on_disk))
+    if doc["default_variant"] not in names:
+        problems.append("default_variant %r is not a variant" % doc["default_variant"])
+    pv = doc["preview"]
+    if not isinstance(pv, dict) or tuple(pv) != ("file", "sha256") or pv["file"] != "preview.png":
+        problems.append("preview is %r" % pv)
+    else:
+        hashed("preview", pv["file"], pv["sha256"], os.path.dirname(os.path.normpath(export_dir)))
+    return problems
