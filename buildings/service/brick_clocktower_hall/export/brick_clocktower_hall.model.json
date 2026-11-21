@@ -3,7 +3,7 @@
   "version": 1,
   "name": "brick_clocktower_hall",
   "path": "buildings/service/brick_clocktower_hall",
-  "source": {"commit": "c0a48351952ae0b4ff02f130aea49e7f6a35a490", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "15aabec34866097bc0f0d50469547d580e0a8b76", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-24.85, 0.0, -14.175], "max": [24.85, 24.6, 14.175]},
   "footprint": [
