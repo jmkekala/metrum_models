@@ -126,7 +126,7 @@ FLAP_TOP = 1.528
 FIELD = (0.815, 1.02, 0.70, 1.452, 0.05, 0.010)   # as GRILLE, then its depth
 SLOT_F = (0.21, 1.492, 0.014)         # centre intake slot: half width, z, half height
 GRAB_F = (0.56, 0.76, 1.492, 0.022)   # grab handle recesses: |x|0, |x|1, z, half height
-PIVOTS = (0.0, 0.86)                  # wiper pivot bosses on the cowl, |x|
+PIVOT_X = 0.45                        # the two wiper pivots' bosses on the cowl, |x| (the texture is mirrored)
 # Corner air deflectors: a painted blade rooted in the front panel and standing
 # off the cab's corner toward its tail, an open slot behind it. z0, z1 and
 # stations (arc fraction, outer and inner face off the corner's surface).
@@ -164,6 +164,7 @@ CSTEP = (0.44, 0.66, 0.925, 0.08)     # centre recess between the lamp pods: hal
 INTAKE = (0.34, 0.72, 0.465, 0.535)   # the chin's intake slots: |x|0, |x|1, z0, z1
 FOG = (0.875, 0.497, 0.062, 0.031, 0.012)   # front fog lamps on the chin: centre |x|, z, half width, half height, depth
 POD = 0.040                           # the lamp pods' dark insert, this far round each unit
+POD_STEP = (0.014, 0.006)             # the step down into the unit at LOD0: its width and depth
 TOWEYE = (0.50, 0.70, 0.034)          # tow-eye covers between pods and recess: |x|, z, half size
 TREAD_X = 0.52                        # the step tread on the bumper's top, half width
 
@@ -179,6 +180,8 @@ DEFL_Z = (DEFL_Z0, 2.94, 3.16, 3.34, 3.46, 3.535)
 DEFL_W = (1.22, 1.245)                # half width at the back (by the box corners), base and from 60 % up
 DEFL_CROWN = 0.05                     # the half width lost toward the top, a rounded shoulder
 DEFL_TAPER = 0.24                     # the sides close in toward the nose, x per s
+DEFL_FIELD = (0.17, 0.14, 0.20, 0.008)   # the front's recessed field: in from the corner arc, from
+#                                     the foot, from the top (along the nose), depth
 
 # box
 BOX_S0, BOX_S1 = 1.90, 7.90
@@ -215,7 +218,8 @@ REAR_LENS_Z = (0.585, 0.705)
 REAR_CELLS_L = [(1.16, 1.08, 4), (1.08, 0.96, 3), (0.96, 0.87, 11), (0.87, 0.78, 6)]
 REAR_CELLS_R = [(1.16, 1.08, 5), (1.08, 0.96, 3), (0.96, 0.87, "reflector"), (0.87, 0.78, 6)]
 PLATE_R = (0.26, 0.42, 0.53)
-MUDGUARD = (5.22, 6.58, 0.58, 1.255, 1.07, 1.11)   # s0, s1, |x|0, |x|1, z0, z1
+MUDGUARD = (5.22, 6.58, 0.58, 1.255, 1.07, 1.11)   # s0, s1, |x|0, |x|1, z0, z1 (LOD1's flat guard)
+MUDGUARD_ARC = (0.577, 0.615, 20.0, 160.0)   # LOD0's, round the twins: radii about the axle, from, to
 
 # glass and lamp groups the truck carries
 MARKER = 15
@@ -248,6 +252,7 @@ for _k, _n in enumerate(LENS_KINDS):
 # The headlamp unit's lenses are mapped whole, at about 240 texels per metre,
 # in the open field right of the box front: the white ones together, the
 # amber indicator a block away.
+REG["insert"] = (2 + 64 * 12, 578, 28, 28)
 REG.update({"lens_high": (260, 660, 48, 52), "lens_low": (324, 660, 40, 52),
             "lens_drl": (260, 728, 84, 18), "lens_ind": (452, 660, 30, 66)})
 PAD = 2.0                              # region origin to the first mapped texel
@@ -454,11 +459,11 @@ BASE = {
     M_STEP: (44, 44, 45), M_SEAL: (24, 24, 25), M_TAPE: (214, 170, 40),
     M_TAPE_RED: (170, 40, 34), M_PIC_LAMP: (150, 152, 150), M_PIC_TAIL: (110, 28, 24),
     M_HANDLE: (30, 30, 31), M_ALU_DARK: (120, 122, 123), M_BEZEL: (186, 188, 190),
-    M_INSERT: (27, 27, 28), M_LENS_DIV: (246, 247, 248),
+    M_INSERT: (27, 27, 28), M_LENS_DIV: (226, 228, 231),
     M_CAB_FAR: (0, 0, 0), M_BOX_FAR: (0, 0, 0),         # set below from FAR_GREY
 }
-LENS_UNLIT = {"low": (198, 201, 205), "high": (176, 179, 184), "drl": (236, 237, 239),
-              "ind": (206, 124, 34), "fog_front": (190, 193, 198), "tail_brake": (124, 26, 24), "reverse": (178, 180, 180),
+LENS_UNLIT = {"low": (202, 205, 208), "high": (198, 201, 205), "drl": (213, 215, 218),
+              "ind": (206, 124, 34), "fog_front": (198, 201, 205), "tail_brake": (124, 26, 24), "reverse": (178, 180, 180),
               "fog": (112, 24, 22), "mark_white": (180, 182, 182), "mark_amber": (184, 110, 30),
               "mark_red": (128, 26, 24)}
 for _n, _m in M_LENS.items():
@@ -803,10 +808,9 @@ def paint_cab(P):
     slat = cowl & (x < whw - 0.03) & (np.mod(z - COWL_Z, 0.022) < 0.009)
     mid[slat] = M_PLASTIC
     hgt[slat] += 0.004
-    for px in PIVOTS:
-        boss = cowl & (np.hypot(x - px, z - (COWL_Z + wz0) / 2) < 0.028)
-        mid[boss] = M_HOUSING
-        hgt[boss] += 0.012
+    boss = cowl & (np.hypot(x - PIVOT_X, z - (COWL_Z + wz0) / 2) < 0.028)
+    mid[boss] = M_HOUSING
+    hgt[boss] += 0.012
     # the front flap: a shut line all round it (the corner panels' lines and
     # one under the brow)
     gap(cab & front & (np.abs(x - CORNER_X) < gw / 2) & (z > Z_LEDGE + 0.03) & (z < FLAP_TOP))
@@ -926,6 +930,20 @@ def paint_cab(P):
         (np.abs(np.abs(v + 0.30 - 1.10) - 0.26) < 0.006) & (np.abs(u - CAB_HW) < 0.38)))
     # deflector: U round each plan ring from the nose, V up the nose's profile
     P.fill("defl", M_CAB)
+    # a shallow recessed field with rounded corners on the fairing's front
+    # (relief only): it follows the nose's width, 8 mm deep, a 16 mm bevel
+    xes = [float(plan_frame(*r[1:])[0]) for r in DEFL.rings]
+    dx, dy, dw, dh = REG["defl"]
+    sy, sx, Y_, X_ = P.c.field(dx, dx + dw, dy, dy + dh)
+    U = (X_ - dx - PAD) / PPM
+    V = (Y_ - dy - PAD) / PPM
+    fr = 0.10
+    ex = np.interp(V, DEFL.v, xes) - DEFL_FIELD[0] - U
+    ev = np.minimum(V - DEFL_FIELD[1], DEFL.v[-1] - DEFL_FIELD[2] - V)
+    dfl = np.where((ex < fr) & (ev < fr), fr - np.hypot(fr - ex, fr - ev), np.minimum(ex, ev))
+    hh = P.c.height[sy, sx]
+    hh -= DEFL_FIELD[3] * np.clip(dfl / 0.016, 0.0, 1.0)
+    P.c.height[sy, sx] = hh
     # grille: horizontal slats over darkness (the LOD0 recess's floor)
     P.fill("grille", M_GRILLE_HOLE)
     P.where("grille", lambda u, v: np.mod(v - 0.025, 0.066) < 0.026, mid=M_GRILLE,
@@ -994,7 +1012,7 @@ def paint_patches(P):
                       ("rubber", M_RUBBER), ("plastic", M_PLASTIC), ("step", M_STEP),
                       ("housing", M_HOUSING), ("mirror", M_MIRROR), ("seal", M_SEAL),
                       ("mirror_body", M_PLASTIC), ("bezel", M_BEZEL),
-                      ("mesh", M_GRILLE_HOLE), ("cabpaint", M_CAB)):
+                      ("mesh", M_GRILLE_HOLE), ("cabpaint", M_CAB), ("insert", M_INSERT)):
         P.fill(name, mid)
     # step treads: non-slip ribs and a light nosing
     P.where("step", lambda u, v: np.mod(v, 0.035) < 0.012, add_h=0.002, shade=1.3)
@@ -1020,11 +1038,10 @@ def paint_patches(P):
             mid=M_GRILLE, add_h=0.004)
     for name in ("low", "high", "drl", "ind", "fog_front"):
         # Each front lens is mapped whole onto its patch (inner edge to outer,
-        # foot to head): a silver reflector behind clear glass, its cells told
-        # apart by tone and shape and parted by light chrome dividers. Nothing
-        # inside a unit is darker than its lens's own tone: no dark joints,
-        # rings or outlines, and no glints; the reflector's structure is ribs
-        # lighter than the lens, a shelf a tone down and a soft bowl.
+        # foot to head): bright silver behind clear glass, a field of about
+        # sRGB 200, its cells parted by light chrome dividers. No darker
+        # line anywhere inside a unit (no joints, rings, outlines or flute
+        # lines) and no glints: the structure is soft tonal shading only.
         x, y, w, h = REG["lens_" + name]
         sy, sx, Y_, X_ = P.c.field(x, x + w, y, y + h)
         u, v = (X_ - x - 1.5) / (w - 3.0), (Y_ - y - 1.5) / (h - 3.0)
@@ -1036,23 +1053,26 @@ def paint_patches(P):
         r = 0.18
         d = r - np.hypot(np.maximum(r - du, 0), np.maximum(r - dv, 0))   # rounded inset
         rim = d < 0.055
-        rr = np.hypot((u - 0.5) * 2.0, (v - 0.58) * 2.0)
-        flute = lambda n: np.where(np.mod(u * n, 1.0) < 0.32, 1.13, 1.0)   # noqa: E731  light ribs
-        if name == "low":
-            # a smooth bright bowl over a shelf a tone down, the shelf ribbed in light
-            body = np.where(v < 0.42, 0.90 * flute(6.0), np.clip(1.10 - 0.08 * rr ** 2, 1.0, 1.10))
-        elif name == "high":
-            # light ribs from foot to head, a shade lighter toward the head
-            body = flute(7.0) * (0.96 + 0.10 * v)
+        # the reflector: a soft bowl across the whole cell, a smooth fall
+        # from the field (sRGB about 200) to a darker heart (about 162) with
+        # no edge, and in it a small soft bulb cap, a low oval a shade
+        # darker still (about 150)
+        cu, cv, ru, rv_ = {"low": (0.5, 0.52, 0.52, 0.52), "high": (0.5, 0.52, 0.54, 0.52),
+                           "fog_front": (0.5, 0.5, 0.52, 0.56)}.get(name, (0.5, 0.5, 1, 1))
+        rr = np.hypot((u - cu) / ru, (v - cv) / rv_)
+        bowl = 1.0 - 0.39 * np.clip(1.0 - rr ** 2, 0.0, 1.0) ** 1.5
+        cap = -0.10 * np.exp(-(((u - cu) / 0.11) ** 2 + ((v - cv) / 0.045) ** 2))
+        if name in ("low", "high", "fog_front"):
+            body = bowl + cap
+            if name == "high":       # faint upright flutes, lighter than the bowl
+                body = body * np.where(np.mod(u * 9.0, 1.0) < 0.4, 1.04, 1.0)
         elif name == "ind":
-            body = np.where(np.mod(v * 7.0, 1.0) < 0.35, 1.10, 1.0)
-        elif name == "fog_front":
-            body = flute(5.0) * np.clip(1.06 - 0.10 * rr ** 2, 0.96, 1.06)
+            body = np.where(np.mod(v * 7.0, 1.0) < 0.35, 1.08, 1.0)
         else:
             body = np.ones_like(u)
         P.c.shade[sy, sx] *= body
         if name in ("low", "high", "fog_front"):
-            P.c.height[sy, sx] -= 0.004 * np.clip(1.0 - rr, 0, 1)
+            P.c.height[sy, sx] -= 0.005 * np.clip(1.0 - rr ** 2, 0, 1)
         if name == "ind":
             P.c.shade[sy, sx][rim] *= 1.10            # a lighter amber edge, no chrome: it blinks
         else:

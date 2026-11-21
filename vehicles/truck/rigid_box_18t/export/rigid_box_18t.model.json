@@ -4,7 +4,7 @@
   "kind": "vehicle",
   "name": "rigid_box_18t",
   "path": "vehicles/truck/rigid_box_18t",
-  "source": {"commit": "231cbdb49b7790597307c600fbf8bbd71935b3ef", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "753f37a43e39aa2812aad98d36d8e79880394aa5", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-1.493, 0.0, -3.95], "max": [1.493, 3.7, 3.95]},
   "body": {
@@ -68,20 +68,20 @@
   "coupling": null,
   "interior": null,
   "lods": [
-    {"file": "rigid_box_18t_lod0.glb", "triangles": 4458, "sha256": "acdbded8c1debb2b1483e14b27ec3db1fce144d6bdea04ac514ab1d16faf9790", "wheel_parts": true, "lamp_ids": true, "glass_ids": true},
+    {"file": "rigid_box_18t_lod0.glb", "triangles": 4490, "sha256": "1485ed84591b7ddea346b812e7b45e16990eb552a3dcd0d77752df4802cca047", "wheel_parts": true, "lamp_ids": true, "glass_ids": true},
     {"file": "rigid_box_18t_lod1.glb", "triangles": 1398, "sha256": "75bd0ef19c49d092bc900f152e41fbea4e8f5b78aa3f475445f9d469192b9f8b", "wheel_parts": true, "lamp_ids": true, "glass_ids": true},
     {"file": "rigid_box_18t_lod2.glb", "triangles": 348, "sha256": "a7dc7edf750af4229626fd5283dda847b1b1fb7c9ef269493a07e9b4b05b63cb", "wheel_parts": false, "lamp_ids": true, "glass_ids": true},
     {"file": "rigid_box_18t_lod3.glb", "triangles": 60, "sha256": "0e7647188d3f8dd8b21bf3dcc975a29ecbec4dca3663f3a0f6bbfbb58c3baa18", "wheel_parts": false, "lamp_ids": false, "glass_ids": false}
   ],
   "textures": {
-    "orm": {"file": "rigid_box_18t_orm.png", "sha256": "12167808e63a91a2968206d2715e605f7ff3c6dc941959f481d55839dd4d948a"},
-    "emission": {"file": "rigid_box_18t_emission.png", "sha256": "6993d54ae396e38ce6565369b71b778d7bc74887e4136adfdf095099c3b6a47c"},
-    "normal": {"file": "rigid_box_18t_normal.png", "sha256": "9a7b26dea437df470be9eb8ed2b91590243af9c12d893333487bbfe4d0e06528"}
+    "orm": {"file": "rigid_box_18t_orm.png", "sha256": "b3980ab63176181196a7701c39ada1d99f8b477f8be5f4d5cb13cd876a51aedf"},
+    "emission": {"file": "rigid_box_18t_emission.png", "sha256": "092329a5e1cf21b7f3ebd5356361c1be1506ddb5936ebc14be1331c283f2a5c9"},
+    "normal": {"file": "rigid_box_18t_normal.png", "sha256": "aaf2f9076af6690d6144218a7081a4fabacba371f1a1d88f5e9ef01ec785e79f"}
   },
   "variants": [
-    {"name": "plain", "albedo": {"file": "rigid_box_18t_albedo_plain.png", "sha256": "a3fa9dd344ac267a313725be94e25fd81acc8d5bf20748cc2ff132a0092f7a2a"}, "paint": true},
-    {"name": "haulier", "albedo": {"file": "rigid_box_18t_albedo_haulier.png", "sha256": "d0cd738cda45c4e49092ffb2847fc798ad8f2da72b8a9c11055a810a6b021570"}, "paint": false}
+    {"name": "plain", "albedo": {"file": "rigid_box_18t_albedo_plain.png", "sha256": "87a7c8d548638bcff015f3e064028dbe0dc76fc935435ccf12a65be8615e3457"}, "paint": true},
+    {"name": "haulier", "albedo": {"file": "rigid_box_18t_albedo_haulier.png", "sha256": "c3ccc1229c7bc371f340275eb8c18cc15a17736de711d9c3622f002311ae5820"}, "paint": false}
   ],
   "default_variant": "plain",
-  "preview": {"file": "preview.png", "sha256": "d1a29985d58199131f7fd205a326cdc1a1b107ad881afd8dcf74d02c020389a4"}
+  "preview": {"file": "preview.png", "sha256": "18aacee7904939778a400e6d272c5c692956e174f48e847c7b69cd61694a90d9"}
 }

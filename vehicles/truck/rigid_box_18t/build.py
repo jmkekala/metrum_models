@@ -138,9 +138,9 @@ def uv_lod3_rear(co):
 
 PAINT_CAB = K("cabpaint", paint=True) if "cabpaint" in L.REG else None
 (DARK, LINER, ALU, GUARD, RUBBER, PLASTIC, STEP, HOUSING, SEAL, MBODY, MGLASS, BEZEL, MESH,
- REFLECTOR) = (
+ REFLECTOR, INSERT) = (
     K(n) for n in ("dark", "liner", "alu", "guard", "rubber", "plastic", "step", "housing",
-                   "seal", "mirror_body", "mirror", "bezel", "mesh", "reflector"))
+                   "seal", "mirror_body", "mirror", "bezel", "mesh", "reflector", "insert"))
 
 
 def lamp(lid, colour=None):
@@ -476,6 +476,32 @@ def headlamp_cells(sgn, grid=True):
     ]
 
 
+def pod_cutter(c, U, V_, N, hu, hv, cells, depth=0.030, out=0.14):
+    """LOD0's headlamp cutter: the unit's recess (cells its floor, a light
+    bezel its walls) inside a shallow step, POD_STEP wide and deep, whose
+    ledge is the gloss black insert: a real rim round the unit."""
+    e, ds = L.POD_STEP
+    c, U, V_, N = (np.asarray(v, float) for v in (c, U, V_, N))
+
+    def p(a, b, t):
+        return P(*(c + U * a + V_ * b + N * t))
+    B = new()
+    for a0, a1, b0, b1, k in cells:
+        put(B, [p(a0, b0, -depth), p(a1, b0, -depth), p(a1, b1, -depth), p(a0, b1, -depth)], k,
+            False)
+    inner = [(-hu, -hv), (hu, -hv), (hu, hv), (-hu, hv)]
+    outer = [(-hu - e, -hv - e), (hu + e, -hv - e), (hu + e, hv + e), (-hu - e, hv + e)]
+    for i in range(4):
+        (a0, b0), (a1, b1) = inner[i], inner[(i + 1) % 4]
+        (c0, d0), (c1, d1) = outer[i], outer[(i + 1) % 4]
+        put(B, [p(a0, b0, -depth), p(a1, b1, -depth), p(a1, b1, -ds), p(a0, b0, -ds)], BEZEL,
+            False)
+        put(B, [p(a0, b0, -ds), p(a1, b1, -ds), p(c1, d1, -ds), p(c0, d0, -ds)], INSERT, False)
+        put(B, [p(c0, d0, -ds), p(c1, d1, -ds), p(c1, d1, out), p(c0, d0, out)], INSERT, False)
+    put(B, [p(a, b, out) for a, b in outer], INSERT, False)
+    return obj(B, "pod")
+
+
 def shell_cutters(level):
     """Arches, screen, door glass, repeaters and headlamp units; at LOD0
     also the grille, the step wells, the front plate and the centre step."""
@@ -527,8 +553,11 @@ def shell_cutters(level):
         # the headlamp unit, its floor square to the bowed face
         c, U, V_, N = lamp_frame(sgn)
         _xc, _zc, hu, hv_ = L.HEADLAMP
-        out.append(obj(obox(new(), c, U, V_, N, hu, hv_, 0.030, 0.14, headlamp_cells(sgn),
-                            BEZEL), "lamp"))
+        if level == 0:
+            out.append(pod_cutter(c, U, V_, N, hu, hv_, headlamp_cells(sgn)))
+        else:
+            out.append(obj(obox(new(), c, U, V_, N, hu, hv_, 0.030, 0.14, headlamp_cells(sgn),
+                                BEZEL), "lamp"))
         # the fog lamp in the chin's corner, in LOD0's plane on every tier
         c, U, V_, N = fog_frame(sgn)
         _xc, _zc, hu, hv_, fd = L.FOG
@@ -661,10 +690,11 @@ def visor(level):
     return obj(split_quads(B), "visor")
 
 
-def arc_prism(sgn, r0, r1, x0, x1, a0, a1, n, kind, smooth=True):
-    """A band round the front axle from angle a0 to a1 (degrees, 0 at the
-    front, 90 over the top), radii r0..r1, across |x| x0..x1."""
-    sc, zc = L.FRONT_AXLE, L.R_WHEEL
+def arc_prism(sgn, r0, r1, x0, x1, a0, a1, n, kind, smooth=True, axle=None):
+    """A band round an axle (the front one unless *axle* names a station)
+    from angle a0 to a1 (degrees, 0 at the front, 90 over the top), radii
+    r0..r1, across |x| x0..x1."""
+    sc, zc = L.FRONT_AXLE if axle is None else axle, L.R_WHEEL
     ang = [math.radians(a0 + (a1 - a0) * k / n) for k in range(n + 1)]
     outer = [(sc - r1 * math.cos(a), zc + r1 * math.sin(a)) for a in ang]
     inner = [(sc - r0 * math.cos(a), zc + r0 * math.sin(a)) for a in reversed(ang)]
@@ -680,7 +710,7 @@ def cab_addons(level):
     out = [visor(level)]
     if level == 0:
         r0, r1, x0, x1, a0, a1 = L.FLARE
-        out += [arc_prism(sgn, r0, r1, x0, x1, a0, a1, 6, PLASTIC) for sgn in (1, -1)]
+        out += [arc_prism(sgn, r0, r1, x0, x1, a0, a1, 5, PLASTIC) for sgn in (1, -1)]
         out += blades(L.BLADE)
     return out
 
@@ -769,7 +799,9 @@ def wipers():
     nrm = unit((0.0, -(r4[0] - r3[0]), r4[1] - r3[1]))
     xe = L.SHELL.xe(1.75)
     out = []
-    for a0, a1, z0, z1 in ((-0.86, -0.14, 1.71, 1.78), (0.04, 0.76, 1.71, 1.78)):
+    # two parallel arms, each from its pivot over a boss on the cowl
+    for a0, a1, z0, z1 in ((-L.PIVOT_X, -L.PIVOT_X - 0.48, 1.705, 1.775),
+                           (L.PIVOT_X, L.PIVOT_X - 0.48, 1.705, 1.775)):
         f0 = np.array((a0, L.SHELL.front(a0, z0, L.I_SCR0, L.I_SCR1) + 0.03, z0))
         f1 = np.array((a1, L.SHELL.front(a1, z1, L.I_SCR0, L.I_SCR1) + 0.03, z1))
         sag = L.BOW / xe ** 2 * ((a1 - a0) / 2) ** 2
@@ -898,19 +930,18 @@ def chassis(level):
         out.append(rear_lamp(sgn, level))
     # mudguards and flaps over the twins
     m0, m1, mx0, mx1, mz0, mz1 = L.MUDGUARD
-    prof = [(m0, 0.86), (m0, mz1), (m1, mz1), (m1, 0.50), (m1 - 0.04, 0.50),
-            (m1 - 0.04, mz0), (m0 + 0.04, mz0), (m0 + 0.04, 0.86)]
     for sgn in (1, -1):
         if level >= 1:
             # a flat guard and one rubber lip and flap behind it
             out.append(xbox(sgn * mx0, sgn * mx1, m0, m1 - 0.04 - G, mz0, mz1, PLASTIC))
             out.append(xbox(sgn * mx0, sgn * mx1, m1 - 0.04, m1, 0.25, mz1, RUBBER))
             continue
-        B = new()
-        a0, a1 = sorted((sgn * mx0, sgn * mx1))
-        prism(B, prof, "x", a0, a1, PLASTIC, PLASTIC)
-        out.append(obj(B, "mudguard"))
-        out.append(xbox(sgn * 0.62, sgn * 1.24, m1 + G, m1 + 0.02, 0.25, 0.62, RUBBER))
+        # LOD0: a guard round the twins, its flap under its tail
+        r0, r1, g0, g1 = L.MUDGUARD_ARC
+        out.append(arc_prism(sgn, r0, r1, mx0, mx1, g0, g1, 4, PLASTIC, axle=L.REAR_AXLE))
+        tail = L.REAR_AXLE + r0 * math.cos(math.radians(g0))
+        out.append(xbox(sgn * 0.62, sgn * 1.24, tail + 0.004, tail + 0.024, 0.25,
+                        L.R_WHEEL + r0 * math.sin(math.radians(g0)) - 0.015, RUBBER))
     # rear axle housings and differential
     zc = L.R_WHEEL
     if level == 0:
@@ -1279,8 +1310,16 @@ def check_layout():
                         % (L.ARCH[3], reach))
     if L.ARCH[2] < math.hypot(L.R_WHEEL, hw) + 0.02:
         problems.append("arch radius too small for a turned wheel")
-    if L.MUDGUARD[4] < 2 * L.R_WHEEL + 0.015:
+    rm0, rm1, _g0, _g1 = L.MUDGUARD_ARC
+    if L.MUDGUARD[4] < 2 * L.R_WHEEL + 0.015 \
+            or rm0 * math.cos(math.radians(17.5)) < L.R_WHEEL + 0.028:
         problems.append("mudguard too low over the twins")
+    if L.R_WHEEL + rm1 > L.BOX_Z0 - 0.01:
+        problems.append("round mudguard reaches the box's floor")
+    xl, zl, hul, hvl = L.HEADLAMP
+    if zl - hvl - L.POD_STEP[0] < L.Z_CHIN + 0.008 \
+            or xl + hul + L.POD_STEP[0] > L.SHELL.xe(zl, *L.I_FACE) - 0.008:
+        problems.append("the lamp pod's step leaves the bumper's face")
     s = L.MARK_SIDE_S
     if s[0] > 3.0 or L.LENGTH - s[-1] > 1.0 + 0.05 or max(b - a for a, b in zip(s, s[1:])) > 3.0:
         problems.append("side marker spacing outside UN R48")

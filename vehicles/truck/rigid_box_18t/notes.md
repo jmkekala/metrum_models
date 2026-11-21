@@ -106,8 +106,10 @@ at the centre of the 7.90 x 2.53 plan box.
   degrees) and 30 mm deep, its walls a light bezel: the amber indicator
   at the outer end (0.105 x 0.25), the low (0.145 x 0.195) and high beam
   (0.18 x 0.195) reflectors and the daytime strip under them (0.325 x
-  0.055), six cells that share every corner. LOD1 cuts the same recess in
-  LOD0's planes; LOD2 carries the lenses on plaques in those planes.
+  0.055), six cells that share every corner. At LOD0 the recess sits
+  inside a step 14 mm wide and 6 mm deep whose ledge is the gloss black
+  insert, a real rim round the unit. LOD1 cuts the plain recess in LOD0's
+  planes; LOD2 carries the lenses on plaques in those planes.
 - **Fog lamps:** a pair in the chin's corners (centre |x| 0.875, z 0.497,
   0.124 x 0.062, recessed 12 mm, turned square to the bow, each in a gloss
   black insert). LOD1 cuts the same recesses, deeper, through its flat
@@ -127,7 +129,7 @@ at the centre of the 7.90 x 2.53 plan box.
   rooted inside the front panel at a tenth of the corner arc and standing
   off the corner toward its tail (48 mm out, 14 mm thick), an open slot
   34 mm wide behind it, drawn dark on the corner panel. Black fender lips
-  round the arches (six segments). This union is not snapped to the
+  round the arches (five segments). This union is not snapped to the
   boolean grid: none of them shares a wall with the cab.
 - **Closed solids that touch nothing:** the plate's plinth on the chin
   (0.54 x 0.114, 18 mm deep, LOD0; its face is the plate); the cab's side
@@ -136,7 +138,8 @@ at the centre of the 7.90 x 2.53 plan box.
   following the leaning side; LOD0 and LOD1); the front mudguards' rear
   quarters behind the cab with their flaps (LOD0; LOD1 one plate a side);
   LOD1's blades (a short tail plate off its own, more conical corner);
-  parked wipers (LOD0).
+  two parked wiper arms (LOD0), parallel, each from its pivot 0.45 either
+  side of the centre line over a boss drawn on the cowl.
 - **Box:** one closed solid built face by face, no booleans: aluminium
   bottom and top rails and corner posts proud by 12 mm of the side panels
   (LOD0), the marker lamps as cells in the rails and the end frames, the
@@ -145,7 +148,10 @@ at the centre of the 7.90 x 2.53 plan box.
   they would meet (a rail and subframe member a side, six cross bearers,
   rear axle housings and differential, tank, battery, AdBlue, air tank,
   silencer, guards and brackets, under-run bar and brackets, lamp
-  housings, mudguards, flaps). The tank is mapped along and round its
+  housings, mudguards, flaps). LOD0's rear mudguards follow the twins: a
+  band round the axle from 20 to 160 degrees in four segments (inner
+  radius 0.577, 30 mm over the tyre at the facets' middles), the flap
+  under its tail; LOD1 keeps a flat guard with a rubber lip. The tank is mapped along and round its
   patch, so its two dark straps are rings. Tank, battery box, AdBlue
   tank, air tank and silencer hang 2-14 mm off the rail's side, so none
   needs a bracket. Unioning them first cut every long face at every
@@ -237,22 +243,24 @@ upper (cab and box) solid only.
 
 Unlit colours in the albedo, lit colours in the emission (markers in their
 own white, amber or red; validator: 12 white, 12 amber, 5 red). The
-front lenses are silver reflectors behind clear glass (the low beam sRGB
-about 200, the high beam 178, the daytime strip 237, before shading), each
-mapped whole onto its own patch at about 240 texels per metre. Nothing
-inside a unit is darker than its lens's own tone: the cells are told apart
-by tone and shape and parted by light chrome dividers (sRGB 247, lit with
-the lenses); the reflector's structure is ribs lighter than the lens, a
-shelf a tone down in the low beam and a soft bowl; no dark joints, rings,
-outlines or glints; roughness 0.12, nonmetallic. The only dark line is the
-gloss black insert the unit sits in. The rear lenses have soft ribs 5 %
-apart. LOD1 keeps every lens, as flat cells on the housings and box and as
-recesses on the shell (the headlamp and fog recesses in LOD0's planes, so
-the lens rectangles are the same). LOD2 keeps every group on flat faces
-inside the LOD0 rectangles but not every lens: the side repeaters, the
-side and front markers, the right reverse lens and the right fog lamp are
-dropped (37 lamp faces); its headlamp lenses are plaques' outer faces.
-LOD3 has none. No plate lamp or high-mounted stop lamp.
+front lenses are bright silver behind clear glass, each mapped whole onto
+its own patch at about 240 texels per metre: a field of about sRGB 200
+(low beam 202, high beam 198), each reflector a soft bowl across its whole
+cell, falling smoothly with no edge to a darker heart (about 162) with a
+small soft bulb cap in it (a low oval, about 150); the high beam has faint
+upright flutes lighter than the bowl; the daytime strip is only subtly
+lighter (214); the cells are parted by light chrome dividers (227, lit
+with the lenses). No darker line anywhere inside a unit (no joints, rings,
+outlines or flute lines) and no glints; roughness 0.12, nonmetallic. The
+only dark line is the gloss black insert the unit sits in. The fog lenses
+are the same bowl and cap. The rear lenses have soft ribs 5 % apart. LOD1
+keeps every lens, as flat cells on the housings and box and as recesses on
+the shell (the headlamp and fog recesses in LOD0's planes, so the lens
+rectangles are the same). LOD2 keeps every group on flat faces inside the
+LOD0 rectangles but not every lens: the side repeaters, the side and front
+markers, the right reverse lens and the right fog lamp are dropped (37
+lamp faces); its headlamp lenses are plaques' outer faces. LOD3 has none.
+No plate lamp or high-mounted stop lamp.
 
 ## Glass
 
@@ -321,10 +329,10 @@ LOD0/LOD1.
 
 Rendered check (AgX, the review camera's 75 degree field of view,
 silhouette mean, 100 m / 400 m, against LOD0): under white paint every
-tier within 1.4 %; under red LOD1 -1.8 / -2.0 %, LOD2 -3.1 / -3.2 %, LOD3
--7.3 / -5.6 %; under dark grey LOD1 -2.6 / -3.2 %, LOD2 -4.4 / -4.9 %,
-LOD3 -11.5 / -9.2 %; `haulier` LOD1 +0.2 / +0.5 %, LOD2 -0.1 / -0.1 %,
-LOD3 -3.3 / -3.3 %. Under dark paint the far tiers are darker overall than
+tier within 1.6 %; under red LOD1 -1.9 / -1.9 %, LOD2 -3.2 / -3.3 %, LOD3
+-7.3 / -5.3 %; under dark grey LOD1 -2.6 / -3.1 %, LOD2 -4.5 / -5.0 %,
+LOD3 -11.5 / -8.7 %; `haulier` LOD1 +0.0 / +0.5 %, LOD2 -0.3 / -0.1 %,
+LOD3 -3.4 / -3.0 %. Under dark paint the far tiers are darker overall than
 LOD0 because LOD0's light unpainted parts (rails and posts, tank, guards,
 rims, tape, lamps) shrink to a few texels. LOD2's box keeps both its
 rails as unpainted aluminium. LOD3's box sides are one painted face each,
@@ -335,22 +343,22 @@ does not have.
 
 | Tier | Triangles | Ceiling |
 | --- | --- | --- |
-| LOD0 | 4,458 | 4,500 |
+| LOD0 | 4,490 | 4,500 |
 | LOD1 | 1,398 | 1,400 |
 | LOD2 | 348 | 350 |
 | LOD3 | 60 | 60 |
 
-LOD0: cab group 1,838 (the shell's loft 516 before its cuts, the arches
-and recesses about 930, fairing 164, visor 68, fender lips 2 x 52, blades
-2 x 28), wheels 1,344 (front 2 x 276, rear 2 x 396), chassis and gear 580
-as 35 small solids, mirrors 2 x 172, box 196, wings and flaps 96, collars
-24, wipers 24, plinth 12. LOD1: cab group 546 (loft 140, fairing 44,
-visor 20), wheels 304, chassis and gear 288, box 140, mirrors 2 x 24,
-collars 24, blades 24, wing plates 24. LOD2: shell 92, box 52, headlamp
-plaques 2 x 24, fairing 20, visor 8, fog lens 4, dark under-box block 12,
-bar 12, lamp housings 32 + 28, one hexagonal prism an axle 2 x 20. LOD3:
-two extruded profiles, the painted cab and box (7 points, 24) and the dark
-lower module and under-body (10 points, 36).
+LOD0: cab group 1,854 (the shell's loft 516 before its cuts, the arches
+and recesses about 960, fairing 164, visor 68, fender lips 2 x 44, blades
+2 x 28), wheels 1,344 (front 2 x 276, rear 2 x 396), chassis and gear 596
+as 35 small solids (the round mudguards 2 x 36), mirrors 2 x 172, box 196,
+wings and flaps 96, collars 24, wipers 24, plinth 12. LOD1: cab group 546
+(loft 140, fairing 44, visor 20), wheels 304, chassis and gear 288, box
+140, mirrors 2 x 24, collars 24, blades 24, wing plates 24. LOD2: shell
+92, box 52, headlamp plaques 2 x 24, fairing 20, visor 8, fog lens 4, dark
+under-box block 12, bar 12, lamp housings 32 + 28, one hexagonal prism an
+axle 2 x 20. LOD3: two extruded profiles, the painted cab and box (7
+points, 24) and the dark lower module and under-body (10 points, 36).
 
 ## LOD review
 
@@ -368,7 +376,8 @@ three-quarter and the cab's side, far nearer than LOD1 and LOD2 are used.
   as short tail plates, the wings as one plate a side, guards, tank, twin
   width, under-run bar, mirrors and every lamp; loses the chin and the
   rolled bumper edge, the belt's brow and crown, the step wells, grille
-  recess, plinth and centre recess (all in the texture), the fender lips
+  recess, plinth, centre recess and the lamp pods' step (all in the
+  texture), the round rear mudguards (a flat guard), the fender lips
   (their dark shape is painted under them, so the colour holds), the
   blades' roots, the visor's wrapped ends, guard brackets, cross bearers,
   AdBlue and air tanks, the panel recess and the roller door's inset
@@ -394,15 +403,17 @@ three-quarter and the cab's side, far nearer than LOD1 and LOD2 are used.
 
 ## Interior geometry
 
-No interior. Hidden faces (validator, inspection candidates): LOD0 153 of
-4,458 (3.4 %), LOD1 32 (2.3 %), LOD2 46 (13.2 %), LOD3 1. They are the
+No interior. Hidden faces (validator, inspection candidates): LOD0 187 of
+4,490 (4.2 %), LOD1 32 (2.3 %), LOD2 46 (13.2 %), LOD3 1. They are the
 faces kept closed 2 mm under or beside another solid, and exterior
 surface in a narrow gap: the shell's bottom, the chassis members' and
 bearers' tops under the box floor, the tank's and boxes' faces against
 the rails, the plinth's back, the mirror arm roots beside the cab, the
 box's front wall behind the cab (10 cm off its back, between the
 collars), and at LOD2 the dark block's top under the box and the wheel
-prisms' middles inside the shell and the block.
+prisms' middles inside the shell and the block. LOD0's count rose by 34
+with the final round's round mudguards and lamp pod steps; those
+candidates were not inspected one by one.
 
 ## Known simplifications
 
@@ -419,8 +430,11 @@ prisms' middles inside the shell and the block.
   tow-eye covers, the front flap's field, slot and grab handles, the cowl's
   slats and pivot bosses, the door's handle recess and the grab handle
   behind it are texture and normal map.
-- The texture is mirrored about the centre line, so the cowl shows three
-  pivot bosses (the centre one and one each side) for two wiper arms.
+- The cab band's texture is mirrored about the centre line, so the two
+  wiper pivots' bosses sit symmetrically (0.45 either side) and the
+  parallel arms start from them.
+- The rear mudguards are four flat facets round the tyre, not a smooth
+  curve; LOD1's are flat boxes.
 - No tail lift, kerb mirror, roof antenna or plate lamp.
 - The door window is one recessed pane with a dropped front corner,
   without a separate quarter light.
@@ -465,7 +479,9 @@ One 1024 atlas, 64 texels per metre in final pixels, supersampled 4x
   rounded corners and a 12 mm bevel (relief only), over it a centre
   intake slot (0.42 x 0.028) with a raised lip between two grab handle
   recesses (0.20 x 0.044, a pull across each); the cowl under the screen
-  has vent slats and three pivot bosses.
+  has vent slats and the two wiper pivots' bosses. The fairing's front
+  carries a field recessed 8 mm with rounded corners and a 16 mm bevel
+  (relief only), following the nose's width.
 - The lower module: gloss black inserts with a proud, lighter rim round
   the headlamp units (40 mm) and the fog lamps (20 mm), a moulded rim
   round the centre recess, tow-eye covers (68 mm squares) between pods
@@ -561,6 +577,15 @@ Blender 5.3.0 (2026-11-11); Blender MCP extension not used for this build
 (headless scripts only).
 
 ## Revision log
+
+- 2026-11-21, final round. Headlamp and fog lenses back from near white to
+  bright silver: a field of about sRGB 200, each reflector a soft bowl to a
+  darker heart with a small bulb cap, light chrome dividers, the daytime
+  strip only subtly lighter (were lenses of 198/176 with 236-247 strip
+  and dividers and light ribs). The lamp pods' rim a real step at LOD0
+  (14 mm wide, 6 mm deep). Two wiper pivots under two parallel arms (were
+  three bosses). A recessed field on the fairing's front. LOD0's rear
+  mudguards round the twins (were flat boxes). Fender lips five segments.
 
 - 2026-11-21, second shape round. Face: a brow at the belt (the front
   panel now leans 5 mm forward to it and tucks 35 mm back to the screen),
