@@ -24,7 +24,9 @@ A trim sheet. Rows from the bottom:
     y  558 ..  658   ROOF    profiled roof sheet, V stretched up the slope
     y  660 ..  680   FASCIA  the roof slab's front and rake edges
     y  684 ..  944   unique  the lane's ceiling and side walls (32 px/m), the
-                             doors, the window, a hopper side, flat patches
+                             doors, the window, a hopper side, flat patches,
+                             the intake's roof (32 px/m) and the trestle's
+                             steel (32 px/m, V = height from the ground)
     y  988 .. 1024   EAVE_R  the rear (low) eave: fascia with the gutter, then
                              the roof's lowest 0.40 m with the snow guard
 
@@ -109,6 +111,28 @@ INT_SLAB = (3.95, 4.20)
 INT_OV = 0.15
 INT_TOP = 4.07               # its walls' lid, inside the slab
 
+# The steel trestle (bent) under the gallery's span, mid-way between the
+# house's east wall and the intake's west wall: two H-section legs on concrete
+# pad footings, flanges square to X, the channels facing each other across
+# the bent; an H-section cross-head along Y under the gallery's floor, its top
+# flange sloped to the floor and TR_BURY up into it; an X of two square bars
+# between the legs, one each side of the bent's centre plane, ending in the
+# legs' webs.
+TR_X = (HX + INT_X[0]) / 2.0                     # 8.50: the bent's centre plane
+TR_LEG_Y = (GAL_Y[0] - 0.14, GAL_Y[1] + 0.14)    # the legs' centres, outside the gallery
+TR_LEG = 0.20                # the legs' H, square in plan
+TR_LEG_TF, TR_LEG_TW = 0.020, 0.015
+TR_HEAD_W = 0.22             # the cross-head's flanges, along X
+TR_HEAD_D = 0.30             # its depth under the gallery's floor at its east edge
+TR_HEAD_TF, TR_HEAD_TW = 0.030, 0.015
+TR_BURY = 0.012              # its top flange's top over the gallery's floor
+TR_HEAD_Y = (TR_LEG_Y[0] - TR_LEG / 2 - 0.02, TR_LEG_Y[1] + TR_LEG / 2 + 0.02)
+TR_BRACE = 0.07              # the X's square bars
+TR_BRACE_LO = 0.70           # their low ends, at the legs' webs
+TR_BRACE_TOP = 0.20          # their high ends, under the cross-head
+TR_PAD = (0.60, 0.20)        # the footings: plan side, height
+TR_PAD_INTO = 0.05           # the legs run this far down into them
+
 
 def z_under(y):
     """Height of the bunker roof's underside over plan y."""
@@ -118,6 +142,14 @@ def z_under(y):
 def gal_bottom(x):
     """The gallery's floor (its bottom face) over plan x."""
     return Z_SCREEN - (x - HX) * GAL_TAN
+
+
+def tr_head_top(x):
+    """The trestle cross-head's top over plan x: TR_BURY up into the floor."""
+    return gal_bottom(x) + TR_BURY
+
+
+TR_HEAD_ZB = tr_head_top(TR_X + TR_HEAD_W / 2) - TR_HEAD_D    # its bottom, level
 
 
 SLOPE_F = (1.0 + TAN * TAN) ** 0.5
@@ -160,6 +192,17 @@ CHUTE = (782.0, UNI_Y0, 80.0, 48.0)
 PATCHES = {name: (870.0 + 14.0 * i, UNI_Y0, 8.0, 8.0) for i, name in enumerate(
     ("blank", "reveal", "soffit", "coal", "gal_under", "coping", "felt",
      "slab_under", "steel"))}
+# The trestle's steel: every face maps U along its own horizontal run (Y, or
+# X on a face square to Y) from TR_U0 / TR_UX0, V up from the ground, at TPM,
+# so the coal on its feet can follow height.
+TPM = 32.0
+TRESTLE = (880.0, 706.0, 84.0, 200.0)            # V: 6.25 m from the ground
+TR_U0 = TR_HEAD_Y[0] - 0.02
+TR_UX0 = TR_X - 1.25
+# The intake's roof, planar from its slab's south-west corner at LPM: felt
+# under the coal that spills where the gallery's tail stands through it.
+INT_ROOF = (444.0, 834.0, (INT_X[1] - INT_X[0] + 2 * INT_OV) * LPM,
+            (INT_Y[1] - INT_Y[0] + 2 * INT_OV) * LPM)      # 112 x 105.6
 
 # The rear eave band, as konehalli_open_bays: the rear fascia (V = height over
 # the slab's underside) with the gutter across its top, and from its top row
@@ -215,7 +258,7 @@ VARIANTS = {
 DEFAULT_VARIANT = "grey_sheet"
 FIXED = {
     ID_CONC: (134, 132, 126), ID_GLASS: glazing.BASE, ID_STEEL: (72, 72, 70),
-    ID_COAL: (30, 30, 30), ID_FELT: (54, 54, 56), ID_BLANK: (52, 52, 52),
+    ID_COAL: (30, 30, 30), ID_FELT: (80, 79, 77), ID_BLANK: (52, 52, 52),
     ID_HW: (46, 46, 46), ID_GUTTER: (134, 137, 137),
 }
 GLASS_BASE = glazing.BASE
@@ -691,6 +734,32 @@ def paint_door_v(c):
                 height=0.030)
 
 
+def paint_trestle(c):
+    """The trestle's dark painted steel, V up from the ground at TPM: plain
+    plate, a little uneven in tone; its coal is weather()'s."""
+    x0, y0, w, h = TRESTLE
+    c.paint(x0 - 2, x0 + w + 2, y0 - 2, y0 + h + 2, ID_STEEL, 1.0, 1.0, height=0.0)
+    sy, sx, Y, X = c.field(x0 - 2, x0 + w + 2, y0 - 2, y0 + h + 2)
+    c.shade[sy, sx] *= 1.0 + 0.04 * (atlas.hash_unit(
+        83, np.floor((Y - y0) / (0.5 * TPM)).astype(np.int64) % 64) - 0.5)
+
+
+def paint_int_roof(c):
+    """The intake's flat roof at LPM: bitumen felt in 1.0 m rolls laid
+    along X, a lapped seam between each."""
+    x0, y0, w, h = INT_ROOF
+    k = LPM / PPM
+    c.paint(x0 - 2, x0 + w + 2, y0 - 2, y0 + h + 2, ID_FELT, 1.0, 1.0, height=0.0)
+    sy, sx, Y, X = c.field(x0 - 2, x0 + w + 2, y0 - 2, y0 + h + 2)
+    v = (Y - y0) / LPM
+    roll = np.floor(v).astype(np.int64)
+    seam = (v - roll) * LPM < 0.8
+    tone = 1.0 + 0.05 * (atlas.hash_unit(89, roll % 16) - 0.5)
+    c.shade[sy, sx] = np.where(seam, tone * 0.88, tone)
+    c.height[sy, sx] = np.where(seam, 0.004 * k, 0.0)
+    c.ao[sy, sx] = np.where(seam, 0.9, 1.0)
+
+
 def paint_patches(c):
     spec = {"blank": (ID_BLANK, 1.0, 0.5), "reveal": (ID_STEEL, 0.75, 0.6),
             "soffit": (ID_ROOF, 0.72, 0.75), "coal": (ID_COAL, 1.0, 0.5),
@@ -777,12 +846,41 @@ def weather(c):
            lambda Y, X, nz: 0.35 + 0.45 * np.clip(1.0 - (Y - y0) / hh, 0, 1))
     w.add("R", x0 - 2, x0 + hw_ + 2, y0 - 2, y0 + hh + 2,
           lambda Y, X, nz: 0.12 * nz("speck") + 0.06 * nz("blotch"))
-    # flat patches: the gallery's floor and the intake's roof under it take
-    # the spill; the reveals and the slab's soffit less
-    for name, k in (("gal_under", 0.55), ("felt", 0.60), ("slab_under", 0.30),
+    # flat patches: the gallery's floor is caked with what the belt's return
+    # drops; the reveals and the slab's soffit take less
+    for name, k in (("gal_under", 0.85), ("felt", 0.60), ("slab_under", 0.30),
                     ("steel", 0.30), ("reveal", 0.25)):
         px, py, pw, ph = PATCHES[name]
         w.coal(px - 2, px + pw + 2, py - 2, py + ph + 2, k)
+    # the intake's roof: a film of coal everywhere, in drifts, heaped against
+    # the gallery's tail where it stands through the slab
+    x0, y0, rw, rh = INT_ROOF
+    xs0, ys0 = INT_X[0] - INT_OV, INT_Y[0] - INT_OV
+    gu0 = HX + (Z_SCREEN - INT_SLAB[1]) / GAL_TAN - xs0       # the floor's crossing
+    gu1, gv0, gv1 = GAL_X[1] - xs0, GAL_Y[0] - ys0, GAL_Y[1] - ys0
+
+    def roof_spill(Y, X, nz):
+        u, v = (X - x0) / LPM, (Y - y0) / LPM
+        d = np.hypot(np.clip(np.maximum(gu0 - u, u - gu1), 0, None),
+                     np.clip(np.maximum(gv0 - v, v - gv1), 0, None))
+        return (0.12 + 0.30 * nz("blotch") + 0.15 * nz("big")
+                + 0.65 * np.exp(-d / 0.50) * (0.7 + 0.3 * nz("blotch")))
+    w.add("D", x0 - 2, x0 + rw + 2, y0 - 2, y0 + rh + 2,
+          lambda Y, X, nz: 0.10 + 0.10 * nz("blotch"))
+    w.coal(x0 - 2, x0 + rw + 2, y0 - 2, y0 + rh + 2, roof_spill)
+    # the trestle: a film all over, caked on its feet where the trucks' and
+    # the tipping vehicles' dust settles, and on the cross-head under the
+    # gallery's floor, where the belt's return drops it
+    x0, y0, tw, th = TRESTLE
+
+    def trestle_coal(Y, X, nz):
+        z = np.clip(Y - y0, 0, None) / TPM
+        return (0.20 + 0.10 * nz("blotch")
+                + 0.75 * np.exp(-z / 0.90) * (0.7 + 0.3 * nz("blotch"))
+                + 0.30 * atlas.smoothstep(TR_HEAD_ZB - 0.3, TR_HEAD_ZB + 0.1, z))
+    w.add("D", x0 - 2, x0 + tw + 2, y0 - 2, y0 + th + 2,
+          lambda Y, X, nz: 0.08 + 0.08 * nz("blotch"))
+    w.coal(x0 - 2, x0 + tw + 2, y0 - 2, y0 + th + 2, trestle_coal)
     # the column strip and the openings
     for kind, (wd, h, cs, cb, ct) in OPENINGS.items():
         ix, iy = ITEM_ORIGIN[kind]
@@ -814,6 +912,8 @@ def paint(ss=atlas.SS):
     paint_door(c)
     paint_door_v(c)
     paint_patches(c)
+    paint_trestle(c)
+    paint_int_roof(c)
 
     wear = 0.025 * noise(c, 3, 40.0) + 0.015 * noise(c, 4, 8.0)
     c.shade *= 1.0 + wear

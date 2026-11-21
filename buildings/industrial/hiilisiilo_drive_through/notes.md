@@ -19,13 +19,14 @@ chutes.
   rear. It has one row of small steel-framed windows at the screen floor.
 - **Conveyor:** on the east side, the side the catalog view sees, a 2.0 ×
   2.0 m enclosed conveyor gallery rises at 30° from a low concrete intake
-  hopper house into the screen house's east wall. It is the second half of
-  the silhouette, and what makes the bunker read as a coal loading plant
-  rather than a box on legs.
+  hopper house into the screen house's east wall, carried at mid-span on a
+  steel trestle. It is the second half of the silhouette, and what makes
+  the bunker read as a coal loading plant rather than a box on legs.
 
 Materials are muted and coal-dusty, as a working plant's are: board-formed
 concrete blackened at its foot by the coal the trucks throw up, a dusty lane
-and dust-caked hoppers, moderately dirty cladding above; grey (or red-oxide) painted profiled sheet; a dark grey
+and dust-caked hoppers, a coal-caked gallery underside and intake roof,
+moderately dirty cladding above; grey (or red-oxide) painted profiled sheet; a dark grey
 roof; dark steel hoppers and doors; and the catalog's galvanised rainwater
 steel for the rear gutter, the downpipes and the snow guard. The model shows
 no recognisable real structure.
@@ -58,9 +59,13 @@ parts sit as follows:
   runs along X: it leaves the east wall at x 6.0 and ends inside the intake.
 - **The intake house** is x 11.00 to 14.20 and y 0.30 to 3.30, with its slab
   overhanging 0.15 m.
-- Everything east of the house stands 10 m or more from the lane's east
-  wall, so the lane and both of its approaches are a clear, straight
-  corridor x −4.40…0.60 for any y.
+- **The trestle** stands at mid-span, its bent in the plane x 8.50: legs at
+  y 0.66 and 2.94, footings x 8.20 to 8.80 and y 0.36 to 3.24. In the glTF
+  frame its centre plane is x 4.475 and its legs are at z −0.61 and −2.89.
+- Everything east of the house stands well clear of the lane's east wall
+  (x 0.60): the gallery from x 6.0, 5.4 m off; the trestle's footings from
+  x 8.20, 7.6 m off; the intake's slab from x 10.85. The lane and both of its
+  approaches are a clear, straight corridor x −4.40…0.60 for any y.
 
 The roof slab overhangs 0.30 m at the front and rakes and 0.40 m at the
 rear. The pivot is at ground level, centred on the bounding box: build point
@@ -75,7 +80,9 @@ These stand outside that polygon but inside the bounds:
 
 - the roof slab's overhangs;
 - the two downpipes on the rear wall, under the rear eave;
-- the intake slab's 0.15 m overhang.
+- the intake slab's 0.15 m overhang;
+- the trestle's legs and footings, which are not walls. Its legs stand
+  0.04 m outside the gallery's strip on each side.
 
 ## Story height
 
@@ -140,6 +147,8 @@ boolean (`asset_build.union`):
 - the roof slab;
 - the gallery;
 - the intake house's walls and its roof slab;
+- the trestle: its legs, cross-head, bracing and footings (one solid at
+  `LOD2`/`LOD3`);
 - three hoppers;
 - two downpipes.
 
@@ -203,10 +212,40 @@ east of the house on the side the catalog camera sees.
 - **Visible end:** the lower end's top 1.18 m stands out of the intake roof
   as the conveyor's tail housing.
 - **Span:** 5.0 m clear between the house's east wall and the intake's west
-  wall, unsupported.
+  wall, carried at its middle by the trestle, so it spans 2.4 m either side.
 
 The intake's walls run 0.12 m up into their slab. Nothing in the union is
 coplanar.
+
+### Trestle
+
+One steel bent stands under the gallery at mid-span, in the plane x 8.50
+(`TR_X`, half-way between the house's east wall and the intake's west
+wall). Its members are closed solids; nothing is a lattice or needs alpha.
+
+- **Legs:** two 0.20 × 0.20 m H-sections, centred at y 0.66 and 2.94, just
+  outside the gallery's sides. Their flanges are square to X (a flat face
+  to the east and west), the channels facing each other across the bent.
+- **Footings:** a 0.60 × 0.60 m concrete pad under each leg, 0.20 m high.
+  The legs stand 0.05 m down into them.
+- **Cross-head:** an H-section along Y from y 0.54 to 3.06, across both legs
+  and the gallery's whole width. Its 0.22 m flanges run along X; its bottom
+  is level at 5.61 m; its top flange follows the gallery's 30° floor, 0.012
+  m up into it, so 0.018 m of that flange shows under the floor and it
+  stands 0.012 m proud beside the gallery, a bearing seat. It is 0.30 m
+  deep at its east edge. The legs stop half-way up its bottom flange.
+- **Bracing:** an X of two 0.07 m square bars between the legs, from 0.70 m
+  at one leg to 5.41 m at the other. Each bar ends cut along the plane of a
+  leg's web, inside it, and the two pass 0.01 m apart, one each side of the
+  bent's centre plane, so neither touches the other.
+- **Paint:** dark painted steel, coal-caked at its feet (Texture set).
+- **Tiers:** `LOD0` and `LOD1` build all of it. `LOD2` and `LOD3` build the
+  legs and head as one plain solid, an upturned U of the legs' 0.20 m width
+  standing on the ground, with no footings. `LOD2` keeps the X, its bars
+  ending inside the solid legs; `LOD3` drops it (LOD review).
+
+The trestle stays inside the `LOD0` bounds, so the pivot, the doors, the
+footprint and the passage are unchanged by it.
 
 ### Roof, rainwater goods and snow guard
 
@@ -234,6 +273,8 @@ is at 12.80 m at the front wall line and 12.00 m at the rear. The walls run
 - the eave heights and overhangs;
 - the hoppers, the gallery (`GAL_Y` across, `GAL_X` along, `Z_SCREEN`,
   30°) and the intake (`INT_X`, `INT_Y`), derived from the gallery;
+- the trestle (`TR_X`, `TR_LEG_Y`, the sections, `TR_BURY`, `TR_PAD`),
+  derived from the gallery and the intake;
 - the openings.
 
 `build.py` adds the wall specs. `check_layout()` asserts the following:
@@ -246,6 +287,12 @@ is at 12.80 m at the front wall line and 12.00 m at the rear. The walls run
   east windows by 0.3 m;
 - the gallery and the intake stand east of the house, 1.5 m or more clear of
   the lane's line, so neither reaches the lane or its approaches;
+- the trestle's footings are 1.5 m or more clear of the lane's line too, in
+  the open between the house and the intake's slab, 1.0 m or more clear of
+  the intake door's approach; its legs stand outside the gallery's sides,
+  its cross-head spans them and the gallery, its top flange sits just under
+  the floor, the bracing fits between its feet, its head and the legs'
+  flanges, and its UVs stay inside their region;
 - the downpipes clear the lane's mouth (`downpipes.problems()`);
 - the cladding's U stays inside its band;
 - the roof is no steeper than 1:8.
@@ -254,24 +301,33 @@ is at 12.80 m at the front wall line and 12.00 m at the rear. The walls run
 
 | Tier | Triangles | Ceiling | What changes |
 | --- | --- | --- | --- |
-| `LOD0` | 782 | 12,000 | openings with a frame ring and a 0.12/0.15 m recess; three hoppers; eight-sided downpipes with swan-necks and shoes |
-| `LOD1` | 630 | 4,000 | each opening one recess the size of its frame; downpipes four-sided, bent |
-| `LOD2` | 446 | 1,500 | openings flush; coplanar boolean subdivisions dissolved (UV seams kept); downpipes straight, four-sided |
-| `LOD3` | 438 | 500 | downpipes three-sided; the lane, hoppers, gallery and intake kept |
+| `LOD0` | 1,022 | 12,000 | openings with a frame ring and a 0.12/0.15 m recess; three hoppers; eight-sided downpipes with swan-necks and shoes; the full trestle |
+| `LOD1` | 870 | 4,000 | each opening one recess the size of its frame; downpipes four-sided, bent; the full trestle |
+| `LOD2` | 534 | 1,500 | openings flush; coplanar boolean subdivisions dissolved (UV seams kept); downpipes straight, four-sided; the trestle one U-shaped solid with its X of bars |
+| `LOD3` | 486 | 500 | downpipes three-sided; the trestle's bracing dropped; the lane, hoppers, gallery, intake and the U-shaped trestle kept |
 
-The counts are not padded. The massing is three boxes, a tunnel and a
-gallery. The walls are polygons with holes, and everything shallow is
-texture. That covers the ribs, board marks, the frame's columns, the ring
+The counts are not padded. The massing is three boxes, a tunnel, a gallery
+and its trestle. The walls are polygons with holes, and everything shallow
+is texture. That covers the ribs, board marks, the frame's columns, the ring
 beam, the window bars and the wheel guard.
 
 Where the triangles go at `LOD0`:
 
 - the lane's walls and ceiling and the U-shaped mouths: about 40;
 - the three hoppers, with their holes in the ceiling: 52;
+- the trestle: 240, with its cut in the gallery's floor. The two H-section
+  legs and the H-section cross-head take most of it, each 12-sided, with
+  the legs' joints into the head and the footings; the bracing bars and
+  footings take the rest;
 - the downpipes and the gallery's cuts make up most of the rest.
 
-`LOD3` keeps the hoppers (LOD review), so it sits near `LOD2`. It stays 62
-under the ceiling. The gallery's mouth shares the east wall's cladding strips
+The trestle costs 240 at `LOD0` and `LOD1`. At `LOD2` and `LOD3` its legs
+and head are one solid, 48; the bracing adds 40 at `LOD2`. Built there as
+three boxes, the leg tops' holes in the head cost 64, which took `LOD3` to
+502, over its ceiling.
+
+`LOD3` keeps the hoppers and the trestle (LOD review), so it sits near
+`LOD2`. It stays 14 under the ceiling. The gallery's mouth shares the east wall's cladding strips
 with the screen house window, so the wall's triangulation round both is a
 little denser than a bare wall's.
 
@@ -292,7 +348,11 @@ denoising, AgX, exposure 0. Pairs compared:
 Close renders at 25 m (front, oblique, rear and grazing, noon and morning),
 the six views and `oblique` tier sets at 70 and 120 m for every tier are in
 the local, untracked `review/mine_fixes_2026_11_20/hiilisiilo_drive_through/`,
-beside the earlier passes in `review/mine_2026_11_20/`.
+beside the earlier passes in `review/mine_2026_11_20/`. The trestle pass is
+in `review/bunker_trestle_2026_11_21/`: the six views, 25 m close renders
+(`oblique` and `grazing`, noon and morning, `LOD0`/`LOD1`) and every tier
+at 35, 70 and 120 m (`oblique` and `front`, noon), each before and after,
+with `review_compare.py` sheets in `compare/`.
 
 - **The lane is a real opening on every tier.** It costs about 40
   triangles. From the front it reads as a dark tunnel with the lit ground at
@@ -308,8 +368,17 @@ beside the earlier passes in `review/mine_2026_11_20/`.
   rising from the right into the screen house; at 120 m all four tiers show
   the same diagonal. The frame's columns and the ring beam are UV regions,
   so they keep their contrast at every tier.
+- **The trestle** reads at 35 m as two dark legs on black footings with
+  the X between them, the cross-head under the gallery's floor. At 70 m
+  `LOD1` and `LOD2` both show the legs and the X; the H-sections and the
+  footings flatten to the `LOD2` solid without a visible change. At 120 m
+  the X is a faint pair of lines against the shaded east wall; `LOD3`
+  drops it and keeps the two legs and the head, so the gallery stays
+  visibly supported. The X's vanishing at the 120 m switch is the one
+  transition it adds, and it is barely visible.
 - **The coal dust** is texture only, so it is the same on every tier; at 70
-  and 120 m the dark feet and the dark lane hold.
+  and 120 m the dark feet and the dark lane hold. The intake roof's drifts
+  read from raised views at 25 m and blur to a darker roof by 70 m.
 - **Downpipes:** `downpipes.MODES` on every tier; no tier drops them.
 
 Pending in the consumer: real LOD switching, shadows and ambient occlusion
@@ -329,10 +398,14 @@ thresholds.
   modelled.
 - The kept closure faces are:
   - the floor caps under the leg, the control room and the intake walls;
+  - the trestle footings' bottoms (`LOD0`/`LOD1`) and its legs' feet
+    (`LOD2`/`LOD3`), on the ground;
   - the hoppers' mouths, painted coal;
   - the downpipes' shoe mouths.
-- The lids, the gallery's buried ends and the hoppers' tops are removed by
-  the union.
+- The lids, the gallery's buried ends, the hoppers' tops and the trestle's
+  buried ends (the legs in their footings and the head, the bars in the
+  legs' webs, the head's top in the gallery's floor) are removed by the
+  union.
 
 ## Known simplifications
 
@@ -346,13 +419,17 @@ thresholds.
   board marks, tie holes, the wheel guard, the downstand beams and hopper
   flanges on the lane's ceiling are all painted. So are the sheet's ribs and
   laps.
-- **Gallery:** no supporting trestle (it spans 5.0 m between the house and
-  the intake) and no windows. Its tail housing's top is a plain clad end.
+- **Gallery:** no windows. Its tail housing's top is a plain clad end.
   It has no belt, chute or skirt where it meets the screen house; the clad
   box simply runs into the wall.
+- **Trestle:** no base plates, bolts, gussets or bearing; the bracing bars
+  stand for the angles a real bent would carry, and they end in the legs'
+  webs. The footings are plain concrete blocks, and the trestle has no
+  ladder or walkway.
 - **Ground:** the asset has no ground, so the coal spilt under the gallery
   and in the lane is carried by the surfaces that exist: the gallery's
-  floor, the intake's roof, the lane's walls and the legs' feet.
+  floor, the intake's roof, the trestle's feet and footings, the lane's
+  walls and the legs' feet.
 - **Rainwater goods:** the gutter is painted, with its relief in the normal
   map. The downpipes run up into the soffit behind it. The intake house's
   flat roof has no gutter.
@@ -368,7 +445,7 @@ One 1024² trim-sheet atlas, rasterised by `scripts/atlas.py` at `atlas.SS`
 | 414–554 | C, cladding (x 0–960) and column strip (x 972) | one 2.00 m repeat (rows 420–548) tiling in V, 64 px/m; periodic gutters 6 rows each side |
 | 558–658 | ROOF | U = x at 64 px/m; V up the slope from the low edge, 96 rows over 9.60 m (10 px/m); also the gallery's top |
 | 660–680 | FASCIA | front and rake edges, 64 px/m |
-| 684–944 | unique | lane ceiling (160 × 256) and side walls (256 × 166) at 32 px/m; door, window, intake door at 64 px/m; hopper side; flat patches |
+| 684–944 | unique | lane ceiling (160 × 256) and side walls (256 × 166) at 32 px/m; door, window, intake door at 64 px/m; hopper side; flat patches; the intake's roof (112 × 106 at x 444, y 834) and the trestle's steel (84 × 200 at x 880, y 706), both at 32 px/m |
 | 988–1024 | EAVE_R | rear fascia with the gutter, then the roof's lowest 0.40 m at 40 px/m with the snow guard |
 
 **Deviations from 64 px/m:**
@@ -376,6 +453,12 @@ One 1024² trim-sheet atlas, rasterised by `scripts/atlas.py` at `atlas.SS`
 - The lane's regions are at 32 px/m. They are in shade and seen obliquely;
   at 64 px/m they would need a third of the atlas. Relief heights there are
   scaled by 32/64, so the normal map's slopes stay physical.
+- The intake's roof is at 32 px/m, planar from its slab's corner: felt and
+  coal, nothing sharper than its roll seams, seen from above at a distance.
+- The trestle's steel is at 32 px/m: every face maps U along its own
+  horizontal run and V up from the ground, so the coal on its feet follows
+  height. At 64 px/m its 6.25 m of height would need 400 rows. It is plain
+  plate with no relief.
 - The roof band is stretched in V; only its ribs vary there.
 
 ### Repeating cladding
@@ -433,14 +516,25 @@ runs under the flashings and the gutter.
     more at the foot, falling by 1/e every 1.0 m;
   - the lane's ceiling: 0.35 plus 0.55 round each hopper's throat;
   - the hoppers' sides: 0.35 at the flange to 0.8 at the mouth;
-  - the gallery's floor 0.55 and the intake's roof 0.60, where the spill
-    falls; the slab soffits and reveals 0.25–0.30; the door feet 0.45.
+  - the gallery's underside 0.85, caked with what the belt's return drops;
+  - the intake's roof (its own region): 0.12 plus 0.30 and 0.15 in
+    blotches and broad patches everywhere, and up to 0.65 more heaped round
+    the gallery's tail where it stands through the slab, falling by 1/e
+    every 0.50 m. Its felt is a lighter mineral grey (sRGB 80/79/77), so the
+    drifts read against it;
+  - the trestle: 0.20 plus blotches all over, 0.75 more at the ground
+    falling by 1/e every 0.90 m, and 0.30 more on the cross-head under the
+    gallery's floor; its footings take S1's foot, the heaviest coal there;
+  - the slab soffits and reveals 0.25–0.30; the door feet 0.45.
 - **Measured albedo** (grey_sheet, sRGB, band means):
   - concrete plinth (0–0.3 m) ~61, foot (0.3–1.0 m) ~80, 1–2 m ~97,
     2–4 m ~113, ring beam ~122 (both variants);
   - cladding ~105 (grey_sheet), 93/57/49 (red_sheet); columns ~122;
   - lane walls ~42 at the foot and ~82 at 1.5–4 m; lane ceiling ~61;
-  - hopper sides ~51; gallery floor and intake roof ~44;
+  - hopper sides ~51; gallery underside ~35;
+  - intake roof ~52 mean, 40 in the heaped coal to 72 on the bare felt;
+  - trestle ~47 at its feet (0–0.5 m), ~60 at 1–2 m, ~67 at 3–5 m, ~57 on
+    the cross-head;
   - roof ~73 (grey_sheet), ~64 (red_sheet).
 - **Working, not abandoned:** the dust darkens and mattes; it adds no rust,
   stains, peeling or growth, and the cladding and roof above stay only
@@ -586,7 +680,7 @@ Checked here, in Blender:
   The glazing measures within its band in both albedos, and the facts
   sidecar is consistent.
 - **Layout:** `check_layout()`, including the lane's clearances, the
-  gallery's burial and the downpipes.
+  gallery's burial, the trestle's clearances and the downpipes.
 - **Six views:** `LOD0` (`review_asset.py --six-views`). The lane shows the
   ground through it in the front view, clear of everything east of the
   house, and the gallery's joins into the east wall and the intake roof are
@@ -596,6 +690,14 @@ Checked here, in Blender:
   2.10 m leaf, the gallery's join, and the coal dust: black at the legs'
   feet and the intake's, in the lane and on the hoppers, light on the
   cladding.
+- **Trestle pass** (`review/bunker_trestle_2026_11_21/`), before and after
+  with identical settings: the trestle stands clear of the house, the lane
+  and the intake door, its joins into the gallery's floor and its footings
+  are clean in the six views and at 25 m, and the rest of the asset is
+  unchanged beside them (whole-frame mean difference 0.2/255 in the 25 m
+  oblique). The regenerated sidecar differs from the previous one only in its
+  triangle counts, hashes and source: bounds, pivot, footprint, doors and
+  the passage are the same.
 - **Sidecar against `LOD0`:** the bounds match the mesh's; every footprint
   corner on a wall is a ground vertex (the strip's four corners under the
   gallery are not, by design); both doors sit on their walls' outer planes,

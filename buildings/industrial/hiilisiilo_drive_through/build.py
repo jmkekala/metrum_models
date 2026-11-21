@@ -26,11 +26,13 @@ beam carries the screen house: a concrete frame clad in profiled sheet to a
 of small steel windows at the screen floor. East of it, on the side the
 catalog camera sees, a 2.0 x 2.0 m conveyor gallery rises at 30 degrees from
 a low concrete intake hopper house into the screen house's east wall, clear
-of the lane and both of its approaches.
+of the lane and both of its approaches, carried at mid-span on a steel
+trestle.
 
 Construction is a set of closed solids unioned with Blender's exact boolean
 (asset_build.union): the bunker house, the roof slab, the gallery, the intake
-house's walls and roof slab, three hoppers and two downpipes. The bunker
+house's walls and roof slab, the trestle's legs, cross-head, bracing and
+footings, three hoppers and two downpipes. The bunker
 house is one closed solid of genus one: a box with the lane as a tunnel
 through it, its front and rear walls U-shaped round the lane's mouths, the
 lane's two side walls and ceiling ordinary outside surface. The lane has no
@@ -570,13 +572,19 @@ def box(x0, x1, y0, y1, z0, z1, side, top, bottom):
     return B
 
 
+def uv_int_roof(co):
+    """The intake roof's felt, planar from the slab's south-west corner."""
+    x0, y0 = L.INT_ROOF[:2]
+    return (x0 + (co.x - (IX0 - L.INT_OV)) * L.LPM, y0 + (co.y - (IY0 - L.INT_OV)) * L.LPM)
+
+
 def intake_slab():
     """The intake house's flat concrete roof, overhanging its walls by
-    INT_OV: a coping edge, a felt top, a concrete soffit."""
+    INT_OV: a coping edge, a coal-dusted felt top, a concrete soffit."""
     o = L.INT_OV
     z0, z1 = L.INT_SLAB
     return box(IX0 - o, IX1 + o, IY0 - o, IY1 + o, z0, z1, uv_patch("coping"),
-               uv_patch("felt"), uv_patch("slab_under"))
+               uv_int_roof, uv_patch("slab_under"))
 
 
 # ============================================================== the gallery
@@ -617,6 +625,163 @@ def gallery():
     return B
 
 
+# ============================================================= the trestle
+def trestle_mode(level):
+    """How the trestle under the gallery's span is built at each tier.
+
+    full   - LOD0/1: H-section legs on concrete pad footings, an H-section
+             cross-head, the X of two bars.
+    portal - LOD2/3: the legs and the cross-head as one plain solid, an
+             upturned U of the legs' plan width standing on the ground; no
+             footings. As separate boxes the leg tops' holes in the head
+             cost LOD3 its last triangles under the ceiling.
+    """
+    return ("full", "full", "portal", "portal")[level]
+
+
+def keeps_bracing(level):
+    """The X reads as two faint lines at the 70 m switch, so LOD2 keeps it
+    for about 30 triangles; LOD3 cannot afford it under its ceiling, and at
+    120 m its bars are under a pixel."""
+    return level <= 2
+
+
+def _normal(cos):
+    nx = ny = nz = 0.0
+    for i in range(len(cos)):
+        (ax, ay, az), (bx, by, bz) = cos[i], cos[(i + 1) % len(cos)]
+        nx += ay * bz - az * by
+        ny += az * bx - ax * bz
+        nz += ax * by - ay * bx
+    return nx, ny, nz
+
+
+def steel_face(B, cos):
+    """One face of the trestle's steel on the TRESTLE region: V is height
+    from the ground; U runs along Y, or along X on a face square to Y."""
+    nx, ny, _ = _normal(cos)
+    x0, y0 = L.TRESTLE[:2]
+    if abs(nx) >= abs(ny):
+        fn = lambda co: (x0 + (co.y - L.TR_U0) * L.TPM, y0 + co.z * L.TPM)   # noqa: E731
+    else:
+        fn = lambda co: (x0 + (co.x - L.TR_UX0) * L.TPM, y0 + co.z * L.TPM)  # noqa: E731
+    B.face(cos, fn)
+
+
+def prism(profile, place, t0, t1):
+    """A closed prism of the trestle's steel: the 2D *profile* swept from t0
+    to t1, place(p, t) giving the 3D point."""
+    B = Builder()
+    n = len(profile)
+    for k in range(n):
+        p, q = profile[k], profile[(k + 1) % n]
+        steel_face(B, [place(p, t0), place(q, t0), place(q, t1), place(p, t1)])
+    steel_face(B, [place(p, t0) for p in reversed(profile)])
+    steel_face(B, [place(p, t1) for p in profile])
+    return B
+
+
+def h_profile(a0, a1, b0, b1, tf, tw):
+    """An H in (a, b): flanges tf thick at a0 and a1, each spanning b0..b1;
+    the web, tw thick, along a at b's middle."""
+    m0, m1 = (b0 + b1 - tw) / 2.0, (b0 + b1 + tw) / 2.0
+    return [(a0, b0), (a0 + tf, b0), (a0 + tf, m0), (a1 - tf, m0), (a1 - tf, b0),
+            (a1, b0), (a1, b1), (a1 - tf, b1), (a1 - tf, m1), (a0 + tf, m1),
+            (a0 + tf, b1), (a0, b1)]
+
+
+def pad_uv(z_top=None):
+    """A footing on S1's foot: U round its sides, V the height, or one row
+    at z_top for its top."""
+    def fn(co):
+        return ((co.x + co.y + 3.0) * PPM, L.S1_Y0 + (co.z if z_top is None else z_top) * PPM)
+    return fn
+
+
+def portal(x0, x1, y0, y1, w, zb):
+    """The bent at LOD2/3 as one closed solid: an upturned U in (y, z), legs
+    *w* wide in Y from the ground to the head, the head from zb to the
+    cross-head's top, swept along X from x0 to x1. The top follows the
+    gallery's floor, so the U's outline differs at its two ends."""
+    top = L.tr_head_top
+
+    def u_at(x):
+        return [(x, y0, 0.0), (x, y0 + w, 0.0), (x, y0 + w, zb), (x, y1 - w, zb),
+                (x, y1 - w, 0.0), (x, y1, 0.0), (x, y1, top(x)), (x, y0, top(x))]
+    B = Builder()
+    a, b = u_at(x0), u_at(x1)
+    n = len(a)
+    for k in range(n):
+        steel_face(B, [a[k], b[k], b[(k + 1) % n], a[(k + 1) % n]])
+    steel_face(B, a)
+    steel_face(B, list(reversed(b)))
+    return B
+
+
+def trestle(level):
+    """The bent under the gallery's span, as closed solids for the union:
+    two legs, the cross-head under the gallery's floor, at the full tiers
+    two footings, and through LOD2 the X of two bars. The cross-head's top
+    follows the gallery's floor TR_BURY up into it; its bottom is level at
+    TR_HEAD_ZB, and the legs stop half-way up its bottom flange. Beyond the
+    gallery's sides its top flange stands TR_BURY proud of the floor, a
+    bearing seat."""
+    xc, s, hw = L.TR_X, L.TR_LEG / 2.0, L.TR_HEAD_W / 2.0
+    zb, top = L.TR_HEAD_ZB, L.tr_head_top
+    solids = bracing(level, xc, zb)
+    if trestle_mode(level) == "portal":
+        return solids + [(portal(xc - s, xc + s, L.TR_LEG_Y[0] - s, L.TR_LEG_Y[1] + s,
+                                 s, zb), "tmp_tr_portal")]
+    (hy0, hy1) = L.TR_HEAD_Y
+    # cross-head: an H turned on its side, a profile in (x, z) swept along Y:
+    # flanges along X at the bottom (level) and the top (sloped), the web
+    # upright between them
+    xs = (xc - hw, xc + hw)
+    tf, tw = L.TR_HEAD_TF, L.TR_HEAD_TW
+    prof = [(xs[0], zb), (xs[1], zb), (xs[1], zb + tf), (xc + tw / 2, zb + tf),
+            (xc + tw / 2, top(xc + tw / 2) - tf), (xs[1], top(xs[1]) - tf),
+            (xs[1], top(xs[1])), (xs[0], top(xs[0])), (xs[0], top(xs[0]) - tf),
+            (xc - tw / 2, top(xc - tw / 2) - tf), (xc - tw / 2, zb + tf),
+            (xs[0], zb + tf)]
+    solids.append((prism(prof, lambda p, t: (p[0], t, p[1]), hy0, hy1), "tmp_tr_head"))
+    # legs: in plan, flanges square to X, the web along X at the leg's centre,
+    # from inside their footings to half-way up the head's bottom flange
+    for i, yc in enumerate(L.TR_LEG_Y):
+        prof = h_profile(xc - s, xc + s, yc - s, yc + s, L.TR_LEG_TF, L.TR_LEG_TW)
+        solids.append((prism(prof, lambda p, t: (p[0], p[1], t),
+                             L.TR_PAD[1] - L.TR_PAD_INTO, zb + tf / 2.0), "tmp_tr_leg%d" % i))
+        p = L.TR_PAD[0] / 2.0
+        solids.append((box(xc - p, xc + p, yc - p, yc + p, 0.0, L.TR_PAD[1],
+                           pad_uv(), pad_uv(L.TR_PAD[1]), uv_patch("blank")),
+                       "tmp_tr_pad%d" % i))
+    return solids
+
+
+def bracing(level, xc, zb):
+    """The X: each bar ends cut along the plane y of a leg's centre, inside
+    its web (or the portal's solid leg), one bar each side of the bent's
+    centre plane so the two never touch."""
+    if not keeps_bracing(level):
+        return []
+    solids = []
+    ya, yb = L.TR_LEG_Y
+    z0, z1 = L.TR_BRACE_LO, zb - L.TR_BRACE_TOP
+    t = L.TR_BRACE
+    hv = t * math.hypot(yb - ya, z1 - z0) / (yb - ya)
+    for i, ((y0, za), (y1, zz), side) in enumerate((((ya, z0), (yb, z1), -1),
+                                                     ((ya, z1), (yb, z0), 1))):
+        x0 = xc + side * 0.005
+        x1 = xc + side * (0.005 + t)
+        prof = [(min(x0, x1), -hv / 2), (max(x0, x1), -hv / 2),
+                (max(x0, x1), hv / 2), (min(x0, x1), hv / 2)]
+
+        def place(p, u, y0=y0, y1=y1, za=za, zz=zz):
+            f = (u - y0) / (y1 - y0)
+            return (p[0], u, za + (zz - za) * f + p[1])
+        solids.append((prism(prof, place, y0, y1), "tmp_tr_brace%d" % i))
+    return solids
+
+
 # ================================================================ hoppers
 def hopper(yc):
     """One loading hopper under the bunker: a frustum from HOP_BURY inside
@@ -655,6 +820,7 @@ def build_lod(level):
              to_object(intake_slab(), "tmp_intake_slab")]
     if keeps_hoppers(level):
         parts += [to_object(hopper(y), "tmp_hopper%d" % i) for i, y in enumerate(L.HOP_Y)]
+    parts += [to_object(B, name) for B, name in trestle(level)]
     parts += [to_object(B, name) for B, name in
               DP.solids(DOWNPIPES, *DP.MODES[level], L.PIPE_STRIP, L.ATLAS)]
     obj = union(base, parts)
@@ -687,7 +853,8 @@ def check_layout():
     """Assert what the numbers hide and a render would show: openings
     straddling a joint, a column or the roof; the lane narrower or lower than
     the brief's truck; the gallery missing the intake or fouling a downpipe;
-    the bands overrunning the atlas."""
+    the trestle near the lane or off its gallery; the bands overrunning the
+    atlas."""
     problems = []
     gap = 0.05
     for spec in WALLS + INTAKE_WALLS:
@@ -773,6 +940,35 @@ def check_layout():
         problems.append("the gallery or the intake reaches within 1.5 m of the lane's line")
     if gx0 < HX - 0.6 or IX0 - L.INT_OV < HX + 1.0:
         problems.append("the gallery or the intake is not east of the house")
+    # the trestle: its footings 1.5 m or more off the lane's line too, in the
+    # open between the house and the intake's slab, clear of the intake
+    # door's approach; its legs outside the gallery's sides, its cross-head
+    # across the whole width under the floor, the legs and bars inside it
+    p, s, hw = L.TR_PAD[0] / 2.0, L.TR_LEG / 2.0, L.TR_HEAD_W / 2.0
+    tx0, tx1 = L.TR_X - max(p, hw), L.TR_X + max(p, hw)
+    (ly0, ly1), (hy0, hy1) = L.TR_LEG_Y, L.TR_HEAD_Y
+    if tx0 < XL1 + 1.5:
+        problems.append("the trestle reaches within 1.5 m of the lane's line")
+    if not (HX + 1.0 < tx0 and tx1 < IX0 - L.INT_OV - 1.0):
+        problems.append("the trestle is not in the open between the house and the intake")
+    (dl, dr, _b, _t), _ = item_rects("door_v", *INTAKE_WALLS[0]["items"][0][1:])
+    if tx1 > IX0 + dl - 1.0:
+        problems.append("the trestle crowds the intake door's approach")
+    if not (ly0 + s < gy0 - 0.03 and gy1 + 0.03 < ly1 - s):
+        problems.append("a trestle leg is under the gallery, not beside it")
+    if not (hy0 < ly0 - s - 0.01 and ly1 + s + 0.01 < hy1 and hy0 < gy0 and gy1 < hy1):
+        problems.append("the cross-head does not span the legs and the gallery")
+    zb = L.TR_HEAD_ZB
+    if not (L.TR_HEAD_D - 0.05 < L.gal_bottom(L.TR_X + hw) - zb
+            and L.TR_BURY + 0.005 < L.TR_HEAD_TF):
+        problems.append("the cross-head's top flange is not just under the gallery's floor")
+    if zb - L.TR_BRACE_TOP < L.TR_BRACE_LO + 2.0 or L.TR_BRACE_LO < L.TR_PAD[1] + 0.3:
+        problems.append("the trestle's bracing does not fit between its feet and head")
+    if s - L.TR_LEG_TF < 0.075 + 0.003:
+        problems.append("the bracing bars do not fit between the legs' flanges")
+    if (hy1 - L.TR_U0) * L.TPM > L.TRESTLE[2] - 1 or \
+            L.tr_head_top(L.TR_X - hw) * L.TPM > L.TRESTLE[3] - 1:
+        problems.append("the trestle runs off its atlas region")
     # downpipes: clear of the lane's mouth, which passes through the rear wall
     avoid = [("lane", HX - XL1, HX - XL0)]
     for pipe in DOWNPIPES:
