@@ -30,7 +30,7 @@ A trim sheet. Rows from the bottom:
                              tipping grate (32 px/m), the windows, the doors,
                              the loading hatch, the louvre, the head house's
                              cladding (CLAD), the conveyor gallery's sides
-                             (GAL_SIDE, 54 px/m along it) and closed end
+                             (GAL_SIDE, 30 px/m along it) and closed end
                              (GAL_END), flat patches; the lane's traffic paint
                              (jamb bands, stop mark, tipping height, the entry
                              signal) is painted into its own regions
@@ -132,31 +132,55 @@ Z_HH_TOP = Z_TSLAB + WALL_INTO      # the head house walls' lid, inside the slab
 # The inclined conveyor gallery: an enclosed box 2.6 m wide and 2.8 m tall
 # in vertical section, leaving the head house's rear face (the shaft's rear
 # face plane, TY1) with its centre line at GAL_Z0 and rising at GAL_ANG
-# degrees away from the building, toward +Y, GAL_LEN metres in plan to a
-# closed end. It is carried as a cantilever on two raking steel struts back
-# to the shaft's rear face: nothing of it reaches the ground.
-#
-# The plant hall's gallery stub has the same section and slope, descending
-# toward this one, its lower end's centre at HALL_STUB_Z. The two are
-# collinear when their ends stand GAL_GAP apart along the line in plan.
+# degrees away from the building, toward +Y, GAL_LEN metres in plan to its
+# closed end face, the asset's rear bounds plane: the whole conveyor from the
+# tower to the plant hall's coal wall, which stands on that plane with a
+# closed inlet of the same section centred at GAL_Z1. A flashing collar
+# COLLAR_PROUD proud all round and COLLAR_L long finishes the end, flush with
+# its end face, where the gallery meets the wall. The span is carried by two
+# raking struts back to the shaft's rear face and one steel trestle bent near
+# the far end; nothing stands on the ground within TR_CLEAR of the tower.
 GAL_W, GAL_H = 2.6, 2.8
 GAL_ANG = 20.0
 GAL_TAN = math.tan(math.radians(GAL_ANG))
 GAL_Z0 = 13.0
-GAL_LEN = 6.5
-GAL_Y1 = TY1 + GAL_LEN                       # its end face's plane, 13.5
-GAL_Z1 = GAL_Z0 + GAL_LEN * GAL_TAN          # its end's centre, 15.3658
-HALL_STUB_Z = 15.8051                        # the hall's stub's lower end centre
-GAL_GAP = (HALL_STUB_Z - GAL_Z1) / GAL_TAN   # 1.207 m end to end
+GAL_LEN = 12.0
+GAL_Y1 = TY1 + GAL_LEN                       # its end face's plane, 19.0
+GAL_Z1 = GAL_Z0 + GAL_LEN * GAL_TAN          # its end's centre, 17.3676
 GAL_BURY = 0.30                              # it starts this far inside the head house
 GAL_END_RIM = 0.15                           # the end face's rim round its panel
 GAL_END_RECESS = 0.08                        # the panel's set-back at the close tiers
-# Two raking struts under the gallery's sides, from low on the shaft's rear
-# face to two-thirds along the gallery: a cantilever on knee braces.
+COLLAR_PROUD = 0.05                          # the flashing collar, proud of the gallery ...
+COLLAR_L = 0.18                              # ... and long in plan, flush with the end
+GAL_YS = GAL_Y1 - COLLAR_L                   # the collar's back face
+# Two raking struts under the gallery's sides, from high on the shaft's rear
+# face to STRUT_OUT along the gallery: a cantilever on knee braces.
 STRUT_X = (-1.0, 1.0)
 STRUT_W = 0.24
-STRUT_FOOT = (TY1, 8.60)                     # (y, z) of their axis at the shaft's face
-STRUT_TOP_Y = TY1 + GAL_LEN * 2.0 / 3.0      # ... and under the gallery's floor, 11.33
+STRUT_FOOT = (TY1, 8.85)                     # (y, z) of their axis at the shaft's face
+STRUT_OUT = 4.5
+STRUT_TOP_Y = TY1 + STRUT_OUT                # ... and under the gallery's floor, 11.5
+# The trestle: one steel bent across the gallery TR_OUT from the tower's rear
+# face, two H-section legs just outside the gallery's sides on concrete pad
+# footings, an H-section cross-head under the floor, three panels of X
+# bracing with ties between them. Nothing else stands on the ground behind
+# the tower: the strip to TR_CLEAR is a truck road.
+TR_OUT = 10.5
+TR_Y = TY1 + TR_OUT                          # the bent's centre plane, 17.5
+TR_CLEAR = 9.0                               # nothing on the ground nearer the tower
+TR_PAD_BAND = (9.9, 11.1)                    # the footings stay inside this, out from TY1
+TR_LEG = 0.30                                # the legs' H, square in plan
+TR_LEG_TF, TR_LEG_TW = 0.025, 0.020
+TR_LEG_X = (-(GAL_W / 2.0 + 0.20), GAL_W / 2.0 + 0.20)   # their centres, x -1.5 / 1.5
+TR_HEAD_W = 0.30                             # the cross-head's flanges, along Y
+TR_HEAD_D = 0.40                             # its depth under the floor at its low edge
+TR_HEAD_TF, TR_HEAD_TW = 0.030, 0.020
+TR_BURY = 0.012                              # its top flange's top over the floor
+TR_HEAD_X = (TR_LEG_X[0] - TR_LEG / 2 - 0.03, TR_LEG_X[1] + TR_LEG / 2 + 0.03)
+TR_PAD = (1.0, 0.25)                         # the footings: plan side, height
+TR_PAD_INTO = 0.05                           # the legs run this far down into them
+TR_BRACE = 0.10                              # the bracing's square bars
+TR_PANELS = 3                                # X panels up the legs, ties between
 # The hoist beam over the head house's loading hatch, east face, with a
 # trolley block under its outer end
 HOIST_Y = 4.6
@@ -175,6 +199,14 @@ SHAFT_FRONT_Z = 9.65                         # the front face's window over the 
 def gal_floor(y):
     """The gallery's underside over plan y (its floor's outside)."""
     return GAL_Z0 - GAL_H / 2.0 + (y - TY1) * GAL_TAN
+
+
+def tr_head_top(y):
+    """The trestle cross-head's top over plan y: TR_BURY up into the floor."""
+    return gal_floor(y) + TR_BURY
+
+
+TR_HEAD_ZB = tr_head_top(TR_Y - TR_HEAD_W / 2) - TR_HEAD_D   # its bottom, level
 
 # Walls above the band sample the brick rows lower by these, in bands split
 # at these heights. A shift is a whole tone period (48 courses, 3.75 m).
@@ -287,13 +319,17 @@ CLAD_GIRTS = (0.10, 1.00, 2.00, 3.00, 3.80)     # fixing rows up the head house'
 CLAD_REAR_U = 3.0           # the rear wall's U offset in CLAD (build.py's HH_WALLS)
 GAL_REAR_S = (HX1 - GAL_W / 2.0, HX1 + GAL_W / 2.0)   # the gallery's mouth along it
 # The gallery's two sides: U along the gallery in plan from inside the head
-# house (GAL_BURY) at GPPM, V up from its floor across its 2.8 m section.
-# GPPM is under 64 px/m so its 6.8 m fit one row of the sheet.
-GPPM = 54.0
-GAL_SIDE = (648.0, 912.0, (GAL_LEN + GAL_BURY) * GPPM, 106.0)
+# house (GAL_BURY) to the collar at GPPM, V up from its floor across its
+# 2.8 m section. GPPM is under half the 64 px/m target so the 12.1 m fit one
+# row of the sheet; the lane's regions are at 32 px/m alike.
+GPPM = 30.0
+GAL_SIDE = (648.0, 912.0, (GAL_YS - TY1 + GAL_BURY) * GPPM, 106.0)
 GAL_VPM = GAL_SIDE[3] / GAL_H
-# the side lights' centres from its mouth, one a metre, clear of its end
-GAL_LIGHTS = tuple(0.55 + k for k in range(int(GAL_LEN - 1.0) + 1))
+GAL_PANEL = 1.5         # the side girder's panels: a post at every panel point
+GAL_GIRDER = 0.40       # the side girder's bottom chord, up from the floor
+# the side lights' centres from its mouth, one a panel, clear of the collar
+GAL_LIGHT_W = 0.60
+GAL_LIGHTS = tuple(GAL_PANEL * (k + 0.5) for k in range(int(GAL_LEN / GAL_PANEL)))
 # The gallery's closed end, at LPM: U across from its west side, V up.
 GAL_END = (914.0, 560.0, GAL_W * LPM, GAL_H * LPM)
 PATCH_NAMES = ("blank", "soffit", "sill", "conc", "barge", "lintel", "beam",
@@ -553,11 +589,13 @@ def check_pier(c):
         raise ValueError("traffic paint outside the portal legs' strip")
 
 
-def paint_sheet(c, x0, x1, y0, y1, mid, seed, rib_h=RIB_H, k=1.0):
+def paint_sheet(c, x0, x1, y0, y1, mid, seed, rib_h=RIB_H, k=1.0, pitch=1.0):
     """Profiled sheet over a rect, ribs across U every RIB_P px (as
     hiilisiilo_drive_through paints its own): a crown on short slopes, the
-    pan between in the rib's lee, a darker side-lap every fourth rib."""
+    pan between in the rib's lee, a darker side-lap every fourth rib.
+    *pitch* scales the rib's pixel pattern, for a region at another px/m."""
     sy, sx, Y, X = c.field(x0, x1, y0, y1)
+    X = X / pitch
     xm = np.mod(X, RIB_P)
     up = np.clip(xm / 1.5, 0.0, 1.0)
     down = np.clip((6.0 - xm) / 1.5, 0.0, 1.0)
@@ -973,24 +1011,34 @@ def paint_clad(c):
 
 
 def paint_gal_side(c):
-    """A side of the conveyor gallery, U along it in plan, V up from its
-    floor (GAL_VPM): pale profiled sheet with upright ribs between a steel
-    bottom chord and a flashing along the top, and a row of small steel
-    windows lighting the belt walkway, one every metre."""
+    """A side of the conveyor gallery, U along it in plan (GPPM), V up from
+    its floor (GAL_VPM): pale profiled sheet with upright ribs at the head
+    house's 0.25 m pitch, on a long-span side girder: a deep steel bottom
+    chord, a flashing along the top chord, a steel post at every panel point
+    and a small steel window lighting the belt walkway in every panel."""
     x0, y0, w, h = GAL_SIDE
-    paint_sheet(c, x0 - PAD, x0 + w + PAD, y0 - PAD, y0 + h + PAD, ID_CLAD, seed=67)
+    paint_sheet(c, x0 - PAD, x0 + w + PAD, y0 - PAD, y0 + h + PAD, ID_CLAD, seed=67,
+                pitch=0.25 * GPPM / RIB_P)
     v = GAL_VPM
-    c.paint(x0 - PAD, x0 + w + PAD, y0 - PAD, y0 + 0.18 * v, ID_STEEL, 1.0, 0.9, height=0.02)
-    c.mul(x0 - PAD, x0 + w + PAD, y0 + 0.18 * v, y0 + 0.18 * v + 1.5, 0.82, ao=0.84)
+    g = y0 + GAL_GIRDER * v
+    c.paint(x0 - PAD, x0 + w + PAD, y0 - PAD, g, ID_STEEL, 1.0, 0.9, height=0.03)
+    c.paint(x0 - PAD, x0 + w + PAD, g - 2.0, g, ID_STEEL, 1.08, 0.95, height=0.05)
+    c.mul(x0 - PAD, x0 + w + PAD, g, g + 2.0, 0.80, ao=0.80)
     c.paint(x0 - PAD, x0 + w + PAD, y0 + h - 0.14 * v, y0 + h + PAD, ID_FLASH, 0.95, 0.95,
             height=0.015)
     c.mul(x0 - PAD, x0 + w + PAD, y0 + h - 0.14 * v - 1.5, y0 + h - 0.14 * v, 0.85, ao=0.86)
+    k = 1
+    while (GAL_BURY + k * GAL_PANEL) * GPPM < w - 2.0:
+        a = x0 + (GAL_BURY + k * GAL_PANEL) * GPPM
+        _bar(c, a - 1.5, a + 1.5, g, y0 + h - 0.14 * v, mid=ID_STEEL, h=0.03, ao=0.86,
+             shade=0.95, axes="x")
+        k += 1
     for d in GAL_LIGHTS:
-        a = x0 + (GAL_BURY + d - 0.30) * GPPM
-        b = a + 0.60 * GPPM
+        a = x0 + (GAL_BURY + d - GAL_LIGHT_W / 2.0) * GPPM
+        b = a + GAL_LIGHT_W * GPPM
         s0, s1 = y0 + 1.30 * v, y0 + 1.85 * v
         _bar(c, a, b, s0, s1, h=FRAME_H)
-        _grid(c, a + 3, b - 3, s0 + 3, s1 - 3, 2, 1)
+        _grid(c, a + 2, b - 2, s0 + 2, s1 - 2, 2, 1)
         c.mul(a, b, s0 - 2, s0, 0.85, ao=0.84)
 
 
@@ -1063,8 +1111,11 @@ def check_regions():
     legs = WALL_T / (2 * HAZARD_W)
     if round(legs) < 1 or abs(legs - round(legs)) > 1e-9:
         problems.append("the traffic bands' period does not divide the legs' faces")
-    if GAL_LIGHTS[-1] + 0.30 > GAL_LEN - 0.15:
-        problems.append("the gallery's last light runs into its end")
+    if GAL_LIGHTS[-1] + GAL_LIGHT_W / 2.0 > GAL_YS - TY1 - 0.15:
+        problems.append("the gallery's last light runs into its collar")
+    if any(abs(d - k * GAL_PANEL) < GAL_LIGHT_W / 2.0 + 0.1 for d in GAL_LIGHTS
+           for k in range(int(GAL_LEN / GAL_PANEL) + 1)):
+        problems.append("a gallery light runs into a girder post")
     if ANNEX_SLOPE * ANNEX_V_K > MAIN_SLOPE - 0.15 - 0.05:
         problems.append("the lean-to reaches the ridge cap's rows")
     if ROOF_Y0 - PAD < BRICK_H + PAD + 2 or EAVE_Y0 - PAD < ROOF_Y0 + ROOF_H + PAD + 2:
@@ -1290,8 +1341,8 @@ def weather(c):
            * np.exp(-np.clip((X - x0) / GPPM - GAL_BURY, 0, None) / 1.2)
            * (0.6 + 0.4 * nz("blotch")), (ID_CLAD, ID_STEEL, ID_FLASH))
     for d in GAL_LIGHTS:
-        a = x0 + (GAL_BURY + d - 0.30) * GPPM
-        w.add("D", a, a + 0.60 * GPPM, y0 + 0.25 * v, y0 + 1.30 * v,
+        a = x0 + (GAL_BURY + d - GAL_LIGHT_W / 2.0) * GPPM
+        w.add("D", a, a + GAL_LIGHT_W * GPPM, y0 + 0.25 * v, y0 + 1.30 * v,
               lambda Y, X, nz: 0.45 * atlas.smoothstep(0.2, 1.2, nz("runs"))
               * np.exp(-(y0 + 1.30 * v - Y) / (0.5 * v)), (ID_CLAD,))
     w.coal(GAL_END[0] - PAD, GAL_END[0] + GAL_END[2] + PAD, GAL_END[1] - PAD,
