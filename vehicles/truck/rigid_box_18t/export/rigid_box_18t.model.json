@@ -4,7 +4,7 @@
   "kind": "vehicle",
   "name": "rigid_box_18t",
   "path": "vehicles/truck/rigid_box_18t",
-  "source": {"commit": "db1af2b244807bac18148757d6a1b209bee48889", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "506ac9effc34358c014f7c94bdf3949e6c5cb953", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-1.493, 0.0, -3.95], "max": [1.493, 3.7, 3.95]},
   "body": {
@@ -34,10 +34,10 @@
     {"group": "tail_brake", "lamp": 3, "side": "right", "position": "rear", "colour": "red", "centre": [-1.02, 0.645, -3.87], "facing": [0.0, 0.0, -1.0], "width_m": 0.12, "height_m": 0.12},
     {"group": "indicator_left", "lamp": 4, "side": "left", "position": "front", "colour": "amber", "centre": [0.9307, 0.735, 3.8239], "facing": [0.1591, 0.0, 0.9873], "width_m": 0.1049, "height_m": 0.25},
     {"group": "indicator_left", "lamp": 4, "side": "left", "position": "rear", "colour": "amber", "centre": [1.12, 0.645, -3.87], "facing": [0.0, 0.0, -1.0], "width_m": 0.08, "height_m": 0.12},
-    {"group": "indicator_left", "lamp": 4, "side": "left", "position": "side", "colour": "amber", "centre": [1.138, 1.27, 3.445], "facing": [1.0, 0.0, 0.0], "width_m": 0.07, "height_m": 0.06},
+    {"group": "indicator_left", "lamp": 4, "side": "left", "position": "side", "colour": "amber", "centre": [1.1419, 1.27, 3.445], "facing": [1.0, 0.0, 0.0], "width_m": 0.07, "height_m": 0.06},
     {"group": "indicator_right", "lamp": 5, "side": "right", "position": "front", "colour": "amber", "centre": [-0.9307, 0.735, 3.8239], "facing": [-0.1591, 0.0, 0.9873], "width_m": 0.1049, "height_m": 0.25},
     {"group": "indicator_right", "lamp": 5, "side": "right", "position": "rear", "colour": "amber", "centre": [-1.12, 0.645, -3.87], "facing": [0.0, 0.0, -1.0], "width_m": 0.08, "height_m": 0.12},
-    {"group": "indicator_right", "lamp": 5, "side": "right", "position": "side", "colour": "amber", "centre": [-1.138, 1.27, 3.445], "facing": [-1.0, 0.0, 0.0], "width_m": 0.07, "height_m": 0.06},
+    {"group": "indicator_right", "lamp": 5, "side": "right", "position": "side", "colour": "amber", "centre": [-1.1419, 1.27, 3.445], "facing": [-1.0, 0.0, 0.0], "width_m": 0.07, "height_m": 0.06},
     {"group": "reverse", "lamp": 6, "side": "left", "position": "rear", "colour": "white", "centre": [0.825, 0.645, -3.87], "facing": [0.0, 0.0, -1.0], "width_m": 0.09, "height_m": 0.12},
     {"group": "reverse", "lamp": 6, "side": "right", "position": "rear", "colour": "white", "centre": [-0.825, 0.645, -3.87], "facing": [0.0, 0.0, -1.0], "width_m": 0.09, "height_m": 0.12},
     {"group": "low_beam", "lamp": 7, "side": "left", "position": "front", "colour": "white", "centre": [0.8073, 0.7625, 3.8438], "facing": [0.1579, 0.0, 0.9875], "width_m": 0.145, "height_m": 0.195},
@@ -46,6 +46,8 @@
     {"group": "high_beam", "lamp": 8, "side": "right", "position": "front", "colour": "white", "centre": [-0.6469, 0.7625, 3.8695], "facing": [-0.1589, 0.0, 0.9873], "width_m": 0.18, "height_m": 0.195},
     {"group": "daytime", "lamp": 9, "side": "left", "position": "front", "colour": "white", "centre": [0.7184, 0.6375, 3.858], "facing": [0.1585, 0.0, 0.9874], "width_m": 0.325, "height_m": 0.055},
     {"group": "daytime", "lamp": 9, "side": "right", "position": "front", "colour": "white", "centre": [-0.7184, 0.6375, 3.858], "facing": [-0.1585, 0.0, 0.9874], "width_m": 0.325, "height_m": 0.055},
+    {"group": "fog_front", "lamp": 10, "side": "left", "position": "front", "colour": "white", "centre": [0.8729, 0.497, 3.8172], "facing": [0.1792, 0.0, 0.9838], "width_m": 0.1239, "height_m": 0.062},
+    {"group": "fog_front", "lamp": 10, "side": "right", "position": "front", "colour": "white", "centre": [-0.8729, 0.497, 3.8172], "facing": [-0.1792, 0.0, 0.9838], "width_m": 0.1239, "height_m": 0.062},
     {"group": "fog_rear", "lamp": 11, "side": "left", "position": "rear", "colour": "red", "centre": [0.915, 0.645, -3.87], "facing": [0.0, 0.0, -1.0], "width_m": 0.09, "height_m": 0.12},
     {"group": "marker", "lamp": 15, "side": "left", "position": "front", "colour": "white", "centre": [1.11, 3.63, 2.05], "facing": [0.0, 0.0, 1.0], "width_m": 0.1, "height_m": 0.06},
     {"group": "marker", "lamp": 15, "side": "right", "position": "front", "colour": "white", "centre": [-1.11, 3.63, 2.05], "facing": [0.0, 0.0, 1.0], "width_m": 0.1, "height_m": 0.06},
@@ -66,20 +68,20 @@
   "coupling": null,
   "interior": null,
   "lods": [
-    {"file": "rigid_box_18t_lod0.glb", "triangles": 4492, "sha256": "9af7aa084aaaebb6c1eb42185899fecb797afaa2b4a00807dd17176ab17a7c26", "wheel_parts": true, "lamp_ids": true, "glass_ids": true},
-    {"file": "rigid_box_18t_lod1.glb", "triangles": 1374, "sha256": "d404b9d2a0500ef5cca899d07f0f86a4251a43e4f627c0291b93050afb84e9da", "wheel_parts": true, "lamp_ids": true, "glass_ids": true},
-    {"file": "rigid_box_18t_lod2.glb", "triangles": 348, "sha256": "e9dfb5fa48e41d00a2635432bf784567d8d0e934eac7c2dd67bf39de6b7f9c1d", "wheel_parts": false, "lamp_ids": true, "glass_ids": true},
+    {"file": "rigid_box_18t_lod0.glb", "triangles": 4458, "sha256": "acdbded8c1debb2b1483e14b27ec3db1fce144d6bdea04ac514ab1d16faf9790", "wheel_parts": true, "lamp_ids": true, "glass_ids": true},
+    {"file": "rigid_box_18t_lod1.glb", "triangles": 1398, "sha256": "75bd0ef19c49d092bc900f152e41fbea4e8f5b78aa3f475445f9d469192b9f8b", "wheel_parts": true, "lamp_ids": true, "glass_ids": true},
+    {"file": "rigid_box_18t_lod2.glb", "triangles": 348, "sha256": "a7dc7edf750af4229626fd5283dda847b1b1fb7c9ef269493a07e9b4b05b63cb", "wheel_parts": false, "lamp_ids": true, "glass_ids": true},
     {"file": "rigid_box_18t_lod3.glb", "triangles": 60, "sha256": "0e7647188d3f8dd8b21bf3dcc975a29ecbec4dca3663f3a0f6bbfbb58c3baa18", "wheel_parts": false, "lamp_ids": false, "glass_ids": false}
   ],
   "textures": {
-    "orm": {"file": "rigid_box_18t_orm.png", "sha256": "a3d03b064b3ac6a912ed63dce1c957b915d5b8485b1648274564dbe911385c9c"},
-    "emission": {"file": "rigid_box_18t_emission.png", "sha256": "e6ca3528bc910611147198470bb7335c2d4a7690a357f9dc407b48afb4feda82"},
-    "normal": {"file": "rigid_box_18t_normal.png", "sha256": "a84965470a1eefa982da750227a196aa61d1b82f3f858a0acd2eb3a91f124233"}
+    "orm": {"file": "rigid_box_18t_orm.png", "sha256": "12167808e63a91a2968206d2715e605f7ff3c6dc941959f481d55839dd4d948a"},
+    "emission": {"file": "rigid_box_18t_emission.png", "sha256": "6993d54ae396e38ce6565369b71b778d7bc74887e4136adfdf095099c3b6a47c"},
+    "normal": {"file": "rigid_box_18t_normal.png", "sha256": "9a7b26dea437df470be9eb8ed2b91590243af9c12d893333487bbfe4d0e06528"}
   },
   "variants": [
-    {"name": "plain", "albedo": {"file": "rigid_box_18t_albedo_plain.png", "sha256": "d0ba8e412be3f8e9d507b2242b884f556c66f45ef777fa726f83d55576a107ed"}, "paint": true},
-    {"name": "haulier", "albedo": {"file": "rigid_box_18t_albedo_haulier.png", "sha256": "18d2b79c33214a6dce7e718a873765f738f086f5372ada065a48cb94142a1d28"}, "paint": false}
+    {"name": "plain", "albedo": {"file": "rigid_box_18t_albedo_plain.png", "sha256": "a3fa9dd344ac267a313725be94e25fd81acc8d5bf20748cc2ff132a0092f7a2a"}, "paint": true},
+    {"name": "haulier", "albedo": {"file": "rigid_box_18t_albedo_haulier.png", "sha256": "d0cd738cda45c4e49092ffb2847fc798ad8f2da72b8a9c11055a810a6b021570"}, "paint": false}
   ],
   "default_variant": "plain",
-  "preview": {"file": "preview.png", "sha256": "329b6427674c7a12dfee21e6ce2d4fdae1527db4ac7becdedea75e9970d95312"}
+  "preview": {"file": "preview.png", "sha256": "d1a29985d58199131f7fd205a326cdc1a1b107ad881afd8dcf74d02c020389a4"}
 }
