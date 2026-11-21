@@ -4,7 +4,7 @@
   "kind": "vehicle",
   "name": "estate_compact",
   "path": "vehicles/car/estate_compact",
-  "source": {"commit": "b1e6301327109ba62d12a38c4e35d03a733fab42", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "18d805b90a87c0951a6d7d07da29bcbf2bc35354", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-1.01, 0.0, -2.24], "max": [1.01, 1.468, 2.24]},
   "body": {
@@ -30,30 +30,30 @@
   ],
   "attributes": {"set": "COLOR_0", "r": "part", "g": "surface", "b": "paint", "version": 1},
   "lamps": [
-    {"group": "tail", "lamp": 1, "side": "left", "position": "side", "colour": "red", "centre": [0.8546, 0.9247, -1.8721], "facing": [0.9582, 0.1553, -0.2405], "width_m": 0.2166, "height_m": 0.1559},
-    {"group": "tail", "lamp": 1, "side": "right", "position": "side", "colour": "red", "centre": [-0.8546, 0.9247, -1.8721], "facing": [-0.9582, 0.1553, -0.2405], "width_m": 0.2166, "height_m": 0.1559},
+    {"group": "tail", "lamp": 1, "side": "left", "position": "side", "colour": "red", "centre": [0.8562, 0.925, -1.8755], "facing": [0.9531, 0.1904, -0.2353], "width_m": 0.2227, "height_m": 0.1572},
+    {"group": "tail", "lamp": 1, "side": "right", "position": "side", "colour": "red", "centre": [-0.8562, 0.925, -1.8755], "facing": [-0.9531, 0.1904, -0.2353], "width_m": 0.2227, "height_m": 0.1572},
     {"group": "brake", "lamp": 2, "side": "centre", "position": "rear", "colour": "red", "centre": [0.0, 1.3586, -1.7921], "facing": [0.0, -0.6856, -0.728], "width_m": 0.2988, "height_m": 0.0346},
-    {"group": "tail_brake", "lamp": 3, "side": "left", "position": "rear", "colour": "red", "centre": [0.7514, 0.9156, -1.9933], "facing": [0.3941, 0.3215, -0.861], "width_m": 0.1824, "height_m": 0.1765},
-    {"group": "tail_brake", "lamp": 3, "side": "right", "position": "rear", "colour": "red", "centre": [-0.7514, 0.9156, -1.9933], "facing": [-0.3941, 0.3215, -0.861], "width_m": 0.1824, "height_m": 0.1765},
-    {"group": "indicator_left", "lamp": 4, "side": "left", "position": "rear", "colour": "amber", "centre": [0.6383, 0.945, -2.0189], "facing": [0.194, 0.3521, -0.9157], "width_m": 0.113, "height_m": 0.0995},
+    {"group": "tail_brake", "lamp": 3, "side": "left", "position": "rear", "colour": "red", "centre": [0.7521, 0.9155, -1.9987], "facing": [0.3903, 0.3749, -0.8409], "width_m": 0.1861, "height_m": 0.1803},
+    {"group": "tail_brake", "lamp": 3, "side": "right", "position": "rear", "colour": "red", "centre": [-0.7521, 0.9155, -1.9987], "facing": [-0.3903, 0.3749, -0.8409], "width_m": 0.1861, "height_m": 0.1803},
+    {"group": "indicator_left", "lamp": 4, "side": "left", "position": "rear", "colour": "amber", "centre": [0.6382, 0.9449, -2.0224], "facing": [0.1872, 0.4118, -0.8918], "width_m": 0.1144, "height_m": 0.1025},
     {"group": "indicator_left", "lamp": 4, "side": "left", "position": "side", "colour": "amber", "centre": [0.8239, 0.7568, 1.8431], "facing": [0.8415, 0.5203, 0.1458], "width_m": 0.3149, "height_m": 0.1465},
-    {"group": "indicator_left", "lamp": 4, "side": "left", "position": "side", "colour": "amber", "centre": [1.01, 1.0193, 0.798], "facing": [1.0, 0.0, 0.0], "width_m": 0.0185, "height_m": 0.0426},
-    {"group": "indicator_right", "lamp": 5, "side": "right", "position": "rear", "colour": "amber", "centre": [-0.6383, 0.945, -2.0189], "facing": [-0.194, 0.3521, -0.9157], "width_m": 0.113, "height_m": 0.0995},
+    {"group": "indicator_left", "lamp": 4, "side": "left", "position": "side", "colour": "amber", "centre": [1.01, 1.0234, 0.7937], "facing": [1.0, 0.0, 0.0], "width_m": 0.025, "height_m": 0.0582},
+    {"group": "indicator_right", "lamp": 5, "side": "right", "position": "rear", "colour": "amber", "centre": [-0.6382, 0.9449, -2.0224], "facing": [-0.1872, 0.4118, -0.8918], "width_m": 0.1144, "height_m": 0.1025},
     {"group": "indicator_right", "lamp": 5, "side": "right", "position": "side", "colour": "amber", "centre": [-0.8239, 0.7568, 1.8431], "facing": [-0.8415, 0.5203, 0.1458], "width_m": 0.3149, "height_m": 0.1465},
-    {"group": "indicator_right", "lamp": 5, "side": "right", "position": "side", "colour": "amber", "centre": [-1.01, 1.0193, 0.798], "facing": [-1.0, 0.0, 0.0], "width_m": 0.0185, "height_m": 0.0426},
-    {"group": "reverse", "lamp": 6, "side": "left", "position": "rear", "colour": "white", "centre": [0.6295, 0.8636, -2.052], "facing": [0.192, 0.3522, -0.916], "width_m": 0.1177, "height_m": 0.0882},
-    {"group": "reverse", "lamp": 6, "side": "right", "position": "rear", "colour": "white", "centre": [-0.6295, 0.8636, -2.052], "facing": [-0.192, 0.3522, -0.916], "width_m": 0.1177, "height_m": 0.0882},
+    {"group": "indicator_right", "lamp": 5, "side": "right", "position": "side", "colour": "amber", "centre": [-1.01, 1.0234, 0.7937], "facing": [-1.0, 0.0, 0.0], "width_m": 0.025, "height_m": 0.0582},
+    {"group": "reverse", "lamp": 6, "side": "left", "position": "rear", "colour": "white", "centre": [0.63, 0.8635, -2.0617], "facing": [0.1877, 0.412, -0.8917], "width_m": 0.1201, "height_m": 0.0907},
+    {"group": "reverse", "lamp": 6, "side": "right", "position": "rear", "colour": "white", "centre": [-0.63, 0.8635, -2.0617], "facing": [-0.1877, 0.412, -0.8917], "width_m": 0.1201, "height_m": 0.0907},
     {"group": "low_beam", "lamp": 7, "side": "left", "position": "front", "colour": "white", "centre": [0.7269, 0.741, 2.0139], "facing": [0.4173, 0.5973, 0.6849], "width_m": 0.1978, "height_m": 0.1857},
     {"group": "low_beam", "lamp": 7, "side": "right", "position": "front", "colour": "white", "centre": [-0.7269, 0.741, 2.0139], "facing": [-0.4173, 0.5973, 0.6849], "width_m": 0.1978, "height_m": 0.1857},
     {"group": "high_beam", "lamp": 8, "side": "left", "position": "front", "colour": "white", "centre": [0.5217, 0.7448, 2.0843], "facing": [0.21, 0.4487, 0.8687], "width_m": 0.3108, "height_m": 0.1485},
     {"group": "high_beam", "lamp": 8, "side": "right", "position": "front", "colour": "white", "centre": [-0.5217, 0.7448, 2.0843], "facing": [-0.21, 0.4487, 0.8687], "width_m": 0.3108, "height_m": 0.1485},
     {"group": "daytime", "lamp": 9, "side": "left", "position": "front", "colour": "white", "centre": [0.5106, 0.6648, 2.1262], "facing": [0.1387, 0.4662, 0.8737], "width_m": 0.3194, "height_m": 0.0784},
     {"group": "daytime", "lamp": 9, "side": "right", "position": "front", "colour": "white", "centre": [-0.5106, 0.6648, 2.1262], "facing": [-0.1387, 0.4662, 0.8737], "width_m": 0.3194, "height_m": 0.0784},
-    {"group": "fog_rear", "lamp": 11, "side": "left", "position": "rear", "colour": "red", "centre": [0.5, 0.4165, -2.1955], "facing": [0.1725, -0.0905, -0.9808], "width_m": 0.1128, "height_m": 0.0713}
+    {"group": "fog_rear", "lamp": 11, "side": "left", "position": "rear", "colour": "red", "centre": [0.4999, 0.4165, -2.195], "facing": [0.1754, -0.0712, -0.9819], "width_m": 0.1126, "height_m": 0.0712}
   ],
   "glass": [
-    {"group": "glass_windscreen", "id": 32, "area_m2": 1.199},
-    {"group": "glass_front_side", "id": 33, "area_m2": 0.406},
+    {"group": "glass_windscreen", "id": 32, "area_m2": 1.196},
+    {"group": "glass_front_side", "id": 33, "area_m2": 0.408},
     {"group": "glass_rear_side", "id": 34, "area_m2": 0.803},
     {"group": "glass_rear", "id": 35, "area_m2": 0.398}
   ],
@@ -61,19 +61,19 @@
   "coupling": null,
   "interior": null,
   "lods": [
-    {"file": "estate_compact_lod0.glb", "triangles": 2952, "sha256": "a497e8442254e16989d5f76ce86e38af92c88fd0eb79b012c059e21130edbc36", "wheel_parts": true, "lamp_ids": true, "glass_ids": true},
-    {"file": "estate_compact_lod1.glb", "triangles": 878, "sha256": "0ebc79c3559b743bc08fbc2e0eb802625c26ed12133afed65c25f556a12aff40", "wheel_parts": true, "lamp_ids": true, "glass_ids": true},
-    {"file": "estate_compact_lod2.glb", "triangles": 216, "sha256": "ec89917ea0287e16028df5d409003ca741ca204b40884607b2215f5b84133542", "wheel_parts": false, "lamp_ids": true, "glass_ids": true},
+    {"file": "estate_compact_lod0.glb", "triangles": 2910, "sha256": "97e5c174990bb0983be3aa8be4ce9fcc391fd8f6b7a03b0b44cf5f8c5ecf0cd4", "wheel_parts": true, "lamp_ids": true, "glass_ids": true},
+    {"file": "estate_compact_lod1.glb", "triangles": 880, "sha256": "a64ea9d1313d3348467c275ca255af7585fdf6c6523fe48b1a596367b8d9ed78", "wheel_parts": true, "lamp_ids": true, "glass_ids": true},
+    {"file": "estate_compact_lod2.glb", "triangles": 216, "sha256": "023fbdae188514121c3112c2a92ce49b2e2d6abd509890e1992b7d8c8458a268", "wheel_parts": false, "lamp_ids": true, "glass_ids": true},
     {"file": "estate_compact_lod3.glb", "triangles": 40, "sha256": "d6247f3d7f74e02ec7df88f65709697f23807156c0e48d5c638ce3660f1b7857", "wheel_parts": false, "lamp_ids": false, "glass_ids": false}
   ],
   "textures": {
-    "orm": {"file": "estate_compact_orm.png", "sha256": "df6952de78dfc8c8a97652fda439cc40538e014080c6d8be7a3441e3862e2d8f"},
-    "emission": {"file": "estate_compact_emission.png", "sha256": "88f37cb30e0e952d38a9cbdbf9009538f3df8f274215f00e65263bb522dfcc82"},
-    "normal": {"file": "estate_compact_normal.png", "sha256": "a37226673412cf2d76f037bacf63c74f16f539a66dba51d4ca4770dcd596009f"}
+    "orm": {"file": "estate_compact_orm.png", "sha256": "c25dad1eed1bcebca8330749fa299cc6fd3c770bb43c43ee3732cfb389e6d6f9"},
+    "emission": {"file": "estate_compact_emission.png", "sha256": "14202068e85350aa1d846fe4dd94b0e031ab1b5ae28baed557ee610e3b161f5d"},
+    "normal": {"file": "estate_compact_normal.png", "sha256": "42dc52a2fdc62558387977b6f8311d977bf6ebcb921b4e855b5565fb1a739d0b"}
   },
   "variants": [
-    {"name": "plain", "albedo": {"file": "estate_compact_albedo_plain.png", "sha256": "881b22cc786e84935245ff44f79b4cbc91790fe296b75063de1d216e2e640855"}, "paint": true}
+    {"name": "plain", "albedo": {"file": "estate_compact_albedo_plain.png", "sha256": "57a91ce8a1f5c1ada30386d02df1c268cdf84872522319ed35555b643af3af16"}, "paint": true}
   ],
   "default_variant": "plain",
-  "preview": {"file": "preview.png", "sha256": "ec447432ecc41a26b22dcd065ccc6ae122daf59f792f277dce51450ccc1f37d4"}
+  "preview": {"file": "preview.png", "sha256": "0091eb2cfb63fe10b0084a9831c809d0c995386bd30c1ff1538dfadeaa2ac726"}
 }

@@ -53,7 +53,7 @@ M = dict(paint=1, lip=2, grille=3, intake=4, pillar=5, sail=35, under=6, liner=7
          glass_dark=23, pic_red=24, pic_amber=25, pic_white=26, disc=27, hl_chrome=28)
 M_LENS = {lid: 40 + lid for lid in range(1, 16)}
 SRGB = {M["paint"]: (228, 228, 228), M["lip"]: (40, 41, 42), M["grille"]: (24, 25, 26),
-        M["intake"]: (30, 31, 32), M["pillar"]: (16, 17, 18), M["under"]: (20, 20, 21),
+        M["intake"]: (30, 31, 32), M["pillar"]: (25, 26, 27), M["under"]: (20, 20, 21),
         M["liner"]: (38, 38, 39), M["plate"]: (238, 238, 234), M["plate_rim"]: (40, 42, 44),
         M["glass"]: glazing.BASE, M["tread"]: (40, 40, 40), M["tyre"]: (30, 30, 31),
         M["rim"]: (186, 188, 190), M["wheel_inner"]: (22, 22, 23),
@@ -64,7 +64,7 @@ SRGB = {M["paint"]: (228, 228, 228), M["lip"]: (40, 41, 42), M["grille"]: (24, 2
         M["pic_white"]: (165, 167, 165), M["disc"]: (24, 24, 26),
         M["hl_chrome"]: (206, 208, 210)}
 ROUGH = {M["paint"]: (0.32, 0.0), M["lip"]: (0.86, 0.0), M["grille"]: (0.55, 0.0),
-         M["intake"]: (0.62, 0.0), M["pillar"]: (0.18, 0.0), M["under"]: (0.9, 0.0),
+         M["intake"]: (0.62, 0.0), M["pillar"]: (0.42, 0.0), M["under"]: (0.9, 0.0),
          M["liner"]: (0.92, 0.0), M["plate"]: (0.45, 0.0), M["plate_rim"]: (0.5, 0.0),
          M["glass"]: (glazing.ROUGHNESS, 0.0), M["tread"]: (0.9, 0.0), M["tyre"]: (0.88, 0.0),
          M["rim"]: (0.35, 0.85), M["wheel_inner"]: (0.85, 0.0), M["mirror_glass"]: (0.06, 0.9),
@@ -81,7 +81,7 @@ CABIN_LEVEL = 0.25
 KIND_MID = {"paint": M["paint"], "lip": M["lip"], "grille": M["grille"],
             "intake": M["intake"], "pillar": M["pillar"], "sail": M["sail"],
             "under": M["under"], "liner": M["liner"], "reflector": M["pic_red"],
-            "seal": M["seal"]}
+            "seal": M["seal"], "pod": M["lip"]}
 
 
 # ================================================================ raster
@@ -173,7 +173,7 @@ def paint():
         c.paint(x, x + w, y, y + h, mid=mid, shade=sh, height=0.0)
     for name, rect in (("paint", S.R_FLAT_PAINT), ("mirror_glass", S.R_MIRROR_GLASS),
                        ("rail", S.R_RAIL), ("under", S.R_UNDER),
-                       ("pic_red", S.R_REFLECTOR)):
+                       ("pic_red", S.R_REFLECTOR), ("sail", S.R_SAIL)):
         x, y, w, h = rect
         c.paint(x, x + w, y, y + h, mid=M[name])
     return c
@@ -235,6 +235,7 @@ class Region:
 
 SEAM = 0.0135                   # a panel gap's painted width: 1.7 texels, to read at 30 m
 ARCH_TRIM = 0.008               # the dark trim edge round each wheel arch
+DOOR_FOOT = S.Z_MID["S1"] + 0.012   # the doors' lower edge, over the sill cover
 STRIP_Z = (0.462, 0.500)        # the side mouldings and the bumpers' rub strips
 STRIP_FRONT_S, STRIP_REAR_S = 0.47, 3.90      # where the strips end short of the arches
 STRIP_X = 0.50                  # and where they start on the bumpers' faces
@@ -319,25 +320,45 @@ def paint_side(c):
             R.put((r >= S.ARCH_R + 0.026) & (r < S.ARCH_R + 0.034), shade=0.96, add_h=0.002,
                   on=BODY)
         # door cut lines
-        R.groove(near(s, 1.305) & (z > 0.30) & (z < bz - 0.004), on=BODY)
-        R.groove(near(s, 2.44) & (z > 0.30) & (z < bz - 0.004), on=BODY)
+        R.groove(near(s, 1.305) & (z > DOOR_FOOT) & (z < bz - 0.004), on=BODY)
+        R.groove(near(s, 2.44) & (z > DOOR_FOOT) & (z < bz - 0.004), on=BODY)
         R.groove(near(s, 3.20) & (z > 0.585) & (z < bz - 0.004), on=BODY)
         ra = np.hypot(s - 3.51, z - 0.335)
-        R.groove(near(ra, 0.40) & (s < 3.205) & (z > 0.335) & (z < 0.59), on=BODY)
-        R.groove(near(s, 3.11) & (z > 0.30) & (z < 0.34), on=BODY)
-        R.groove(near(z, 0.305) & (s > 1.305) & (s < 3.11), on=BODY)
+        R.groove(near(ra, 0.40) & (s < 3.205) & (z > DOOR_FOOT + 0.035) & (z < 0.59), on=BODY)
+        R.groove(near(s, 3.11) & (z > DOOR_FOOT) & (z < DOOR_FOOT + 0.04), on=BODY)
+        R.groove(near(z, DOOR_FOOT) & (s > 1.305) & (s < 3.11), on=BODY)
         # bumper breaks: the front cover's joint, level from under the lamp's
         # swept tip back to the arch (along the texel rows, so it stays crisp)
         R.groove(near(z, BUMPER_JOINT[2]) & (s > BUMPER_JOINT[0]) & (s < BUMPER_JOINT[1]), on=BODY)
         R.groove(near(z, 0.63) & (s > 3.70) & (s < 4.45), on=BODY)
         # the wing's top edge to the A-pillar, and the tailgate's edge
         R.groove(near(s, 4.115) & (z > 0.995) & (z < bz - 0.004), on=BODY)
-        # handles: a raised grip over a dark recess
-        for s0, s1, zh in ((2.06, 2.20, 0.905), (3.02, 3.15, 0.945)):
-            R.put(rrect(s, z, s0 - 0.01, s1 + 0.01, zh - 0.026, zh - 0.004, 0.01),
-                  shade=0.45, add_h=-0.004, ao=0.6, on=BODY)
-            R.put(rrect(s, z, s0, s1, zh - 0.012, zh + 0.018, 0.012), mid=M["handle"],
-                  height=0.006)
+        # handles: each a grip across a scallop dished into the door, just
+        # under the shoulder crease
+        zcr = np.array([S.z_side("S5", v) for v in s[0]])[None, :]
+        for s0, s1 in ((2.045, 2.215), (3.005, 3.165)):
+            sm, hs, hz = (s0 + s1) / 2.0, (s1 - s0) / 2.0, 0.034
+            zc = zcr - 0.052
+            rr = ((s - sm) / hs) ** 2 + ((z - zc) / hz) ** 2
+            dish = rr < 1.0
+            hh = c.height[R.sy, R.sx]
+            mm = dish & np.isin(R.mid(), BODY)
+            hh[mm] -= (0.007 * (1.0 - rr))[mm]
+            c.height[R.sy, R.sx] = hh
+            R.put(dish, shade=1.0, ao=0.75, on=BODY)
+            sha = c.shade[R.sy, R.sx]
+            sha[mm] *= np.clip(0.80 + 0.22 * (zc + hz - z) / (2 * hz), 0.78, 1.0)[mm]
+            c.shade[R.sy, R.sx] = sha
+            R.put(rrect(s, z, sm - hs * 0.84, sm + hs * 0.84, zc + 0.000, zc + 0.020, 0.010),
+                  mid=M["handle"], height=0.008)
+        # the doors' frames: the shut line to the roof above the window seal,
+        # and the door gaps carried up the B- and C-pillars' black-outs
+        zgt0 = np.interp(s, [a for a, _ in S.GLASS_TOP], [b for _, b in S.GLASS_TOP])
+        R.groove(near(z, zgt0 + 0.034, 0.010) & (s > S.A_GT_TOP + 0.04) & (s < 3.215), depth=0.003,
+                 on=BODY)
+        for sg in (2.44, 3.205):
+            R.put(near(s, sg, 0.009) & (z > bz) & (z < zgt0 + 0.034), mid=M["rim_dark"],
+                  on=(M["pillar"],))
         # side moulding along the doors, and the bumpers' rub strips at its
         # height: one dark line round the car, broken by the arches
         R.put(rrect(s, z, 1.37, 3.08, STRIP_Z[0], STRIP_Z[1], 0.018), mid=M["lip"], height=0.006,
@@ -415,18 +436,13 @@ def paint_top(c):
 
 
 # ---------------------------------------------------------------- front
-def _eroded(m, px, x=None):
-    """A sample mask shrunk by px atlas pixels all round; given the island's
-    x field, not across the centre line, where the mirrored half continues."""
+def _eroded(m, px):
+    """A sample mask shrunk by px atlas pixels at its top and its foot only:
+    a frame's rails. The slanted sides stay the mesh's own edges, crisp at
+    any distance."""
     from scipy import ndimage
-    m = m.copy()
-    k = 0
-    if x is not None:
-        k = int(np.searchsorted(x[0], 0.02))
-        m[:, :k] = m[:, k:k + 1]
     n = max(1, int(round(px * atlas.SS)))
-    out = ndimage.binary_erosion(np.pad(m, ((0, 0), (n + 1, 0)), mode="edge"), iterations=n)
-    return out[:, n + 1:]
+    return ndimage.binary_erosion(m, structure=np.ones((3, 1), bool), iterations=n)
 
 
 def paint_front(c):
@@ -437,27 +453,19 @@ def paint_front(c):
     # slats over darkness (the cells were rastered a texel past their
     # outline, so the frame's edge finds frame, never paint)
     g = R.mid() == M["grille"]
-    gin = _eroded(g, 2.6, x)
+    gin = _eroded(g, 2.6)
     R.put(g, mid=M["rim_dark"], height=0.002)
     R.put(gin, mid=M["grille"], height=-0.006)
     R.put(gin & (np.mod(z - 0.634, 0.028) < 0.011), mid=M["rim_dark"], height=0.004)
     # the lower intake: its frame and mesh
     g = R.mid() == M["intake"]
-    iin = _eroded(g, 2.2, x)
+    iin = _eroded(g, 2.2)
     R.put(g, mid=M["rim_dark"], height=0.004)
     R.put(iin, mid=M["intake"], height=-0.006)
     mesh = iin & ((np.mod(x, 0.034) < 0.008) | (np.mod(z - 0.2865, 0.034) < 0.008))
     R.put(mesh, mid=M["rim_dark"], height=-0.002)
-    # the fog lamps' pods beside it: a dark insert round each lamp's face
-    # (the lamps themselves are faces of their own, R_FOGLAMP)
-    fog = [f for f in S.tier(0)["body"] if f.kind == "foglamp" and f.centre()[0] > 0]
-    if fog:
-        pts = np.array([p for f in fog for p in f.pts])
-        x0, x1 = np.abs(pts[:, 0]).min(), np.abs(pts[:, 0]).max()
-        z0, z1 = pts[:, 2].min(), pts[:, 2].max()
-        # a rounded pod, its edges along the texel rows so they stay crisp
-        pod = rrect(x, z, x0 - 0.030, x1 + 0.012, z0 - 0.008, z1 + 0.012, 0.024)
-        R.put(pod, mid=M["lip"], height=-0.003, on=BODY)
+    # (the fog lamps' pods beside it are faces of their own kind, and the
+    # lamps faces on their own patch, R_FOGLAMP)
     # the plate's holder: a black plinth a little larger than the plate
     # (the plate's own faces map to their rect; the light patch inside the
     # holder is what LOD2's bumper face shows there)

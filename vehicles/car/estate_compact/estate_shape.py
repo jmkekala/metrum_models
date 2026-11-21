@@ -58,15 +58,18 @@ IDX = {r: i for i, r in enumerate(ROWS)}
 # the belt (SH). In plan the body tapers toward both ends, the shoulder rows
 # most, and the rows at arch height stand proud round the wheels, where the
 # body reaches its full width.
-W_MID = dict(SB=0.820, S1=0.846, S2=0.867, S3=0.876, S4=0.879, S5=0.878, SH=0.838)
-TAPER_F = dict(SB=0.020, S1=0.016, S2=0.004, S3=0.000, S4=0.004, S5=0.020, SH=0.034)
+W_MID = dict(SB=0.826, S1=0.857, S2=0.846, S3=0.877, S4=0.884, S5=0.878, SH=0.838)
+# (the nose keeps its own widths whatever the doors' section: the lamps' and
+# the fog lamps' cells are laid out on them; a negative taper is a row wider
+# at the nose than amidships)
+TAPER_F = dict(SB=0.026, S1=0.027, S2=-0.017, S3=0.001, S4=0.0084, S5=0.02, SH=0.034)
 TAPER_R = dict(SB=0.015, S1=0.012, S2=0.006, S3=0.006, S4=0.016, S5=0.030, SH=0.040)
 # (S4 runs just over the arches' tops and is not cut away there: it is
 # the row that carries the full width. The rows the arches cut flare over
 # a longer run, so their lips stand proud at the arches' sides too.)
-FLARE = dict(S1=0.008, S2=0.021, S3=0.022, S4=0.024, S5=0.010)
+FLARE = dict(S1=0.008, S2=0.021, S3=0.022, S4=0.018, S5=0.010)
 FLARE_LEN = dict(S1=0.42, S2=0.42, S3=0.42, S4=0.32, S5=0.32)
-Z_MID = dict(SB=0.23, S1=0.30, S2=0.43, S3=0.62, S4=0.77)
+Z_MID = dict(SB=0.23, S1=0.325, S2=0.40, S3=0.60, S4=0.78)
 SHOULDER = 0.065                    # the crease (S5) under the belt
 
 # The ends, row by row: z on the centre line, z at the side (None: the
@@ -93,7 +96,7 @@ CAP = {
                   SH=(0.800, None, 0.125, 0.070, 0.46, 3.0)),
         # inner columns: x, the same on every row or row by row (the grille
         # an inverted trapezoid, the lamps' inner edges parallel to it)
-        inner=dict(RC=0.0, R3=0.13, R2=0.26,
+        inner=dict(RC=0.0, R3=0.13, R2=0.272,
                    R1=dict(SB=0.34, S1=0.34, S2=0.37, S3=0.36, S4=0.32, S5=0.305, SH=0.385),
                    RE=dict(SB=0.42, S1=0.42, S2=0.50, S3=0.46, S4=0.39, S5=0.355, SH=0.435)),
         # outer columns: degrees, x = xRE + (W - xRE) sin(angle)
@@ -106,10 +109,10 @@ CAP = {
                   S1=(0.330, 0.330, 0.018, 0.040, 0.29, 3.0),
                   S2=(0.520, 0.520, 0.000, 0.045, 0.30, 3.0),
                   S3=(0.640, 0.640, 0.040, 0.045, 0.32, 3.0),
-                  S4=(0.800, 0.850, 0.120, 0.045, 0.36, 3.0),
+                  S4=(0.800, 0.850, 0.106, 0.045, 0.36, 3.0),
                   S5=(0.975, 1.000, 0.190, 0.040, 0.40, 3.2),
                   SH=(1.050, None, 0.290, 0.030, 0.43, 4.0)),
-        inner=dict(RC=0.0, R3=0.12, R2=0.26, R1=0.42,
+        inner=dict(RC=0.0, R3=0.12, R2=0.272, R1=0.42,
                    RE=dict(SB=0.575, S1=0.575, S2=0.575, S3=0.575, S4=0.575, S5=0.600, SH=0.625)),
         outer=dict(K3=11.0, GT=21.0, K2=48.0, GB=62.0, K1=77.0),
         rise={}, rise_default=2.0),
@@ -347,8 +350,7 @@ def key_stations():
     for k, f in enumerate(BONNET_F):
         st.append(("F%d" % (k + 1), _bonnet(f0, cw, f)))
     st.append(("CW", cw))
-    for name, f, fg, s in (("A1", 1.0 / 3.0, 0.18, 1.53), ("A2", 2.0 / 3.0, 0.59, 1.81)):
-        st.append((name, _screen(cw, hd, f, s, fg)))
+    st.append(("A1", _screen(cw, hd, 1.0 / 3.0, 1.53, 0.18)))
     st.append(("HD", hd))
     for name, sg, st_ in (("B1", 2.39, 2.39), ("B2", 2.49, 2.49),
                           ("C1", 3.12, 3.15), ("C2", 3.28, 3.25), ("X1", S_AXLE[1], 3.51)):
@@ -472,13 +474,15 @@ class Tier:
 
 
 ALL_STATIONS = [n for n, _ in key_stations()]
-_CAP0 = (SIDE_ROWS, TOP_ROWS)
+# (R3 is computed but no tier keeps it: the bonnet's soft centre and the
+# ends' bow are carried by R2 and the centre line)
+_CAP0 = (SIDE_ROWS, tuple(r for r in TOP_ROWS if r != "R3"))
 _CAP_K = ("K1", "K2", "K3")
 TIERS = {
-    0: Tier(0, ALL_STATIONS, [r for r in ROWS if r not in CAP_ONLY],
+    0: Tier(0, ALL_STATIONS, [r for r in ROWS if r not in CAP_ONLY and r != "R3"],
             {"front": _CAP0, "rear": _CAP0}),
-    1: Tier(1, ["F0", "F2", "CW", "HD", "B1", "B2", "C1", "C2", "D1", "RL", "RG", "R0"],
-            ("S1", "S3", "S4", "SH", "GT", "RE", "RC"),
+    1: Tier(1, ["F0", "FR", "F2", "CW", "HD", "B1", "B2", "C1", "C2", "D1", "RL", "RG", "R0"],
+            ("S1", "S4", "S5", "SH", "GT", "RE", "RC"),
             {"front": (("S1", "S3", "S4", "S5", "SH"), ("GB", "GT", "RE", "RC")),
              "rear": (("S1", "S2", "S3", "S4", "S5", "SH"), ("GB", "GT", "RE", "RC"))}),
     # LOD2's sides start at the sill's top (S1): its painted faces never
@@ -634,7 +638,7 @@ def tube_cell(level, seg, pair, sign, q, poly):
         k = "lip"                       # the cowl panel under the wipers
     side_glass = (lo, hi) == ("GB", "GT") or (level >= 1 and (lo, hi) == ("SH", "GT"))
     if side_glass:
-        k = {("CW", "A1"): "sail", ("A1", "A2"): ("glass", 33), ("A2", "HD"): ("glass", 33),
+        k = {("CW", "A1"): "sail", ("A1", "HD"): ("glass", 33),
              ("HD", "B1"): ("glass", 33), ("B1", "B2"): "pillar", ("B2", "M1"): ("glass", 34),
              ("B2", "C1"): ("glass", 34),
              ("M1", "C1"): ("glass", 34), ("C1", "C2"): "pillar",
@@ -646,7 +650,7 @@ def tube_cell(level, seg, pair, sign, q, poly):
             k = ("glass", 33) if seg in (("CW", "HD"), ("HD", "RG")) else "paint"
     top = IDX[lo] >= IDX["RE" if level < 2 else "GT"]
     if top:
-        if seg in (("CW", "A1"), ("A1", "A2"), ("A2", "HD"), ("CW", "HD")):
+        if seg in (("CW", "A1"), ("A1", "HD"), ("CW", "HD")):
             k = ("glass", 32)
         elif seg == ("RG", "R0"):
             k = ("glass", 35)
@@ -736,6 +740,7 @@ def _centre(p):
 
 
 PLATE_Z = {"front": (0.408, 0.518), "rear": (0.665, 0.775)}
+PLATE_DEPTH = 0.012       # LOD0: how far the plates sit back in their recesses
 DRL_B = 0.26              # the daytime strip's share of the lamp's height, from its foot
 GRILLE_A = 0.87           # LOD1: the grille's outer edge inside its wider cell
 FOG = (0.445, 0.555, 0.381, 0.452)      # the rear fog lamp: x0, x1, z0, z1 (LOD0)
@@ -776,7 +781,21 @@ def cap_cell(end, level, rowpair, col, sign, q):
         out = []
         if b0 > 1e-6:
             out.append((sub(q, 0, 1, 0, b0), "paint"))
-        out.append(([bil(q, 0, b0), bil(q, a0_, b0), bil(q, a1_, b1), bil(q, 0, b1)], "plate"))
+        pl = [bil(q, 0, b0), bil(q, a0_, b0), bil(q, a1_, b1), bil(q, 0, b1)]
+        if level == 0:
+            # the plate sits in a shallow recess: its face set back, black
+            # walls above, below and at its outer end (none on the centre line)
+            pp = np.array(pl)
+            n = np.cross(pp[1] - pp[0], pp[3] - pp[0])
+            n[0] = 0.0                  # straight back: the halves meet on the centre line
+            n /= np.linalg.norm(n)
+            if (n[1] > 0) == front:
+                n = -n
+            back = [tuple(v - n * PLATE_DEPTH) for v in pp]
+            for i, j in ((0, 1), (1, 2), (2, 3)):
+                out.append(([pl[i], pl[j], back[j], back[i]], "lip"))
+            pl = back
+        out.append((pl, "plate"))
         if a0_ < 1 - 1e-6 or a1_ < 1 - 1e-6:
             out.append(([bil(q, a0_, b0), bil(q, 1, b0), bil(q, 1, b1), bil(q, a1_, b1)], "paint"))
         if b1 < 1 - 1e-6:
@@ -787,7 +806,7 @@ def cap_cell(end, level, rowpair, col, sign, q):
             inner = co in ("R3", "R2", "R1", "RE")
             if (ci, co) == ("K3", "GT"):
                 # a round fog lamp in the bumper's pod, its own atlas patch
-                return inset(q, 0.10, 0.90, 0.14, 0.86, "foglamp")
+                return inset(q, 0.10, 0.90, 0.14, 0.86, "foglamp", rest="pod")
             return [(q, "intake" if inner else "paint")]
         if hi == "SH":
             # the band under the bonnet's edge: the grille between the
@@ -987,6 +1006,7 @@ R_FLAT_PAINT = (288, 832, 32, 32)
 R_MIRROR_GLASS = (256, 832, 24, 24)
 R_RAIL = (192, 832, 32, 32)
 R_REFLECTOR = (352, 832, 24, 24)
+R_SAIL = (64, 832, 32, 32)          # the mirror's sail patch: uniform, so its edge is the mesh's
 R_TREAD = (772, 240, 248, 40)
 # lenses, each in its own 64 x 32 cell of a coarse grid, so that a
 # minified atlas does not bleed one lens into another or into paint (the
@@ -1077,23 +1097,28 @@ WHEELS = [  # part, x, s, steer
 
 # ================================================================ mirrors
 MIRROR_C = (1.465, 1.025)                  # housing centre (s, z)
-MIRROR_SECTION = [(0.050, -0.052), (-0.005, -0.064), (-0.048, -0.040), (-0.062, 0.008),
-                  (-0.036, 0.052), (0.050, 0.058)]
+MIRROR_SECTION = {     # (ds, dz) round the housing, the mirror's face between last and first
+    0: [(0.050, -0.050), (0.010, -0.064), (-0.034, -0.054), (-0.058, -0.022), (-0.060, 0.014),
+        (-0.040, 0.046), (0.004, 0.060), (0.050, 0.056)],
+    1: [(0.050, -0.052), (-0.005, -0.064), (-0.048, -0.040), (-0.062, 0.008),
+        (-0.036, 0.052), (0.050, 0.058)],
+}
 _ARM = (1.475, 0.986)
 MIRROR_LOFT = {   # x, scale, centre (s, z): a slim arm, then the housing, rounded at its end
     0: [(0.800, 0.30, _ARM), (0.846, 0.30, _ARM), (0.858, 0.80, MIRROR_C),
-        (0.878, 0.97, MIRROR_C), (0.945, 1.0, MIRROR_C), (0.985, 0.93, MIRROR_C),
-        (1.003, 0.78, MIRROR_C), (1.010, 0.52, MIRROR_C)],
-    1: [(0.800, 0.80, MIRROR_C), (1.010, 0.52, MIRROR_C)],
+        (0.880, 0.98, MIRROR_C), (0.960, 1.0, MIRROR_C), (0.998, 0.84, MIRROR_C),
+        (1.010, 0.52, MIRROR_C)],
+    1: [(0.800, 0.80, MIRROR_C), (1.010, 0.46, MIRROR_C)],
 }
 MIRROR_GLASS_SEG = {0: (3, 4), 1: (0,)}            # the loft segment whose rear face is glass
 
 
 def mirror_faces(level, sign):
     loft = MIRROR_LOFT[level]
-    secs = [[P(sign * x, c[0] + k * ds, c[1] + k * dz) for ds, dz in MIRROR_SECTION]
+    section = MIRROR_SECTION[level]
+    secs = [[P(sign * x, c[0] + k * ds, c[1] + k * dz) for ds, dz in section]
             for x, k, c in loft]
-    n = len(MIRROR_SECTION)
+    n = len(section)
     faces = []
     for j in range(len(secs) - 1):
         a, b = secs[j], secs[j + 1]
@@ -1105,11 +1130,12 @@ def mirror_faces(level, sign):
     faces.append(Face(secs[0][::-1], "paint", paint=True, smooth=False, island="mirror"))
     # the outer end: the side repeater across its front
     e = secs[-1]
-    m1 = tuple((np.array(e[1]) + np.array(e[2])) / 2)
-    m2 = tuple((np.array(e[3]) + np.array(e[4])) / 2)
+    k0, k1 = (2, 5) if n == 8 else (2, 3)     # the end's front corners: the repeater's
+    m1 = tuple((np.array(e[k0 - 1]) + np.array(e[k0])) / 2)
+    m2 = tuple((np.array(e[k1]) + np.array(e[k1 + 1])) / 2)
     ind = 4 if sign > 0 else 5
-    faces.append(Face([m1, e[2], e[3], m2], "lamp", surface=ind, smooth=False))
-    faces.append(Face([e[0], e[1], m1, m2, e[4], e[5]], "paint", paint=True, smooth=False,
+    faces.append(Face([m1] + e[k0:k1 + 1] + [m2], "lamp", surface=ind, smooth=False))
+    faces.append(Face(e[:k0] + [m1, m2] + e[k1 + 1:], "paint", paint=True, smooth=False,
                       island="mirror"))
     return faces
 
@@ -1242,6 +1268,10 @@ def assign_all(faces):
             f.island = "reflector"
             f.uv = small_uv(R_REFLECTOR, f, (0, 2))
             continue
+        if f.kind == "sail":
+            f.island = "sail"
+            f.uv = small_uv(R_SAIL, f)
+            continue
         isl = island_of(f)
         if isl == "glass_side" and level_of_faces(faces) == 2:
             isl = "glass_band"
@@ -1272,6 +1302,10 @@ def tier(level):
         for sg in (1, -1):
             out["mirrors"].append(assign_all(mirror_faces(level, sg)))
             out["rails"].append(assign_all(rail_faces(level, sg)))
+        if level == 0:
+            out["rails"].append(assign_all(wiper_faces()))
+            out["rails"].append(assign_all(tailpipe_faces()))
+            out["rails"].append(assign_all(fin_faces()))
         for part, x, s, steer in WHEELS:
             out["wheels"].append((part, P(x, s, WHEEL_R), steer,
                                   wheel_faces(level, 1 if x > 0 else -1)))
@@ -1357,20 +1391,96 @@ def lod3_faces():
     return faces
 
 
+CREASE_FROM = {0: "F3", 1: "CW"}       # the shoulder crease sharpens behind the front arch
+
+
 def crease_edges(level):
     """Edges that shade as a crease whatever their angle: the shoulder
-    crease (row S5) from the headlamp's end to the tail lamp, both sides, as
-    pairs of build-frame points. LOD0 only; the coarser tiers keep no such
-    row."""
-    if level != 0:
+    crease (row S5) along the doors and the rear quarter, both sides, as
+    pairs of build-frame points. It fades out forward of the front door,
+    where the row runs on smooth to the headlamp. LOD0 and LOD1."""
+    if level not in CREASE_FROM:
         return []
-    st = [(n, h) for n, h in key_stations() if n not in ("F0", "R0")]
+    st = station_points(level)
+    names = [n for n, _ in st]
+    st = st[names.index(CREASE_FROM[level]):names.index("D1") + 1]
     out = []
     for (_na, a), (_nb, b) in zip(st[:-1], st[1:]):
         for sg in (1, -1):
             out.append((P(sg * a["S5"][0], a["S5"][1], a["S5"][2]),
                         P(sg * b["S5"][0], b["S5"][1], b["S5"][2])))
     return out
+
+
+# ================================================================ wiper, tailpipe
+def _box(c, ax, hx, at, ht, an, hn, kind, island):
+    """A closed box about centre c with half-extents hx, ht, hn along the
+    unit axes ax, at, an."""
+    c, ax, at, an = (np.array(v, float) for v in (c, ax, at, an))
+    def pt(i, j, k):
+        return tuple(c + ax * hx * i + at * ht * j + an * hn * k)
+    quads = [[pt(-1, -1, -1), pt(1, -1, -1), pt(1, 1, -1), pt(-1, 1, -1)],
+             [pt(-1, -1, 1), pt(-1, 1, 1), pt(1, 1, 1), pt(1, -1, 1)],
+             [pt(-1, -1, -1), pt(-1, -1, 1), pt(1, -1, 1), pt(1, -1, -1)],
+             [pt(-1, 1, -1), pt(1, 1, -1), pt(1, 1, 1), pt(-1, 1, 1)],
+             [pt(-1, -1, -1), pt(-1, 1, -1), pt(-1, 1, 1), pt(-1, -1, 1)],
+             [pt(1, -1, -1), pt(1, -1, 1), pt(1, 1, 1), pt(1, 1, -1)]]
+    return [Face(q, kind, smooth=False, island=island) for q in quads]
+
+
+WIPER_X = (-0.05, 0.37)        # the rear wiper's blade, parked along the glass's foot
+TAILPIPE = dict(x=-0.46, z=0.218, r=0.026, s=(4.33, 4.447), sides=6)
+
+
+def wiper_faces():
+    """The rear wiper: one dark bar a few millimetres off the tailgate glass,
+    parked level above its foot. A closed solid of its own."""
+    st = dict(key_stations())
+    a = np.array((st["R0"]["RC"][1], st["R0"]["RC"][2]))        # (s, z): the glass's foot
+    b = np.array((st["RG"]["RC"][1], st["RG"]["RC"][2]))        # and its head
+    t = (b - a) / np.linalg.norm(b - a)
+    n = np.array((-t[1], t[0]))
+    if n[0] < 0:
+        n = -n                                                  # outward: rearward and up
+    c = a + (b - a) * 0.13 + n * 0.014
+    xm, hx = (WIPER_X[0] + WIPER_X[1]) / 2.0, (WIPER_X[1] - WIPER_X[0]) / 2.0
+    return _box(P(xm, c[0], c[1]), (1, 0, 0), hx, (0, t[0], t[1]), 0.012, (0, n[0], n[1]), 0.007,
+                "rail", "rail")
+
+
+FIN = dict(s=(3.72, 3.87), top=(3.855, 0.045), half=(0.022, 0.006))
+
+
+def fin_faces():
+    """The aerial's fin on the roof's rear centre line: a dark wedge lower
+    than the rails, its foot sunk a few millimetres into the roof."""
+    d = FIN
+    (s0, s1), (st, ht), (hb, hk) = d["s"], d["top"], d["half"]
+    z0, z1 = roof_z(s0, "RC") - 0.006, roof_z(s1, "RC") - 0.006
+    zt = roof_z(st, "RC") + ht
+    a = [P(sg * hb, s0, z0) for sg in (1, -1)]
+    b = [P(sg * hb, s1, z1) for sg in (1, -1)]
+    c = [P(sg * hk, st, zt) for sg in (1, -1)]
+    quads = [[a[0], b[0], c[0]], [a[1], c[1], b[1]], [a[0], c[0], c[1], a[1]],
+             [b[0], b[1], c[1], c[0]], [a[0], a[1], b[1], b[0]]]
+    return [Face(q, "rail", smooth=False, island="rail") for q in quads]
+
+
+def tailpipe_faces():
+    """The tailpipe's bright tip under the rear bumper, on the right: a short
+    closed prism, its ends dark."""
+    d = TAILPIPE
+    n = d["sides"]
+    ring = [(math.cos(2 * math.pi * k / n), math.sin(2 * math.pi * k / n)) for k in range(n)]
+    ends = [[P(d["x"] + d["r"] * c, s, d["z"] + d["r"] * w) for c, w in ring] for s in d["s"]]
+    faces = []
+    for k in range(n):
+        j = (k + 1) % n
+        faces.append(Face([ends[0][k], ends[1][k], ends[1][j], ends[0][j]], "mirror_glass",
+                          smooth=True, island="mirror"))
+    faces.append(Face(ends[0], "rail", smooth=False, island="rail"))
+    faces.append(Face(ends[1][::-1], "rail", smooth=False, island="rail"))
+    return faces
 
 
 LEVELS_BUILT = (0, 1, 2, 3)
