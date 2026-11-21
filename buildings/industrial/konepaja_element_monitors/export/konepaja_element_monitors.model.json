@@ -1,0 +1,45 @@
+{
+  "schema": "metrum-model-facts",
+  "version": 1,
+  "name": "konepaja_element_monitors",
+  "path": "buildings/industrial/konepaja_element_monitors",
+  "source": {"commit": "9c017af71281602e11a5e6feb2d56992cc846e7b", "dirty": true, "blender": "5.3.0"},
+  "license": "CC-BY-4.0",
+  "bounds": {"min": [-16.4838, 0.0, -12.7969], "max": [16.4838, 15.25, 12.7969]},
+  "footprint": [
+    [-15.61, -12.7031],
+    [16.39, -12.7031],
+    [16.39, 11.2969],
+    [-15.61, 11.2969]
+  ],
+  "storeys": [
+    {"floor_y_m": 0.0, "area_m2": 768.0},
+    {"floor_y_m": 3.4375, "area_m2": 106.67}
+  ],
+  "dwellings": 0,
+  "doors": [
+    {"id": "entrance", "kind": "entrance", "position": [-4.11, 0.1562, 11.2969], "facing": [0.0, 0.0, 1.0], "width_m": 1.625, "height_m": 2.1875, "main": true},
+    {"id": "loading", "kind": "vehicle", "position": [16.39, 0.0, 0.6302], "facing": [1.0, 0.0, 0.0], "width_m": 3.3125, "height_m": 3.9, "main": false},
+    {"id": "staff", "kind": "service", "position": [16.39, 0.0, -3.0364], "facing": [1.0, 0.0, 0.0], "width_m": 0.9375, "height_m": 2.125, "main": false},
+    {"id": "stores", "kind": "service", "position": [8.39, 0.0, 11.2969], "facing": [0.0, 0.0, 1.0], "width_m": 0.9375, "height_m": 2.125, "main": false}
+  ],
+  "lods": [
+    {"file": "konepaja_element_monitors_lod0.glb", "triangles": 2428, "sha256": "64cbe8d737da2efc75f8609dec4335881787c067f87f632bc953e1f814d65bb3"},
+    {"file": "konepaja_element_monitors_lod1.glb", "triangles": 2002, "sha256": "0275d0fe4ee405187c3aa300ab1080a81cf2498950f7959daa843aa1bd88a0e3"},
+    {"file": "konepaja_element_monitors_lod2.glb", "triangles": 850, "sha256": "8de1494e95b6fed548e5ea356bcece14cbc455ce0a9f0e75e2b81f0b3b6d9d40"},
+    {"file": "konepaja_element_monitors_lod3.glb", "triangles": 486, "sha256": "0768893dda95052ac3a8df6915513e88bf4db4e85d3325afc8a134628c229409"}
+  ],
+  "textures": {
+    "orm": {"file": "konepaja_element_monitors_orm.png", "sha256": "c3fa0d1e2b499be12ae73bf8726bccf75cbc6f96aa15b9f52da9aa1fbf37c7fe"},
+    "normal": {"file": "konepaja_element_monitors_normal.png", "sha256": "460893a35eb8dffd3bddf30cddae4cf731a0a988a5d27b7cd327aece75e70cbd"},
+    "emission": {"file": "konepaja_element_monitors_emission.png", "sha256": "46af74a7d8c53406af569cfd08bf775a6601843190c5c64c19c3d0e6524a7b5a"}
+  },
+  "variants": [
+    {"id": "grey_aggregate", "albedo": "konepaja_element_monitors_albedo_grey_aggregate.png", "sha256": "45b415302adf0ae955635c8c2539d73745ff1795355c2bc2149015787414476e"},
+    {"id": "beige_aggregate", "albedo": "konepaja_element_monitors_albedo_beige_aggregate.png", "sha256": "e17fe9eb710be668e0055a397bacc745bdc2945ee3722ac387fefe7731078689"},
+    {"id": "red_aggregate", "albedo": "konepaja_element_monitors_albedo_red_aggregate.png", "sha256": "32fab5c6321f085ce07eb63bfb59b42915445faf4f1b3a36c6dcce2affb40e48"}
+  ],
+  "default_variant": "grey_aggregate",
+  "preview": {"file": "../preview.png", "sha256": "7c9d1a3ec51f11146bdf87b953d8521cdff852b4db3036275d4886e60691ec55"},
+  "hero": false
+}
