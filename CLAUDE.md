@@ -274,7 +274,7 @@ to `vehicle_build.VehicleAsset`, its subclass).
 | `model_facts.py` | The facts sidecar `export/<asset_name>.model.json`: its schema, the build-frame to glTF conversion, `wall_door()`, `lane_passage()` and `roof_clear_width()` for a `build.py`'s `facts()`, `compose()`/`write()`, and `check()`, which `validate_asset.py` runs on the file: version 1 for buildings and boundary props; version 2 (`kind: vehicle`) with `compose_vehicle()`, `wheel_part()`, `lamp_lens()`, `glass_group()`, `cargo_box()` and `interior_file()` for vehicles. Pure Python (numpy for version 2). |
 | `boundary_wall.py` | The brick perimeter wall pieces of `props/boundary/`: their shared 512 atlas (`export`, written into each piece's `export/`), the joint rule, `Run`/`Pier`/`Gate` and their four tiers, layout checks and facts; each piece's `build.py` names its piece and calls `piece_asset()`. |
 | `vehicle_ids.py` | The vehicle contract's numbers and the ids as they ship: class boxes, ceilings, atlas sizes, the part, lamp and glass tables, `encode()`/`decode()`, a GLB accessor reader (`tier()`), `convert_color0_to_ubyte()`, `steer()`, the lens axes, and `save_glass_texels()`/`load_glass_texels()`. numpy only; runs in Blender and in system Python. |
-| `vehicle_build.py` | The vehicle half of `asset_build`: `Builder` (faces with surface and paint ids), `patch_face()`, `wheel_solid()`, `conform()` (inserts T-junction vertices), `Piece`, the id attribute's writing and checks, the paint and lamp-gate preview nodes, and `VehicleAsset` (`build_all()`, `write_facts()`, `material(paint=, lamps=)`, `steer()`). Runs inside Blender only. |
+| `vehicle_build.py` | The vehicle half of `asset_build`: `Builder` (faces with surface and paint ids), `patch_face()`, `wheel_solid()`, `conform()` (inserts T-junction vertices and removes the edges it leaves without faces), `to_object()`, `Piece`, the id attribute's writing and checks, the paint and lamp-gate preview nodes, and `VehicleAsset` (`build_all()`, `write_facts()`, `material(paint=, lamps=)`, `steer()`). Runs inside Blender only. |
 | `glazing.py` | Paints glass as the room behind it: `rooms()` on the finished albedo by day, `night_rooms()` on the emission mask by night. Called by texture generators. |
 | `downpipes.py` | Downpipes as swept, mitred closed solids for `build.py` to union: a `Pipe` placed on a wall, swan-neck and shoe, UVs on the atlas's painted gutter (`PIPE_STRIP`), per-tier `MODES`, and `problems()` for `check_layout()`. Runs inside Blender only. |
 | `roof_safety.py` | Roof safety equipment as closed solids for `build.py` to union: the wall ladder and its safety cage, the roof ladder and the walkway, UVs on the painted gutter (`PIPE_STRIP`) or a fixed patch, per-tier `MODES`, and `problems()` for `check_layout()`; an opt-in lean wall ladder and cage (`lean=True`), separate solids that cut nothing, added after the weld by `append(check=True)` at a fraction of the triangles. Runs inside Blender only. |
@@ -650,9 +650,9 @@ loss of white corner boards, dark windows or another dominant colour.
 ## Texture Requirements
 
 - **Format:** lossless PNG, 8 bits per channel, square, power of two, no alpha.
-  Buildings 1024 (hero/landmark 2048); props 256–512 (Props); vehicles 512 or
-  1024 by class (Vehicles). The consumer owns GPU compression and shipping
-  mipmaps; authoring owns padding and filtering review.
+  Buildings 1024 (hero/landmark 2048); props 256–512 (Props); vehicles 1024
+  (Vehicles). The consumer owns GPU compression and shipping mipmaps;
+  authoring owns padding and filtering review.
 - **Painting:** rasterise atlases with `scripts/atlas.py`, supersampled
   `atlas.SS` = 4 samples per pixel per axis and box-filtered down in linear
   light, so edges at fractional positions, curves and lettering are
@@ -697,9 +697,10 @@ loss of white corner boards, dark windows or another dominant colour.
   tools.
 - **Fully opaque:** no alpha or masked transparency, glass included. A future
   prop cutout (e.g. ornate metalwork) needs a per-asset decision.
-- **Consistent texel density** across the catalog, 64 texels/metre for every
-  class: an asset visibly sharper or blurrier than its neighbours is wrong
-  even if it looks fine alone.
+- **Consistent texel density** across the catalog, 64 texels/metre for
+  buildings and props (vehicles: their 1024 atlas, Vehicles): an asset
+  visibly sharper or blurrier than its neighbours is wrong even if it looks
+  fine alone.
 - **Seamless tiling:** repeating regions (brick, siding) tile at their edges;
   non-tiling regions avoid visible UV-boundary seams.
 - **Atlas padding and filtering:**
@@ -862,8 +863,8 @@ box.
 
 | Class | Length x width x height (m) | Mirrors, a side | Atlas |
 | --- | --- | --- | --- |
-| `car` | 4.50 x 1.80 x 1.95 | 0.12 | 512 |
-| `van` | 6.00 x 2.10 x 2.70 | 0.25 | 512 |
+| `car` | 4.50 x 1.80 x 1.95 | 0.12 | 1024 |
+| `van` | 6.00 x 2.10 x 2.70 | 0.25 | 1024 |
 | `truck` | 8.00 x 2.55 x 3.80 | 0.25 | 1024 |
 | `bus` | 12.00 x 2.55 x 3.20 | 0.25 | 1024 |
 
@@ -904,8 +905,9 @@ Every tier has one colour attribute, `COLOR_0`, normalised `UNSIGNED_BYTE`
 | B | paint | 255 on painted body panels, 0 elsewhere |
 | A | unused | 255 |
 
-- One R and one G per triangle: ids never blend. A lamp or glass face is
-  unpainted body (R 0, B 0).
+- One R, one G and one B per triangle: ids never blend, and paint never
+  fades across a panel edge. A lamp or glass face is unpainted body
+  (R 0, B 0).
 - Set each face's surface and paint as it is made
   (`vehicle_build.Builder.face(..., surface=, paint=)`) and each wheel's part
   on its piece. `VehicleAsset` writes them as the `FLOAT_COLOR` corner
@@ -919,8 +921,10 @@ Every tier has one colour attribute, `COLOR_0`, normalised `UNSIGNED_BYTE`
   is required. No other custom attribute ships.
 - Standard glTF viewers multiply `COLOR_0` into base colour and show these
   files dark, and Blender's importer reads it as sRGB bytes. Nothing here
-  reads it that way: previews use the plain material; the review sheet and
-  the validator read the accessors (`scripts/vehicle_ids.py`).
+  reads it that way: previews use the plain material, `review_asset.py`
+  cuts `COLOR_0` out of the imported materials (so its mip renders work on
+  vehicles), and the review sheet and the validator read the accessors
+  (`scripts/vehicle_ids.py`).
 
 ### Lamps
 
@@ -956,9 +960,12 @@ in their own colour in the emission. No glow, halo or beam geometry.
 
 ### Glass
 
-Opaque, dark and glossy, in the Style Direction glass band and painted with
-`glazing.rooms()`. Every pane is its own tagged faces, so tint, lit cabins
-and see-through glass can come later without touching a model.
+Opaque, dark and glossy, in the Style Direction glass band. It is painted
+neutral dark, each pane a little darker at its foot and lighter at its head,
+not with `glazing.rooms()`: a room's lit wall reads as a stain on a
+windscreen. The seals round it are black rubber, so vehicle glass need not
+be darker than its casing. Every pane is its own tagged faces, so tint, lit
+cabins and see-through glass can come later without touching a model.
 
 | Id | Group | Covers |
 | --- | --- | --- |
@@ -991,9 +998,19 @@ and see-through glass can come later without touching a model.
   about 0.75 linear, with panel gaps and light wear only; the consumer
   multiplies them by the vehicle's paint colour, so no body colour is baked.
   Plates are blank white rectangles, unpainted.
+  - The level is the panel field of `LOD0` and `LOD1`: the area-weighted
+    median of the painted texels, 0.70–0.80 linear, so every vehicle takes
+    a paint alike. Seams and trim lines do not move it; never brighten the
+    base or unpaint trim to reach it.
+  - Every tier's area-weighted painted mean is within 10 % of `LOD0`'s, so
+    a vehicle keeps its brightness at a tier switch. Far tiers give their
+    painted faces flat light texels and their glass, wheels and underbody
+    unpainted dark faces, each in its own block of the atlas.
 - **Textures:** albedo per variant, ORM and emission required, a normal map
-  optional; external PNGs, one set for every tier, one material slot. The
-  class's atlas size at 64 texels/metre. Mirrored left/right UVs are fine
+  optional; external PNGs, one set for every tier, one material slot. A
+  1024 atlas for every class, exactly: about 64 texels/metre on a truck,
+  about 128 on a car, with lamps and wheel faces denser still. Mirrored
+  left/right UVs are fine
   except under lettering. The emission holds the lit lenses, the lit cabin on
   glass and black everywhere else, bound with factor zero.
 - **Variants:** `plain` (paint true) on every vehicle. A livery is another
@@ -1034,7 +1051,9 @@ exported frame, geometry and files only.
   (`{"set": "COLOR_0", "r": "part", "g": "surface", "b": "paint",
   "version": 1}`); `lamps`, one per lens (group, lamp id, side
   left/right/centre, position front/rear/side/roof from the facing's
-  dominant axis, centre, unit outward facing, width along up x facing,
+  dominant axis, colour white/amber/red when lit (the group's own; a
+  marker's is read from its emission texels or stated with
+  `lamp_lens(colour=)`), centre, unit outward facing, width along up x facing,
   height across it); `glass`, one per group present (group, id, area in
   m²); `cargo` (a van's or truck's load box: min, max, door), `null` for a
   car; `coupling`, `null` (reserved for trailers); `interior`, `null` or the
@@ -1042,7 +1061,8 @@ exported frame, geometry and files only.
   whether the tier has wheel parts, lamp ids, glass ids); `textures` (orm,
   emission, normal or `null`); `variants` (name, albedo file and hash,
   paint); `default_variant`; `preview` (`preview.png` in the asset folder).
-- The lists and `LOD0` agree both ways, and every lens has a face. No seats,
+- The lists and `LOD0` agree both ways, every lens has a face, and its
+  colour matches the emission texels its faces sample. No seats,
   weights, palettes or other consumer terms.
 - A full rebuild rewrites it; `build.py -- facts` rewrites it alone, from a
   committed tree.
@@ -1050,7 +1070,8 @@ exported frame, geometry and files only.
 ### Previews and the review sheet
 
 - `preview.png` is the catalog setup with the painted panels multiplied by
-  the asset's `preview_paint`, or white (the albedo as shipped).
+  the asset's `preview_paint`, or white (the albedo as shipped); a
+  paint-false livery is always shown white, as the consumer paints it.
   `variants.png` has every variant by day and at night with the driving
   lamps lit (tail, tail and brake, low beam, daytime, markers).
 - The review sheet is one command, `scripts/review_vehicle.py`, into
@@ -1241,7 +1262,8 @@ is exterior surface.
 - Palette per Style Direction; no baked lighting or reflections in albedo;
   glass/material separation reviewed in representative lighting.
 - Glazing inside the Style Direction band and darker than its surrounding trim,
-  painted with `scripts/glazing.py`, or a brief-driven exception recorded.
+  painted with `scripts/glazing.py`, or a brief-driven exception recorded
+  (vehicle glass: Vehicles).
 - No unexplained buried partitions or duplicate interior surfaces.
 - All six views inspected (a vehicle: its review sheet); LODs compared at
   intended switches with fixed camera and lighting; dominant colours and
@@ -1297,8 +1319,11 @@ is exterior surface.
 - Every required lamp and glass id present; lens rectangles and glass texels
   pass; each lamp group, the night set and the cabin checked lit on the
   review sheet.
-- Painted panels neutral grey, plates blank, no body colour baked; white,
-  dark grey and red paint read right on the review sheet.
+- Painted panels neutral grey, their field 0.70–0.80 and every tier's
+  painted mean within 10 % of `LOD0`'s; plates blank, no body colour baked;
+  white, dark grey and red paint read right on the review sheet, with no
+  brightness jump between tiers.
+- Every lens states its lit colour, matching the emission.
 - The facts sidecar passes with `source.dirty` false and describes the
   vehicle as built; `glass_texels.png` matches the atlas.
 - A generic composite after the owner's direction, with no recognisable make
