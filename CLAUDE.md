@@ -852,9 +852,9 @@ reworked later.
   - Origin on the ground at the centre of the body's plan box (length x
     width, mirrors excluded), one origin for every tier.
   - Tyres touch the ground exactly and nothing is below it, on every tier.
-  - Symmetric about `x = 0` unless the brief says otherwise: wheel and lens
-    pairs mirror within 1 mm. A rear fog lamp, a single reverse lamp, a
-    plate lamp, a beacon or a sign may stand alone off the centre line.
+  - Symmetric about `x = 0`: wheel and lens pairs mirror within 1 mm. Only
+    a rear fog lamp, a single reverse lamp, a plate lamp, a beacon or a
+    sign may stand alone off the centre line.
 
 ### Class boxes
 
@@ -891,6 +891,10 @@ box.
 - The arch is a dark recess. Each wheel straight ahead, and each front wheel
   turned 35° either way about the vertical through its centre, keeps 10 mm
   from every body triangle.
+- Signs, in the exported frame: a positive steer angle turns the wheel's
+  nose toward `+X`, the driver's left (a rotation about `+Y` through the
+  wheel centre); a positive spin rolls it forward (about `+X`, the top of
+  the tyre moving toward `+Z`).
 - No brake discs, suspension or tread geometry.
 
 ### Ids
@@ -945,8 +949,8 @@ in their own colour in the emission. No glow, halo or beam geometry.
 | 10 | `fog_front` | white | optional |
 | 11 | `fog_rear` | red | optional |
 | 12 | `plate` | white | rear plate lamp, optional |
-| 13 | `beacon` | livery | roof; reserved |
-| 14 | `sign` | livery | taxi sign, bus destination board; reserved |
+| 13 | `beacon` | not defined yet; white, amber or red accepted | roof; reserved |
+| 14 | `sign` | not defined yet; white, amber or red accepted | taxi sign, bus destination board; reserved |
 | 15 | `marker` | amber, white, red | truck and bus outline lamps |
 
 - Every vehicle has 3 (or 1 and 2), 4, 5, 6, 7, 8 and 9; a car also a
