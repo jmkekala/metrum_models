@@ -3,7 +3,7 @@
   "version": 1,
   "name": "kaivostorni_concrete",
   "path": "buildings/industrial/kaivostorni_concrete",
-  "source": {"commit": "3e3e93de0a47297473217212bea0db141eb777b5", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "8909fdaa55f1c1e0396ffa3da7f28f8909170840", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-5.95, 0.0, -3.8477], "max": [5.95, 21.9428, 3.8477]},
   "footprint": [
@@ -25,9 +25,9 @@
     {"id": "collar", "kind": "vehicle", "position": [3.5, 0.1, 2.9323], "facing": [0.0, 0.0, 1.0], "width_m": 3.2, "height_m": 3.4, "main": false}
   ],
   "lods": [
-    {"file": "kaivostorni_concrete_lod0.glb", "triangles": 5748, "sha256": "b80fb32126a2863b31d5b2d6cc4759689de1103f71a9797c89c3b0d145de769b"},
-    {"file": "kaivostorni_concrete_lod1.glb", "triangles": 3700, "sha256": "4ae13b838759aeb17248da937ba510011371d5a376017899826cf9aac67516e6"},
-    {"file": "kaivostorni_concrete_lod2.glb", "triangles": 1320, "sha256": "3dcc0df5a236b8ce9ae064d0b233ab27b58b9ed1f1eb3a52851c267f73190ce0"},
+    {"file": "kaivostorni_concrete_lod0.glb", "triangles": 3602, "sha256": "e4890991c8a91316a9acdc841fca86c95c3a4c996f354b97a7c372537fdc7d79"},
+    {"file": "kaivostorni_concrete_lod1.glb", "triangles": 2294, "sha256": "a28d318f5b660bc5941891d182d22daf5f14cc39eccbc900e2ca8085dec2e61f"},
+    {"file": "kaivostorni_concrete_lod2.glb", "triangles": 792, "sha256": "5af26cb03330cc2e7f4946b8a14b925f0ccfd956b188c0003f10bdb1a8aa2e19"},
     {"file": "kaivostorni_concrete_lod3.glb", "triangles": 458, "sha256": "55e7d53164e0dfb76a1728989e0baa8955fcd4dadd93446de8ed05f7fb4f7a1c"}
   ],
   "textures": {
@@ -40,6 +40,6 @@
     {"id": "ochre_render", "albedo": "kaivostorni_concrete_albedo_ochre_render.png", "sha256": "13dc6a259d9da10756a06b2cca47fe7cf05ce9edbf25b606c01377ae37b75833"}
   ],
   "default_variant": "grey_concrete",
-  "preview": {"file": "../preview.png", "sha256": "26e7c6b1a6c68e2c579fec95084c4c021c8d5aa95f97db6fda334186dfa2dc2f"},
+  "preview": {"file": "../preview.png", "sha256": "44563125eee343350b4f05f0ed7cff267d04bfae6f891f378f2877477aa9f93e"},
   "hero": false
 }

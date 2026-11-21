@@ -155,9 +155,11 @@ concrete soffits. Every tier keeps every overhang.
 - three downpipes (`scripts/downpipes.py`);
 - the two sheaves, each a rim, a hub, eight spokes and an axle, and on
   `LOD0` their four ropes; on `LOD2` each sheave is one disc; on `LOD3` they
-  are painted (The sheave bay);
-- the wall ladder and its cage (`scripts/roof_safety.py`), on
-  `LOD0`–`LOD2`.
+  are painted (The sheave bay).
+
+After the union and the weld it appends the wall ladder and its cage
+(`scripts/roof_safety.py`'s lean kit): separate closed solids that touch
+nothing, so the boolean never cuts them (Roof safety).
 
 Parameters the tiers derive from:
 
@@ -229,41 +231,71 @@ The head room roof carries nothing serviced, so the kit is not required.
 The brief asks for a ladder for the read, and one serves the roof, the
 gutters and the head room from outside. It is `RS.WallLadder` on the back
 eave wall, west of the windows, from the ground to 1 m above the roof's edge,
-passing 0.12 m outside the fascia. Its brackets below 3.95 m run into the
-base. A ladder this tall needs a cage, `RS.Cage` (The ladder cage). There
-is no roof ladder or walkway. The ladder sets the top, so `LOD3` keeps its
-bare rails (`RS.solids(extents=True)`, appended after the weld).
+passing 0.12 m outside the fascia. A ladder this tall needs a cage,
+`RS.Cage` (The ladder cage). There is no roof ladder or walkway. The ladder
+sets the top, so `LOD3` keeps its bare rails (`RS.solids(extents=True)`).
+
+It is the module's **lean kit** (`RS.WallLadder(..., lean=True)`, the cage
+following it): every rail, rung, bracket, hoop and strap is its own closed
+solid, 1.5 mm (`RS.LEAN_GAP`) clear of its neighbours and of the wall, so
+no part cuts another and none goes through the union. `build_lod()` appends
+the whole kit on every tier after the weld, `RS.append(..., check=True)`,
+which raises if any part meets the building or another part.
+
+- **Rails:** one box each, full length, mapped as before.
+- **Rungs:** each a three-sided prism in the old 30 mm square, its top and
+  outer faces full and its third face across the square's diagonal, so
+  from above or in front, and in a sun from there, its outline and shadow
+  are the old bar's; it ends 1.5 mm short of each rail's inner face
+  (8 triangles), on `LOD0` (all 77) and `LOD1` (every other one). On
+  `LOD2` it is a tetrahedron on the same box's diagonals (4), whose outline
+  along each axis is the box's. Two other forms were reviewed and dropped
+  (`review/lean_ladder_2026_11_21/v1_tetra_lod1/`, `v2_isosceles_prism/`):
+  tetrahedra on `LOD1` lost the rung rhythm from behind at 70 m with the
+  sun on the wall, and an isosceles prism, apex toward the wall, read
+  about a third thinner from the raised rear view at 20 m. At 70 m on
+  `LOD2` tetrahedra and the old bars read alike.
+- **Brackets:** 14 per rail, at the old heights, from 1.5 mm off the
+  surface behind to 1.5 mm short of the rail: a prism, full faces down and
+  toward the ladder's middle, on
+  `LOD0`, a tetrahedron on `LOD1` (their shadows on the wall read the same
+  at 35 m), none on `LOD2`. Below 3.95 m that surface is the base, 0.25 m proud of the
+  shaft: `base_behind()` gives it, so the three lowest pairs stop at the
+  base's face where the union used to cut them.
 
 ### The ladder cage
 
 `scripts/roof_safety.py`'s `Cage` on the wall ladder, at the module's
-defaults but for its top hoop (`CAGE_TOP`, 21.80 m): closed solids listed
-after the ladder in `RS.solids()`, unioned with it and taking its
-`PIPE_STRIP` mapping (`RS.Paint`), so it is the ladder's galvanised steel
-in every variant. The cage was first built here and moved into the module
-unchanged, so a second tall ladder gets the same one:
+defaults but for its top hoop (`CAGE_TOP`, 21.80 m), lean with its ladder
+and appended with it, taking its `PIPE_STRIP` mapping (`RS.Paint`), so it
+is the ladder's galvanised steel in every variant:
 
-- **Hoops:** flat bars 50 × 16 mm, 13 of them from 2.50 to 21.80 m (at most
-  1.65 m apart, here 1.61 m). Each leaves the outside of one rail, buried
-  2 cm in it, flares out to the arc, rounds the climber's back on a radius
-  of 0.36 m about an axis 0.80 m off the wall (four mitred chords), and runs
-  back into the other rail. The top hoop is 0.14 m under the rails' top;
-  the hoops pass well clear of the fascia (the ladder already stands 0.12 m
-  outside it).
-- **Straps:** three vertical flat bars, 50 × 20 mm, at 45°, 90° (the back)
+- **Hoops:** flat bars 50 mm high, 13 of them from 2.50 to 21.80 m (at
+  most 1.65 m apart, here 1.61 m). Each leaves one rail at its front outer
+  corner, flares out to the arc, rounds the climber's back on a radius of
+  0.36 m about an axis 0.80 m off the wall (four mitred chords), and comes
+  back to the other rail. Lean, each is three-sided: the outer face the old
+  16 mm bar's, the inner side a ridge 16 mm in; it ends 1.5 mm off the
+  rail's front face, its cap in that plane, where the old hoop ran 2 cm
+  into the rail (38 triangles). The top hoop is 0.14 m under the rails'
+  top; the hoops pass well clear of the fascia (the ladder already stands
+  0.12 m outside it).
+- **Straps:** three vertical flat bars, 50 mm wide, at 45°, 90° (the back)
   and 135° round the arc, from 4 cm under the lowest hoop to 4 cm over the
   top one. They sit on the hoops' **outsides**, not the usual insides, so
   that the back strap, not a hoop, is the building's +Y extent: a plain
-  prism every tier can keep cheaply.
+  prism every tier can keep cheaply. Lean, each keeps the old outer face,
+  three-sided, its inner edge 1.5 mm off the hoops' outermost corners
+  (8 triangles); the part of the old 20 mm bar that was buried in the
+  hoops is gone, so the extent is unchanged.
 - **Tiers:** `LOD0` every hoop; `LOD1` every other one (7); `LOD2` the
   lowest, middle and top (3), so the straps stay held; all with the three
   straps. `LOD3` keeps only the back strap, a three-sided prism with its
   outer edge on the strap's outer face (8 triangles), appended after the
   weld like the bare rails: it holds the +Y extent and the pivot, and at
   that range the rest of the cage is under half a pixel.
-- **Cost:** about 1,390 triangles at `LOD0` (Per-tier triangle counts),
-  most of it the hoops' own faces and the exact boolean's cuts where they
-  meet the rails and straps.
+- **Cost:** 518 triangles at `LOD0`, down from 1,388 when it was unioned
+  (Per-tier triangle counts): the hoops' own faces and nothing else.
 
 ### The sheave bay
 
@@ -343,27 +375,35 @@ Asserts, before building:
 
 | Tier | Triangles | Ceiling | What changes |
 | --- | --- | --- | --- |
-| `LOD0` | 5,748 | 12,000 | surround rings, reveals and closures on all 20 openings; sheave bay recessed; sheaves 32-sided with spokes, hubs, axles and ropes; downpipes 8-sided with swan-necks; ladder with all 77 rungs and its brackets; cage with 13 hoops and 3 straps |
-| `LOD1` | 3,700 | 4,000 | each opening one recess the size of its surround; sheaves 20-sided, no ropes; pipes 4-sided bent; every other rung; 7 hoops |
-| `LOD2` | 1,320 | 1,500 | openings flush, the sheave bay still recessed; each sheave one painted disc; coplanar splits dissolved; pipes 4-sided straight (tower pipes keep jog and shoe); every fourth rung, no brackets; 3 hoops |
+| `LOD0` | 3,602 | 12,000 | surround rings, reveals and closures on all 20 openings; sheave bay recessed; sheaves 32-sided with spokes, hubs, axles and ropes; downpipes 8-sided with swan-necks; ladder with all 77 rungs (prisms) and its 28 brackets; cage with 13 hoops and 3 straps |
+| `LOD1` | 2,294 | 4,000 | each opening one recess the size of its surround; sheaves 20-sided, no ropes; pipes 4-sided bent; every other rung (prisms), the brackets as tetrahedra; 7 hoops |
+| `LOD2` | 792 | 1,500 | openings flush, the sheave bay still recessed; each sheave one painted disc; coplanar splits dissolved; pipes 4-sided straight (tower pipes keep jog and shoe); every fourth rung (tetrahedra), no brackets; 3 hoops |
 | `LOD3` | 458 | 500 | as `LOD2`, but the sheave bay flush and painted; annex pipe 3-sided; ladder reduced to bare rails, the cage to its back strap |
 
-Where the triangles go, measured by building without each part:
+Where the triangles go: the ladder and cage counted on the appended solids
+(they touch nothing, so their count is exactly what they add), the rest
+measured by building without each part:
 
 | Tier | Ladder | Cage | Sheaves (and ropes) | Three downpipes | The rest |
 | --- | --- | --- | --- | --- | --- |
-| `LOD0` | 2,140 | 1,388 | 1,178 | 308 | 734 |
-| `LOD1` | 1,380 | 764 | 826 | 156 | 574 |
-| `LOD2` | 422 | 348 | 96 | 100 | 354 |
+| `LOD0` | 864 | 518 | 1,178 | 308 | 734 |
+| `LOD1` | 448 | 290 | 826 | 156 | 574 |
+| `LOD2` | 104 | 138 | 96 | 100 | 354 |
 | `LOD3` | 16 | 8 | — | 100 | 334 |
 
 The building itself is four boxes, two slabs, 20 openings and the sheave
 bay, polygons with holes rather than grids; board marks, lift lines, ties,
 frames, louvres and door bracing are texture. The ladder and its cage are
-three-fifths of `LOD0`: 77 rungs and 13 hoops on a 22 m ladder. Each spoke
+still the largest single part of `LOD0`, 1,382 triangles: 77 rungs at 8
+(616), 28 brackets at 8 (224), two rails (24), 13 hoops at 38 (494) and
+three straps (24). Unioned they were 3,528 (2,140 + 1,388): every rung,
+bracket and hoop end the boolean cut into a rail or the wall, and every
+strap crossing a hoop, split the faces round it. A closed rung that still
+reads as a bar up close costs a three-sided prism's 8, so all 77 rungs
+alone are 616. Each spoke
 is its own solid, so a spoked sheave costs about 500 triangles with the
 boolean's cuts at both ends of its spokes; that is why `LOD2` builds discs.
-`LOD2` sits 180 under its ceiling, `LOD3` 42, mostly the flush openings'
+`LOD2` sits 708 under its ceiling, `LOD3` 42, mostly the flush openings'
 holes and the strip cuts the tiling band needs.
 
 ## LOD review
@@ -404,6 +444,15 @@ Renders of the current state are in
 - **Ladder.** Reads on the back and above the roof edge at 35 and 70 m; at
   120 m `LOD2`'s every-fourth rungs and `LOD3`'s bare rails read alike, a
   pale double line.
+- **The lean kit against the unioned one** (`review/lean_ladder_2026_11_21/`:
+  `before/`, `after/`, `compare/`, ladder crops `crop_*`): every tier from
+  behind (180°, 0°) and from the raised rear (150°, 30°) at 20, 35 and
+  70 m, noon (the back in shade) and `reverse` (sun on the back). Rails,
+  rungs, brackets, hoops and straps read the same at every distance; up
+  close at 20 m (3× crops) no rung, hoop or bracket shows a gap or floats,
+  the rung, bracket and hoop shadows on the wall and base are the same, and
+  nothing flickers, since no faces are coplanar. The only differences seen
+  are the forms rejected under Roof safety.
 - **Downpipes.** The front pipe and its jog over the base read at 35 m; past
   70 m a thin line.
 
@@ -429,10 +478,14 @@ Measured with `scripts/validate_asset.py` on the exports:
 
 | Tier | Hidden triangles | Share | Vertical area |
 | --- | --- | --- | --- |
-| `LOD0` | 301 of 5,748 | 5.2 % | 6.0 m² |
-| `LOD1` | 198 of 3,700 | 5.4 % | 5.9 m² |
-| `LOD2` | 43 of 1,320 | 3.3 % | 35.1 m² |
+| `LOD0` | 368 of 3,602 | 10.2 % | 6.0 m² |
+| `LOD1` | 208 of 2,294 | 9.1 % | 5.8 m² |
+| `LOD2` | 30 of 792 | 3.8 % | 35.0 m² |
 | `LOD3` | 18 of 458 | 3.9 % | 6.5 m² |
+
+Of these, the ladder and cage's (counted by region): 122 on `LOD0`, 41 on
+`LOD1`, none on `LOD2`, 16 on `LOD3`; unioned they were 55, 31, 13 and 16.
+The rest is unchanged face for face.
 
 The candidates are exterior surface the 40 sampled rays rarely escape:
 
@@ -445,6 +498,14 @@ The candidates are exterior surface the 40 sampled rays rarely escape:
   the one point the test samples, lies behind both discs, though most of it
   is visible round them, and the discs' rear faces (about 15 m²), closure
   faces as above.
+- **The lean kit's caps.** On `LOD0` the rungs' end caps face a rail's
+  inner face 1.5 mm away, and the brackets' caps face the wall, the base
+  or a rail as closely: 78 rung-cap and 44 bracket-cap triangles that the
+  sampled rays cannot leave the gap from. They are the closure faces that
+  keep each part a closed solid without burying it, kept on purpose; the
+  union used to remove the buried ends instead, at the cost of the cuts.
+  On `LOD1`, 40 rung-cap triangles; the tetrahedral brackets there and
+  rungs on `LOD2` have no caps.
 - As before the sheaves: base wall slivers behind the back downpipe's lower
   run, a sliver where the east gable's top meets the rake soffit, and at
   `LOD3` the wall-facing sides of the ladder's bare rails and of the cage's
@@ -675,6 +736,12 @@ Checked here, in Blender 5.3.0, headless:
 - The day/night sheet for both colours: oxide-red sheaves in the ochre
   variant, the bay dark at night.
 - Mip4 stress renders at 120 m (LOD review).
+- The lean kit: before/after renders of every tier from behind and the
+  raised rear at 20, 35 and 70 m (LOD review); `RS.append(check=True)`
+  finds no part meeting the building or another part on any tier, and
+  fails as it should when the base is left out of `behind` or the gap is
+  made negative; LOD0 bounds, pivot, the sidecar's doors and footprint,
+  `LOD3` and `preview.png` unchanged.
 
 Pending, in the consumer:
 
@@ -693,6 +760,15 @@ Recorded as known-good markers, not requirements.
 
 ## Revision log
 
+- **2026-11-21:** the wall ladder and cage switched to `scripts/roof_safety.py`'s
+  lean kit (`lean=True`, `base_behind()` for the brackets over the base):
+  separate solids appended after the weld instead of unioned. Same rails,
+  rungs, brackets, hoops and straps in the same places and UVs; rungs and
+  brackets three-sided or tetrahedral, hoops three-sided, nothing buried.
+  Triangles 5,748 / 3,700 / 1,320 / 458 to 3,602 / 2,294 / 792 / 458 (the
+  kit 3,528 / 2,144 / 770 / 24 to 1,382 / 738 / 242 / 24); bounds, pivot,
+  sidecar doors and footprint, textures and `LOD3` unchanged. Before/after
+  renders in `review/lean_ladder_2026_11_21/`.
 - **2026-11-21:** the ladder cage moved from `build.py` into
   `scripts/roof_safety.py` (`RS.Cage`); every tier's mesh, UVs and the
   exported files are unchanged.

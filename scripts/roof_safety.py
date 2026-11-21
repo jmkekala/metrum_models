@@ -29,6 +29,36 @@ the kit (after the weld, as below):
 
     RS.append(obj, RS.solids([WALL, CAGE], level, PAINT, extents=True))
 
+The lean kit. WallLadder(..., lean=True), and the Cage given that ladder,
+build the same rails, rungs, brackets, hoops and straps, in the same places
+and with the same UVs, as separate closed solids that touch nothing:
+rungs stop LEAN_GAP (1.5 mm) short of the rails, brackets as short of the
+wall and the rails, hoops of the rails and straps of the hoops. Nothing is
+cut, so nothing is split: a 22 m caged ladder costs about 1,380 triangles at
+LOD0 and 740 at LOD1, against 3,500 and 2,100 unioned. It goes into every
+tier through append(), after the build's union, weld and dissolve, never
+through the union; check=True raises if any part meets the building or
+another part (clashes()). Brackets stop short of the eave wall's face; where
+something stands proud of it behind the ladder, *behind* says how far:
+
+    WALL = RS.WallLadder(EAVE, s, lean=True,
+                         behind=lambda z: 0.25 if z < 3.7 else 0.0)  # a plinth
+    CAGE = RS.Cage(WALL)                                    # lean with it
+    KIT = [WALL, CAGE]
+    ...
+    obj = union(base, parts)            # the kit is not in parts
+    ...weld, dissolve...
+    RS.append(obj, RS.solids(KIT, level, PAINT, extents=True), check=True)
+
+extents=True there gives the full kit on tiers that keep it and the bare
+rails and back strap on the tier that drops it, so one call serves every
+tier. A lean ladder's rungs are three-sided prisms (8 triangles) to LOD1
+and tetrahedra (4) from LOD2, its brackets prisms at LOD0 and tetrahedra
+from LOD1 (LEAN_FORMS; solids(forms=...) replaces it); hoops and straps are
+three-sided throughout. Only the wall ladder and its cage have a
+lean form; the roof ladder and walkway stand on the sheet and still go
+through the union.
+
 The eave is given by its wall's plan end points p0 -> p1, walked
 anticlockwise seen from above so the outward face is on the right, as every
 build.py walks its walls and as scripts/downpipes.py takes them. *s* runs
@@ -437,6 +467,106 @@ def ladder(foot, up, across, out, length, standoff, brackets, mode, paint,
     return M
 
 
+# ============================================================= lean kit
+# The lean kit (WallLadder(lean=True) and its Cage): every part a closed
+# solid of its own that cuts nothing, LEAN_GAP clear of its neighbours and of
+# the wall, so no part is split by another and nothing goes through the
+# boolean. Per tier, LOD0 to LOD3, the form of its (rungs, brackets):
+# "prism", three-sided with full faces up and out, or down (8 triangles), or
+# "tetra", a tetrahedron on two skew diagonals of the same box (4), whose
+# outline along each of the box's three axes is the box's own. Tetrahedral
+# rungs read fainter than prisms at 35-70 m (reviewed on the headframe), so
+# they wait for LOD2; brackets, seen by their shadows, go at LOD1.
+LEAN_GAP = 0.0015
+LEAN_FORMS = (("prism", "prism"), ("prism", "tetra"), ("tetra", "tetra"),
+              ("tetra", "tetra"))
+
+
+def _finish(M):
+    """Outward normals on every shell of *M*: lean parts reach their tier
+    through append(), which recalculates nothing."""
+    bmesh.ops.recalc_face_normals(M.bm, faces=M.bm.faces[:])
+    return M
+
+
+def bar(M, Q, t0, t1, u0, u1, v0, v1, form, along):
+    """A bar from *t0* to *t1* in the box *u0*..*u1*, *v0*..*v1* of the frame
+    Q(t, u, v) -> point, added to *M*: a "prism", three-sided, with full
+    faces on v1 and on u1 and its third face across the box's diagonal, so
+    seen from beyond that corner -- or lit from there -- its outline is the
+    box's (swap a pair of bounds to turn it); a "tetra" on the box's
+    diagonals; or a "box"."""
+    if form == "tetra":
+        p, q, r, s = Q(t0, u0, v1), Q(t0, u1, v0), Q(t1, u0, v0), Q(t1, u1, v1)
+        for f in ((p, q, r), (q, p, s), (r, s, p), (s, r, q)):
+            M.face(list(f), along)
+        return M
+    if form == "prism":
+        sec = [(u0, v1), (u1, v1), (u1, v0)]
+    elif form == "box":
+        sec = [(u0, v0), (u1, v0), (u1, v1), (u0, v1)]
+    else:
+        raise ValueError("a lean bar is a 'prism', a 'tetra' or a 'box', not %r" % form)
+    return _prism(M, [Q(t0, u, v) for u, v in sec], [Q(t1, u, v) for u, v in sec], along)
+
+
+def lean_ladder(foot, up, across, out, length, standoff, brackets, mode, paint,
+                form=("prism", "prism"), backs=None, rail_d=RAIL_D):
+    """ladder()'s lean twin: the same rails, rungs and brackets in the same
+    places, as separate closed solids in one mesh. *form* is the (rungs,
+    brackets) bar form, or one form for both. Each rail one box mapped as
+    ladder() maps it; every *mode*-th rung a bar between the rails' inner
+    faces, LEAN_GAP short of each; each bracket a bar from LEAN_GAP off the
+    surface behind it -- *backs*, its distance out
+    from the ladder's foot plane at each bracket, 0 by default -- to
+    LEAN_GAP short of the rail. Nothing is buried, so nothing is cut."""
+    M = Mesh(paint)
+    up, across, out = Vector(up), Vector(across), Vector(out)
+    foot = Vector(foot)
+    rung_form, bracket_form = (form, form) if isinstance(form, str) else form
+
+    def P(a, b, c):
+        q = foot + across * a + up * b + out * c
+        return (q.x, q.y, q.z)
+
+    g = LEAN_GAP
+    b0, b1 = 0.0, length
+    c0, c1 = standoff, standoff + rail_d
+    cm = (c0 + c1) / 2.0
+    half = LADDER_W / 2.0
+    r2, k2 = RUNG / 2.0, BRACKET / 2.0
+    backs = [0.0] * len(brackets) if backs is None else list(backs)
+    for side in (-1, 1):
+        a_out = side * (half + RAIL_W / 2.0)
+        a_in = side * (half - RAIL_W / 2.0)
+        am = side * half
+        M.face([P(a_out, b0, c0), P(a_out, b1, c0), P(a_out, b1, c1),
+                P(a_out, b0, c1)], up)
+        M.face([P(a_out, b0, c1), P(a_out, b1, c1), P(a_in, b1, c1),
+                P(a_in, b0, c1)], up)
+        M.face([P(a_out, b1, c0), P(a_in, b1, c0), P(a_in, b1, c1),
+                P(a_out, b1, c1)], up)
+        M.face([P(a_out, b0, c0), P(a_out, b0, c1), P(a_in, b0, c1),
+                P(a_in, b0, c0)], up)
+        M.face([P(a_in, b0, c0), P(a_in, b0, c1), P(a_in, b1, c1), P(a_in, b1, c0)],
+               up, (P(a_in, 0.0, cm), rail_d / 2.0))
+        M.face([P(a_out, b0, c0), P(a_in, b0, c0), P(a_in, b1, c0), P(a_out, b1, c0)],
+               up, (P(am, 0.0, c0), RAIL_W / 2.0))
+        for bb, back in zip(brackets, backs):
+            # full faces down and toward the ladder's middle
+            bar(M, lambda t, u, v, am=am: P(u, v, t), back + g, c0 - g,
+                am + side * k2, am - side * k2, bb + k2, bb - k2, bracket_form, out)
+    n = int((length - 0.25) / RUNG_PITCH)
+    lo = half - RAIL_W / 2.0 - g
+    for k in range(n):
+        if mode and k % mode == 0:
+            b = RUNG_PITCH * (k + 1)
+            # full faces up and out: from above and in front, and in a sun
+            # from there, its outline is the old square bar's
+            bar(M, P, -lo, lo, b - r2, b + r2, cm - r2, cm + r2, rung_form, across)
+    return M
+
+
 # ============================================================ placement
 class Eave:
     """One eave: its wall, its overhang and the slope above it."""
@@ -467,10 +597,19 @@ class Eave:
 
 
 class WallLadder:
-    """The ladder from the ground up the eave's wall, centred *s* along it."""
+    """The ladder from the ground up the eave's wall, centred *s* along it.
 
-    def __init__(self, eave, s, foot=0.0, brackets=None):
+    *lean* builds it, and its Cage, as the lean kit (module docstring):
+    separate solids that touch nothing, for append() after the weld rather
+    than the union. Its brackets then stop short of the wall instead of
+    running into it, so where something stands proud of the wall behind
+    them -- a plinth, a base -- *behind* gives that: a function of height
+    (build-frame z) returning how far the surface behind the ladder stands
+    out from the eave wall's face there, 0 by default."""
+
+    def __init__(self, eave, s, foot=0.0, brackets=None, lean=False, behind=None):
         self.eave, self.s, self.foot = eave, s, foot
+        self.lean, self.behind = lean, behind
         self.standoff = eave.eave_out + EAVE_CLEAR
         self.length = eave.z_edge + LADDER_TOP - foot
         if brackets is None:
@@ -482,11 +621,29 @@ class WallLadder:
     def span(self):
         return (self.s - HALF, self.s + HALF)
 
-    def solid(self, paint, mode, fittings):
+    def backs(self):
+        """How far out from the wall face the surface behind each bracket
+        stands: *behind* at its foot, middle and top, the furthest."""
+        if self.behind is None:
+            return [0.0] * len(self.brackets)
+        k2 = BRACKET / 2.0
+        return [max(self.behind(self.foot + b + dz) for dz in (-k2, 0.0, k2))
+                for b in self.brackets]
+
+    def solid(self, paint, mode, fittings, form=("prism", "prism")):
+        """The ladder at rung *mode*, with its brackets if *fittings*; a lean
+        ladder's (rungs, brackets) in *form* (a LEAN_FORMS entry), its bare
+        rails the same as any ladder's."""
         e = self.eave
-        return ladder(e.point(self.s, 0.0, self.foot), (0, 0, 1), e.t, e.n,
-                      self.length, self.standoff,
-                      self.brackets if fittings and mode else [], mode, paint)
+        if not self.lean or mode is None:
+            return ladder(e.point(self.s, 0.0, self.foot), (0, 0, 1), e.t, e.n,
+                          self.length, self.standoff,
+                          self.brackets if fittings and mode else [], mode, paint)
+        keep = fittings and mode
+        return _finish(lean_ladder(
+            e.point(self.s, 0.0, self.foot), (0, 0, 1), e.t, e.n, self.length,
+            self.standoff, self.brackets if keep else [], mode, paint, form,
+            self.backs() if keep else []))
 
 
 def _prism(M, ring0, ring1, along):
@@ -510,6 +667,7 @@ class Cage:
 
     def __init__(self, wall, foot=None, top=None, modes=CAGE_MODES):
         self.wall, self.eave, self.s, self.modes = wall, wall.eave, wall.s, modes
+        self.lean = getattr(wall, "lean", False)     # lean with its ladder
         self.foot = wall.foot + CAGE_FOOT if foot is None else foot
         self.top = wall.foot + wall.length - CAGE_TOP_GAP if top is None else top
         if self.top - self.foot < CAGE_PITCH / 2.0:
@@ -579,15 +737,71 @@ class Cage:
         return _prism(Mesh(paint), [self.point(*p, z0) for p in sec],
                       [self.point(*p, z1) for p in sec], (0, 0, 1))
 
+    def lean_hoop(self, z, M):
+        """hoop()'s lean twin, added to *M*: the same centre line and outer
+        face, three-sided (its inner face a ridge), and ending LEAN_GAP
+        outside the rail where the centre line leaves it rather than inside
+        it, its cap in that face's plane."""
+        pts = [Vector(p) for p in self.hoop_path()]
+        segs = [(q - p).normalized() for p, q in zip(pts, pts[1:])]
+        left = [Vector((-d.y, d.x)) for d in segs]
+        offs = [left[0]]
+        for i in range(1, len(pts) - 1):
+            m = (left[i - 1] + left[i]).normalized()
+            offs.append(m / m.dot(left[i - 1]))
+        offs.append(left[-1])
+        t, h, g = HOOP_T / 2.0, HOOP_H / 2.0, LEAN_GAP
+        sec = ((1, -1), (1, 1), (-1, 0))        # outer face full, inner ridge
+        rings = [[(p + n * sa * t, sz) for sa, sz in sec] for p, n in zip(pts, offs)]
+        front = self.wall.standoff + RAIL_D
+        for idx, d, side in ((0, segs[0], -1.0), (-1, -segs[-1], 1.0)):
+            p = pts[idx]                        # inside the rail; d leads out
+            planes = [(Vector((0.0, 1.0)), front + g),
+                      (Vector((side, 0.0)), HALF + g)]
+            n2, val = min(((n2, val) for n2, val in planes if d.dot(n2) > 1e-9),
+                          key=lambda pl: (pl[1] - p.dot(pl[0])) / d.dot(pl[0]))
+            rings[idx] = [(q + d * ((val - q.dot(n2)) / d.dot(n2)), sz)
+                          for q, sz in rings[idx]]
+        rings = [[self.point(q.x, q.y, z + sz * h) for q, sz in r] for r in rings]
+        for i, d in enumerate(segs):
+            along = Vector(self.point(*pts[i + 1], 0.0)) - Vector(self.point(*pts[i], 0.0))
+            for k in range(3):
+                M.face([rings[i][k], rings[i][(k + 1) % 3], rings[i + 1][(k + 1) % 3],
+                        rings[i + 1][k]], along)
+        M.face(list(reversed(rings[0])), (0, 0, 1))
+        M.face(list(rings[-1]), (0, 0, 1))
+        return M
+
+    def lean_strap(self, angle, M):
+        """strap()'s lean twin, added to *M*: the same outer face, three-sided,
+        its inner edge LEAN_GAP off the hoops' outermost corners."""
+        a = math.radians(angle)
+        rad, tan = Vector((math.cos(a), math.sin(a))), Vector((-math.sin(a), math.cos(a)))
+        c = Vector((0.0, self.o)) + rad * CAGE_R
+        w = STRAP_W / 2.0
+        r_in = HOOP_T / 2.0 / math.cos(math.pi / (2.0 * CAGE_ARC)) + LEAN_GAP
+        sec = [c + tan * w + rad * STRAP_T, c - tan * w + rad * STRAP_T, c + rad * r_in]
+        z0, z1 = self.hoops[0] - STRAP_END, self.hoops[-1] + STRAP_END
+        return _prism(M, [self.point(*p, z0) for p in sec],
+                      [self.point(*p, z1) for p in sec], (0, 0, 1))
+
     def solid(self, paint, level, kit=True):
         """The hoops this tier keeps and the straps, for the union; or, on a
         tier without hoops or without the kit, the back strap alone,
-        three-sided, for append()."""
+        three-sided, for append(). A lean cage's hoops and straps are one
+        mesh of separate solids, for append()."""
         every = self.modes[level] if kit else None
         if every is None:
             return [self.strap(90.0, paint, tri=True)]
         zs = [z for k, z in enumerate(self.hoops)
               if k % every == 0 or k == len(self.hoops) - 1]
+        if self.lean:
+            M = Mesh(paint)
+            for z in zs:
+                self.lean_hoop(z, M)
+            for a in STRAP_ANGLES:
+                self.lean_strap(a, M)
+            return [_finish(M)]
         return [self.hoop(z, paint) for z in zs] + [self.strap(a, paint)
                                                      for a in STRAP_ANGLES]
 
@@ -657,12 +871,55 @@ class Walkway:
         return out
 
 
-def append(obj, pieces):
+def clashes(obj, pieces):
+    """What in *pieces*, (solid, name) pairs, touches or cuts *obj*'s mesh,
+    or one of its own solids another: append() joins nothing, so a lean part
+    that reaches the wall or a neighbour would leave both whole, buried in
+    each other. Faces that share a vertex belong to one solid and are not
+    compared."""
+    from mathutils.bvhtree import BVHTree
+    verts, polys, owner = [], [], []
+    for M, name in pieces:
+        base = len(verts)
+        index = {v: base + i for i, v in enumerate(M.bm.verts)}
+        verts += [v.co.copy() for v in M.bm.verts]
+        for f in M.bm.faces:
+            polys.append([index[v] for v in f.verts])
+            owner.append(name)
+    if not polys:
+        return []
+    kit = BVHTree.FromPolygons(verts, polys)
+    bm = bmesh.new()
+    bm.from_mesh(obj.data)
+    building = BVHTree.FromBMesh(bm)
+    bm.free()
+    bad = []
+    hit = building.overlap(kit)
+    if hit:
+        c = Vector(verts[polys[hit[0][1]][0]])
+        bad.append("%d faces of the kit meet the building, e.g. %s's near (%.3f, %.3f, %.3f)"
+                   % (len({j for _i, j in hit}), owner[hit[0][1]], c.x, c.y, c.z))
+    pairs = [(i, j) for i, j in kit.overlap(kit)
+             if i < j and not set(polys[i]) & set(polys[j])]
+    if pairs:
+        c = Vector(verts[polys[pairs[0][0]][0]])
+        bad.append("%d pairs of the kit's faces from different solids meet, e.g. "
+                   "near (%.3f, %.3f, %.3f)" % (len(pairs), c.x, c.y, c.z))
+    return bad
+
+
+def append(obj, pieces, check=False):
     """Add *pieces*, (solid, name) pairs touching nothing, to *obj*'s mesh
     after its union and its cleanup. A wall ladder's bare rails stand clear
     of the building, so there is nothing to join, and in the mesh before a
     build's weld and dissolve they changed what those greedy passes merged
-    elsewhere, for eight more triangles on a tier with none to spare."""
+    elsewhere, for eight more triangles on a tier with none to spare. The
+    lean kit goes in this way on every tier. *check* raises if a piece
+    meets the mesh or another piece (clashes())."""
+    if check:
+        bad = clashes(obj, pieces)
+        if bad:
+            raise ValueError("the appended kit is not clear:\n  " + "\n  ".join(bad))
     bm = bmesh.new()
     bm.from_mesh(obj.data)
     for M, _name in pieces:
@@ -676,14 +933,15 @@ def append(obj, pieces):
     return obj
 
 
-def solids(parts, level, paint, extents=False, modes=MODES):
+def solids(parts, level, paint, extents=False, modes=MODES, forms=LEAN_FORMS):
     """(solid, object name) for each of *parts* at *level*; none past the
     tiers that keep the kit. *modes* replaces MODES for a building that
     cannot afford the kit as far out; a Cage thins its hoops by its own
     modes. With *extents*, a tier that drops the kit still keeps each wall
     ladder's bare rails, 16 triangles, and each cage's back strap, 8, for a
     building whose extents a wall ladder or its cage sets: every tier shares
-    LOD0's bounds and pivot."""
+    LOD0's bounds and pivot. *forms* replaces LEAN_FORMS for a lean ladder's
+    rungs and brackets."""
     mode, fittings = modes[level]
     out = []
     for p in parts:
@@ -691,6 +949,8 @@ def solids(parts, level, paint, extents=False, modes=MODES):
             continue
         if isinstance(p, Cage):
             got = p.solid(paint, level, kit=mode is not None)
+        elif isinstance(p, WallLadder):
+            got = p.solid(paint, mode, fittings, forms[level])
         else:
             got = p.solid(paint, mode, fittings)
         for M in (got if isinstance(got, list) else [got]):
@@ -719,4 +979,8 @@ def problems(wall, name, avoid, clear=CLEAR):
     if wall.brackets and wall.foot + max(wall.brackets) + BRACKET / 2.0 > \
             wall.eave.z_wall - 0.05:
         bad.append("%s has a bracket in the soffit" % name)
+    if getattr(wall, "lean", False) and any(wall.standoff - back < 0.05
+                                            for back in wall.backs()):
+        bad.append("%s has a bracket with under 5 cm between its rail and the "
+                   "surface behind it" % name)
     return bad

@@ -24,9 +24,10 @@ runs up the back to the roof.
 Construction is a set of closed solids unioned with Blender's exact boolean:
 the tower (shaft and head room as one ring of walls, the cantilevers' soffits
 included, the sheave bay recessed into its front), the base, the annex,
-the two roof slabs, three downpipes (scripts/downpipes.py), the sheaves
-(rims, hubs, spokes, axles, ropes), and the wall ladder and its cage
-(scripts/roof_safety.py).
+the two roof slabs, three downpipes (scripts/downpipes.py) and the sheaves
+(rims, hubs, spokes, axles, ropes). The wall ladder and its cage
+(scripts/roof_safety.py) are its lean kit: separate solids that touch
+nothing, appended after the weld rather than unioned.
 The base stands round the shaft's foot and the annex runs into the shaft,
 so the union removes every buried wall. The result is the boundary of one
 empty volume, so no interior geometry can occur.
@@ -231,9 +232,20 @@ DOWNPIPES = [
 
 # The wall ladder (scripts/roof_safety.py) up the back eave wall, west of
 # the head room's windows, from the ground to a metre over the roof's edge.
+# The lean kit: its parts are separate solids that touch nothing, appended
+# after the weld, so its brackets stop short of the wall, or of the base
+# where it stands proud of the shaft (base_behind()).
 LADDER_S = 6.00                 # along the back wall from its east end: x -2.20
 BACK_EAVE = RS.Eave(*TOWER_WALLS["back"][:2], Z_EAVE, EAVE_OV, Z_EDGE, H_TAN)
-LADDER = RS.WallLadder(BACK_EAVE, LADDER_S)
+
+
+def base_behind(z):
+    """How far the base stands out from the shaft's back face at height *z*:
+    its full 0.25 m below Z_BASE, then in along its 45 degree top."""
+    return max(0.0, (BX - TY) - max(0.0, z - Z_BASE))
+
+
+LADDER = RS.WallLadder(BACK_EAVE, LADDER_S, lean=True, behind=base_behind)
 PAINT = RS.Paint(L.ATLAS, strip=L.PIPE_STRIP)
 
 # The ladder's safety cage (scripts/roof_safety.py's Cage, its defaults):
@@ -850,8 +862,6 @@ def build_lod(level):
         DP.solids(DOWNPIPES[:2], max(sides, 4), bent, L.PIPE_STRIP, L.ATLAS))]
     parts += [to_object(B, "tmp_downpipe_a%d" % i) for i, (B, _n) in enumerate(
         DP.solids(DOWNPIPES[2:], sides, bent, L.PIPE_STRIP, L.ATLAS))]
-    if RS.MODES[level][0] is not None:
-        parts += [to_object(M, name) for M, name in RS.solids([LADDER, CAGE], level, PAINT)]
     if bay_mode(level) == "recess":
         parts += [to_object(B, "tmp_sheave%d" % i) for i, B in enumerate(sheave_solids(level))]
     obj = union(base, parts)
@@ -869,10 +879,11 @@ def build_lod(level):
             delimit={'UV', 'MATERIAL'})
     bm.to_mesh(obj.data)
     bm.free()
-    if RS.MODES[level][0] is None:
-        # the ladder sets the top and the cage's back strap the +Y extent:
-        # the bare rails and that strap stay
-        RS.append(obj, RS.solids([LADDER, CAGE], level, PAINT, extents=True))
+    # The lean ladder and cage on every tier, clear of the building and of
+    # each other (check). The ladder sets the top and the cage's back strap
+    # the +Y extent, so the tier that drops the kit keeps the bare rails and
+    # that strap (extents).
+    RS.append(obj, RS.solids([LADDER, CAGE], level, PAINT, extents=True), check=True)
     return obj
 
 

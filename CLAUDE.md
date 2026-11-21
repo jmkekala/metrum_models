@@ -115,8 +115,9 @@ budgets; style ambition never raises a ceiling.
 - **Classes: buildings (exterior shells only) and props.** No interiors,
   opening door/window meshes, rigging, animation, vehicles or characters.
 - **Props v1: street furniture and lighting** (benches, bins, bollards,
-  mailboxes, planters, lamp posts). Add signage, kiosks, shelters etc. only
-  when work on them starts.
+  mailboxes, planters, lamp posts) and **boundary pieces** (wall runs,
+  piers, gates) that the consumer assembles round a lot. Add signage,
+  kiosks, shelters etc. only when work on them starts.
 - **Vehicles** may later get a `vehicles/` folder beside `buildings/` and
   `props/`, with their own section. Before writing it, decide the animation
   scope (engine-side wheel rotation versus rigging); do not inherit Props
@@ -194,6 +195,8 @@ metrum_models/
         preview.png          # required; same standard preview setup as buildings
     lighting/
       <asset_name>/           # same per-asset layout as street_furniture/
+    boundary/
+      <asset_name>/           # as street_furniture/, plus _lod2.glb, _lod3.glb and the facts sidecar
   scripts/                  # helper scripts that are genuinely reusable across assets — see below
   CATALOG.md                 # running list of finished assets, one line each, linking each asset's preview.png as a browsable visual index
   .gitattributes             # LFS patterns
@@ -203,7 +206,7 @@ metrum_models/
 ```
 
 **Categories:** `residential/`, `commercial/`, `industrial/`, `service/`,
-`agricultural/` under `buildings/`; `street_furniture/`, `lighting/` under `props/`. Add categories
+`agricultural/` under `buildings/`; `street_furniture/`, `lighting/`, `boundary/` under `props/`. Add categories
 when needed. A mixed-use building goes under its primary category, with the
 secondary use recorded in `notes.md`.
 
@@ -231,9 +234,10 @@ and its `facts()` and hands the rest to one `asset_build.Asset`.
 | `weathering.py` | Weathering as per-sample fields (dirt, algae, rust, faded paint, rain runs, coal dust) that the canvas carries through `pad()` and `atlas.albedo()`/`orm()` resolve per variant, with helpers for a plinth, splash-back, a sheltered eave, runs under a drip, a roof band, a window and a door. Each atlas's `weather()` places them. |
 | `asset_build.py` | The shared half of every `build.py`: `check_toolchain()`, the catalog preview constants, `open_stack()` (a chimney or stack open at the top round a sooted flue), `union()` (the exact boolean, which triangulates any keyhole face it returns round a hole before the build's weld can fold it) and `difference()`, its subtracting twin, and an `Asset` (`night_lit=False` for one without glazing) with `material()`, `build_all()`, `export_all()`, `render_preview()`, `render_variants()`, `write_facts()` and `main()`. Runs inside Blender only. |
 | `model_facts.py` | The facts sidecar `export/<asset_name>.model.json`: its schema, the build-frame to glTF conversion, `wall_door()`, `lane_passage()` and `roof_clear_width()` for a `build.py`'s `facts()`, `compose()`/`write()`, and `check()`, which `validate_asset.py` runs on the file. Pure Python. |
+| `boundary_wall.py` | The brick perimeter wall pieces of `props/boundary/`: their shared 512 atlas (`export`, written into each piece's `export/`), the joint rule, `Run`/`Pier`/`Gate` and their four tiers, layout checks and facts; each piece's `build.py` names its piece and calls `piece_asset()`. |
 | `glazing.py` | Paints glass as the room behind it: `rooms()` on the finished albedo by day, `night_rooms()` on the emission mask by night. Called by texture generators. |
 | `downpipes.py` | Downpipes as swept, mitred closed solids for `build.py` to union: a `Pipe` placed on a wall, swan-neck and shoe, UVs on the atlas's painted gutter (`PIPE_STRIP`), per-tier `MODES`, and `problems()` for `check_layout()`. Runs inside Blender only. |
-| `roof_safety.py` | Roof safety equipment as closed solids for `build.py` to union: the wall ladder and its safety cage, the roof ladder and the walkway, UVs on the painted gutter (`PIPE_STRIP`) or a fixed patch, per-tier `MODES`, and `problems()` for `check_layout()`. Runs inside Blender only. |
+| `roof_safety.py` | Roof safety equipment as closed solids for `build.py` to union: the wall ladder and its safety cage, the roof ladder and the walkway, UVs on the painted gutter (`PIPE_STRIP`) or a fixed patch, per-tier `MODES`, and `problems()` for `check_layout()`; an opt-in lean wall ladder and cage (`lean=True`), separate solids that cut nothing, added after the weld by `append(check=True)` at a fraction of the triangles. Runs inside Blender only. |
 | `handrails.py` | Handrails on entrance flights as closed solids for `build.py` to union: one rail on posts, on the right going up (`side="left"` where that is blocked), level along the landing and down the nosing line, UVs on `PIPE_STRIP` through `roof_safety.Paint`, per-tier `MODES`, and `problems()` for `check_layout()`. Runs inside Blender only. |
 | `window_emission.py` | Wires the emission mask into the material (`attach`, `set_state`), rewrites an exported GLB's emission factor (`rewrite_glb_emission`, which `asset_build` uses to ship it default-off), holds the reference `LIT_FACTOR`. |
 | `glb_images.py` | `strip_embedded_images()`: removes the `bufferView` the exporter leaves beside each image `uri`; `asset_build`'s export runs it on every tier (Texture Requirements). |
@@ -681,7 +685,8 @@ Requirements, `Z`-up authoring with `+Y`-up export, and the
 orientation, budgets and variants differ:
 
 - **Categories:** `street_furniture/` (benches, bins, bollards, mailboxes,
-  planters) and `lighting/` (lamp posts). Add more only when work starts.
+  planters), `lighting/` (lamp posts) and `boundary/` (wall runs, piers,
+  gates). Add more only when work starts.
 - **Pivot:** the actual attachment or ground-contact point (e.g. base centre of
   a bench or lamp), not necessarily the footprint centre.
 - **Orientation:** front toward Blender `-Y` only for a genuinely asymmetric
@@ -702,6 +707,20 @@ orientation, budgets and variants differ:
 - **Variants:** 0–2 by default; municipal furniture is usually city-uniform.
   Record the reasoning in `notes.md`.
 - **Glass on a prop** (e.g. a lamp cover) follows the building glass rules.
+- **Boundary pieces** fence a lot as a building's neighbours, seen as far:
+  - All four tiers, `LOD0`–`LOD3`. Provisional ceilings, no floors: `LOD0`
+    200, `LOD1` 120, `LOD2` 80, `LOD3` 24. Texture 512.
+  - Long axis along `X`, the outer (street) face toward the front, the
+    pivot on the ground on the wall's centre line, midway between the
+    piece's two joint planes (a gate piece: on the opening's edge plane).
+    Every tier keeps `LOD0`'s plan bounds: the consumer's obstacle.
+  - Joint rule: a run brings the pier centred on its `-X` joint plane and
+    none at `+X`, where its wall stops inside whatever closes it (the next
+    run's pier, a pier piece, a gate pier); so a closed lot gets one pier
+    per joint and corner. The run beyond a gate is pierless.
+  - Up to three brick variants, matching the buildings they enclose.
+  - They ship the facts sidecar, with no doors, storeys or dwellings; the
+    footprint is the plan outline at ground level.
 
 ## Determinism & Reproducibility
 
@@ -712,6 +731,10 @@ iterate later.
 - Where practical, keep a cleaned-up `build.py` beside `source.blend` as a
   reproduction aid. It cannot capture every screenshot-driven decision, so it
   replaces neither.
+- **A rebuild is two steps.** The texture generator bakes the PNGs
+  (`python3 facade_atlas.py export`, system Python with scipy and Pillow);
+  the Blender build only reads them. A texture or palette change that skips
+  the first step rebuilds the old textures without complaint.
 - **Record Blender and addon versions as known-good diagnostics, not pins.**
   The glTF exporter keywords are the likeliest thing to break on upgrade;
   `build.py` asserts the version floor and that each exporter flag it passes
@@ -801,6 +824,7 @@ blender --background --python scripts/validate_asset.py -- buildings/residential
 blender --background --python scripts/validate_asset.py -- buildings/service/brick_clocktower_hall building hero
 blender --background --python scripts/validate_asset.py -- props/street_furniture/your_asset prop_small
 blender --background --python scripts/validate_asset.py -- props/lighting/your_asset prop_medium
+blender --background --python scripts/validate_asset.py -- props/boundary/tiilimuuri_run_10m prop_boundary
 ```
 
 It checks required exports, GLB structure, image references, material count and
@@ -886,8 +910,9 @@ is exterior surface.
 
 ### Props only
 
-- `LOD0`/`LOD1` present; optional `LOD2` cost and benefit recorded.
-- Small/medium triangle bands met; below-floor counts explained.
+- `LOD0`/`LOD1` present; optional `LOD2` cost and benefit recorded
+  (boundary pieces: all four tiers, plan bounds equal, facts sidecar).
+- Small/medium/boundary triangle bands met; below-floor counts explained.
 - Attachment pivot unchanged across tiers; `-Y` front only for genuinely
   asymmetric props.
 - Switch/cull distances and appearance reviewed at prop scale.

@@ -28,6 +28,15 @@ under the 0.25 m relief threshold, but placement-specific: no tiling band can
 paint a rail that follows one flight, and it is seen by its outline against
 the wall and its shadow on the treads.
 
+Lean. Flight(..., lean=True) builds the same rail and posts as separate
+closed solids that cut nothing (roof_safety's lean kit): the runs meet on a
+mitre, the posts stand just over their treads and stop just under the rail,
+60 triangles a flight. They go in after the weld, with the lean ladder if
+there is one, never through the union:
+
+    FRONT = HR.Flight(a0, a1, wall, -1.0, STEP_PROFILE, lean=True)
+    RS.append(obj, HR.solids([FRONT], level, PAINT), check=True)
+
 Shape. The rail runs INSET in from the flight's edge, its top HEIGHT
 above the landing and above the line through the nosings, on posts: one on
 the landing by the wall, one at the head of the flight and one on the bottom
@@ -68,11 +77,11 @@ class Flight:
     """The handrail of one flight of steps."""
 
     def __init__(self, a0, a1, wall, outward, profile, axis="y", top=None,
-                 inset=INSET, side="right"):
+                 inset=INSET, side="right", lean=False):
         if side not in ("right", "left"):
             raise ValueError("side is 'right' or 'left', seen going up")
         self.a0, self.a1 = min(a0, a1), max(a0, a1)
-        self.side = side
+        self.side, self.lean = side, lean
         self.wall, self.outward, self.axis, self.inset = wall, outward, axis, inset
         flats = []
         for (d0, z0), (d1, z1) in zip(profile, profile[1:] + profile[:1]):
@@ -133,7 +142,62 @@ class Flight:
         out.append((self.foot, self.foot_z))
         return out
 
+    def lean_solid(self, paint):
+        """solids()'s lean twin: the same rail and posts as separate closed
+        solids in one mesh, none cutting another or the steps, for
+        roof_safety.append() after the weld. The two runs meet on the mitre
+        through the knee, RS.LEAN_GAP apart; each post stands RS.LEAN_GAP
+        over its tread and stops as far under the rail, its top following
+        the rail's underside."""
+        g = RS.LEAN_GAP
+        du, zu = self.upper
+        r2, p2 = RAIL / 2.0, POST / 2.0
+        a = self.rail_a()
+        s = self.slope
+        k = (1.0 + s * s) ** 0.5
+        top = zu + HEIGHT
+        # the knee: top at (du, top), underside where the two runs' bottoms meet
+        d_bk = du + RAIL * (k - 1.0) / s
+
+        def under(d):
+            """The rail's underside over *d*."""
+            return top - RAIL if d <= d_bk else top + s * (d - du) - RAIL * k
+
+        M = RS.Mesh(paint)
+        dv, _ = self._dirs()
+        d0 = self.inner - p2
+        RS._prism(M, [self.W(a + sa * r2, d0, z) for sa, z in
+                      ((-1, top - RAIL), (1, top - RAIL), (1, top), (-1, top))],
+                  [self.W(a + sa * r2, d, z) for sa, d, z in
+                   ((-1, d_bk, top - RAIL), (1, d_bk, top - RAIL), (1, du, top),
+                    (-1, du, top))], dv)
+        # the run down the flight, from LEAN_GAP past the mitre to p2 past
+        # the bottom post, square across its axis there
+        ax = Vector((1.0, s)) / k                   # along the run, in (d, z)
+        mitre = Vector((du - d_bk, RAIL))
+        n_m = Vector((mitre.y, -mitre.x)).normalized()
+        shift = ax * (g / abs(ax.dot(n_m)))
+        t_end = (self.foot - du) * k + p2
+        e_top = Vector((du, top)) + ax * t_end
+        e_bot = e_top - Vector((-ax.y, ax.x)) * RAIL
+        lo = [(du + shift.x, top + shift.y), (d_bk + shift.x, top - RAIL + shift.y)]
+        hi = [(e_top.x, e_top.y), (e_bot.x, e_bot.y)]
+        RS._prism(M, [self.W(a + sa * r2, d, z) for sa, (d, z) in
+                      ((-1, lo[1]), (1, lo[1]), (1, lo[0]), (-1, lo[0]))],
+                  [self.W(a + sa * r2, d, z) for sa, (d, z) in
+                   ((-1, hi[1]), (1, hi[1]), (1, hi[0]), (-1, hi[0]))],
+                  self.W(a, self.foot, self.rail_top(self.foot)) - self.W(a, du, top))
+        for d, zf in self.posts():
+            corners = [(d + sd * p2, a + sa * p2) for sd, sa in
+                       ((-1, -1), (1, -1), (1, 1), (-1, 1))]
+            RS._prism(M, [self.W(aa, dd, zf + g) for dd, aa in corners],
+                      [self.W(aa, dd, under(dd) - g) for dd, aa in corners],
+                      (0.0, 0.0, 1.0))
+        return RS._finish(M)
+
     def solids(self, paint):
+        if self.lean:
+            return [self.lean_solid(paint)]
         dv, _ = self._dirs()
         up = Vector((0.0, 0.0, 1.0))
         du, zu = self.upper
