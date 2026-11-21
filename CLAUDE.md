@@ -558,7 +558,9 @@ triangle cost and the tiers that keep it.
 Union plan outlines, exact booleans on closed solids (`asset_build`'s
 `union()`/`difference()`), direct exterior meshing, and disjoint closed
 solids in one mesh that touch nothing (kits of thin bars built
-`lean=True`, a bench's slats) are all valid.
+`lean=True`, a bench's slats) are all valid. A new build passes
+`snap=asset_build.SNAP` to its booleans, so walls that meet at a non-round
+coordinate merge instead of leaving a double wall inside.
 
 - Remove buried partitions and duplicate internal surfaces; close the exterior
   and check topology.
@@ -848,6 +850,8 @@ Two licences; the file format decides, not the location:
   tiers, including oblique/distant filtering and LOD switches; a `LOD0` sheet
   cannot show those. An unlit asset with more than one variant ships a
   day-only `variants.png` instead: one labelled row of every colour.
+  `build.py -- variants` renders the sheet alone, after checking the build
+  against `export/`.
 
 ## Validation Checklist Before Marking an Asset Done
 
