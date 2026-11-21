@@ -8,9 +8,11 @@ tail over a rounded bumper, three side glass groups closed by a thick
 body-colour D-pillar, a short crowned bonnet falling to a rounded,
 leaned-back nose, a clear cowl step, and 16-inch alloy wheels. A composite
 with no recognisable make: no badge, script or signature grille, conventional
-lamp shapes (slim headlamp units swept back along the wings to an amber tip,
-a plain slatted grille between them, wrap-round tail clusters), black window
-surrounds, black sill trim and bumper lips. Moderate Nordic road film: darker
+lamp shapes (headlamp units swept back along the wings to an amber end, a
+plain slatted grille between them, wrap-round tail clusters), black window
+surrounds, black sill trim and bumper lips, and one dark line round the car
+at door-moulding height (rub strips on the bumpers' corners, mouldings on
+the doors). Moderate Nordic road film: darker
 lower body and spray behind the wheels, a dusty lower tailgate; not
 neglected.
 
@@ -36,8 +38,8 @@ Belt 0.92 at the A-pillar foot rising to 1.065 at the quarter glass, sill
 bottom 0.23, side glass top 1.345-1.36, windscreen 27 degrees from
 horizontal (cowl 1.01 m at s 1.27 to header 1.40 at s 2.05), tailgate glass
 about 35 degrees from vertical. The bonnet's leading edge is 0.80 high and
-0.125 behind the bumper's foremost line (0.515 high) on the centre line. The
-body is 1.79 wide over the wheel arches and 1.766 along the doors. A
+0.125 behind the bumper's foremost line (0.53 high) on the centre line. The
+body is 1.79 wide over the wheel arches and 1.758 along the doors. A
 1.8 m figure stands beside the car on the review sheet: the roof comes to
 its chin.
 
@@ -52,52 +54,64 @@ the atlas generator and `build.py` read one description.
   their own s, so a station bends where a pillar leans. Behind the
   windscreen's header the roof keeps three rows only (edge, the row under
   the rails, centre line); the rows it drops end at the header as points
-  of the first roof cells. Front and rear are grids ("caps") whose rows are
-  the side rows and whose columns are the top rows laid round the plan
-  corner, with three extra corner columns (`K1`-`K3`) carried by the end
-  stations only, so the corners and lamps are cells of one grid. The
-  windscreen bows 14 mm outward, the roof is crowned and falls 0.05 to the
-  rear, the side glass leans in about 23 degrees above a painted belt
-  shoulder carrying an 18 mm waist seal.
-- **Section** (`W_MID`, `hw()`): amidships the door skin is fullest (0.883)
-  at 0.77 m, barrelled 0.05 down to the black sill (0.832 at its foot) and
-  nearly upright up to a shoulder crease 65 mm under the belt (row `S5`,
-  0.876), above which it leans in 26 mm to the belt and a further 22 mm of
-  painted shoulder to the glass. In plan the body tapers toward both ends
-  (`TAPER_F`, `TAPER_R`: the belt by 44 mm at the nose and 40 mm at the
-  tail, the crease by 20 and 30 mm, the sill by 15-20 mm), and the rows
-  from the sill's top to just over the arches stand 6-18 mm proud round
-  each wheel (`FLARE`, falling off over 0.34 m). The row over the arch
-  tops (`S4`) is not cut away by the arches and carries the full 1.79
-  width at both axles.
+  of the first roof cells, and the roof runs straight from the B-pillar to
+  the C-pillar. Front and rear are grids ("caps") whose rows are the side
+  rows and whose columns are the top rows laid round the plan corner, with
+  three extra corner columns (`K1`-`K3`) carried by the end stations only,
+  so the corners and lamps are cells of one grid. The windscreen bows 14 mm
+  outward, the roof is crowned and falls 0.05 to the rear, the side glass
+  leans in about 21 degrees above a painted belt shoulder carrying an 18 mm
+  waist seal.
+- **Section** (`W_MID`, `hw()`): amidships the door skin is fullest (0.879)
+  at 0.77 m, barrelled 0.06 down to the black sill (0.820 at its foot) and
+  upright up to the shoulder crease 65 mm under the belt (row `S5`,
+  0.878), above which it leans in 40 mm to the belt (32 degrees) and a
+  further 22 mm of painted shoulder to the glass. The crease is a real
+  break: `crease_edges()` hands its edges to `build.py`, which marks them
+  sharp from the headlamp's end to the tail lamp, so the band above it
+  takes the sky and the door below it does not. In plan the body tapers
+  toward both ends (`TAPER_F`, `TAPER_R`: the belt by 34 mm at the nose and
+  40 mm at the tail, the crease by 20 and 30 mm, the sill by 15-20 mm), and
+  the rows from the sill's top to just over the arches stand 8-24 mm proud
+  round each wheel (`FLARE`: the rows the arches cut fall off over 0.42 m,
+  so the lips stand proud at the arches' sides too; the rows above over
+  0.32 m). The row over the arch tops (`S4`) is not cut away by the arches
+  and carries the full 1.79 width at both axles.
 - **Ends** (`CAP`): each cap row has its height on the centre line and at
   the side, its setback from the bumper line, a bow across the face, the
   distance at which it reaches the body side, and the exponent of the
   superellipse that turns its corner, so every row is one smooth plan
   curve, tangent to the side.
-- **Nose**: the black lip tucks 0.105 under at 0.19 m; the bumper is
-  fullest at 0.515 m (row `S3`), bowed 50 mm across the face and turning a
-  corner that reaches the side 0.38 behind the bumper line (half-width
-  0.72 at 0.10 behind it; plan radius of curvature about 6 m on the centre
-  line, tightening to about 0.20 at the corner); its top rolls back to a
-  shelf (0.605 to 0.635 m, setback 22 to 62 mm) under the lamps and the
-  grille. Those lean back 21 degrees from vertical on the centre line and
-  39 degrees at the outer lamp, to the bonnet's leading edge 0.80 m high
-  and 0.125 behind the bumper line, which in plan sweeps back to 0.17 at
-  the lamp's inner corner (x 0.445), 0.27 at x 0.70 and reaches the wing
-  top 0.48 behind the bumper line. The lamps' foot climbs from 0.635 at
-  the grille to 0.715 at the side, where it runs on as the shoulder
-  crease; the lamp's outer end is a point on the wing 0.57 behind the
-  bumper line. The bonnet is crowned across (0.10 x squared, a soft raised
-  centre) and rolls up from its leading edge at about 20 degrees to a
-  10-degree run to the cowl; the wing tops roll down from it to the belt.
-- **Tail**: the bumper is fullest at 0.52 m, bowed 45 mm across, its top
-  rolling 35 mm forward at 0.64 m under a tailgate panel leaning about 23
-  degrees to the lamps' foot (0.80, climbing to 0.85 at the corner) and
-  top (0.975, climbing to 1.00, the shoulder crease's height), so each
-  cluster narrows round the corner and runs out to a point on the crease
-  beside the D-pillar; a ledge under the glass, whose foot is 1.20 wide;
-  plan corners squarer than the nose's (exponent 3-4).
+- **Nose**: the black lip tucks 0.105 under at 0.19 m and the lower valance
+  (the intake's and the fog lamps') leans back 17 degrees from 0.27 to
+  0.40 m, under an upright face that carries the plate and is fullest at
+  0.53 m (row `S3`), bowed 45 mm across and turning a corner that reaches
+  the side 0.36 behind the bumper line (half-width 0.77 at 0.10 behind it,
+  exponent 3.8); its top rolls back to a shelf (0.595 to 0.622 m, setback
+  22 to 62 mm) under the lamps and the grille. Those lean back 20 degrees
+  from vertical on the centre line and 37 degrees at the outer lamp, to
+  the bonnet's leading edge 0.80 m high and 0.125 behind the bumper line,
+  which in plan sweeps back to 0.16 at the lamp's inner corner (x 0.435),
+  0.26 at x 0.705 and reaches the wing top 0.46 behind the bumper line.
+  The lamps' foot climbs from 0.622 at the grille to 0.70 at the side,
+  where it runs on as the shoulder crease. A roll station 4 cm behind the
+  leading edge (`FR`) turns the bonnet's lip up at about 30 degrees before
+  its 10-degree run to the cowl, so the edge is rounded in silhouette; the
+  same station's side rows stand 6-10 cm behind the nose's and rake, so the
+  first side cell under the belt is the headlamp's blunt end on the wing
+  (0.56 behind the bumper line at the shoulder, 0.46 at its foot). The
+  bonnet is crowned across (0.10 x squared, a soft raised centre); the wing
+  tops roll down from it to the belt.
+- **Tail**: the bumper is fullest at 0.52 m, bowed 45 mm across, tucked
+  18 mm at its foot, its top rolling 40 mm forward at 0.64 m under a
+  tailgate panel that leans 27 degrees to the lamps' foot (0.80) and 22
+  degrees above it, a slight break across the tailgate at that height. The
+  clusters' foot climbs to 0.85 and their top from 0.975 to 1.00 round the
+  corner, their inner edge leans out with the tailgate's opening line, and
+  each runs out to a point on the shoulder crease beside the D-pillar. The
+  glass is 1.25 wide at its foot and 1.17 under the spoiler lip, which
+  overhangs it by about 3 cm; plan corners squarer than the nose's
+  (exponent 3-4).
 - **Pillars**: the A-pillar is a constant 0.08 m band beside the windscreen
   edge; the side glass's front edge runs parallel to it from a small black
   mirror patch (sail) at its foot. B black-out 0.10 constant, C black-out
@@ -115,15 +129,17 @@ the atlas generator and `build.py` read one description.
   arc segments at LOD0, 5 at LOD1) reaching in to the liner wall at
   |x| = 0.465; its faces stay as the dark closed liners. The arch lip is
   painted relief.
-- **Mirrors**: separate closed solids lofted outward from a short arm on the
-  sail (x 0.80-1.01), a tapered housing rounded toward its front, a dark mirror face (not a
-  glass id) and the side repeater across the outer end. LOD1's 3-section
-  mirror has its whole rear face dark (arm to end), so it reads as a mirror
-  from behind like LOD0's.
-- **Roof rails**: closed solids at x +-0.525 floating 10-12 mm over the roof,
-  their ends dipped into it as feet.
+- **Mirrors**: separate closed solids lofted outward from a slim arm on the
+  sail (x 0.80-1.01; the arm 3 x 3.5 cm), a housing rounded toward its
+  front and tapered over its last 2.5 cm to an end half its section, a
+  dark mirror face (not a glass id) and the side repeater across the outer
+  end. LOD1's mirror is one tapered section with its whole rear face dark,
+  so it reads as a mirror from behind like LOD0's.
+- **Roof rails**: closed solids at x +-0.525 floating about 10 mm over the
+  roof, their ends dipped into it as feet.
 - **Smoothing**: smooth shading throughout; edges are sharp past 50 degrees,
-  where glass meets anything else and where unpainted trim meets paint.
+  where glass meets anything else, where unpainted trim meets paint, and
+  along the shoulder crease.
 - **Front** toward -Y; origin on the ground at the centre of the body's plan
   box (mirrors excluded), one origin for every tier.
 
@@ -157,20 +173,23 @@ part 0 and paint only.
 20 lenses, measured from LOD0 into the sidecar:
 
 - Front, each side, one unit under the bonnet's edge, from the grille's post
-  out: high beam (8), low beam (7), and the indicator (4/5) in the swept
-  tip, with the daytime lamp (9) as a strip along the foot of the high
-  beam. The unit is 0.16 high at its slanted inner edge (parallel to the
-  grille's side), 0.115 at mid-length and 0.095 where it turns onto the
-  wing, and ends in a point on the shoulder line 0.57 behind the bumper
-  line; seen from the front it spans x 0.37-0.86. The grille between the
-  units is an inverted trapezoid 0.77 wide at the bonnet's edge and 0.62
-  at its foot, 0.165 high; the lower intake repeats its shape (1.00 wide
-  at the top, 0.84 at the lip) between the fog lamps' pods.
+  out: high beam (8), low beam (7), and the indicator (4/5) in the end on
+  the wing, with the daytime lamp (9) as a strip along the foot of the high
+  beam. The unit is 0.175 high at its slanted inner edge (parallel to the
+  grille's side, 5 cm from it), 0.13 at mid-length and 0.11 where it turns
+  onto the wing, and ends bluntly there on a raked edge, 0.46 behind the
+  bumper line at its foot and 0.56 at the shoulder; seen from the front it
+  spans x 0.355-0.86. The grille between the units is an inverted
+  trapezoid 0.77 wide at the bonnet's edge and 0.61 at its foot, 0.178
+  high, foot and top level with the lamps'; the lower intake repeats its
+  shape (1.00 wide at the top, 0.84 at the lip) between the fog lamps'
+  pods.
 - Mirrors: side repeaters (4/5) across the housings' outer ends.
-- Rear, each side: tail and brake (3) on the corner, a tail (1) section
-  wrapping onto the side and running out to a point on the shoulder
-  crease, indicator (4/5) over reverse (6) on the inboard end; cluster z
-  0.80-0.975 inboard, 0.85-1.00 at the corner.
+- Rear, each side, one cluster on the quarter, outboard of the tailgate's
+  opening line: indicator (4/5) over reverse (6) on its inboard end, tail
+  and brake (3) on the corner, a tail (1) section wrapping onto the side
+  and running out to a point on the shoulder crease; z 0.80-0.975 inboard,
+  0.85-1.00 at the corner.
 - High-mounted brake (2) across the spoiler lip, 0.33 x 0.03, centred.
 - Rear fog (11) low in the bumper on the left; a red reflector (no id) in
   its place on the right.
@@ -178,31 +197,39 @@ part 0 and paint only.
 Unlit lens colours: red (128, 28, 26), amber (196, 112, 30), clear
 (172, 175, 174) sRGB; lit as `vehicle_ids.LENS_LIT`. Headlamps: a light silvery
 housing behind the clear lens (its own id `hl_chrome`, sRGB 206, roughness
-0.25, metallic 0.55: at 0.85 it mirrored the neutral world's grey and read
-darker than the paint, so it was lowered), in the high and low beam cells a
-shaded dish (light rim, darker centre) inside a fine bezel line, sized
-from the cell's mean height and set on its centre of area, a projector
-lens with a shaded lower half in the low beam and a small bulb cap in the
-high beam, a soft darker band under the housing's roof; the daytime strip
-a pale lens with a slim, slightly lighter light guide following the foot;
-the indicator a ribbed amber cell out to the tip. The unit's dark outline
-is drawn along its own outer edges (`unit_outline()`: the edges no other
-face of the unit shares), two lens texels wide, so it follows the slanted
-inner end and the tip. Elsewhere ribbed red clusters with a lighter light
-guide, a clear reverse cell, LED dots in the high-mounted lamp, each with
-a one-texel dark outline where it meets the body; glossy in the ORM only
-(roughness 0.12). Every lens rect is
-lit in full in the emission. LOD1 keeps every lens (its brake and fog lamps
-are shrunk insets of coarser cells); LOD2 keeps all but the high-mounted
-brake: at 208 of 220 triangles it would cost about 22 more (WARN, recorded);
-LOD3 none.
+0.25, metallic 0.55), darker under its roof. The high beam is a fluted
+reflector bowl, wider than tall, its flutes upright and lighter toward its
+foot, with a small bulb shield; the low beam a projector's glass lens (the
+clear lens colour at 0.6-0.74, shaded below its cut-off) in a square
+shroud; the daytime strip a pale lens with a lighter light guide following
+the foot; the indicator a ribbed amber cell out to the end. No ring round
+a dot, no dark housing, no painted glints. The bowl and the shroud are
+sized from each cell's mean height and set on its centre of area. A unit's
+cells are parted by fine dark joints and its dark outline is drawn along
+its own outer edges (`unit_edges()`: the edges no other face of the unit
+shares), two lens texels wide, so it follows the slanted inner end and the
+raked end; the tail clusters are outlined and parted the same way, with
+ribbed red cells crossed by a lighter light guide, a ribbed amber cell and
+a clear ribbed reverse cell. LED dots in the high-mounted lamp; a one-texel
+dark outline round the lenses that stand alone; glossy in the ORM only
+(roughness 0.12). Every lens rect is lit in full in the emission. LOD1
+keeps every lens (its brake and fog lamps are shrunk insets of coarser
+cells, its headlamp's end cut to the same point of the shoulder line);
+LOD2 keeps all but the high-mounted brake: its lens is a 3 cm strip on the
+spoiler lip, which LOD2's roof end does not have, and a face inside that
+rectangle would cost about 22 triangles of the 4 it has spare (WARN,
+recorded); LOD3 none.
+
+The housing's metallic was tried at 0.30, 0.55 and 0.85 under the preview's
+flat grey world: the unit's mean brightness in a close render fell from 164
+to 159 to 149 (8-bit), 0.85 reading grey and flat, so 0.55 stays.
 
 ## Glass
 
 Groups 32 windscreen (1.20 m2), 33 front door (0.41), 34 rear door and
-quarter (0.82), 35 tailgate (0.39). Separate faces on their own UV islands;
+quarter (0.81), 35 tailgate (0.40). Separate faces on their own UV islands;
 LOD2 merges the side glass into one band a side, tagged 33. Measured over
-the glass texels: sRGB 52 mean, roughness 0.080, metallic 0.
+the glass texels: sRGB 51 mean, roughness 0.080, metallic 0.
 
 ### Glazing treatment
 
@@ -210,8 +237,13 @@ Departure from `glazing.rooms()`: its lit far-wall patch read as a stain on
 a windscreen, so `vehicle_glass()` paints each pane (found with glazing's
 own components) neutral dark (52, 56, 60) with a gentle 0.86-1.08 falloff
 toward the pane's foot, a per-pane level of 0.92-1.06 and glazing's grain.
-No privacy glass. The emission's cabin is `glazing.night_rooms()` at 0.25
-on the glass texels; partly covered texels are black.
+No privacy glass. The windscreen and the tailgate glass carry a printed
+black band round their edge with rounded inner corners (`frit()`: 4 texels
+wide with an 8-texel corner radius on the windscreen, 5.5 and 12 on the
+tailgate, the glass's albedo at 0.42), so the panes read shaped although
+their faces are plain quads; it is still glass (same ids, texels, gloss
+and emission). The emission's cabin is `glazing.night_rooms()` at 0.25 on
+the glass texels; partly covered texels are black.
 
 ## Paint
 
@@ -219,27 +251,35 @@ Painted panels (B = 1) are neutral grey 228 sRGB before wear (chroma 0.1):
 the panel field (the area-weighted median of the painted texels, LOD0 and
 LOD1) measures 0.761 linear, level with the catalog's other vehicles. The
 tiers keep one brightness under one paint: the area-weighted mean of the
-albedo the painted faces sample is, in linear, LOD0 0.716, LOD1 0.707
-(-1.3 %), LOD2 0.686 (-4.2 %), LOD3 0.711 (-0.7 %). LOD2's sides start at the
+albedo the painted faces sample is, in linear, LOD0 0.705, LOD1 0.695
+(-1.4 %), LOD2 0.676 (-4.2 %), LOD3 0.711 (+0.8 %). LOD2's sides start at the
 sill's top, so they never sample the black sill, and the wheel pictures they
 show in the arches are a large light rim in a thin dark tyre with the arch
 gap left as paint. LOD3's painted faces sample a uniform light block (shaded
 to the tiers' level); its dark parts are unpainted faces. Panel gaps (doors,
-tailgate, fuel flap, the front bumper's joint from the headlamp's tip to
+tailgate, fuel flap, the front bumper's joint from the headlamp's end to
 the arch, the rear bumper's joint, roof hinge) and the bonnet's shut lines
 are 13.5 mm (1.7 texels) dark gap lines, albedo at 0.10 of the paint (about
 sRGB 70 on the light field), a 4 mm groove (6 mm on the bonnet's lines,
 with a 1.5 mm raised lip on the bonnet's side). The bonnet spans nearly
 the car's width: its front line runs just behind the leading edge, over
-the grille and along the lamps' tops out to the low beam cell (x 0.67),
+the grille and along the lamps' tops out to the middle of the low beam
+(x 0.705),
 and each side line runs from there back along the wing's top, nearly
-parallel to the car's length (x 0.67 to 0.705, 0.13-0.14 inboard of the
-body side), to the windscreen's base corner just inboard of the A-pillar's
-foot, where it meets the bonnet's rear edge at the cowl; the wing shows as
-a strip about 0.13 wide outboard of it. The lines are texture and normal
+parallel to the car's length (x 0.705 at the lamp, 0.72-0.73 along the
+bonnet, 0.09-0.10 inboard of the wing's crest), curving in over its last
+0.15 to the windscreen's base corner just inboard of the A-pillar's foot
+(x 0.705), where it meets the bonnet's rear edge at the cowl; the wing
+shows as a strip about 0.10 wide outboard of it. The lines are texture and normal
 map only, no modelled grooves; the bonnet strips ahead of the cowl stay in the top island so
-the side lines run straight to the windscreen. Handles, the waist seal and
-the flank's character line are relief and darkening on the paint; the
+the side lines run straight to the windscreen. Handles and the waist seal are relief and darkening on the paint. Painted
+on the panels in dark trim grey (so they take a paint colour as near
+black): the side mouldings and the bumpers' rub strips, one line at
+0.462-0.50 m from the nose to the tail, broken by the arches; an 8 mm trim
+edge round each wheel arch inside the body's raised, rolled lip (it also
+rounds the cut's facets); the plates' holders, 2 cm larger than the
+plates, with a light patch inside for LOD2's bumper faces; the fog lamps'
+pods; the tailgate's handle recess under a raised body-colour garnish; the
 black trims (sill, lips, slim cowl, grille, intake, B/C pillars) are
 unpainted faces, and the mirror sail is unpainted satin black (sRGB 24,
 roughness 0.62). Trim and glass faces are rastered grown by a true offset of
@@ -254,26 +294,28 @@ plate rect (no mirror seam). The preview multiplies the paint by linear
 
 | Tier | Triangles | Ceiling |
 | --- | --- | --- |
-| LOD0 | 2944 | 3000 |
-| LOD1 | 892 | 900 |
-| LOD2 | 208 | 220 |
+| LOD0 | 2952 | 3000 |
+| LOD1 | 878 | 900 |
+| LOD2 | 216 | 220 |
 | LOD3 | 40 | 40 |
 
-LOD0: body shell about 1570 before the arches and 1920 after them, four
-wheels 752, mirrors 2 x 84, rails 2 x 52. The nose's corner columns and
-the stations round the arches were paid for with the roof's two spare
-rows. LOD1 (body 680, wheels 4 x 28, mirrors 2 x 36,
-rails 2 x 14): 12 stations, rows sill
-top / arch height / 0.77 / belt / glass top / roof edge / centre, the same
-nose and tail rows as LOD0 less the lips' lower edge and one bumper row
-(its rear bumper's top stands on the bumper line, so the tier keeps the
-plan box), the headlamp's tip cut at the same point of the shoulder line,
-8-sided wheels, 3-section mirrors, triangular rails, 5-segment arches.
-LOD2: 5 stations, rows sill / belt / glass top / centre (the sill carries
-the width), a nose of the bumper face leaning back to the lamps' foot and
-the lamp band to the bonnet's edge, the tail's lamp rows, two axle prisms;
-its sides start at the sill's top (0.30), the prisms showing under them. LOD3: the side profile (11 points:
-nose (0.515 high), bonnet edge (0.15 back, 0.78 high), cowl, header, roof
+LOD0: body shell about 1576 before the arches and 1940 after them, four
+wheels 752, mirrors 2 x 94, rails 2 x 36. The nose's corner columns, the
+roll station and the stations round the arches were paid for with the
+roof's two spare rows, the mid-door station and two rail sections. LOD1
+(body 694, wheels 4 x 28, mirrors 2 x 22, rails 2 x 14): 12 stations, rows
+sill top / arch height / 0.77 / belt / glass top / roof edge / centre, the
+same nose rows as LOD0 less the lips' lower edge and the valance's break,
+the same tail rows less the lip's edge (so its rear bumper keeps the
+rolled top), four columns a side on each end, the headlamp's end cut at
+the same point of the shoulder line, 8-sided wheels, one-section mirrors,
+triangular rails, 5-segment arches. LOD2: 5 stations, rows sill / belt /
+glass top / centre (the sill carries the width), a nose of the bumper face
+in three cells a side turning the corner, leaning back to the lamps' foot,
+and the lamp band to the bonnet's edge, the tail's lamp rows, two axle
+prisms; its sides start at the sill's top (0.30), the prisms showing under
+them. LOD3: the side profile (11 points:
+nose (0.53 high), bonnet edge (0.125 back, 0.80 high), cowl, header, roof
 end, glass foot, tail, tail foot, two wheel contacts, chin) extruded across the width; each side cut along those
 points into three polygons (2 + 5 + 2 triangles, the plain extrusion's 9):
 the glasshouse (cowl, header, roof end, glass foot) and the lower strip
@@ -294,26 +336,27 @@ colour. The tier switches checked for brightness and colour under white,
 dark grey and red paint at 100 m and 400 m, with full textures and with
 mips 4 and 6 (`review_atlas_mips.py`): no brightness jump at LOD1-LOD2 or
 LOD2-LOD3. Known transition limits: LOD1's front lip sits at the sill-top row
-(0.27 instead of 0.19, about 2 px at 30 m), its rear bumper's top is not
-rolled and its tail is not bowed between the lamps; LOD2's body bottom at
-0.30, its nose two flat halves from the bumper line to the lamps' foot;
+(0.27 instead of 0.19, about 2 px at 30 m), it has no shoulder crease, no
+roll at the bonnet's edge and no break at the valance; LOD2's body bottom
+at 0.30;
 LOD2 loses the arches (painted) and the high-mounted brake lamp; LOD3 has no
 wheels, only the dark lower strip. Runtime switching and performance are pending in
 the consumer.
 
 ## Interior geometry
 
-Validator hidden-surface test: LOD0 8/2944 (the roof rails' buried feet), LOD1 0, LOD2 22/208 (the middles of the
+Validator hidden-surface test: LOD0 8/2952 (the roof rails' buried feet), LOD1 0, LOD2 22/216 (the middles of the
 axle prisms inside the body, kept: one prism per axle is cheaper than two
 wheels), LOD3 0. No seats, no interior.
 
 ## Known simplifications
 
 Textured, not modelled: panel gaps, bonnet shut lines, handles, side
-mouldings, window and waist seals, the grille's frame and slats, the lower
-intake's frame and mesh, the fog lamps' dark pods, wipers (on the cowl),
-fuel flap (right rear), arch lips, bumper joints and tailgate handle
-strip. The grille's and the intake's frames are drawn 2-3 texels inside
+mouldings and rub strips, window and waist seals, the glass's printed
+bands, the grille's frame and slats, the lower intake's frame and mesh, the
+fog lamps' dark pods, the plates' holders, wipers (on the cowl), fuel flap
+(right rear), arch lips and their trim edge, bumper joints, the front
+lip's chamfer, the tailgate's handle recess and garnish. The grille's and the intake's frames are drawn 2-3 texels inside
 their cells' own outline, whatever its shape. No rear
 wiper, exhaust, antenna, washer jets, tow eye or brake discs. Glass is
 opaque. Wheels have no tread geometry and no hub geometry. LOD2 shows the
@@ -344,8 +387,9 @@ LOD0 face uses carry LOD2's pictures (light wheels in the arches, shadow
 under the sills). Deviations: the under-body patch and LOD3's blocks carry
 no density (uniform colour); 45-degree faces stretch up to 1.4x in
 their projection. Painted with `scripts/atlas.py` at SS 4; heights for the
-normal map: panel gaps -4 mm (the bonnet's lines -6 mm with a +1.5 mm lip), handles +6 mm, side moulding +6 mm, arch lip
-+3 mm, grille slats +4 mm over a -6 mm grille, intake mesh, rim lip and hub
+normal map: panel gaps -4 mm (the bonnet's lines -6 mm with a +1.5 mm lip), handles +6 mm, side mouldings +6 mm and rub strips +5 mm, arch
+trim +2 mm and lip +4 mm, plate holders +4 mm, the tailgate's recess -6 mm
+under a +6 mm garnish, headlamp bowls -5 mm, grille slats +4 mm over a -6 mm grille, intake mesh, rim lip and hub
 +3 mm, spoke openings -4 mm, tread grooves -6 mm; glass and lens faces flat
 (0.5 mm ribs on amber and red); cavity darkens grooves. Weathering
 through `scripts/weathering.py` at the moderate level (grime, road film
@@ -365,8 +409,9 @@ its dark rim; it is a 3-pixel feature at those distances; the plate's rect
 sits in a white block so it stays light). The wheel faces average to a mid
 grey at mip 6. LOD3's faces each sample one uniform block, so its mips keep
 paint, glass and under-body apart. The atlas's rects and blocks are the
-ones the earlier 512 and 1024 reviews (mips 3 to 6) passed; only the
-pictures inside the front, top and lens rects changed with the nose.
+ones the earlier 512 and 1024 reviews (mips 3 to 6) passed; the pictures
+inside them changed with the shape, and the set was rendered again on the
+current textures.
 Consumer filtering is pending.
 
 ## Variant list
@@ -395,17 +440,21 @@ steered wheels, each lamp group, night set, cabin, ids, white/dark grey/red
 paint, tiers at 30/100/400 m; fixed-camera sets of LOD0 in white and
 blue-grey paint (orthographic side, front, rear and top; head-on from 0.95 m;
 front three-quarter from eye height, raised and close; rear three-quarter
-low and raised; a low side perspective) after each change to the shape, with
-the head-on and front three-quarter frames judged every time; the same
-frames without textures on a plain glossy grey, for the nose corners'
-shading (no facets) and the flank's highlights; all four tiers from the
-front and rear three-quarter, head-on and side; close-ups of the mirrors
-and sail patches and of the front wheels in their arches (dark liner, an
-even gap of about 0.05); the mip set above. Before any build the face
-lists were checked without Blender: each tier's shell closed once its
-T-junctions are conformed, every tier on LOD0's plan box, LOD1's and LOD2's
-lamp faces inside LOD0's lens rectangles. Pending in the consumer: runtime
-LOD switching and mip filtering, lamp intensities and cabin lighting, paint
+low and raised; a low side perspective and a front-quarter view along the
+flank) after each change to the shape, with the head-on and front
+three-quarter frames judged every time; close-ups of the face, a
+headlamp, the front bumper, the tail from the quarter and from behind, a
+front wheel in its arch (dark liner, an even gap of about 0.05, the trim
+edge), and a mirror with its sail patch from the front and from behind (no
+light fringe; at that magnification the black patch's edge on the paint
+is stepped by its texels); the same frames without textures on a plain
+glossy grey, for the nose corners' shading (no facets) and the flank's
+highlights; all four tiers from the front and rear three-quarter, head-on
+and side; the mip set above. Before any build the face lists were checked
+without Blender: each tier's shell closed once its T-junctions are
+conformed, every tier on LOD0's plan box, LOD1's and LOD2's lamp faces
+inside LOD0's lens rectangles. Pending in the consumer: runtime LOD
+switching and mip filtering, lamp intensities and cabin lighting, paint
 colours on the real shader, tangents for the normal map, performance.
 
 ## Tooling versions

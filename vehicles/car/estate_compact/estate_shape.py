@@ -58,13 +58,14 @@ IDX = {r: i for i, r in enumerate(ROWS)}
 # the belt (SH). In plan the body tapers toward both ends, the shoulder rows
 # most, and the rows at arch height stand proud round the wheels, where the
 # body reaches its full width.
-W_MID = dict(SB=0.832, S1=0.852, S2=0.871, S3=0.880, S4=0.883, S5=0.876, SH=0.850)
-TAPER_F = dict(SB=0.020, S1=0.016, S2=0.004, S3=0.000, S4=0.004, S5=0.020, SH=0.044)
+W_MID = dict(SB=0.820, S1=0.846, S2=0.867, S3=0.876, S4=0.879, S5=0.878, SH=0.838)
+TAPER_F = dict(SB=0.020, S1=0.016, S2=0.004, S3=0.000, S4=0.004, S5=0.020, SH=0.034)
 TAPER_R = dict(SB=0.015, S1=0.012, S2=0.006, S3=0.006, S4=0.016, S5=0.030, SH=0.040)
 # (S4 runs just over the arches' tops and is not cut away there: it is
-# the row that carries the full width)
-FLARE = dict(S1=0.006, S2=0.016, S3=0.018, S4=0.018, S5=0.010)
-FLARE_LEN = 0.34
+# the row that carries the full width. The rows the arches cut flare over
+# a longer run, so their lips stand proud at the arches' sides too.)
+FLARE = dict(S1=0.008, S2=0.021, S3=0.022, S4=0.024, S5=0.010)
+FLARE_LEN = dict(S1=0.42, S2=0.42, S3=0.42, S4=0.32, S5=0.32)
 Z_MID = dict(SB=0.23, S1=0.30, S2=0.43, S3=0.62, S4=0.77)
 SHOULDER = 0.065                    # the crease (S5) under the belt
 
@@ -83,33 +84,33 @@ SHOULDER = 0.065                    # the crease (S5) under the belt
 # side, where it runs on as the shoulder crease.
 CAP = {
     "front": dict(
-        rows=dict(SB=(0.190, 0.190, 0.105, 0.035, 0.40, 3.0),
-                  S1=(0.270, 0.270, 0.040, 0.040, 0.39, 3.1),
-                  S2=(0.385, 0.400, 0.010, 0.045, 0.38, 3.2),
-                  S3=(0.515, 0.530, 0.000, 0.050, 0.38, 3.2),
-                  S4=(0.605, 0.665, 0.022, 0.055, 0.40, 3.1),
-                  S5=(0.635, 0.715, 0.062, 0.060, 0.42, 3.0),
-                  SH=(0.800, None, 0.125, 0.075, 0.48, 2.8)),
+        rows=dict(SB=(0.190, 0.190, 0.105, 0.035, 0.38, 3.4),
+                  S1=(0.270, 0.270, 0.046, 0.040, 0.37, 3.6),
+                  S2=(0.400, 0.410, 0.006, 0.045, 0.36, 3.8),
+                  S3=(0.530, 0.540, 0.000, 0.045, 0.36, 3.8),
+                  S4=(0.595, 0.655, 0.022, 0.050, 0.38, 3.6),
+                  S5=(0.622, 0.700, 0.062, 0.055, 0.40, 3.4),
+                  SH=(0.800, None, 0.125, 0.070, 0.46, 3.0)),
         # inner columns: x, the same on every row or row by row (the grille
         # an inverted trapezoid, the lamps' inner edges parallel to it)
         inner=dict(RC=0.0, R3=0.13, R2=0.26,
-                   R1=dict(SB=0.34, S1=0.34, S2=0.37, S3=0.36, S4=0.325, S5=0.31, SH=0.385),
-                   RE=dict(SB=0.42, S1=0.42, S2=0.50, S3=0.46, S4=0.40, S5=0.37, SH=0.445)),
+                   R1=dict(SB=0.34, S1=0.34, S2=0.37, S3=0.36, S4=0.32, S5=0.305, SH=0.385),
+                   RE=dict(SB=0.42, S1=0.42, S2=0.50, S3=0.46, S4=0.39, S5=0.355, SH=0.435)),
         # outer columns: degrees, x = xRE + (W - xRE) sin(angle)
         outer=dict(K3=20.0, GT=38.0, K2=54.0, GB=68.0, K1=80.0),
         # how late a row climbs to its side height: the lamps' foot stays
         # level under the inner cells and climbs round the corner
         rise=dict(S4=3.0, S5=3.0), rise_default=2.2),
     "rear": dict(
-        rows=dict(SB=(0.250, 0.250, 0.055, 0.030, 0.29, 3.0),
-                  S1=(0.330, 0.330, 0.008, 0.040, 0.29, 3.0),
+        rows=dict(SB=(0.250, 0.250, 0.060, 0.030, 0.29, 3.0),
+                  S1=(0.330, 0.330, 0.018, 0.040, 0.29, 3.0),
                   S2=(0.520, 0.520, 0.000, 0.045, 0.30, 3.0),
-                  S3=(0.640, 0.640, 0.035, 0.045, 0.32, 3.0),
-                  S4=(0.800, 0.850, 0.105, 0.045, 0.36, 3.0),
+                  S3=(0.640, 0.640, 0.040, 0.045, 0.32, 3.0),
+                  S4=(0.800, 0.850, 0.120, 0.045, 0.36, 3.0),
                   S5=(0.975, 1.000, 0.190, 0.040, 0.40, 3.2),
                   SH=(1.050, None, 0.290, 0.030, 0.43, 4.0)),
         inner=dict(RC=0.0, R3=0.12, R2=0.26, R1=0.42,
-                   RE=dict(SB=0.575, S1=0.575, S2=0.575, S3=0.575, S4=0.575, S5=0.575, SH=0.60)),
+                   RE=dict(SB=0.575, S1=0.575, S2=0.575, S3=0.575, S4=0.575, S5=0.600, SH=0.625)),
         outer=dict(K3=11.0, GT=21.0, K2=48.0, GB=62.0, K1=77.0),
         rise={}, rise_default=2.0),
 }
@@ -157,8 +158,8 @@ BELT = ((0.30, 0.80), (0.62, 0.818), (0.86, 0.842), (1.08, 0.872), (1.30, 0.903)
         (1.40, 0.92), (3.88, 1.065), (4.00, 1.062), (4.10, 1.05))
 # the bonnet's centre line: rolling up from its leading edge, then about 10
 # degrees to the cowl
-BONNET_C = ((0.125, 0.800), (0.21, 0.832), (0.34, 0.856), (0.70, 0.916), (1.00, 0.965),
-            (1.27, 1.010))
+BONNET_C = ((0.125, 0.800), (0.165, 0.823), (0.24, 0.842), (0.36, 0.860), (0.70, 0.916),
+            (1.00, 0.965), (1.27, 1.010))
 BONNET_CROWN = 0.100                # z falls by this times x squared
 ROOF_C = ((2.05, 1.400), (2.40, 1.432), (2.80, 1.446), (3.20, 1.446), (3.60, 1.432),
           (3.99, 1.395))
@@ -199,8 +200,8 @@ def hw(row, s):
         - TAPER_R[row] * smoothstep(3.00, 4.30, s)
     fl = FLARE.get(row, 0.0)
     if fl:
-        w += fl * max(math.exp(-((s - S_AXLE[0]) / FLARE_LEN) ** 2),
-                      math.exp(-((s - S_AXLE[1]) / FLARE_LEN) ** 2))
+        w += fl * max(math.exp(-((s - S_AXLE[0]) / FLARE_LEN[row]) ** 2),
+                      math.exp(-((s - S_AXLE[1]) / FLARE_LEN[row]) ** 2))
     return min(w, HW)
 
 
@@ -312,7 +313,13 @@ def gt(s, x=0.683):
     return (x, s, _tab(GLASS_TOP, s))
 
 
-BONNET_F = (0.14, 0.47, 0.70, 0.962)      # the bonnet stations, leading edge to cowl
+BONNET_F = (0.20, 0.47, 0.70, 0.962)      # the bonnet stations, leading edge to cowl
+# FR, the roll station just behind the leading edge: the bonnet's lip turns
+# up over 4 cm instead of meeting the lamps at a corner. Its side rows stand
+# further back and rake, so the first side cell under the belt is the
+# headlamp's blunt end on the wing.
+ROLL_F = 0.035
+ROLL_SIDE = dict(SB=0.06, S1=0.06, S2=0.06, S3=0.06, S4=0.06, S5=0.06, SH=0.10)
 
 
 def key_stations():
@@ -332,13 +339,18 @@ def key_stations():
               R1=(0.51, 2.07, 1.383), R2=(0.34, 2.06, 1.392), R3=(0.17, 2.052, 1.398),
               RC=(0.0, 2.05, 1.400))
     st.append(("F0", f0))
+    fr = _bonnet(f0, cw, ROLL_F)
+    for r in SIDE_ROWS:
+        s = f0[r][1] + ROLL_SIDE[r]
+        fr[r] = (hw(r, s), s, z_side(r, s))
+    st.append(("FR", fr))
     for k, f in enumerate(BONNET_F):
         st.append(("F%d" % (k + 1), _bonnet(f0, cw, f)))
     st.append(("CW", cw))
     for name, f, fg, s in (("A1", 1.0 / 3.0, 0.18, 1.53), ("A2", 2.0 / 3.0, 0.59, 1.81)):
         st.append((name, _screen(cw, hd, f, s, fg)))
     st.append(("HD", hd))
-    for name, sg, st_ in (("B1", 2.39, 2.39), ("B2", 2.49, 2.49), ("M1", 2.80, 2.80),
+    for name, sg, st_ in (("B1", 2.39, 2.39), ("B2", 2.49, 2.49),
                           ("C1", 3.12, 3.15), ("C2", 3.28, 3.25), ("X1", S_AXLE[1], 3.51)):
         d = side_part(sg)
         d.update(GB=gb(sg), GT=gt(st_))
@@ -354,13 +366,13 @@ def key_stations():
     rf.update({r: (ROOF_X[r], 3.99, roof_z(3.99, r)) for r in ("R1", "R2", "R3", "RC")})
     rl = side_part(3.96)
     rl.update(GB=(gb_x(3.95) - 0.004, 3.95, belt(3.95) + 0.011), GT=(0.672, 3.975, 1.308),
-              RE=(0.618, 4.012, 1.343))
-    rl.update({r: (ROOF_X[r] * 0.97, 4.032, 1.376 + 0.85 * ROOF_CROWN[r])
+              RE=(0.612, 4.020, 1.343))
+    rl.update({r: (ROOF_X[r] * 0.97, 4.046, 1.376 + 0.85 * ROOF_CROWN[r])
                for r in ("R1", "R2", "R3", "RC")})
     rg = side_part(4.00)
     rg.update(GB=(gb_x(3.98) - 0.006, 3.98, belt(3.98) + 0.011), GT=(0.668, 3.995, 1.292),
-              RE=(0.600, 4.016, 1.322))
-    rg.update({r: (ROOF_X[r] * 0.94, 4.022, 1.346 + 0.7 * ROOF_CROWN[r])
+              RE=(0.585, 4.014, 1.322))
+    rg.update({r: (ROOF_X[r] * 0.94, 4.018, 1.346 + 0.7 * ROOF_CROWN[r])
                for r in ("R1", "R2", "R3", "RC")})
     st += [("RF", rf), ("RL", rl), ("RG", rg)]
     r0 = {r: _xsz(cap_point("rear", r, "SIDE")) for r in SIDE_ROWS}
@@ -467,8 +479,8 @@ TIERS = {
             {"front": _CAP0, "rear": _CAP0}),
     1: Tier(1, ["F0", "F2", "CW", "HD", "B1", "B2", "C1", "C2", "D1", "RL", "RG", "R0"],
             ("S1", "S3", "S4", "SH", "GT", "RE", "RC"),
-            {"front": (("S1", "S3", "S4", "S5", "SH"), ("GB", "GT", "RE", "R2", "RC")),
-             "rear": (("S1", "S3", "S4", "S5", "SH"), ("GB", "GT", "RE", "RC"))}),
+            {"front": (("S1", "S3", "S4", "S5", "SH"), ("GB", "GT", "RE", "RC")),
+             "rear": (("S1", "S2", "S3", "S4", "S5", "SH"), ("GB", "GT", "RE", "RC"))}),
     # LOD2's sides start at the sill's top (S1): its painted faces never
     # sample the black sill, and the wheel prisms show more under them
     2: Tier(2, ["F0", "CW", "HD", "RG", "R0"], ("S1", "SH", "GT", "RC"),
@@ -477,9 +489,10 @@ TIERS = {
 }
 # a cap strip that keeps fewer columns than the tier's (its cells become
 # polygons over the row points the neighbouring strips need)
-STRIP_COLS = {(2, "front", "S1"): ("RC", "SIDE"), (2, "rear", "S1"): ("RC", "RE", "SIDE")}
+STRIP_COLS = {(2, "front", "S1"): ("RC", "RE", "GB", "SIDE"),
+              (2, "rear", "S1"): ("RC", "RE", "SIDE")}
 LOD2_SB_X = HW            # LOD2 keeps no widest row: its sill carries the width
-FLUSH.update({(2, "front"): "S1", (2, "rear"): "S1", (1, "rear"): "S3"})
+FLUSH.update({(2, "front"): "S1", (2, "rear"): "S1"})
 
 
 # ================================================================ faces
@@ -584,7 +597,7 @@ def body_faces(level):
                 for p, kd in tube_cell(level, (na, nb), (lo, hi), sign, q, poly):
                     f = Face(p, **kind_args(kd))
                     if (lo, hi) == ("GT", "RE") and f.kind == "paint" \
-                            and na not in ("F0", "F1", "F2", "F3", "F4"):
+                            and na not in ("F0", "FR", "F1", "F2", "F3", "F4"):
                         # the pillars and the roof's side (not the bonnet's
                         # strip ahead of the cowl): always the side island,
                         # whatever their slope
@@ -611,8 +624,11 @@ def tube_cell(level, seg, pair, sign, q, poly):
         # the tail lamp's wrap runs out to a point on the shoulder crease
         return [([q[1], q[2], q[3]], ("lamp", 1)), ([q[0], q[1], q[3]], "paint")]
     if hi == "SH" and seg[0] == "F0" and level < 2:
-        # the headlamp's swept tip on the wing: the indicator runs out to a
-        # point on the shoulder line, TIP_S behind the bumper
+        # the headlamp's end on the wing, the indicator's: LOD0's first side
+        # cell whole (its rear edge raked with the roll station), LOD1's cut
+        # to the same point of the shoulder line
+        if seg[1] == "FR":
+            return [(poly, ("lamp", 4 if sign > 0 else 5))]
         return lamp_tip(poly, sign)
     if seg == ("F4", "CW") and IDX[lo] >= IDX["RE"]:
         k = "lip"                       # the cowl panel under the wipers
@@ -641,12 +657,14 @@ def tube_cell(level, seg, pair, sign, q, poly):
                 # the high-mounted stop lamp: the inner part of a wider cell,
                 # kept inside the LOD0 lens
                 b0 = 1.0 - 0.150 / max(abs(q[0][0]), abs(q[1][0]), 1e-6)
-                a0, a1 = 0.12, 0.88
+                a0, a1 = (0.12, 0.88) if level == 0 else (0.22, 0.78)
                 return inset(q, a0, a1, b0, 1.0, ("lamp", 2))
     return [(poly, k)]
 
 
-TIP_S = 0.57
+def tip_s():
+    """Where the headlamp's end meets the shoulder line (LOD0's roll station)."""
+    return dict(key_stations())["FR"]["SH"][1]
 
 
 def lamp_tip(poly, sign):
@@ -659,7 +677,7 @@ def lamp_tip(poly, sign):
     a_pts, b_hi, b_lo = poly[:n_a], poly[n_a], poly[n_a + 1]
     a_hi, a_foot = a_pts[-1], a_pts[-2]
     s0, s1 = s_of(a_hi), s_of(b_hi)
-    f = min(max((TIP_S - s0) / (s1 - s0), 0.05), 1.0)
+    f = min(max((tip_s() - s0) / (s1 - s0), 0.05), 1.0)
     tip = tuple(np.array(a_hi) + (np.array(b_hi) - np.array(a_hi)) * f)
     rest = a_pts[:-1][::-1] + [b_lo, b_hi] + ([tip] if f < 1.0 - 1e-6 else [])
     return [([a_foot, tip, a_hi], ("lamp", 4 if sign > 0 else 5)), (rest, "paint")]
@@ -717,9 +735,9 @@ def _centre(p):
     return (0.0, p[1], p[2])
 
 
-PLATE_Z = {"front": (0.395, 0.505), "rear": (0.665, 0.775)}
+PLATE_Z = {"front": (0.408, 0.518), "rear": (0.665, 0.775)}
 DRL_B = 0.26              # the daytime strip's share of the lamp's height, from its foot
-GRILLE_A = 0.56           # LOD1: the grille's outer edge inside its wider cell
+GRILLE_A = 0.87           # LOD1: the grille's outer edge inside its wider cell
 FOG = (0.445, 0.555, 0.381, 0.452)      # the rear fog lamp: x0, x1, z0, z1 (LOD0)
 
 
@@ -746,11 +764,24 @@ def cap_cell(end, level, rowpair, col, sign, q):
     zl, zh = CAP[end]["rows"][lo][0], CAP[end]["rows"][hi][0]
     xa, xb = abs(q[0][0]), abs(q[1][0])
     if level < 2 and zl <= pz0 + 1e-6 and zh >= pz1 - 1e-6 and xa < PLATE_W / 2 - 1e-3:
-        a1 = min(1.0, (PLATE_W / 2 - xa) / (xb - xa))
-        if a1 > 0.995:
-            a1 = 1.0
-        b0, b1 = (pz0 - zl) / (zh - zl), (pz1 - zl) / (zh - zl)
-        return inset(q, 0.0, a1, max(b0, 0.0), min(b1, 1.0), "plate")
+        b0, b1 = max((pz0 - zl) / (zh - zl), 0.0), min((pz1 - zl) / (zh - zl), 1.0)
+
+        def a_at(b):
+            # the plate's edge is upright, whatever the cell's side edges do
+            x0 = abs(q[0][0]) + (abs(q[3][0]) - abs(q[0][0])) * b
+            x1 = abs(q[1][0]) + (abs(q[2][0]) - abs(q[1][0])) * b
+            a = min(1.0, (PLATE_W / 2 - x0) / (x1 - x0))
+            return 1.0 if a > 0.995 else a
+        a0_, a1_ = a_at(b0), a_at(b1)
+        out = []
+        if b0 > 1e-6:
+            out.append((sub(q, 0, 1, 0, b0), "paint"))
+        out.append(([bil(q, 0, b0), bil(q, a0_, b0), bil(q, a1_, b1), bil(q, 0, b1)], "plate"))
+        if a0_ < 1 - 1e-6 or a1_ < 1 - 1e-6:
+            out.append(([bil(q, a0_, b0), bil(q, 1, b0), bil(q, 1, b1), bil(q, a1_, b1)], "paint"))
+        if b1 < 1 - 1e-6:
+            out.append((sub(q, 0, 1, b1, 1), "paint"))
+        return out
     if front:
         if (lo, hi) == ("S1", "S2"):
             inner = co in ("R3", "R2", "R1", "RE")
@@ -765,7 +796,7 @@ def cap_cell(end, level, rowpair, col, sign, q):
             # swept tip; the daytime strip along the foot of the high beam
             if co in ("R3", "R2", "R1") or (level == 2 and co == "RE"):
                 return [(q, "grille")]
-            if (ci, co) == ("R2", "RE"):
+            if (ci, co) == ("RC", "RE") and level == 1:
                 return [(sub(q, 0, GRILLE_A, 0, 1), "grille"), (sub(q, GRILLE_A, 1, 0, 1), "paint")]
             if co == "RE":
                 return [(q, "paint")]
@@ -1046,15 +1077,16 @@ WHEELS = [  # part, x, s, steer
 
 # ================================================================ mirrors
 MIRROR_C = (1.465, 1.025)                  # housing centre (s, z)
-MIRROR_SECTION = [(0.052, -0.056), (-0.015, -0.064), (-0.056, -0.030), (-0.060, 0.016),
-                  (-0.026, 0.056), (0.052, 0.060)]
-MIRROR_LOFT = {   # x, scale, centre (s, z)
-    0: [(0.800, 0.42, (1.48, 0.990)), (0.842, 0.42, (1.48, 0.990)), (0.853, 0.80, MIRROR_C),
-        (0.870, 0.97, MIRROR_C), (0.945, 1.0, MIRROR_C), (0.990, 0.92, MIRROR_C),
-        (1.010, 0.70, MIRROR_C)],
-    1: [(0.800, 0.85, MIRROR_C), (0.990, 0.92, MIRROR_C), (1.010, 0.70, MIRROR_C)],
+MIRROR_SECTION = [(0.050, -0.052), (-0.005, -0.064), (-0.048, -0.040), (-0.062, 0.008),
+                  (-0.036, 0.052), (0.050, 0.058)]
+_ARM = (1.475, 0.986)
+MIRROR_LOFT = {   # x, scale, centre (s, z): a slim arm, then the housing, rounded at its end
+    0: [(0.800, 0.30, _ARM), (0.846, 0.30, _ARM), (0.858, 0.80, MIRROR_C),
+        (0.878, 0.97, MIRROR_C), (0.945, 1.0, MIRROR_C), (0.985, 0.93, MIRROR_C),
+        (1.003, 0.78, MIRROR_C), (1.010, 0.52, MIRROR_C)],
+    1: [(0.800, 0.80, MIRROR_C), (1.010, 0.52, MIRROR_C)],
 }
-MIRROR_GLASS_SEG = {0: (3, 4), 1: (0, 1)}            # the loft segment whose rear face is glass
+MIRROR_GLASS_SEG = {0: (3, 4), 1: (0,)}            # the loft segment whose rear face is glass
 
 
 def mirror_faces(level, sign):
@@ -1086,8 +1118,8 @@ def mirror_faces(level, sign):
 RAIL_X = 0.525
 RAIL_SECTION = {0: [(0.017, 0.0), (0.012, 0.032), (-0.012, 0.032), (-0.017, 0.0)],
                 1: [(0.017, 0.0), (0.0, 0.032), (-0.017, 0.0)]}
-RAIL_STATIONS = {0: [(2.26, -0.014), (2.34, 0.010), (2.70, 0.012), (3.10, 0.012),
-                     (3.50, 0.012), (3.86, 0.010), (3.94, -0.014)],
+RAIL_STATIONS = {0: [(2.26, -0.014), (2.34, 0.010), (3.10, 0.012), (3.86, 0.010),
+                     (3.94, -0.014)],
                  1: [(2.26, -0.014), (3.10, 0.012), (3.94, -0.014)]}
 
 
@@ -1286,7 +1318,7 @@ def axle_faces(s):
 # and the painted body between, so the triangle count is the plain
 # extrusion's. Every face samples one uniform 64-texel block, so no mip
 # mixes paint with glass or under-body.
-LOD3_PROFILE = [(0.0, 0.515, "paint"), (0.125, 0.80, "paint"), (1.27, 1.01, "lod3_glass"),
+LOD3_PROFILE = [(0.0, 0.53, "paint"), (0.125, 0.80, "paint"), (1.27, 1.01, "lod3_glass"),
                 (2.05, 1.40, "paint"), (3.99, 1.395, "lod3_glass"), (4.19, 1.05, "paint"),
                 (4.48, 0.52, "paint"), (4.43, 0.25, "lod3_under"), (3.51, 0.0, "lod3_under"),
                 (0.86, 0.0, "lod3_under"), (0.06, 0.20, "paint")]
@@ -1323,6 +1355,22 @@ def lod3_faces():
         f.uv = _block_uv(kind, q)
         faces.append(f)
     return faces
+
+
+def crease_edges(level):
+    """Edges that shade as a crease whatever their angle: the shoulder
+    crease (row S5) from the headlamp's end to the tail lamp, both sides, as
+    pairs of build-frame points. LOD0 only; the coarser tiers keep no such
+    row."""
+    if level != 0:
+        return []
+    st = [(n, h) for n, h in key_stations() if n not in ("F0", "R0")]
+    out = []
+    for (_na, a), (_nb, b) in zip(st[:-1], st[1:]):
+        for sg in (1, -1):
+            out.append((P(sg * a["S5"][0], a["S5"][1], a["S5"][2]),
+                        P(sg * b["S5"][0], b["S5"][1], b["S5"][2])))
+    return out
 
 
 LEVELS_BUILT = (0, 1, 2, 3)

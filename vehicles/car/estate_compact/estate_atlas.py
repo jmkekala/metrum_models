@@ -234,6 +234,10 @@ class Region:
 
 
 SEAM = 0.0135                   # a panel gap's painted width: 1.7 texels, to read at 30 m
+ARCH_TRIM = 0.008               # the dark trim edge round each wheel arch
+STRIP_Z = (0.462, 0.500)        # the side mouldings and the bumpers' rub strips
+STRIP_FRONT_S, STRIP_REAR_S = 0.47, 3.90      # where the strips end short of the arches
+STRIP_X = 0.50                  # and where they start on the bumpers' faces
 # the front bumper cover's joint on the wing: s from under the headlamp's
 # tip to the arch's edge, and its height
 _JZ = S.cap_ze("front", "S5") - 0.020
@@ -306,10 +310,13 @@ def paint_side(c):
             R.put(hole & (rw < S.WHEEL_R), mid=M["tyre"])
             R.put(hole & (rw < 0.26), mid=M["rim"])
             R.put(hole & (rw < 0.05), mid=M["rim_dark"])
-            # the arch lip: a raised, slightly shaded rim on the body
-            lip = (r >= S.ARCH_R) & (r < S.ARCH_R + 0.016)
-            R.put(lip, shade=0.86, add_h=0.003, on=BODY)
-            R.put((r >= S.ARCH_R + 0.016) & (r < S.ARCH_R + 0.022), shade=0.9, add_h=0.0015,
+            # the arch lip: a slim dark trim edge round the opening (it also
+            # rounds the cut's facets), then the body's raised, rolled lip
+            R.put((r >= S.ARCH_R) & (r < S.ARCH_R + ARCH_TRIM), mid=M["lip"], height=0.002,
+                  on=BODY)
+            R.put((r >= S.ARCH_R + ARCH_TRIM) & (r < S.ARCH_R + 0.026), shade=0.93, add_h=0.004,
+                  on=BODY)
+            R.put((r >= S.ARCH_R + 0.026) & (r < S.ARCH_R + 0.034), shade=0.96, add_h=0.002,
                   on=BODY)
         # door cut lines
         R.groove(near(s, 1.305) & (z > 0.30) & (z < bz - 0.004), on=BODY)
@@ -331,21 +338,18 @@ def paint_side(c):
                   shade=0.45, add_h=-0.004, ao=0.6, on=BODY)
             R.put(rrect(s, z, s0, s1, zh - 0.012, zh + 0.018, 0.012), mid=M["handle"],
                   height=0.006)
-        # side moulding along the doors
-        R.put(rrect(s, z, 1.37, 3.08, 0.462, 0.500, 0.018), mid=M["lip"], height=0.006,
+        # side moulding along the doors, and the bumpers' rub strips at its
+        # height: one dark line round the car, broken by the arches
+        R.put(rrect(s, z, 1.37, 3.08, STRIP_Z[0], STRIP_Z[1], 0.018), mid=M["lip"], height=0.006,
               on=BODY + (M["gap"],))
+        R.put(rrect(s, z, -1.0, STRIP_FRONT_S, STRIP_Z[0], STRIP_Z[1], 0.015), mid=M["lip"],
+              height=0.005, on=BODY)
+        R.put(rrect(s, z, STRIP_REAR_S, 6.0, STRIP_Z[0], STRIP_Z[1], 0.015), mid=M["lip"],
+              height=0.005, on=BODY)
         # the belt moulding under the side glass
         # (the door's painted skin runs up to the glass; the waist seal is on
         # the shoulder, in the top island)
-        # a soft character line along the flank, catching the light
-        zc = np.array([S.z_side("S5", v) for v in s[0]])[None, :]      # on the shoulder crease
-        R.put((np.abs(z - zc) < 0.012) & (s > 0.45) & (s < 4.12),
-              add_h=0.0, on=BODY)
-        ridge = np.clip(1.0 - np.abs(z - zc) / 0.012, 0.0, 1.0)
-        hh = c.height[R.sy, R.sx]
-        mm = np.isin(R.mid(), BODY) & (s > 0.45) & (s < 4.12)
-        hh[mm] += 0.003 * ridge[mm]
-        c.height[R.sy, R.sx] = hh
+        # (the flank's character line is the mesh's own crease, row S5)
         # window surround: black rubber above the glass and up the A-pillar
         zgt = np.interp(s, [a for a, _ in S.GLASS_TOP], [b for _, b in S.GLASS_TOP])
         R.put((z > zgt - 0.01) & (z < zgt + 0.018) & (s > S.A_GT_TOP - 0.02) & (s < 3.875),
@@ -368,15 +372,18 @@ def paint_top(c):
     s, x = R.U, R.V
     # bonnet shut lines. The bonnet spans nearly the car's width: its front
     # edge runs just behind the leading edge, over the grille and along the
-    # lamps' tops as far as the outer (low beam) cell; from there each side
-    # line runs back along the wing's top, nearly parallel to the car's
-    # length, to the windscreen's base corner just inboard of the A-pillar's
-    # foot, where it meets the bonnet's rear edge. Only a narrow strip of
-    # wing shows outboard of it.
-    x_f = S.cap_x("front", "SH", "GT")
+    # lamps' tops to the middle of the low beam; from there each side line
+    # runs back along the wing's top, nearly parallel to the car's length,
+    # and curves in to the windscreen's base corner just inboard of the
+    # A-pillar's foot, where it meets the bonnet's rear edge. Only a narrow
+    # strip of wing shows outboard of it.
+    x_f = 0.705
     s_f = S.cap_s("front", "SH", x_f) + 0.012
     x_r, s_r = 0.705, float(cowl_s(0.705)) - 0.046
-    shut = np.interp(s, [s_f, s_r], [x_f, x_r])
+    # (about 0.09-0.10 inboard of the wing's crest along the bonnet, curving
+    # in over the last 0.15 to the windscreen's corner)
+    ks, kx = [s_f, 0.90, 1.10, 1.20, s_r], [x_f, 0.722, 0.730, 0.723, x_r]
+    shut = np.array([S.pchip(ks, kx, v) for v in s[0]])[None, :]
     run = (s > s_f - SEAM / 2) & (s < s_r + SEAM / 2)
     R.groove(near(x, shut) & run, depth=BONNET_GAP, on=BODY,
              lip=(x - shut > SEAM / 2) & (x - shut < SEAM / 2 + 0.006) & run)
@@ -433,7 +440,7 @@ def paint_front(c):
     gin = _eroded(g, 2.6, x)
     R.put(g, mid=M["rim_dark"], height=0.002)
     R.put(gin, mid=M["grille"], height=-0.006)
-    R.put(gin & (np.mod(z - 0.646, 0.028) < 0.011), mid=M["rim_dark"], height=0.004)
+    R.put(gin & (np.mod(z - 0.634, 0.028) < 0.011), mid=M["rim_dark"], height=0.004)
     # the lower intake: its frame and mesh
     g = R.mid() == M["intake"]
     iin = _eroded(g, 2.2, x)
@@ -448,8 +455,21 @@ def paint_front(c):
         pts = np.array([p for f in fog for p in f.pts])
         x0, x1 = np.abs(pts[:, 0]).min(), np.abs(pts[:, 0]).max()
         z0, z1 = pts[:, 2].min(), pts[:, 2].max()
-        pod = rrect(x, z, x0 - 0.035, x1 + 0.028, z0 - 0.008, z1 + 0.010, 0.025)
+        # a rounded pod, its edges along the texel rows so they stay crisp
+        pod = rrect(x, z, x0 - 0.030, x1 + 0.012, z0 - 0.008, z1 + 0.012, 0.024)
         R.put(pod, mid=M["lip"], height=-0.003, on=BODY)
+    # the plate's holder: a black plinth a little larger than the plate
+    # (the plate's own faces map to their rect; the light patch inside the
+    # holder is what LOD2's bumper face shows there)
+    pz0, pz1 = S.PLATE_Z["front"]
+    R.put(rrect(x, z, -1.0, S.PLATE_W / 2 + 0.020, pz0 - 0.012, pz1 + 0.012, 0.012),
+          mid=M["lip"], height=0.004, on=BODY)
+    R.put(rrect(x, z, -1.0, S.PLATE_W / 2, pz0, pz1, 0.004), mid=M["paint"], height=0.006)
+    # the lip's upper edge: a lighter chamfer, the break between bumper and splitter
+    R.put((z > 0.256) & (z < 0.274), mid=M["rim_dark"], height=0.004, on=(M["lip"],))
+    # the bumper's rub strips on its corners, at the side mouldings' height
+    R.put(rrect(x, z, STRIP_X, 2.0, STRIP_Z[0], STRIP_Z[1], 0.015), mid=M["lip"], height=0.005,
+          on=BODY)
 
 
 # ---------------------------------------------------------------- rear
@@ -457,21 +477,36 @@ def paint_rear(c):
     R = Region(c, S.R_REAR)
     x, z = R.U, R.V + 0.18
     R.put(z < 0.334, mid=M["lip"])
-    # the tailgate's cut lines down beside the lamps and along the bumper
-    R.groove(near(x, 0.622) & (z > 0.64) & (z < 1.06), on=BODY)
-    R.groove(near(z, 0.642) & (x < 0.622), on=BODY)
-    R.groove(near(z, 0.628) & (x > 0.622), on=BODY)
-    # plate recess and the tailgate's handle trim above it
-    R.put((x < 0.30) & (z > 0.806) & (z < 0.830), mid=M["chrome"], height=0.005)
-    # the lamps' housing edge (their top climbs a little toward the corner)
     xs = np.linspace(0.0, 0.89, 40)
     zs4 = np.interp(x, xs, [S.cap_z("rear", "S4", v) for v in xs])
     zs5 = np.interp(x, xs, [S.cap_z("rear", "S5", v) for v in xs])
-    R.put((x > 0.624) & (x < 0.636) & (z > zs4 - 0.01) & (z < zs5 + 0.01), mid=M["seal"])
-    R.put((x > 0.62) & (z > zs5) & (z < zs5 + 0.010), mid=M["seal"])
-    R.put((x > 0.62) & (z > zs4 - 0.010) & (z < zs4), mid=M["seal"])
+    re4, re5, reh = (S.cap_x("rear", r, "RE") for r in ("S4", "S5", "SH"))
+    z4, z5 = S.CAP["rear"]["rows"]["S4"][0], S.CAP["rear"]["rows"]["S5"][0]
+    zh = S.CAP["rear"]["rows"]["SH"][0]
+    # the tailgate's cut lines: along the bumper, up beside the clusters'
+    # inner edges (the clusters sit on the quarters) and on to the glass's
+    # lower corners; the bumper's joint to the quarter outboard of it
+    R.groove(near(x, re4) & (z > 0.64) & (z < z4 - 0.004), on=BODY)
+    R.groove(seg_dist(x, z, (re5, z5 + 0.012), (reh, zh + 0.004)) < SEAM / 2.0, on=BODY)
+    R.groove(near(z, 0.642) & (x < re4), on=BODY)
+    R.groove(near(z, 0.628) & (x > re4), on=BODY)
+    # the handle: a dark recess under a raised garnish, above the plate
+    R.put(rrect(x, z, -1.0, 0.24, 0.790, 0.812, 0.008), mid=M["lip"], height=-0.006, ao=0.6,
+          on=BODY)
+    R.put(rrect(x, z, -1.0, 0.30, 0.812, 0.838, 0.008), mid=M["handle"], height=0.006, on=BODY)
+    # the plate's holder
+    pz0, pz1 = S.PLATE_Z["rear"]
+    R.put(rrect(x, z, -1.0, S.PLATE_W / 2 + 0.020, pz0 - 0.012, pz1 + 0.012, 0.012),
+          mid=M["lip"], height=0.004, on=BODY)
+    R.put(rrect(x, z, -1.0, S.PLATE_W / 2, pz0, pz1, 0.004), mid=M["paint"], height=0.006)
+    # the clusters' housing edge on the body: inner edge, top and foot
+    R.put(seg_dist(x, z, (re4, z4), (re5, z5)) < 0.006, mid=M["seal"], on=BODY)
+    R.put((x > re5 - 0.004) & (z > zs5) & (z < zs5 + 0.010), mid=M["seal"], on=BODY)
+    R.put((x > re4 - 0.004) & (z > zs4 - 0.010) & (z < zs4), mid=M["seal"], on=BODY)
     # (the right-hand red reflector mirroring the fog lamp is its own face)
-    # the bumper's lower diffuser line
+    # the bumper's rub strips on its corners, and its lower diffuser line
+    R.put(rrect(x, z, 0.60, 2.0, STRIP_Z[0], STRIP_Z[1], 0.015), mid=M["lip"], height=0.005,
+          on=BODY)
     R.groove(near(z, 0.345) & (x < 0.8), on=BODY)
 
 
@@ -486,49 +521,53 @@ LENS_STYLE = {(7, "front"): "projector", (8, "front"): "reflector", (9, "front")
               (11, "rear"): "ribs", (4, "mirror"): "plain"}
 
 
-HEADLAMP = (4, 7, 8, 9)          # the ids of one front unit (5 maps as 4)
+UNITS = {"front": (4, 7, 8, 9), "rear": (1, 3, 4, 6)}     # ids of one lamp unit (5 maps as 4)
 
 
-def headlamp_faces():
-    """The left headlamp unit's LOD0 faces (cap cells and the swept tip)."""
+def unit_faces(end):
+    """The left unit's LOD0 faces at one end: cap cells and the tip on the side."""
     return [f for f in S.tier(0)["body"]
-            if f.kind == "lamp" and f.centre()[0] > 0 and S.lens_key(f)[1] == "front"
-            and S.lens_key(f)[0] in HEADLAMP]
+            if f.kind == "lamp" and f.centre()[0] > 0 and S.lens_key(f)[1] == end
+            and S.lens_key(f)[0] in UNITS[end]]
 
 
-def unit_outline(faces):
-    """Edges of *faces* that no other of them shares, whole or in part (a
-    cell cut in two meets its neighbour's uncut edge): the unit's outline,
-    as (face, corner index) pairs."""
-    out = []
+def unit_edges(faces):
+    """(outline, joints): the edges of *faces* no other of them shares,
+    whole or in part (a cell cut in two meets its neighbour's uncut edge),
+    and the edges where two of them with different lamp ids meet; each as
+    (face, corner index) pairs."""
+    outline, joints = [], []
     segs = [(g, np.array(g.pts[k]), np.array(g.pts[(k + 1) % len(g.pts)]))
             for g in faces for k in range(len(g.pts))]
     for f in faces:
         n = len(f.pts)
         for k in range(n):
             m = (np.array(f.pts[k]) + np.array(f.pts[(k + 1) % n])) / 2.0
-            inner = False
+            other = None
             for g, a, b in segs:
                 if g is f:
                     continue
                 d = b - a
                 t = min(max(float((m - a) @ d) / max(float(d @ d), 1e-12), 0.0), 1.0)
                 if np.linalg.norm(m - a - t * d) < 2e-4:
-                    inner = True
+                    other = g
                     break
-            if not inner:
-                out.append((f, k))
-    return out
+            if other is None:
+                outline.append((f, k))
+            elif S.lens_key(other) != S.lens_key(f):
+                joints.append((f, k))
+    return outline, joints
 
 
 def paint_lenses(c):
-    unit = headlamp_faces()
+    units = {end: unit_faces(end) for end in UNITS}
     cent = {}
-    for f in unit:
-        q = np.array(S.lens_uv(f))
-        px = 0.5 * abs(sum(q[k][0] * q[(k + 1) % len(q)][1] - q[(k + 1) % len(q)][0] * q[k][1]
-                           for k in range(len(q))))
-        cent.setdefault(S.lens_key(f), []).append((px, q.mean(axis=0)))
+    for faces in units.values():
+        for f in faces:
+            q = np.array(S.lens_uv(f))
+            px = 0.5 * abs(sum(q[k][0] * q[(k + 1) % len(q)][1]
+                               - q[(k + 1) % len(q)][0] * q[k][1] for k in range(len(q))))
+            cent.setdefault(S.lens_key(f), []).append((px, q.mean(axis=0)))
     for key, ref in S.lens_refs().items():
         x, y, w, h = ref["rect"]
         c.paint(x, x + w, y, y + h, mid=M_LENS[key[0]], shade=1.0, height=0.0)
@@ -538,64 +577,69 @@ def paint_lenses(c):
         hh = np.zeros(u.shape, np.float32)
         style = LENS_STYLE.get(key, "plain")
         cx, cy = w / 2.0, h / 2.0
+        tall = h - 6.0
         if key in cent:
-            # a headlamp cell is no rectangle: its picture sits on the
-            # cell's own centre of area
+            # a unit's cell is no rectangle: its picture sits on the cell's
+            # own centre of area and is sized from its mean height
             ar = np.array([a for a, _ in cent[key]])
             pc = np.array([p for _, p in cent[key]])
             cx, cy = (pc * ar[:, None]).sum(axis=0) / ar.sum() - (x, y)
-            tall = ar.sum() / (w - 6.0)              # the cell's mean height, in texels
+            tall = ar.sum() / (w - 6.0)
         md = np.full(u.shape, M_LENS[key[0]], np.uint8)
         if style in ("projector", "reflector"):
             # the headlamp's inside behind a clear lens: a bright metallic
-            # housing, shaded dishes with a fine bezel line, a soft shadow
-            # under the housing's roof; no glints (the lens's gloss is the
-            # ORM's)
+            # housing, darker under its roof; no glints (the lens's gloss is
+            # the ORM's) and no ring round a dot
             md[:] = M["hl_chrome"]
-            sh *= 1.06
-        if style in ("projector", "reflector"):
-            bx = cx
-            R = 0.42 * tall
-            r = np.hypot(u - bx, v - cy)
-            dish = r < R
-            sh[dish] = (0.84 + 0.26 * (r / R) ** 2)[dish]
-            sh[np.abs(r - R) < 0.55] = 1.28                       # the bezel line
-            sh[(r >= R + 0.55) & (r < R + 1.6)] *= 0.84
-            hh[dish] = -0.004 * (1 - (r / R) ** 2)[dish]
-            if style == "projector":
-                # the projector's lens: glossy, a little darker, its lower
-                # half shaded by the cut-off shield
-                pl = r < R * 0.52
-                md[pl] = M_LENS[key[0]]
-                sh[pl] = 0.86
-                sh[pl & (v < cy - R * 0.12)] = 0.78
-                sh[(r >= R * 0.52) & (r < R * 0.52 + 0.9)] *= 0.8
-            else:
-                cap = r < R * 0.16                                # the bulb cap
-                sh[cap] = 1.2
-                sh[(r >= R * 0.16) & (r < R * 0.16 + 0.9)] *= 0.82
-        if style in ("projector", "reflector"):
-            # the housing's roof under the bonnet lip: a soft darker band
-            t = np.clip((h - v) / (h * 0.30), 0, 1)
-            sh *= 0.80 + 0.20 * t
+            sh *= 0.94
+            sh *= 0.80 + 0.20 * np.clip((h - v) / (h * 0.32), 0, 1)
+        if style == "reflector":
+            # the high beam: a fluted reflector bowl, wider than tall, the
+            # flutes upright, lighter toward its foot; a small bulb shield
+            bw, bh = 0.86 * tall, 0.37 * tall
+            bowl = rrect(u, v, cx - bw, cx + bw, cy - bh, cy + bh, 0.8 * bh)
+            edge = rrect(u, v, cx - bw - 1.1, cx + bw + 1.1, cy - bh - 1.1, cy + bh + 1.1,
+                         0.8 * bh + 1.1) & ~bowl
+            t = np.clip((v - (cy - bh)) / (2 * bh), 0, 1)
+            flute = np.where(np.mod(u - cx, 3.4) < 1.7, 1.07, 0.93)
+            sh[bowl] = ((1.10 - 0.20 * t) * flute)[bowl]
+            sh[edge] = 0.70
+            hh[bowl] = (-0.005 * (1 - ((v - cy) / bh) ** 2).clip(0, 1))[bowl]
+            shield = rrect(u, v, cx - 3.0, cx + 3.0, cy - 1.5, cy + 1.5, 1.5)
+            sh[shield] = 0.66
+        elif style == "projector":
+            # the low beam: a projector's glass lens in a square shroud, the
+            # lens glossy and darker, its lower half shaded by the cut-off
+            hs = 0.42 * tall
+            shroud = rrect(u, v, cx - hs, cx + hs, cy - hs, cy + hs, 0.35 * hs)
+            edge = rrect(u, v, cx - hs - 1.1, cx + hs + 1.1, cy - hs - 1.1, cy + hs + 1.1,
+                         0.35 * hs + 1.1) & ~shroud
+            sh[shroud] = 1.10
+            sh[edge] = 0.70
+            r = np.hypot(u - cx, v - cy)
+            lens = r < 0.72 * hs
+            md[lens] = M_LENS[key[0]]
+            sh[lens] = np.where(v < cy - 0.1 * hs, 0.60, 0.74)[lens]
+            hh[lens] = (0.004 * (1 - (r / (0.72 * hs)) ** 2))[lens]
+        elif style == "strip":
+            sh *= 0.96
         elif style == "ribs":
-            sh[np.mod(v, 2.0 * F) < 0.8 * F] *= 0.82
+            sh[np.mod(v, 2.0 * F) < 0.8 * F] *= 0.78
         elif style == "guide":
             # a lighter light guide across a ribbed red field
-            sh[np.mod(v, 1.6 * F) < 0.6 * F] *= 0.85
-            sh[np.abs(v - h * 0.62) < max(1.2 * F, h * 0.09)] *= 1.45
-            sh[(np.abs(v - h * 0.62) < h * 0.2) & (u > w * 0.1) & (u < w * 0.9)] *= 1.1
+            sh[np.mod(v, 1.6 * F) < 0.6 * F] *= 0.80
+            sh[np.abs(v - cy) < max(1.2 * F, tall * 0.10)] *= 1.50
         elif style == "bars":
-            sh[np.mod(v, 1.6 * F) < 0.6 * F] *= 0.85
-            sh[np.abs(v - h * 0.62) < max(1.2 * F, h * 0.09)] *= 1.45
+            sh[np.mod(v, 1.6 * F) < 0.6 * F] *= 0.80
+            sh[np.abs(v - cy) < max(1.2 * F, tall * 0.10)] *= 1.50
         elif style == "indicator":
-            # a ribbed amber cell behind the clear lens, out to the tip
-            sh[np.mod(u, 1.8 * F) < 0.7 * F] *= 0.86
+            # a ribbed amber cell behind the clear lens, out to the end
+            sh[np.mod(u, 1.8 * F) < 0.7 * F] *= 0.84
         elif style == "dots":
             sh[(np.mod(u, 2.5 * F) < 1.2 * F) & (np.abs(v - cy) < 1.5 * F)] *= 1.3
         elif style == "clear":
-            sh *= 1.1
-            sh[np.mod(u, 2.0 * F) < 0.6 * F] *= 0.88
+            sh *= 1.12
+            sh[np.mod(u, 2.0 * F) < 0.6 * F] *= 0.84
         if key not in cent:
             # a thin dark outline, the first texel inside the faces' mapping
             # (they map to the rect inset 3 texels)
@@ -606,22 +650,28 @@ def paint_lenses(c):
         c.mid[sy, sx] = md
         c.shade[sy, sx] = sh
         c.height[sy, sx] = hh
-    # the daytime strip: a slim, slightly lighter light guide along the
-    # middle of each of its cells (they follow the lamp's foot)
-    for f in unit:
+    # the daytime strip: a slim, lighter light guide along the middle of
+    # each of its cells (they follow the lamp's foot)
+    for f in units["front"]:
         if f.surface != 9:
             continue
         q = np.array(S.lens_uv(f))
         a, b = (q[0] + q[3]) / 2.0, (q[1] + q[2]) / 2.0
-        wd = 0.36 * np.linalg.norm(q[3] - q[0])
+        wd = 0.42 * np.linalg.norm(q[3] - q[0])
         d = (b - a) / np.linalg.norm(b - a)
-        c.stroke(tuple(a - d * 2.0), tuple(b + d * 2.0), wd, shade=1.12)
-    # the unit's outline, drawn just inside its own edge, whatever its
-    # shape: the dark line where the lens meets the body
+        c.stroke(tuple(a - d * 2.0), tuple(b + d * 2.0), wd, shade=1.16)
+    # each unit's joints (a fine dark line where two of its cells meet) and
+    # its outline, drawn just inside its own edge, whatever its shape: the
+    # dark line where the lens meets the body
     ow = 2.0 * S.LENS_PPM / 112.0
-    for f, k in unit_outline(unit):
-        q = S.lens_uv(f)
-        c.stroke(q[k], q[(k + 1) % len(q)], ow, shade=0.45, height=-0.003)
+    for faces in units.values():
+        outline, joints = unit_edges(faces)
+        for f, k in joints:
+            q = S.lens_uv(f)
+            c.stroke(q[k], q[(k + 1) % len(q)], 0.6 * ow, shade=0.62)
+        for f, k in outline:
+            q = S.lens_uv(f)
+            c.stroke(q[k], q[(k + 1) % len(q)], ow, shade=0.45, height=-0.003)
     # the front fog lamps, as at hand-in: a dark bezel round a pale lens
     x, y, w, h = S.R_FOGLAMP
     sy, sx, Y_, X_ = c.field(x, x + w, y, y + h)
@@ -775,6 +825,34 @@ def vehicle_glass(mask, rgb):
     return out
 
 
+FRIT = 0.42               # the printed band's albedo, as a share of the glass's
+FRIT_PX = {32: (4.0, 8.0), 35: (5.5, 12.0)}    # glass id -> band width, inner corner radius (texels)
+
+
+def frit():
+    """The printed black band round the windscreen and the tailgate glass,
+    with rounded inner corners: its coverage per texel, in the atlas's own
+    rows (V up). It is still glass (same ids, texels and gloss), only
+    darker."""
+    from PIL import Image, ImageDraw
+    from scipy import ndimage
+    k = atlas.SS                       # drawn at the canvas's sample density, then box-filtered
+    n = ATLAS * k
+    out = np.zeros((n, n), bool)
+    for gid, (wd, rad) in FRIT_PX.items():
+        m = Image.new("L", (n, n), 0)
+        d = ImageDraw.Draw(m)
+        for f in S.tier(0)["body"]:
+            if f.kind == "glass" and f.surface == gid:
+                d.polygon([(a * k, b * k) for a, b in f.uv], fill=1, outline=1)
+        pane = np.asarray(m, bool)
+        inner = ndimage.distance_transform_edt(pane) > wd * k
+        core = ndimage.distance_transform_edt(inner) > rad * k
+        opened = ndimage.distance_transform_edt(~core) <= rad * k
+        out |= pane & ~(opened & inner)
+    return atlas.box(out.astype(np.float32), k)
+
+
 def export(out_dir):
     os.makedirs(out_dir, exist_ok=True)
     c = paint()
@@ -788,6 +866,8 @@ def export(out_dir):
     glass = cov >= 0.5
     rgb = atlas.albedo(c, lut, grime=0.25 * cav)
     rgb = vehicle_glass(glass, rgb)
+    fr = (frit() * glass)[..., None]
+    rgb = rgb * (1.0 - fr * (1.0 - FRIT))
     out = [atlas.save(rgb, os.path.join(out_dir, "%s_albedo_plain.png" % ASSET))]
     rough = 0.03 * atlas.noise(c, 31, 12.0 * S.SC)
     out.append(atlas.save(atlas.orm(c, ROUGH, rough, 0.5 * cav),

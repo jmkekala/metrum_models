@@ -55,11 +55,14 @@ def builder(faces, conform=True):
     return B
 
 
-def crease(obj):
+def crease(obj, lines=()):
     """Mark the creases sharp: edges past CREASE_DEG, every edge where
-    glass meets something else, and where unpainted trim meets paint."""
+    glass meets something else, where unpainted trim meets paint, and the
+    edges along *lines* (pairs of points: the shape's own crease lines)."""
     bm = bmesh.new()
     bm.from_mesh(obj.data)
+    key = lambda co: tuple(round(v, 3) for v in co)  # noqa: E731
+    marked = {frozenset((key(p), key(q))) for p, q in lines}
     surf = bm.faces.layers.int.get(VB.SURFACE)
     paint = bm.faces.layers.int.get(VB.PAINT)
     lim = math.radians(CREASE_DEG)
@@ -72,7 +75,8 @@ def crease(obj):
         # own part: its edge shades crisp
         trim = (paint is not None and surf is not None and a[surf] == 0 and b[surf] == 0
                 and a[paint] != b[paint])
-        e.smooth = not (e.calc_face_angle() > lim or glass[0] != glass[1] or trim)
+        line = frozenset(key(v.co) for v in e.verts) in marked
+        e.smooth = not (e.calc_face_angle() > lim or glass[0] != glass[1] or trim or line)
     bm.to_mesh(obj.data)
     bm.free()
     return obj
@@ -83,7 +87,7 @@ def body(level, t):
     if t["cutters"]:
         cutters = [VB._object("tmp_cut", builder(f, conform=False)) for f in t["cutters"]]
         obj = asset_build.difference(obj, cutters, snap=asset_build.SNAP)
-    return crease(obj)
+    return crease(obj, S.crease_edges(level))
 
 
 def build_lod(level):
