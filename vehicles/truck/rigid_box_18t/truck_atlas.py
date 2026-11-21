@@ -340,6 +340,12 @@ def at(reg, u_m, v_m, ppm=PPM):
  M_TYRE, M_RIM, M_HUB, M_GLASS, M_MIRROR, M_PLATE, M_PLATE_EDGE, M_HOUSING, M_GRILLE,
  M_GRILLE_HOLE, M_DOOR, M_STEP, M_SEAL, M_TAPE, M_TAPE_RED, M_PIC_LAMP, M_PIC_TAIL,
  M_HANDLE, M_ALU_DARK) = range(1, 30)
+# The LOD3 pictures' own paint: the whole far side and front are one or two
+# painted faces, so their windows, grille and lower plastic sit inside the
+# painted mean; a lighter far field keeps the tier as bright as LOD0 under
+# the same paint (the consumer's tier-switch rule, within 10 %).
+M_CAB_FAR, M_BOX_FAR = 30, 31
+FAR_GREY = 0.83                 # linear
 M_LENS = {"low": 40, "high": 41, "drl": 42, "ind": 43, "tail_brake": 44, "reverse": 45,
           "fog": 46, "mark_white": 47, "mark_amber": 48, "mark_red": 49}
 LENS_COLOUR = {"low": "white", "high": "white", "drl": "white", "ind": "amber",
@@ -363,6 +369,7 @@ BASE = {
     M_STEP: (44, 44, 45), M_SEAL: (24, 24, 25), M_TAPE: (214, 170, 40),
     M_TAPE_RED: (170, 40, 34), M_PIC_LAMP: (150, 152, 150), M_PIC_TAIL: (110, 28, 24),
     M_HANDLE: (30, 30, 31), M_ALU_DARK: (120, 122, 123),
+    M_CAB_FAR: (0, 0, 0), M_BOX_FAR: (0, 0, 0),         # set below from FAR_GREY
 }
 LENS_UNLIT = {"low": (168, 172, 174), "high": (160, 164, 166), "drl": (186, 188, 188),
               "ind": (176, 104, 30), "tail_brake": (124, 26, 24), "reverse": (178, 180, 180),
@@ -370,8 +377,11 @@ LENS_UNLIT = {"low": (168, 172, 174), "high": (160, 164, 166), "drl": (186, 188,
               "mark_red": (128, 26, 24)}
 for _n, _m in M_LENS.items():
     BASE[_m] = LENS_UNLIT[_n]
+_far = 255.0 * (1.055 * FAR_GREY ** (1 / 2.4) - 0.055)
+BASE[M_CAB_FAR] = BASE[M_BOX_FAR] = (_far, _far, _far)
 # the livery: a muted dark blue cab and a white box, panels in full colour
-HAULIER = {M_CAB: (34, 52, 84), M_BOX: (232, 233, 230)}
+HAULIER = {M_CAB: (34, 52, 84), M_BOX: (232, 233, 230),
+           M_CAB_FAR: (34, 52, 84), M_BOX_FAR: (232, 233, 230)}
 
 SURFACE = {  # roughness, metallic
     M_CAB: (0.32, 0.0), M_BOX: (0.40, 0.0), M_ROOF: (0.55, 0.0), M_PLASTIC: (0.68, 0.0),
@@ -382,7 +392,7 @@ SURFACE = {  # roughness, metallic
     M_GRILLE: (0.62, 0.0), M_GRILLE_HOLE: (0.9, 0.0), M_DOOR: (0.45, 0.8),
     M_STEP: (0.75, 0.0), M_SEAL: (0.80, 0.0), M_TAPE: (0.30, 0.0), M_TAPE_RED: (0.30, 0.0),
     M_PIC_LAMP: (0.2, 0.0), M_PIC_TAIL: (0.2, 0.0), M_HANDLE: (0.5, 0.0),
-    M_ALU_DARK: (0.5, 0.8),
+    M_ALU_DARK: (0.5, 0.8), M_CAB_FAR: (0.32, 0.0), M_BOX_FAR: (0.40, 0.0),
 }
 for _m in M_LENS.values():
     SURFACE[_m] = (0.15, 0.0)
@@ -741,23 +751,30 @@ def paint_lod3(P):
 
     def W(fn, mid):
         P.where(reg, fn, mid=mid, ppm=pp)
-    W(lambda s, z: (s > BOX_S0) & (z > BOX_Z0), M_BOX)
+    W(lambda s, z: (s > BOX_S0) & (z > BOX_Z0), M_BOX_FAR)
     W(lambda s, z: (s > BOX_S0) & (np.abs(z - 1.23) < 0.08), M_ALU)
-    W(lambda s, z: (s < CAB_BACK) & (z > Z_DOOR), M_CAB)
+    W(lambda s, z: (s < CAB_BACK) & (z > Z_DOOR), M_CAB_FAR)
     W(lambda s, z: (s < CAB_BACK) & (z > 0.80) & (z <= Z_DOOR), M_PLASTIC)
-    W(lambda s, z: (s > 0.75) & (s < 1.82) & (z > 2.75), M_CAB)        # deflector
+    W(lambda s, z: (s > 0.75) & (s < 1.82) & (z > 2.75), M_CAB_FAR)    # deflector
     W(lambda s, z: (s > DOOR_GLASS[0]) & (s < DOOR_GLASS[1]) & (z > DOOR_GLASS[2])
       & (z < DOOR_GLASS[3]), M_GLASS)
     W(lambda s, z: (s < 0.32) & (z > 0.40) & (z < 0.80), M_PLASTIC)
+    # the under-body solid's sides are unpainted: its guards, tank and rims
+    # in their own colours, light under dark paint as LOD0's are
+    W(lambda s, z: (s > GUARD_S[0]) & (s < GUARD_S[1]) & (
+        (np.abs(z - 0.51) < 0.05) | (np.abs(z - 0.81) < 0.05)), M_GUARD)
+    W(lambda s, z: (s > TANK[0]) & (s < TANK[1]) & (np.abs(z - TANK[3]) < 0.22), M_TANK)
     for sc in (FRONT_AXLE, REAR_AXLE):
         W(lambda s, z, sc=sc: np.hypot(s - sc, z - R_WHEEL) < R_WHEEL, M_TYRE)
-        W(lambda s, z, sc=sc: np.hypot(s - sc, z - R_WHEEL) < 0.29, M_HUB)
+        W(lambda s, z, sc=sc: np.hypot(s - sc, z - R_WHEEL) < 0.29, M_RIM)
     reg = "lod3_front"
     P.fill(reg, M_DARK)
-    W(lambda u, z: (z > Z_DOOR) & (np.abs(u - BOX_HW) < CAB_HW), M_CAB)
-    W(lambda u, z: (z > 0.80) & (z <= Z_DOOR) & (np.abs(u - BOX_HW) < CAB_HW), M_PLASTIC)
-    W(lambda u, z: (z > 2.75), M_BOX)
-    W(lambda u, z: (z > 2.75) & (z < 3.55) & (np.abs(u - BOX_HW) < 1.08), M_CAB)
+    # the cab front, painted down to its foot as LOD0's (the lower intake slot
+    # drawn), across the extrusion's full width
+    W(lambda u, z: z > 0.80, M_CAB_FAR)
+    W(lambda u, z: (np.abs(u - BOX_HW) < 0.70) & (np.abs(z - 0.90) < 0.03), M_GRILLE_HOLE)
+    W(lambda u, z: (z > 2.75), M_BOX_FAR)
+    W(lambda u, z: (z > 2.75) & (z < 3.55) & (np.abs(u - BOX_HW) < 1.08), M_CAB_FAR)
     W(lambda u, z: (np.abs(u - BOX_HW) < WSCREEN[0]) & (z > WSCREEN[1]) & (z < WSCREEN[2]),
       M_GLASS)
     W(lambda u, z: (np.abs(u - BOX_HW) < GRILLE[0]) & (z > GRILLE[1]) & (z < GRILLE[2]),
@@ -781,8 +798,8 @@ def weather(c):
     import weathering
     lens = tuple(M_LENS.values())
     w = weathering.Weather(c, clean=(M_GLASS, M_MIRROR) + lens,
-                           steel=(M_CAB, M_BOX, M_ROOF, M_ALU, M_DOOR, M_TANK, M_GUARD,
-                                  M_PLATE, M_TAPE, M_PLASTIC, M_STEP, M_GRILLE, M_HOUSING))
+                           steel=(M_CAB, M_BOX, M_CAB_FAR, M_BOX_FAR, M_ROOF, M_ALU, M_DOOR,
+                                  M_TANK, M_GUARD, M_PLATE, M_TAPE, M_PLASTIC, M_STEP, M_GRILLE, M_HOUSING))
     w.grime(0.03)
     # box sides: road film from the foot, spray behind the rear wheels,
     # faint runs from the top rail

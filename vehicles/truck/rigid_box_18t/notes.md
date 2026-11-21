@@ -189,10 +189,27 @@ panel, the deflector and extenders, the box side panels and front wall.
 A neutral base of 0.78 linear (sRGB 229) with panel seams, rivets, cavity
 shading and a light, neutral road film and faint runs, so the panel field
 resolves to 0.75-0.77 (box sides 0.76, front 0.75, cab roof 0.76) and the
-mean over every painted face of every tier is 0.744 linear (validator
-0.74; LOD0 0.750, LOD1 0.746, LOD2 0.700 and LOD3 0.663, those two pulled
-down by window and grille texels inside their large faces), mean chroma
-0.1. The band's dark details stop at the openings' own edges, so the small
+mean over every painted face of every tier is 0.745 linear, mean chroma
+0.1.
+
+### Brightness across tiers
+
+The painted mean (area-weighted over the albedo texels the painted faces
+sample, linear) of each tier stays within 10 % of LOD0's, so a tier switch
+does not change the truck's brightness under the same paint: plain LOD0
+0.753, LOD1 0.747 (-0.9 %), LOD2 0.712 (-5.4 %), LOD3 0.739 (-1.9 %);
+haulier 0.522, 0.521, 0.482 (-7.6 %), 0.519 (-0.6 %). LOD2's and LOD3's
+few large painted faces carry windows, grille and lower plastic inside
+them, so the LOD3 pictures paint their cab and box with their own ids
+(`M_CAB_FAR`, `M_BOX_FAR`) at 0.83 linear in `plain`, the haulier's own
+colours in `haulier`; LOD3 was 0.681 (-9.6 %) before. LOD2 shares the cab
+band with LOD0/LOD1, and splitting its window and grille into their own
+faces would not fit its 350 triangles, so it stays at -5.4 %. Rendered
+check (AgX, the review camera's 75 degree field of view, silhouette mean):
+from LOD2 to LOD3 the step is +1 % under white paint, -2 % under red, -3 to
+-5 % under dark grey; under dark paint the far tiers are darker overall
+(LOD3 -13 % of LOD0 at 100 m) because LOD0's light unpainted parts (tank,
+guards, rims, tape) shrink to a few texels. The band's dark details stop at the openings' own edges, so the small
 LOD0 faces round the recesses sample paint, not rubber. Unpainted: bumper and lower cab plastic,
 aluminium rails, posts and rear frame, the roller door, the box roof
 (pale translucent-white panel, the largest surface seen from above),
@@ -240,10 +257,11 @@ front and under the left side, fixed camera and studio light.
   the bar with the two lamp housings over its ends, as LOD0's. At 100 m
   the silhouette holds.
 - LOD3: the cab's nose chamfered, deflector and box front one slope, from
-  pictures at 16 texels per metre, as one painted solid; the under-body a
-  second, narrower solid on four wheel feet, unpainted (B = 0), its sides
-  showing the picture's tyres and hubs in their own colours, so it stays
-  dark under any paint. Its front is one chamfer from the cab's foot to the
+  pictures at 16 texels per metre, as one painted solid (its cab and box
+  in a lighter far paint field, see Paint); the under-body a second,
+  narrower solid on four wheel feet, unpainted (B = 0), its sides showing
+  the picture's tyres, silver rims, guard rails and tank in their own
+  colours, so it stays dark under any paint. Its front is one chamfer from the cab's foot to the
   front wheels' contact, and the gap under the box front is open.
 
 ## Interior geometry
@@ -288,7 +306,9 @@ One 1024 atlas, 64 texels per metre in final pixels, supersampled 4x
   arch liner, aluminium, tank, guard grey, rubber, plastic, step, lamp
   housing, mirror glass and body, seal, cab paint) and the lens and plate
   patches are stretched over their faces, which carries no detail to
-  stretch; the LOD3 side, front and rear pictures at 16 texels/m.
+  stretch; the LOD3 side, front and rear pictures at 16 texels/m, their
+  cab and box in the far paint ids (0.83 linear in `plain`) and the cab's
+  lower front painted as LOD0's.
 - Relief in the height channel: box panel joints 1.5 mm, rivets 1 mm,
   roof bows 4 mm, roller door slat grooves 4 mm, door seams 2 mm, grille
   slats 8-10 mm, tread grooves 8 mm, rim edges 4 mm; glass flat.
@@ -360,6 +380,11 @@ Blender 5.3.0 (2026-11-11); Blender MCP extension not used for this build
 
 ## Revision log
 
+- 2026-11-21, tier brightness: the LOD3 pictures' cab and box on their own
+  far paint ids at 0.83 linear (LOD3 painted mean 0.681 to 0.739, LOD0
+  0.753), the LOD3 front's lower panel painted as LOD0's, the under-body
+  picture's guards, tank and rims restored now that its solid is
+  unpainted. No geometry changed.
 - 2026-11-21, polish: vehicle glass painted neutral dark with a vertical
   falloff instead of `glazing.rooms()`; the paint base raised to 0.78
   linear, wear on paint lightened and the band's dark details kept to the
