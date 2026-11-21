@@ -24,10 +24,14 @@ A build.py declares:
             "storeys": [(floor_z, area_m2), ...],  # occupied storeys, lowest first
             "doors": [model_facts.wall_door("front", "entrance", p0, p1, s, z,
                                             w, h, main=True)],
+            "passages": [model_facts.lane_passage("lane", (x, y), (0.0, 1.0),
+                                                  w, l, h)],   # optional
         }
 
 Every door names its kind, one of DOOR_KINDS, and exactly one door, an
-entrance, is main. asset_build.Asset.write_facts() adds everything that is
+entrance, is main. A building with a drivable lane through it lists it under
+passages; without one, it leaves the key out, and so does the sidecar.
+asset_build.Asset.write_facts() adds everything that is
 read from the build and the exported files. Triangle counts and bounds are
 read from the .glb files themselves, so the sidecar describes what ships.
 
@@ -55,6 +59,20 @@ DOOR_KEYS = ("id", "kind", "position", "facing", "width_m", "height_m", "main")
 # loading and goods doors. balcony: any door not reachable from the ground,
 # upper-floor doors included. store: doors of sheds and unheated stores.
 DOOR_KINDS = ("entrance", "service", "vehicle", "balcony", "store")
+# Optional: present only when the build.py's facts() lists passages, and then
+# right after doors. A drivable lane through the building, from one mouth.
+PASSAGES_AFTER = "doors"
+PASSAGE_KEYS = ("id", "position", "forward", "width_m", "length_m",
+                "clear_height_m", "through")
+PASSAGE_TOL = 1e-3               # a mouth's distance outside the LOD0 plan bounds
+
+
+def schema_keys(doc):
+    """KEYS in order, with passages after doors when *doc* has them."""
+    keys = list(KEYS)
+    if "passages" in doc:
+        keys.insert(keys.index(PASSAGES_AFTER) + 1, "passages")
+    return tuple(keys)
 
 
 def _r(x):
@@ -94,6 +112,27 @@ def wall_door(door_id, kind, p0, p1, s, z, width, height, main=False):
             "position": (p0[0] + tx * s, p0[1] + ty * s, z),
             "facing": (ty, -tx),
             "width_m": width, "height_m": height, "main": bool(main)}
+
+
+def lane_passage(passage_id, mouth, direction, width, length, clear_height,
+                 through=True):
+    """A drivable lane through the building, in the build frame, stated from
+    one of its mouths: the one vehicles enter by, for a lane used one way.
+
+    *mouth* is the plan point (x, y) where the lane's centre line crosses
+    that mouth's outer wall plane, on the ground the pivot stands on.
+    *direction* is the plan vector along the lane from the mouth into the
+    building; it is normalised here. *width* is the clear width between the
+    lane's walls, *length* the run from this mouth to the far one (or to the
+    lane's closed end), and *clear_height* the lowest geometry over the
+    lane's whole width and length, hung hoppers and beams included. *through*
+    is true when the lane is open at the far end.
+    """
+    dx, dy = direction
+    n = math.hypot(dx, dy)
+    return {"id": passage_id, "position": (mouth[0], mouth[1], 0.0),
+            "forward": (dx / n, dy / n), "width_m": width, "length_m": length,
+            "clear_height_m": clear_height, "through": bool(through)}
 
 
 def roof_clear_width(span, z_floor, z_eave, tan, headroom=1.6):
@@ -199,7 +238,8 @@ def compose(name, here, variants, default_variant, levels, pivot, facts, blender
     def entry(fn, key="file"):
         return {key: fn, "sha256": sha256(os.path.join(edir, fn))}
 
-    unknown = set(facts) - {"hero", "dwellings", "footprint", "storeys", "doors"}
+    unknown = set(facts) - {"hero", "dwellings", "footprint", "storeys", "doors",
+                            "passages"}
     if unknown:
         raise ValueError("facts() has unknown keys: %s" % sorted(unknown))
 
@@ -217,6 +257,17 @@ def compose(name, here, variants, default_variant, levels, pivot, facts, blender
                       "facing": [_r(fx / n), 0.0, _r(-fy / n)],
                       "width_m": _r(d["width_m"]), "height_m": _r(d["height_m"]),
                       "main": bool(d["main"])})
+    passages = []
+    for p in facts.get("passages") or ():
+        if set(p) != set(PASSAGE_KEYS):
+            raise ValueError("passage %r: keys %s" % (p.get("id"), sorted(p)))
+        fx, fy = p["forward"]
+        n = math.hypot(fx, fy)
+        passages.append({"id": p["id"], "position": point(p["position"]),
+                         "forward": [_r(fx / n), 0.0, _r(-fy / n)],
+                         "width_m": _r(p["width_m"]), "length_m": _r(p["length_m"]),
+                         "clear_height_m": _r(p["clear_height_m"]),
+                         "through": bool(p["through"])})
 
     lods = []
     for level in levels:
@@ -231,7 +282,7 @@ def compose(name, here, variants, default_variant, levels, pivot, facts, blender
         textures["emission"] = entry(name + "_emission.png")
 
     rel, src = source(here, name, blender)
-    return {
+    doc = {
         "schema": SCHEMA,
         "version": VERSION,
         "name": name,
@@ -256,6 +307,9 @@ def compose(name, here, variants, default_variant, levels, pivot, facts, blender
                     "sha256": sha256(os.path.join(here, "preview.png"))},
         "hero": bool(facts["hero"]),
     }
+    if passages:
+        doc["passages"] = passages
+    return {k: doc[k] for k in schema_keys(doc)}
 
 
 def dumps(doc):
@@ -267,7 +321,7 @@ def dumps(doc):
     items = list(doc.items())
     for i, (k, v) in enumerate(items):
         comma = "," if i + 1 < len(items) else ""
-        if k in ("footprint", "storeys", "doors", "lods", "variants"):
+        if k in ("footprint", "storeys", "doors", "passages", "lods", "variants"):
             out.append("  %s: [" % flat(k))
             out += ["    %s%s" % (flat(e), "," if j + 1 < len(v) else "")
                     for j, e in enumerate(v)]
@@ -332,11 +386,12 @@ def check(doc, export_dir):
     simple footprint inside the bounds, exactly one main door and that one an
     entrance, and every door of a DOOR_KINDS kind, on a footprint edge
     (within DOOR_TOL) or inside the outline, facing out along a unit
-    horizontal normal.
+    horizontal normal. Passages, when present, are checked by _passages().
     """
     problems = []
-    if tuple(doc) != KEYS:
-        problems.append("keys are %s, not the schema's %s" % (list(doc), list(KEYS)))
+    if tuple(doc) != schema_keys(doc):
+        problems.append("keys are %s, not the schema's %s"
+                        % (list(doc), list(schema_keys(doc))))
         return problems
     if doc["schema"] != SCHEMA or doc["version"] != VERSION:
         problems.append("schema %r version %r" % (doc["schema"], doc["version"]))
@@ -456,6 +511,70 @@ def check(doc, export_dir):
                             % (d["id"], d["kind"]))
         if not (d["width_m"] > 0 and d["height_m"] > 0 and d["position"][1] >= 0):
             problems.append("door %r: size or threshold height is not positive" % d["id"])
+    if "passages" in doc:
+        problems += _passages(doc["passages"], lo, hi)
+    return problems
+
+
+def _number(v):
+    return isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
+
+
+def _passages(passages, lo, hi):
+    """Problems with the optional passages: a non-empty list of PASSAGE_KEYS
+    records with unique non-empty ids, each mouth on the ground (y within
+    1 mm of 0) and on or within the LOD0 plan bounds, a unit horizontal
+    forward, positive sizes, a boolean through, and the lane's far end,
+    position + forward * length, on or within the bounds as well."""
+    if not isinstance(passages, list) or not passages:
+        return ["passages must be a non-empty list, or left out"]
+    problems = []
+    ids = [p.get("id") if isinstance(p, dict) else None for p in passages]
+    if len(set(map(repr, ids))) != len(ids):
+        problems.append("passage ids repeat: %s" % ids)
+
+    def within(x, z):
+        return (lo[0] - PASSAGE_TOL <= x <= hi[0] + PASSAGE_TOL
+                and lo[2] - PASSAGE_TOL <= z <= hi[2] + PASSAGE_TOL)
+
+    for p in passages:
+        if not isinstance(p, dict) or tuple(p) != PASSAGE_KEYS:
+            problems.append("passage %r: keys %s, not %s"
+                            % (p.get("id") if isinstance(p, dict) else p,
+                               list(p) if isinstance(p, dict) else type(p).__name__,
+                               list(PASSAGE_KEYS)))
+            continue
+        pid = p["id"]
+        if not isinstance(pid, str) or not pid:
+            problems.append("passage id %r is not a non-empty string" % (pid,))
+        pos, fwd = p["position"], p["forward"]
+        if not (isinstance(pos, list) and len(pos) == 3 and all(map(_number, pos))):
+            problems.append("passage %r: position %r is not [x, y, z]" % (pid, pos))
+            continue
+        if not (isinstance(fwd, list) and len(fwd) == 3 and all(map(_number, fwd))):
+            problems.append("passage %r: forward %r is not [x, y, z]" % (pid, fwd))
+            continue
+        if abs(pos[1]) > 1e-3:
+            problems.append("passage %r: position y is %s, not 0" % (pid, pos[1]))
+        if fwd[1] != 0 or abs(math.hypot(fwd[0], fwd[2]) - 1.0) > 1e-3:
+            problems.append("passage %r: forward %s is not a unit horizontal vector"
+                            % (pid, fwd))
+        sizes = [p[k] for k in ("width_m", "length_m", "clear_height_m")]
+        if not all(_number(v) and v > 0 for v in sizes):
+            problems.append("passage %r: width, length and clear height %s must "
+                            "be positive numbers" % (pid, sizes))
+            continue
+        if not isinstance(p["through"], bool):
+            problems.append("passage %r: through %r is not a boolean"
+                            % (pid, p["through"]))
+        if not within(pos[0], pos[2]):
+            problems.append("passage %r: the mouth %s leaves the LOD0 plan bounds"
+                            % (pid, pos))
+        end = (pos[0] + fwd[0] * p["length_m"], pos[2] + fwd[2] * p["length_m"])
+        if not within(*end):
+            problems.append("passage %r: the %s [%.4f, %.4f] leaves the LOD0 plan "
+                            "bounds" % (pid, "far mouth" if p["through"] else "end",
+                                        end[0], end[1]))
     return problems
 
 

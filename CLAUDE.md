@@ -230,7 +230,7 @@ and its `facts()` and hands the rest to one `asset_build.Asset`.
 | `atlas.py` | Rasterises every atlas: a supersampled `Canvas` with id, shade, AO and height channels, rect, bevel and shape primitives (stroke, disc, rounded rect), and `pad()`; periodic `noise()`; `cavity()`; and resolvers for albedo, ORM, normal map and emission (Texture Requirements). |
 | `weathering.py` | Weathering as per-sample fields (dirt, algae, rust, faded paint, rain runs) that the canvas carries through `pad()` and `atlas.albedo()`/`orm()` resolve per variant, with helpers for a plinth, splash-back, a sheltered eave, runs under a drip, a roof band, a window and a door. Each atlas's `weather()` places them. |
 | `asset_build.py` | The shared half of every `build.py`: `check_toolchain()`, the catalog preview constants, `open_stack()` (a chimney or stack open at the top round a sooted flue), `union()` (the exact boolean, which triangulates any keyhole face it returns round a hole before the build's weld can fold it), and an `Asset` with `material()`, `build_all()`, `export_all()`, `render_preview()`, `render_variants()`, `write_facts()` and `main()`. Runs inside Blender only. |
-| `model_facts.py` | The facts sidecar `export/<asset_name>.model.json`: its schema, the build-frame to glTF conversion, `wall_door()` and `roof_clear_width()` for a `build.py`'s `facts()`, `compose()`/`write()`, and `check()`, which `validate_asset.py` runs on the file. Pure Python. |
+| `model_facts.py` | The facts sidecar `export/<asset_name>.model.json`: its schema, the build-frame to glTF conversion, `wall_door()`, `lane_passage()` and `roof_clear_width()` for a `build.py`'s `facts()`, `compose()`/`write()`, and `check()`, which `validate_asset.py` runs on the file. Pure Python. |
 | `glazing.py` | Paints glass as the room behind it: `rooms()` on the finished albedo by day, `night_rooms()` on the emission mask by night. Called by texture generators. |
 | `downpipes.py` | Downpipes as swept, mitred closed solids for `build.py` to union: a `Pipe` placed on a wall, swan-neck and shoe, UVs on the atlas's painted gutter (`PIPE_STRIP`), per-tier `MODES`, and `problems()` for `check_layout()`. Runs inside Blender only. |
 | `roof_safety.py` | Roof safety equipment as closed solids for `build.py` to union: the wall ladder, the roof ladder and the walkway, UVs on the painted gutter (`PIPE_STRIP`) or a fixed patch, per-tier `MODES`, and `problems()` for `check_layout()`. Runs inside Blender only. |
@@ -373,6 +373,9 @@ thumbnail, so the index is browsable without opening asset folders.
     `main` door, an entrance the `build.py` tags), the hero status, and the name,
     triangle count and SHA-256 of every exported file, with the commit and
     Blender version it was written from.
+  - Optionally, every drivable lane through the building: one mouth's centre
+    on the wall plane, the horizontal direction into the building, width,
+    length, clear height, and whether it is open at the far end.
   - Geometry and files only: no zones, lots, capacities, anchors or other
     consumer terms.
   - A full rebuild rewrites it. `blender --background --python build.py --
@@ -800,7 +803,8 @@ It checks required exports, GLB structure, image references, material count and
 transparency, triangle counts against the budgets, welded topology, pivot and
 bounds, PNG size and format, `notes.md` section order, the facts sidecar
 (schema, hashes, tier counts and bounds, door kinds, one `main` entrance,
-doors on the footprint), and a sampled hidden-surface test. For buildings with an emission PNG it also checks the
+doors on the footprint, passages within the bounds), and a sampled
+hidden-surface test. For buildings with an emission PNG it also checks the
 emission binding, its UV attribute and default-off factor, and measures the
 albedo under the mask against the glazing band. A `PASS` covers only its
 printed check.

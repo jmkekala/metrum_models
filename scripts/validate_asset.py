@@ -536,9 +536,10 @@ def check_facts(results, asset, adir, hero):
 
     Decides only what a file can: the schema, the hashes, the tiers' triangle
     counts and bounds, one main door and that an entrance, each door's kind
-    one of DOOR_KINDS, doors on the footprint. Whether a door, its kind or a
-    storey is what the building has stays with the build.py's facts() and its
-    reviewer.
+    one of DOOR_KINDS, doors on the footprint, and any passages well formed
+    with their mouths and far ends inside the bounds. Whether a door, its
+    kind, a passage or a storey is what the building has stays with the
+    build.py's facts() and its reviewer.
     """
     path = model_facts.sidecar_path(adir, asset)
     problems = model_facts.check_file(path)
@@ -553,18 +554,24 @@ def check_facts(results, asset, adir, hero):
     for problem in problems:
         results.append(("FAIL", "facts", problem))
     if not problems:
-        results.append(("PASS", "facts", "%s: schema, hashes, tiers, footprint "
-                                         "and %d door%s consistent"
-                        % (os.path.basename(path), len(doc["doors"]),
-                           "" if len(doc["doors"]) == 1 else "s")))
+        def count(n, what):
+            return "%d %s%s" % (n, what, "" if n == 1 else "s")
+        parts = ["schema", "hashes", "tiers", "footprint",
+                 count(len(doc["doors"]), "door")]
+        if "passages" in doc:
+            parts.append(count(len(doc["passages"]), "passage"))
+        results.append(("PASS", "facts", "%s: %s and %s consistent"
+                        % (os.path.basename(path), ", ".join(parts[:-1]),
+                           parts[-1])))
         if doc["source"]["dirty"]:
             results.append(("WARN", "facts", "source.dirty is true: rewrite the "
                                              "sidecar from a committed tree "
                                              "(build.py -- facts)"))
         results.append(("MANUAL", "facts", "doors and their kinds, the main "
-                                           "door, footprint, storeys and "
+                                           "door, %sfootprint, storeys and "
                                            "dwellings describe the building as "
-                                           "built"))
+                                           "built"
+                        % ("passages, " if "passages" in doc else "")))
 
 
 def validate(adir, kind="building", hero=False):

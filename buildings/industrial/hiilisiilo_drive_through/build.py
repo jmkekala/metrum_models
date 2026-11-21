@@ -809,7 +809,14 @@ def facts():
     lane and the intake house, inside walls 0.30 and 0.25 m thick. The lane
     is open and the bunker and screen house above it are plant, so neither
     counts; the west leg is a solid concrete pier. The lane's mouths have no
-    door leaf and are not doors."""
+    door leaf and are not doors.
+
+    The lane is the one passage, stated from the front mouth trucks enter
+    by: its centre on the front wall's plane, running +Y to the rear mouth
+    2 * HY on, XL1 - XL0 between its side walls, open at the far end. Its
+    clear height is the hoppers' mouths at Z_HOP, the lowest geometry over
+    the lane (check_layout() keeps them clear of its walls and mouths), or
+    the ceiling at Z_DECK on a tier without them."""
     walls = {spec["name"]: spec for spec in WALLS + INTAKE_WALLS}
 
     def door(door_id, kind, wall, main=False):
@@ -831,6 +838,9 @@ def facts():
         "storeys": [(0.0, control + intake)],
         "doors": [door("control", "entrance", "front", main=True),
                   door("intake", "vehicle", "int_front")],
+        "passages": [model_facts.lane_passage(
+            "truck_lane", (L.LANE_C, -HY), (0.0, 1.0), XL1 - XL0, 2 * HY,
+            min(L.Z_HOP, Z_DECK) if keeps_hoppers(0) else Z_DECK, through=True)],
     }
 
 

@@ -164,6 +164,8 @@ with the lane as a tunnel through it.
 - it is 5.20 m clear to its ceiling, and 4.60 m under the hoppers' mouths;
 - trucks enter from the front (−Y) and leave at the rear.
 
+The facts sidecar states it as its one passage (Export).
+
 ### Hoppers
 
 Three steel hoppers hang on the lane's centre line, at y −2.5, 0 and 2.5.
@@ -557,6 +559,16 @@ culling is on, and the material is single-sided and opaque. The preview is
     the sidecar).
 
   The lane's mouths are not doors.
+- **passages:** one, `truck_lane`, stated from the front mouth trucks
+  enter by:
+  - position [−5.925, 0, 4.05]: the lane's centre line (build x −1.90) on
+    the front wall's plane (build y −4.0), not the roof overhang's edge at
+    4.35;
+  - forward [0, 0, −1], into the building towards the rear;
+  - width 5.00 m between the side walls, length 8.00 m from the front
+    mouth to the rear one at z −3.95, through (open at the rear);
+  - clear height 4.60 m, the hoppers' mouths (`Z_HOP`); the ceiling is
+    at 5.20 m.
 
 ## Review status
 
@@ -585,7 +597,11 @@ Checked here, in Blender:
 - **Sidecar against `LOD0`:** the bounds match the mesh's; every footprint
   corner on a wall is a ground vertex (the strip's four corners under the
   gallery are not, by design); both doors sit on their walls' outer planes,
-  facing out.
+  facing out. The passage was measured on the exported `LOD0`: rays across
+  the lane meet its walls at x −8.425 and −3.425 at every height and
+  depth below the hoppers, rays along it meet the wall planes at z 4.05 and
+  −3.95, and the lowest geometry clipped to the lane's plan is 4.600 m,
+  the hoppers' mouths.
 - **LOD pairs:** around 35, 70 and 120 m, under two sun directions.
 - **Filtering:** mip4 stress renders at 120 m.
 - **Variants:** day and night for both (`variants.png`).
