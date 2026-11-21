@@ -36,3 +36,9 @@ Notes.md & Catalog Template section for what belongs in each field.
 | <img src="props/boundary/tiilimuuri_gate_left/preview.png" width="240"> | [`tiilimuuri_gate_left`](props/boundary/tiilimuuri_gate_left/) | boundary | 3 (`red_brick`, `yellow_brick`, `brown_brick`; unlit, no glazing) | Brick perimeter wall, truck gate (−X side): a 0.50 m brick gate pier to 2.60 m and a 3.0 × 2.0 m framed sheet-steel leaf with a no-entry plate, swung fully back along the yard face on its hinge post; nothing enters the opening. 58 / 44 / 24 / 24 tris. |
 | <img src="props/boundary/tiilimuuri_gate_right/preview.png" width="240"> | [`tiilimuuri_gate_right`](props/boundary/tiilimuuri_gate_right/) | boundary | 3 (`red_brick`, `yellow_brick`, `brown_brick`; unlit, no glazing) | Brick perimeter wall, truck gate (+X side): `tiilimuuri_gate_left` mirrored. 58 / 44 / 24 / 24 tris. |
 | <img src="props/street_furniture/puistopenkki_slatted/preview.png" width="240"> | [`puistopenkki_slatted`](props/street_furniture/puistopenkki_slatted/) | street_furniture | 2 (`green_painted`, `brown_oiled`; unlit, no glazing) | Nordic municipal park bench, 1.80 × 0.60 m, seat at 0.45 m, back to 0.82 m: two dark cast end frames carrying four seat slats and three back slats with real gaps, painted green or oiled timber, carriage bolts, moderate wear. 164 / 80 tris. |
+
+## Vehicles
+
+| Preview | Asset | Class | Variants | Description |
+| --- | --- | --- | --- | --- |
+| <img src="vehicles/truck/rigid_box_18t/preview.png" width="240"> | [`rigid_box_18t`](vehicles/truck/rigid_box_18t/) | truck | 2 (`plain`, `haulier`; [day/night](vehicles/truck/rigid_box_18t/variants.png)) | Generic European two-axle 18 t cab-over box truck, 7.90 × 2.53 × 3.70 m: rounded day cab with raked screen, visor, grille and step wells, roof deflector, aluminium-framed box with roller door, chassis, tank and side guards under it, twin rear wheels; 27 lamp lenses incl. truck marker lamps. 4062 / 1388 / 348 / 60 tris. |
