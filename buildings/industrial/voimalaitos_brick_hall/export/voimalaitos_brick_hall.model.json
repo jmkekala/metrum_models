@@ -3,7 +3,7 @@
   "version": 1,
   "name": "voimalaitos_brick_hall",
   "path": "buildings/industrial/voimalaitos_brick_hall",
-  "source": {"commit": "d14e28e7413378c5deb27115480b6164b899e83a", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "b5660bbf01c0e1b2f89ed419a69dfab1dd106c40", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-16.05, 0.0, -9.625], "max": [16.05, 24.75, 9.625]},
   "footprint": [
@@ -26,9 +26,9 @@
     {"id": "service", "kind": "service", "position": [0.0, 0.0, -8.125], "facing": [0.0, 0.0, -1.0], "width_m": 1.0, "height_m": 2.1, "main": false}
   ],
   "lods": [
-    {"file": "voimalaitos_brick_hall_lod0.glb", "triangles": 4130, "sha256": "ba0a83fee6150eae79ab84e1ec0e375105c724161401772ab8a5a902ac436655"},
-    {"file": "voimalaitos_brick_hall_lod1.glb", "triangles": 3292, "sha256": "d4a720547fe438f27c525ddf50f16ff2a397f7c9e25856e87aff2b344def6328"},
-    {"file": "voimalaitos_brick_hall_lod2.glb", "triangles": 1430, "sha256": "36a6237061efdb3773cdf26b8b527bf370d99301c110a3e65b641b0c831e83dc"},
+    {"file": "voimalaitos_brick_hall_lod0.glb", "triangles": 4138, "sha256": "80706f793b04ee877fe4fa6f75aef77faf80f7017d30a30894a330518722f88c"},
+    {"file": "voimalaitos_brick_hall_lod1.glb", "triangles": 3300, "sha256": "e9ae6e6560166b9b2c8bb9ea54b20f3e6a7448c55ea5d3ebc334eadc79b5ddc5"},
+    {"file": "voimalaitos_brick_hall_lod2.glb", "triangles": 1452, "sha256": "8c6009c7b6cab4b487652269b32ae5feccd10ae3813ac42ea65ec1fd960c673b"},
     {"file": "voimalaitos_brick_hall_lod3.glb", "triangles": 296, "sha256": "ef337b1e109ec4c6fb4fae2b85717e20e371bdb08d2593048777761a67c63eac"}
   ],
   "textures": {
@@ -42,6 +42,6 @@
     {"id": "brown_brick", "albedo": "voimalaitos_brick_hall_albedo_brown_brick.png", "sha256": "06be32440c3ad9a89e5eb9ab0b777bbbe5d5eaa1bac5093bfb105fb3ae0ef909"}
   ],
   "default_variant": "red_brick",
-  "preview": {"file": "../preview.png", "sha256": "8b58451c4cbda378e2b4868061a10477277fa2af21c14147de2ce2c2c345fe87"},
+  "preview": {"file": "../preview.png", "sha256": "dc3a7a4293d214f381fd8bcbddb43e5b35d45340b64005f0002c6a18e50ecab2"},
   "hero": false
 }

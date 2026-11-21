@@ -34,7 +34,8 @@ directly: each wall is a rectangle less its openings and panels, cut into
 of cells; every face is then given every vertex that lies on its edges
 (tjunctions()), so neighbours meet on shared vertices. Recessed openings
 add their concrete reveals and the closing plane, the conveyor inlet its
-flush flashing frame, steel reveals and blanking panel. On LOD0-LOD1 the
+steel frame standing 0.05 m proud on the copings' plane (the face the coal
+reception's gallery butts against), steel reveals and blanking panel. On LOD0-LOD1 the
 shell also carries both roofs' parapets and sunk decks, so it closes with
 its floor alone; on LOD2-LOD3 two flat lids close it. The copings, the
 bunker bay (its windows cut to LOD1), the stacks (with their rings), the
@@ -518,27 +519,37 @@ def item_polys(fr, item, rect, mode, cuts=()):
 
 
 def inlet_polys(fr, rect, mode):
-    """The closed conveyor inlet, *rect* its flashing frame's outline. While
-    openings are cut (LOD0/LOD1): the frame flush on the wall round the
-    opening, the opening's steel reveals INLET_DEPTH deep and the blanking
-    panel closing it, frame and panel sampling the inlet's region where
-    they stand on the wall; flush (LOD2), the frame's rectangle with the
-    panel painted in it. Nothing stands proud of the wall's face, which is
-    the plane the coal reception's gallery butts against."""
+    """The closed conveyor inlet, *rect* its flashing frame's outline. The
+    frame is a steel ring INLET_FRAME wide standing INLET_PROUD off the
+    brick, part of the shell: its face, flat, on the copings' outer plane
+    (the hall's bounds), which the coal reception's gallery's end butts
+    against, and its four outer returns down to the wall. While openings
+    are cut (LOD0/LOD1) the opening's steel reveals run from the frame's
+    face INLET_DEPTH behind the brick to the blanking panel closing it;
+    flush (LOD2), the reveals stop at the brick and the panel lies in the
+    wall's plane. Frame face and panel sample the inlet's region where they
+    stand on the wall, the returns and the reveals the galvanised lining."""
     s0, s1, z0, z1 = rect
     fn = uv_region(fr, L.INLET, s0, z0, L.IPPM)
-    outer = [fr.P(s0, z0), fr.P(s1, z0), fr.P(s1, z1), fr.P(s0, z1)]
-    if mode != "cut":
-        return [Poly([outer], fn)]
-    f, d = L.INLET_FRAME, -L.INLET_DEPTH
+    f, p = L.INLET_FRAME, L.INLET_PROUD
+    d = -L.INLET_DEPTH if mode == "cut" else 0.0
     a0, a1, b0, b1 = s0 + f, s1 - f, z0 + f, z1 - f
     lining = uv_patch("lining")
     return [
-        Poly([outer, [fr.P(a0, b0), fr.P(a0, b1), fr.P(a1, b1), fr.P(a1, b0)]], fn),
-        Poly([[fr.P(a0, b0), fr.P(a0, b0, d), fr.P(a1, b0, d), fr.P(a1, b0)]], lining),
-        Poly([[fr.P(a0, b1), fr.P(a1, b1), fr.P(a1, b1, d), fr.P(a0, b1, d)]], lining),
-        Poly([[fr.P(a0, b0), fr.P(a0, b1), fr.P(a0, b1, d), fr.P(a0, b0, d)]], lining),
-        Poly([[fr.P(a1, b0), fr.P(a1, b0, d), fr.P(a1, b1, d), fr.P(a1, b1)]], lining),
+        # the frame's face, round the opening
+        Poly([[fr.P(s0, z0, p), fr.P(s1, z0, p), fr.P(s1, z1, p), fr.P(s0, z1, p)],
+              [fr.P(a0, b0, p), fr.P(a0, b1, p), fr.P(a1, b1, p), fr.P(a1, b0, p)]], fn),
+        # its outer returns, down to the brick
+        Poly([[fr.P(s0, z0), fr.P(s0, z0, p), fr.P(s1, z0, p), fr.P(s1, z0)]], lining),
+        Poly([[fr.P(s0, z1), fr.P(s1, z1), fr.P(s1, z1, p), fr.P(s0, z1, p)]], lining),
+        Poly([[fr.P(s0, z0), fr.P(s0, z1), fr.P(s0, z1, p), fr.P(s0, z0, p)]], lining),
+        Poly([[fr.P(s1, z0), fr.P(s1, z0, p), fr.P(s1, z1, p), fr.P(s1, z1)]], lining),
+        # the opening's reveals, from the frame's face to the panel
+        Poly([[fr.P(a0, b0, p), fr.P(a0, b0, d), fr.P(a1, b0, d), fr.P(a1, b0, p)]], lining),
+        Poly([[fr.P(a0, b1, p), fr.P(a1, b1, p), fr.P(a1, b1, d), fr.P(a0, b1, d)]], lining),
+        Poly([[fr.P(a0, b0, p), fr.P(a0, b1, p), fr.P(a0, b1, d), fr.P(a0, b0, d)]], lining),
+        Poly([[fr.P(a1, b0, p), fr.P(a1, b0, d), fr.P(a1, b1, d), fr.P(a1, b1, p)]], lining),
+        # the blanking panel
         Poly([[fr.P(a0, b0, d), fr.P(a1, b0, d), fr.P(a1, b1, d), fr.P(a0, b1, d)]], fn),
     ]
 
@@ -1088,8 +1099,9 @@ def check_layout():
     if L.wall_s("step", L.BUNKER[2]) < c1 + 0.8:
         bad.append("the upper ladder lands against the bunker bay")
     # the conveyor inlet: the coal reception's gallery's section at its
-    # height, its frame wide enough for the gallery's 0.05 m collar, its
-    # recess inside the wall, and the dusted panel wrapping its foot
+    # height, its frame wide enough for the gallery's 0.05 m collar and its
+    # face on the copings' outer plane, its recess inside the wall, and the
+    # dusted panel wrapping its foot
     (inlet,) = [L.item_rect("bh_west", it) for it in L.ITEMS["bh_west"] if it[0] == "inlet"]
     (mouth,) = [L.item_rect("bh_west", it) for it in L.ITEMS["bh_west"] if it[0] == "mouth"]
     zc = 13.0 + 12.0 * math.tan(math.radians(20.0))
@@ -1099,6 +1111,8 @@ def check_layout():
         bad.append("the inlet is not the gallery's section at its height")
     if L.INLET_FRAME < 0.05 + 0.05:
         bad.append("the inlet's frame is too narrow for the gallery's collar")
+    if abs(L.INLET_PROUD - L.CO) > EPS:
+        bad.append("the inlet's frame does not stand on the copings' outer plane")
     if not 0.10 <= L.INLET_DEPTH <= 0.15 or L.INLET_DEPTH >= L.PIN:
         bad.append("the inlet's recess is not a shallow one inside the wall")
     bx = L.BUNKER[0] + BUNKER_STEP - L.BH[0]
@@ -1160,8 +1174,8 @@ def facts():
     opens onto level, inside the outer wall faces. The bunker bay on the
     boiler house's deck holds coal, not an occupied floor, so it is no
     storey. Nothing stands over the ground outside the walls but the
-    copings' oversail, the canopy, the flue stub and the lower ladder, so
-    there is no passage."""
+    copings' oversail, the conveyor inlet's frame, the canopy, the flue
+    stub and the lower ladder, so there is no passage."""
     def door(door_id, kind, wall, item, main=False):
         p0, p1 = L.WALLS[wall][:2]
         it, = [i for i in L.ITEMS[wall] if i[0] == item]

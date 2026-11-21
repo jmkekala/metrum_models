@@ -193,13 +193,16 @@ LETTERS_Z = 9.625       # the lettering band's foot, under the hall's coping
 # INLET_W wide and INLET_H tall, centred at plan y INLET_Y and at
 # INLET_ZC = 13.0 + 12.0 tan 20 deg (the reception gallery's centre line
 # where it reaches the wall), recessed INLET_DEPTH to a dark steel blanking
-# panel; round it a galvanised flashing frame INLET_FRAME wide, flush on the
-# brick, on which the gallery's 0.05 m collar lands.
+# panel; round it a galvanised steel frame INLET_FRAME wide standing
+# INLET_PROUD off the brick, its flat face on the copings' outer plane (the
+# hall's bounds): the gallery's end butts against it there, its 0.05 m
+# collar landing on the frame.
 INLET_Y = 4.5
 INLET_W, INLET_H = 2.6, 2.8
 INLET_ZC = 13.0 + 12.0 * math.tan(math.radians(20.0))     # 17.3676
 INLET_FRAME = 0.15
 INLET_DEPTH = 0.12
+INLET_PROUD = CO                # the frame's face on the copings' outer plane
 INLET_Z0 = INLET_ZC - INLET_H / 2.0 - INLET_FRAME         # the frame's foot
 SIZES["inlet"] = (INLET_W + 2 * INLET_FRAME, INLET_H + 2 * INLET_FRAME)
 INLET_COPE_CLEAR = 0.15         # the frame's head, at least this under the coping
@@ -999,7 +1002,8 @@ def paint_mouth(c):
 # ----------------------------------------------------------------- inlet
 def paint_inlet(c, x0, y0, ppm, pad=PAD):
     """The conveyor inlet, closed, its frame's corner at pixel (x0, y0):
-    a galvanised flashing frame INLET_FRAME wide, flush on the brick, its
+    a galvanised steel frame INLET_FRAME wide, standing INLET_PROUD off the
+    brick (build.py models it; its face is this region's ring), its
     outer edge a drip and its inner edge returning into the opening, a bolt
     every 0.3 m; inside it the dark steel blanking panel that closes the
     opening, three bolted plates on two joints with two upright

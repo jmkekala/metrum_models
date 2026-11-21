@@ -37,8 +37,8 @@ The plant is five separate pieces on one lot (this hall, the chimney stack,
 the coal reception, the office and control building and the transformer
 yard). The hall carries **no conveyor gallery**: the coal reception carries
 the whole gallery and ends it against this hall's west wall, at a **closed
-conveyor inlet** in a flush steel frame, which reads as complete when the
-hall stands alone or beside anything else. Nothing joins the pieces: no
+conveyor inlet** in a steel frame standing 0.05 m proud, which reads as
+complete when the hall stands alone or beside anything else. Nothing joins the pieces: no
 ground, base, gallery, pipe bridge or cable reaches out of this asset. The
 sides facing the other pieces are designed for them (Construction, *Sides
 facing the other pieces*).
@@ -89,20 +89,25 @@ change.
 **In the glTF frame** (+Y up, +Z front, origin at the pivot):
 
 - **Bounds:** [-16.05, 0, -9.625] to [16.05, 24.75, 9.625].
-- **The west (coal) wall's face** is the plane x = -16.0; the coping's outer
-  face x = -16.05 is the furthest west anything reaches, at 19.125–19.5 m.
+- **The west (coal) wall's face** is the plane x = -16.0. The furthest
+  west anything reaches is x = -16.05, the bounds' face: the coping's outer
+  face at 19.125–19.5 m and the conveyor inlet's frame face at
+  15.8176–18.9176 m (y, glTF), the plane the coal reception's gallery
+  butts against.
 
 Standing outside the footprint polygon but inside the bounds:
 
 - the copings (0.05 m all round, from 11.25 or 19.125 m up);
+- the conveyor inlet's steel frame (0.05 m, at 15.8176–18.9176 m);
 - the entrance canopy (1.25 m, at 3.25–3.5 m);
 - the flue stub (1.0 m, at 12.75–14.75 m);
 - the lower wall ladder and its cage, up to 0.9 m off the turbine hall's
   rear wall, from the ground.
 
 Nothing stands on the ground outside the footprint: no steps, ramps, bases,
-props or pipes. Nothing projects from the west wall below its coping: the
-conveyor inlet is flush (Construction, *The conveyor inlet*).
+props or pipes. Below its coping nothing projects from the west wall but
+the conveyor inlet's frame, to the coping's own plane (Construction, *The
+conveyor inlet*).
 
 ## Story height
 
@@ -303,7 +308,7 @@ faces are unchanged.
 ### The conveyor inlet
 
 The hall carries no conveyor gallery: the coal reception's gallery, rising
-at 20°, ends against the west wall's face. Where it would enter, the wall
+at 20°, ends against the west wall. Where it would enter, the wall
 has a **closed inlet** that reads as complete on its own (`inlet_polys()`,
 `facade_atlas.INLET_*`):
 
@@ -316,20 +321,38 @@ has a **closed inlet** that reads as complete on its own (`inlet_polys()`,
   blanking panel**: three bolted plates on two joints with two upright
   stiffeners, painted in the inlet's region with the head's and jambs'
   shadow.
-- **Frame:** a galvanised steel flashing 0.15 m wide all round, 2.9 × 3.1 m
-  outside (15.8176–18.9176 m), bolted every 0.3 m. It is **flush with the
-  brick**, 0 m proud (its few centimetres of relief are in the normal map),
-  so the wall's face plane x = -16.0 (glTF) is the contact plane. The
-  gallery's end (2.6 × 2.8 m, its flashing collar 0.05 m proud all round,
-  2.70 × 2.90 m outside) lands on the frame with 0.10 m of frame showing
-  round it. The frame's head is 0.21 m under the coping's foot (19.125 m),
-  and nothing passes the coping's 0.05 m oversail.
+- **Frame:** a galvanised steel frame 0.15 m wide all round, 2.9 × 3.1 m
+  outside (15.8176–18.9176 m), bolted every 0.3 m, standing **0.05 m
+  proud of the brick** (`INLET_PROUD`, equal to the copings' oversail
+  `CO`, which `check_layout()` asserts). Its face is flat (the painted
+  bolts and edge arrises are normal-map relief only).
+- **The contact plane** is the frame's face, glTF x = -16.05: the same
+  plane as the coping's outer face and the hall's bounds face. The coal
+  reception's gallery's end (2.6 × 2.8 m, its flashing collar 0.05 m
+  proud all round, 2.70 × 2.90 m outside) butts against the frame there
+  with 0.10 m of frame showing round it, so the two pieces' plan bounds
+  meet without overlapping and without a slot between gallery and wall.
+  The frame's head is 0.21 m under the coping's foot (19.125 m), and
+  nothing passes x = -16.05.
 
-`LOD0`/`LOD1` cut the recess (the frame is a wall face with a hole, then
-four reveals and the panel, 22 triangles with the wall's extra vertices).
-`LOD2` paints frame and panel flush on one quad; `LOD3` paints them on the
-west elevation. The small square window under it (11.5–12.3 m) and the
-other west windows keep their places.
+The frame is part of the shell, not a separate solid: its face (a ring
+round the opening), its four outer returns down to the brick, and the
+opening's reveals running from the frame's face to the panel, all meshed
+directly with the wall, so it needs no union. Returns and reveals sample
+the galvanised `lining` patch; face and panel the inlet's region.
+
+- `LOD0`/`LOD1`: the frame as above and the recess cut 0.12 m behind the
+  brick (0.17 m behind the frame's face), 26 shell triangles with the
+  wall's extra vertices.
+- `LOD2`: the same ring, its reveals stopping at the brick and the panel
+  in the wall's plane, so the panel is 0.05 m behind the frame's face (28
+  shell triangles). The tier had room (1,452 of 1,500).
+- `LOD3`: painted on the west elevation, flat. The frame's 0.05 m is
+  half a pixel at 120 m, and the coping already sets x = -16.05 on every
+  tier, so the bounds do not depend on it.
+
+The small square window under it (11.5–12.3 m) and the other west windows
+keep their places.
 
 ### The stub stacks
 
@@ -376,7 +399,7 @@ In the build frame (Blender), with the front toward -Y:
 | Side | Blender | glTF | What faces it | What is on the wall |
 | --- | --- | --- | --- | --- |
 | Rear of the boiler house | +Y | -Z | the chimney stack | the **flue stub**: a 2 × 2 m concrete casing projecting 1.0 m at 12.75–14.75 m in the middle, its end closed by a bolted steel blanking plate, sooted. In glTF its end face is centred at (-9.0, 13.75, -9.625). Nothing reaches beyond it. |
-| West end of the boiler house | -X | -X | the coal reception | the **closed conveyor inlet** (above), the coal reception's gallery ending against it. In glTF the wall face is x = -16.0 and the inlet's centre is (-16.0, 17.3676, -4.625): a 2.6 m (along Z) × 2.8 m opening recessed 0.12 m to a steel panel, in a flush 2.9 × 3.1 m frame. Nothing projects beyond the coping's plane, x = -16.05. Coal dust stains the brick round and under it. |
+| West end of the boiler house | -X | -X | the coal reception | the **closed conveyor inlet** (above), the coal reception's gallery ending against it. In glTF the wall face is x = -16.0 and the inlet's centre is (-16.0, 17.3676, -4.625): a 2.6 m (along Z) × 2.8 m opening recessed 0.12 m to a steel panel, in a 2.9 × 3.1 m steel frame standing 0.05 m proud. The frame's flat face is the contact plane, x = -16.05, the coping's outer plane and the hall's bounds face: the gallery's end butts against it there. Nothing projects beyond it. Coal dust stains the brick round and under it. |
 | East end of the turbine hall | +X | +X | the transformer yard | the **cable bushing panel**: flush and painted, 2.5 × 1.25 m at 6.25–7.5 m in the middle. It is a concrete panel in a steel frame with three porcelain bushings and cable glands. Otherwise blank brick between two small windows. |
 
 The office and control building faces no designed side: the front (-Y,
@@ -471,8 +494,9 @@ Every tier derives from `facade_atlas.py`:
 - the ladders' and cages' places, and the upper ladder's landing clear of
   the bay;
 - the conveyor inlet at the gallery's section and height (2.6 × 2.8 m at
-  13.0 + 12.0 tan 20°), its frame wide enough for the gallery's collar and
-  clear of the coping's foot, its recess shallow, the west windows clear of
+  13.0 + 12.0 tan 20°), its frame wide enough for the gallery's collar,
+  clear of the coping's foot and proud by the copings' oversail, its
+  recess shallow, the west windows clear of
   it, the dusted panel wrapping its foot, and the bunker bay's buried foot
   stepped back behind the recess;
 - the bay within the parapets, and the stacks and ventilators clear of each
@@ -482,9 +506,9 @@ Every tier derives from `facade_atlas.py`:
 
 | Tier | Triangles | Ceiling |
 | --- | --- | --- |
-| `LOD0` | 4130 | 12,000 |
-| `LOD1` | 3292 | 4,000 |
-| `LOD2` | 1430 | 1,500 |
+| `LOD0` | 4138 | 12,000 |
+| `LOD1` | 3300 | 4,000 |
+| `LOD2` | 1452 | 1,500 |
 | `LOD3` | 296 | 500 |
 
 Where they go, counted on the solids before the union (the kit is appended
@@ -492,7 +516,7 @@ whole, so its count is exact):
 
 | | `LOD0` | `LOD1` | `LOD2` | `LOD3` |
 | --- | --- | --- | --- | --- |
-| Shell (walls, openings, the conveyor inlet, parapets, decks) | 1630 | 1630 | 1110 | 32 |
+| Shell (walls, openings, the conveyor inlet, parapets, decks) | 1638 | 1638 | 1134 | 32 |
 | Copings | 68 | 68 | 32 | 32 |
 | Bunker bay (its windows cut to `LOD1`) | 364 | 364 | 44 | 44 |
 | Stub stacks (their rings, `stack_rings()`) | 440 | 184 | 120 | 120 |
@@ -504,8 +528,8 @@ The **roof safety kit's share of the finished tier**:
 
 | | `LOD0` | `LOD1` | `LOD2` | `LOD3` |
 | --- | --- | --- | --- | --- |
-| Kit | 1412 (34.2 %) | 830 (25.2 %) | 48 (3.4 %) | 0 |
-| The rest | 2718 | 2462 | 1382 | 296 |
+| Kit | 1412 (34.1 %) | 830 (25.2 %) | 48 (3.3 %) | 0 |
+| The rest | 2726 | 2470 | 1404 | 296 |
 
 Two ladders of 12.6 m and 9.45 m make 22 m of rail and 76 rungs, and both
 cages are required by length. As the lean kit it cuts nothing: a rung is a
@@ -521,7 +545,7 @@ triangles to spare, and thinning rungs that read at 20–35 m would show.
 
 The 20 cut bunker windows (320 triangles to `LOD1`) and the stacks' rings
 (320 at `LOD0`, 64 at `LOD1`) are what the lean kit's saving paid for.
-`LOD1` keeps 708 (18 %) of its ceiling, `LOD2` 70.
+`LOD1` keeps 700 (17.5 %) of its ceiling, `LOD2` 48.
 
 The conveyor inlet replaced the 12-triangle gallery head. Cut on
 `LOD0`/`LOD1` (frame face with a hole, four reveals, the panel) and with
@@ -529,7 +553,10 @@ the dusted panel now notched round it, the shell grew by 32 triangles; on
 `LOD2` the flush inlet and the notched panel cost 16 more than the old
 flush panel. The bunker bay's stepped west foot (*The bunker bay*) adds 8
 before the union, all buried. Net of the gallery and its joins with the
-wall, the tiers moved by +16, +16, -4 and -20.
+wall, the tiers moved by +16, +16, -4 and -20. Standing the frame 0.05 m
+proud added its four outer returns: +8 on `LOD0`/`LOD1`, and +22 on
+`LOD2`, where the flat quad became the ring with its returns, reveals and
+panel (+24 before the coplanar cleanup).
 
 ## LOD review
 
@@ -564,8 +591,9 @@ No distance overrides.
   cages' back straps as hair lines, as before the lean kit. The silhouette
   is unchanged: the bay, stacks, canopy, flue stub and coping line. So are
   the window band, the spandrels and the lettering. The conveyor inlet's
-  0.12 m recess flattens to its painted frame and panel, whose head and
-  jamb shadows are painted, so it stays a dark framed rectangle.
+  recess shallows from 0.17 m to the frame's 0.05 m (the panel in the
+  wall's plane); its head and jamb shadows are painted, so it stays a dark
+  framed rectangle.
 - **120 m.** `LOD3` replaces the walls' geometry with the 6 px/m
   elevations. The plinth, the band and its spandrels, the windows, the doors
   and the lettering are painted on single faces. At 120 m a metre is about
@@ -578,6 +606,11 @@ No distance overrides.
 
 The working renders are local and git-ignored:
 
+- `review/followups_2026_11_21/hall_inlet/`: `before/` (rendered from the
+  copy in `../before_snapshot/voimalaitos_brick_hall/`) and `after/` of
+  the inlet frame pass: the inlet from 10 m (`west`, `west_front`,
+  `west_rear`, noon and reversed light) and the west wall at 30 m, on
+  `LOD0`, `LOD1` and `LOD2`;
 - `review/conveyor_joint_2026_11_21/`: `hall_before/` (rendered from the
   copy in `before_snapshot/voimalaitos_brick_hall/`) and `hall_after/`
   (six views, the west views at 30 m at noon and with the light reversed,
@@ -617,8 +650,9 @@ The shell's floor and lids, the parapet tops inside the copings, the roof
 items' buried feet, and the flue stub's and canopy's backs are all removed
 by the union. There are no buried partitions or duplicate surfaces.
 Recessed glass and doors, and the conveyor inlet's reveals and blanking
-panel, are exterior surfaces. The inlet is a 0.12 m recess closed by its
-panel, so the wall stays closed and no interior shows.
+panel, are exterior surfaces, as are its frame's face and outer returns.
+The inlet is a 0.12 m recess closed by its panel, so the wall stays closed
+and no interior shows.
 
 ## Known simplifications
 
@@ -633,9 +667,9 @@ panel, so the wall stays closed and no interior shows.
   - the stacks' welded seams, guy collar and lugs, and the ladder and cage
     on one face of each (and their stiffening rings on `LOD1`, every ring
     from `LOD2`);
-  - the conveyor inlet's flashing frame (flush, its relief in the normal
-    map), its bolts, the blanking panel's plates, joints and stiffeners,
-    and the whole inlet from `LOD2`;
+  - the conveyor inlet's bolts and edge arrises (its frame stands 0.05 m
+    proud as geometry), the blanking panel's plates, joints and
+    stiffeners, and the whole inlet on `LOD3`;
   - the lettering;
   - the stacks' flanges.
 - **Painted on the roofs:** the felt's laps and mineral grain, the parapet
@@ -768,7 +802,7 @@ shade of that variant's window steel (`VARIANTS["yellow_brick"]["letter"]`).
 Texel density is 64 px/m everywhere, with these exceptions:
 
 - the roof decks, at 8 px/m: felt seen only from above;
-- the conveyor inlet, at 40 px/m: a flashing frame (6 px wide) and a
+- the conveyor inlet, at 40 px/m: the frame's face (6 px wide) and a
   plain steel panel 15.8–18.9 m up, seen from 15 m or more; the only room
   the sheet had left beside the largest dusted brick panel was the
   gallery's old 128 × 136 px corner, too small for it at 48 or 64 px/m;
@@ -819,7 +853,7 @@ The normal map is derived from a painted height channel, in metres:
 | Hopper sash | 0.045 |
 | Door frames and stiles | 0.030 |
 | Sheet ribs (machinery door) | 0.006 |
-| Conveyor inlet's flashing frame | 0.020 (bolts 0.028) |
+| Conveyor inlet's frame, its edges (the frame itself is 0.05 m proud geometry) | 0.020 (bolts 0.028) |
 | Its blanking panel, below the frame | -0.020 (joints -0.025, stiffeners -0.004) |
 | Letters | 0.020 |
 | Stack flanges and rings | 0.012 |
@@ -1038,8 +1072,8 @@ The facts sidecar `export/voimalaitos_brick_hall.model.json` records:
   | Service door (`service`), turbine hall rear, 1.00 × 2.10 m | service | no |
 
 - no passages (the sidecar has no `passages` key): nothing stands over
-  the ground outside the walls but the copings' oversail, the canopy, the
-  flue stub and the lower ladder.
+  the ground outside the walls but the copings' oversail, the conveyor
+  inlet's frame, the canopy, the flue stub and the lower ladder.
 
 In the glTF frame (origin at the pivot, build (0, -0.125, 0)), as written
 and checked against the exported `LOD0`'s vertices:
@@ -1049,10 +1083,11 @@ and checked against the exported `LOD0`'s vertices:
   -8.125 to 7.875 (turbine hall);
 - the entrance at [-9.0, 0, 8.375], the machinery door at [13.5, 0, 7.875],
   both facing +Z, and the service door at [0.0, 0, -8.125], facing -Z;
-- the conveyor inlet (not a sidecar fact): the frame on the wall plane
-  x = -16.0, from y 15.8176 to 18.9176 and z -6.075 to -3.175; the panel at
-  x -15.88, the opening from y 15.9676 to 18.7676 and z -5.925 to -3.325,
-  its centre [-16.0, 17.3676, -4.625].
+- the conveyor inlet (not a sidecar fact): the frame's face on the plane
+  x = -16.05 (the bounds' face), from y 15.8176 to 18.9176 and z -6.075 to
+  -3.175; the wall at x -16.0; the panel at x -15.88, the opening from
+  y 15.9676 to 18.7676 and z -5.925 to -3.325, its centre
+  [-16.0, 17.3676, -4.625].
 
 **Preview.** `preview.png` uses the catalog's fixed camera orientation, lens,
 sun and flat grey world (`asset_build.preview_studio()`), with the distance
@@ -1115,7 +1150,7 @@ Checked here, in Blender:
 - The conveyor-inlet pass: the asset folder copied to
   `review/conveyor_joint_2026_11_21/before_snapshot/` first; before/after
   sets with identical settings and their sheets; the exported tiers
-  measured in the glTF frame (the frame flush on x = -16.0, the panel at
+  measured in the glTF frame (the frame then flush on x = -16.0, the panel at
   -15.88, the opening's centre at 17.3676 m, nothing west of the wall
   below the coping); the emission map and the glass pixel-identical to
   the previous build, and the ORM, normal and albedos changed only in the
@@ -1124,6 +1159,20 @@ Checked here, in Blender:
   at `LOD0`, `LOD2` and `LOD3`. The mip 3/4 stress renders were not re-run
   for the new `INLET` region (4 px gutters, padded by `pad()`): outstanding,
   with the polish pass's.
+
+- The inlet frame pass: the asset folder copied to
+  `review/followups_2026_11_21/before_snapshot/` first; the inlet at 10 m
+  and the west wall at 30 m before and after, with identical settings, on
+  `LOD0`–`LOD2` (the frame's returns and the deeper recess read from the
+  oblique views and under reversed light; `LOD2` now reads as a framed,
+  slightly recessed panel instead of a flat painted one; the three tiers
+  match at 30 m); the exported tiers measured in the glTF frame (the
+  frame's face on x = -16.050, from y 15.8176 to 18.9176 and z -6.075 to
+  -3.175, the panel at -15.88, the opening's centre at y 17.3676,
+  z -4.625; nothing west of x = -16.05 on any tier; every tier welded
+  manifold); the sidecar diffed against the previous one (only triangle
+  counts, hashes and source changed); the textures re-exported
+  byte-identical.
 
 Pending, outside this repository:
 
@@ -1134,8 +1183,8 @@ Pending, outside this repository:
   - runtime performance;
   - how this piece sits beside the plant's other four, above all the coal
     reception's gallery ending against the conveyor inlet: its end face
-    (2.70 × 2.90 m over the collar) on the wall plane x = -16.0, landing
-    on the 2.9 × 3.1 m frame.
+    (2.70 × 2.90 m over the collar) on the bounds' plane x = -16.05,
+    butting against the 2.9 × 3.1 m frame's face.
 
 ## Tooling versions
 
@@ -1148,6 +1197,20 @@ These are recorded as known-good markers, not requirements.
 
 ## Revision log
 
+- **2026-11-21**: Inlet frame pass, so the coal reception's gallery meets
+  the hall on its bounds' plane; `LOD0` bounds, pivot, footprint and doors
+  unchanged (the sidecar differs only in triangle counts, hashes and
+  source).
+  - Stood the conveyor inlet's 2.9 × 3.1 m steel frame 0.05 m proud of the
+    brick (`INLET_PROUD` = `CO`) as part of the shell, its flat face on
+    x = -16.05 (glTF), the copings' outer plane and the bounds' face: the
+    gallery's end butts against it there, with neither the 0.05 m bounds
+    overlap nor the 5 cm slot a flush frame left.
+  - `LOD0`/`LOD1`: the reveals run from the frame's face to the panel,
+    0.17 m. `LOD2`: the same ring, the panel in the wall's plane, in place
+    of the flat quad. `LOD3`: painted, unchanged.
+  - Textures unchanged (re-exported pixel-identical).
+  - Triangles 4130/3292/1430/296 → 4138/3300/1452/296.
 - **2026-11-21**: Conveyor inlet pass, so the hall combines with any
   neighbour.
   - Removed the coal gallery stub on every tier, its three atlas regions,
