@@ -3,7 +3,7 @@
   "version": 1,
   "name": "parturi_brick_pyramid",
   "path": "buildings/commercial/parturi_brick_pyramid",
-  "source": {"commit": "44fbec4ae74d89cb4fb63557a8ca3141c5182019", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "a317259ae86635005424218128b442057c28f15c", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-5.4531, 0.0, -4.7415], "max": [5.4531, 5.9037, 4.7415]},
   "footprint": [
