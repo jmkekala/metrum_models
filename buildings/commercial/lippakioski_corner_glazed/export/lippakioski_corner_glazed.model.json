@@ -3,7 +3,7 @@
   "version": 1,
   "name": "lippakioski_corner_glazed",
   "path": "buildings/commercial/lippakioski_corner_glazed",
-  "source": {"commit": "44fbec4ae74d89cb4fb63557a8ca3141c5182019", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "7b2394ba10c2f276c128ed1e352daca4c4e45332", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-3.375, 0.0, -2.675], "max": [3.375, 3.61, 2.675]},
   "footprint": [
