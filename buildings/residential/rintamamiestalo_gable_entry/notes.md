@@ -553,6 +553,13 @@ The rest is shared with the siblings:
 - The chimney flue is soot: a `flue` patch, the blank patch darkened to about sRGB 34 with AO
   0.35, in a row of its own above the other patches (x 750, y 866). It
   lines and floors the open flue on every tier.
+- **The chimney brick is the catalog's**, painted by `scripts/brickwork.py`'s
+  `paint()`: 0.25 m stretchers on a 0.078125 m course (16 x 5 px), recessed
+  joints, a hashed ±10 % tone per brick (seed 5; one brick id, so no darker
+  bricks). The region is top-anchored, so the courses are counted down from
+  the 0.12 m cap and the course under it is whole; the cut course lands at the
+  region's foot, inside the roof. At mip 3 the 5 px course beats against the
+  8 px footprint as faint horizontal banding, as on every catalog brick.
 
 ### Supersampled atlas, normal map and padding
 
@@ -900,6 +907,10 @@ These are recorded as a known-good marker, not a requirement.
 
 ## Revision log
 
+- **2026-11-22 — catalog brick on the chimney.** The chimney's private brick
+  loop (0.0625 m course, bevelled bricks) gave way to `scripts/brickwork.py`'s
+  `paint()` on the catalog's 0.078125 m course (Texture set). No geometry
+  changed; triangle counts unchanged.
 - **2026-09-25 — handrails.** A rail on posts down the right-hand side, going
   up, of both entrance flights, from the new shared `scripts/handrails.py`
   (Construction). Triangle counts changed from 2296 / 1732 / 762 / 470 to 2572 /

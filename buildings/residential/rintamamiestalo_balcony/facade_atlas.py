@@ -56,6 +56,7 @@ import numpy as np
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "scripts"))
 import atlas  # noqa: E402
+import brickwork  # noqa: E402
 import glazing  # noqa: E402
 import weathering  # noqa: E402
 
@@ -126,6 +127,7 @@ ITEM_ORIGIN = {
     "door_balcony": (866.0, UNI_Y0),
 }
 CHIMNEY = (663.0, UNI_Y0, 64.0, 128.0)      # 1.0 m x 2.0 m, top-anchored
+CHIMNEY_CAP = 0.12                          # the sheet cap down the stack's top, metres
 CORNER = (734.0, UNI_Y0, 8.0, 64.0)         # corner-board strip, V stretched
 PATCHES = {name: (750.0 + 14.0 * i, UNI_Y0, 8.0, 8.0) for i, name in enumerate(
     ("trim", "soffit", "reveal", "blank", "tread", "cap", "barge", "deck"))}
@@ -210,7 +212,6 @@ SILL_H = 0.035       # sill board, proud of the casing
 SASH_H = 0.012       # sash frame, proud of the glass
 SEAM_H = 0.022       # standing seams on the roof
 GUTTER_R = 0.070     # half-round gutter's radius
-BRICK_H = 0.006      # brick face proud of recessed mortar
 
 
 # ============================================================ painting
@@ -469,20 +470,23 @@ def paint_door(c, x0, x1, y0, y1, style):
 
 
 def paint_chimney(c):
+    """The stack's brick, in the catalog's module and bond (scripts/
+    brickwork.py), under a sheet cap with soot below it. The region is
+    top-anchored, so the courses are counted down from the cap: the course
+    under it is whole, and the cut course lands at the region's foot, inside
+    the roof. Its rows below that stay mortar."""
     x0, y0, w, h = CHIMNEY
-    c.paint(x0 - 2, x0 + w + 2, y0 - 2, y0 + h + 2, ID_MORTAR, 1.0, height=0.0)
-    bl, bh = m(0.25), m(0.0625)
-    for row, yy in enumerate(np.arange(y0 - 2, y0 + h + 2, bh)):
-        off = (bl / 2) * (row % 2)
-        for k, xx in enumerate(np.arange(x0 - 2 - off, x0 + w + 2, bl)):
-            tone = 0.9 + 0.2 * (atlas.hash_int(row, k, 5) % 100) / 100.0
-            bx0, bx1 = max(xx, x0 - 2), min(xx + bl - 1, x0 + w + 2)
-            c.paint(bx0, bx1, yy, yy + bh - 1, ID_BRICK, tone)
-            c.bevel(bx0, bx1, yy, yy + bh - 1, BRICK_H, 0.6)
     top = y0 + h
-    c.mul(x0 - 2, x0 + w + 2, top - m(0.55), top - m(0.12), 0.78)      # soot
-    c.paint(x0 - 2, x0 + w + 2, top - m(0.12), top + 2, ID_CAP, 1.0, height=0.020)
-    c.paint(x0 - 2, x0 + w + 2, top - m(0.12), top - m(0.12) + 1, ID_CAP, 0.8, 0.7)
+    cap = top - m(CHIMNEY_CAP)
+    c.paint(x0 - 2, x0 + w + 2, y0 - 2, y0 + h + 2, ID_MORTAR, 1.0, height=0.0)
+    course = m(brickwork.COURSE)
+    foot = cap - course * np.floor((cap - (y0 - 2)) / course)
+    # up to the cap only: the joints' AO would show through it
+    brickwork.paint(c, x0 - 2, x0 + w + 2, foot, cap, (ID_BRICK, ID_BRICK, ID_MORTAR),
+                    tone_courses=32, seed=5)
+    c.mul(x0 - 2, x0 + w + 2, top - m(0.55), cap, 0.78)               # soot
+    c.paint(x0 - 2, x0 + w + 2, cap, top + 2, ID_CAP, 1.0, height=0.020)
+    c.paint(x0 - 2, x0 + w + 2, cap, cap + 1, ID_CAP, 0.8, 0.7)
 
 
 def paint_corner(c):
@@ -559,7 +563,8 @@ def weather(c):
     cx0, cy0, cw, ch = CHIMNEY
     ctop = cy0 + ch
     brick = (ID_BRICK, ID_MORTAR)
-    w.runs(cx0 - 2, cx0 + cw + 2, cy0 - 2, ctop - m(0.12), brick, 0.22, fall=m(0.6), hi=1.6)
+    w.runs(cx0 - 2, cx0 + cw + 2, cy0 - 2, ctop - m(CHIMNEY_CAP), brick, 0.22, fall=m(0.6),
+           hi=1.6)
     w.bloom(cx0 - 2, cx0 + cw + 2, cy0 - 2, ctop - m(0.9), brick, fade=m(0.5))
     # corner boards: splashed at the foot (the strip's V starts at Z_FLASH)
     kx0, ky0, kw, kh = CORNER

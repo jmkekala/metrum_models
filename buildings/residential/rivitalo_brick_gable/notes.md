@@ -486,8 +486,12 @@ Eight unique 1024² images in total, one normal map among them.
   windows stay exactly where they are at every tier and none depends on a
   painted elevation.
 - **The siding and brick bands are one storey tall and are sampled from each
-  storey's own foot.** 3.125 m is 25 lap boards and 40 brick courses exactly,
-  and the brick band's bond and per-brick tone repeat on 2 courses and 64
+  storey's own foot.** 3.125 m is 25 lap boards and 40 brick courses exactly.
+  The brick is the catalog's module, laid by `scripts/brickwork.py`'s
+  `bond()` (0.25 m stretcher on a 0.078125 m course, 16 x 5 px); the band
+  keeps its own tone (±5.5 % per brick, seed 3, repeating every 40 courses)
+  and has no mortar id, its joints the brick darkened to 0.80. The bond
+  and per-brick tone repeat on 2 courses and 64
   bricks, both of which divide the band, so a wall hands over from the ground
   storey's run to the upper storey's at 3.4375 m without a part course and
   without a tone jump.
@@ -802,6 +806,9 @@ only sets them when a node tree is missing.
 
 ## Revision log
 
+- **2026-11-22 — shared brick bond.** The brick band is laid by
+  `scripts/brickwork.py`'s `bond()`; same module, joints and relief, only the
+  per-brick tone of alternate courses reshuffled. Triangle counts unchanged.
 - **2026-10-01 — hollow ridge vents.** Each vent is now an open stack, a rim
   round a flue sunk 0.80 m to a soot floor, and stands 0.95 m over the ridge
   instead of 0.62 m so the floor clears the roof (Construction). A `flue`

@@ -60,6 +60,7 @@ import numpy as np
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "scripts"))
 import atlas  # noqa: E402
+import brickwork  # noqa: E402
 import glazing  # noqa: E402
 import weathering  # noqa: E402
 
@@ -69,7 +70,7 @@ PPM = 64.0
 
 # --------------------------------------------------------- vertical layout
 # Metres above ground, shared by every wall so storey lines agree all round.
-COURSE = 0.078125    # brick course pitch: 5 px, 64 courses per atlas height
+COURSE = brickwork.COURSE   # brick course pitch: 5 px, 64 courses per atlas height
 LAP = 0.125          # lap siding exposure: 8 px, 25 boards per storey
 BOARD = 0.125        # vertical board-and-batten pitch: 8 px, 128 per atlas
 Z_FLOOR = 0.3125     # plinth top = ground-floor level; door thresholds
@@ -279,7 +280,7 @@ BAND_IDS = {
 # painted at PPM3, not PPM, and seen only beyond ~120 m, so they stay flat.
 LAP_BUTT = 0.018     # lap siding: thickness at a board's butt
 LAP_TOP = 0.004      # ... and at its top, under the next board's butt
-BRICK_FACE = 0.006   # brick face proud of the recessed mortar
+BRICK_FACE = brickwork.BRICK_FACE   # brick face proud of the recessed mortar
 BATTEN_H = 0.018     # battens over the board joints
 CASING_H = 0.020     # window and door casings
 SILL_H = 0.035       # sill boards
@@ -340,25 +341,24 @@ def paint_wood(c):
 
 
 def paint_brick(c):
-    """Facing brick in stretcher bond: 0.25 m bricks on a 0.078125 m course.
+    """Facing brick in the catalog's stretcher bond (scripts/brickwork.py):
+    0.25 m bricks on a 0.078125 m course.
 
     Both divide the atlas width and a storey's height exactly, so the bond
     repeats at the atlas wrap and across the storey handover rather than
     shifting by part of a brick. Per-brick tone is hashed from the brick's
     position modulo those periods, so the same is true of the colour variation.
-    The mortar is recessed: the brick faces stand BRICK_FACE proud of it.
+    The band has no mortar id: a joint is the brick's colour darkened, and
+    recessed, the brick faces standing BRICK_FACE proud of it.
     """
     y0, h = BRICK_Y0, BRICK_H
-    cp, bl = m(COURSE), m(0.25)
+    cp, bl = m(COURSE), m(brickwork.BRICK_L)
     assert ATLAS % int(bl) == 0 and int(m(Z_STOREY - Z_FLOOR)) % int(2 * cp) == 0
     c.paint(0, ATLAS, y0 - 2, y0 + h + 4, ID_BRICK, 1.0, 1.0)
     sy, sx, Y, X = c.field(0, ATLAS, y0 - 2, y0 + h + 4)
-    yy = Y - y0
-    course = np.floor(yy / cp).astype(np.int64)
-    off = np.where(course % 2 == 0, 0.0, bl / 2.0)
-    brick = np.floor((X + off) / bl).astype(np.int64)
-    shade = 1.0 + 0.11 * (atlas.hash_unit(3, course % 40, brick % 64) - 0.5)
-    joint = ((yy - course * cp) < 1.0) | (((X + off) % bl) < 1.0)
+    course, brick, bed, perp = brickwork.bond(Y, X, y0, cp, bl, int(ATLAS / bl))
+    shade = 1.0 + 0.11 * (atlas.hash_unit(3, course % 40, brick) - 0.5)
+    joint = bed | perp
     c.shade[sy, sx] = np.where(joint, 0.80, shade)
     c.ao[sy, sx] = np.where(joint, 0.80, 1.0)
     c.height[sy, sx] = np.where(joint, 0.0, BRICK_FACE)

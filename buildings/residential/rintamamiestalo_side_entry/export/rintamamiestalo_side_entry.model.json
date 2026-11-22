@@ -3,7 +3,7 @@
   "version": 1,
   "name": "rintamamiestalo_side_entry",
   "path": "buildings/residential/rintamamiestalo_side_entry",
-  "source": {"commit": "2dbe474483bc446451ecf6106283b03f45b59394", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "cc56dce95f080b05b9c3d18e20aa81b337088d27", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-5.35, 0.0, -6.22], "max": [5.35, 9.5625, 6.22]},
   "footprint": [
@@ -24,24 +24,24 @@
     {"id": "back", "kind": "service", "position": [3.9, 0.7, -4.48], "facing": [0.0, 0.0, -1.0], "width_m": 0.9, "height_m": 2.1, "main": false}
   ],
   "lods": [
-    {"file": "rintamamiestalo_side_entry_lod0.glb", "triangles": 2624, "sha256": "9a1709f322857cabe6168a7248e32597776be1972a0eb7855e667d92cd5f760a"},
-    {"file": "rintamamiestalo_side_entry_lod1.glb", "triangles": 2048, "sha256": "7000b8ac38b6a0a9efd067257bc3efd06e49a6b8b9cc4b4b96a664faedfb6ec4"},
-    {"file": "rintamamiestalo_side_entry_lod2.glb", "triangles": 686, "sha256": "ea704ef0acdfbaa984e7cef8a259cab8dfdf5e38b12567ff4d975bb21c5a6acd"},
-    {"file": "rintamamiestalo_side_entry_lod3.glb", "triangles": 352, "sha256": "714e7e1950ef914cf3c0a9540329055b141284984fc5804b1c2ab75a70136107"}
+    {"file": "rintamamiestalo_side_entry_lod0.glb", "triangles": 2624, "sha256": "0144a7b4802a3b2e62d824c8fa0f0252fa6b1d5bf886935c6cc5726e2633211a"},
+    {"file": "rintamamiestalo_side_entry_lod1.glb", "triangles": 2048, "sha256": "18c5ccb03a0793eaa1b141f43bc1443a6f966a4a5ca2e107dc7f40d7edc204e8"},
+    {"file": "rintamamiestalo_side_entry_lod2.glb", "triangles": 686, "sha256": "8ae2551299f8f10d45bc0c432a5289c3cee508c613f7fb859b47a90d18acd46d"},
+    {"file": "rintamamiestalo_side_entry_lod3.glb", "triangles": 352, "sha256": "f451c909c5d20649fdfc27b893dc3d207fee5c9a932cdc396a38042fbc6e0d12"}
   ],
   "textures": {
-    "orm": {"file": "rintamamiestalo_side_entry_orm.png", "sha256": "24096798410076e44a917c664838348a7de5c205db8266ceb0cd331211ec4bc2"},
-    "normal": {"file": "rintamamiestalo_side_entry_normal.png", "sha256": "278e6b9a5f23545b11fc3bcace37299f657c74c619e36cfd5128c68aa5935a2b"},
+    "orm": {"file": "rintamamiestalo_side_entry_orm.png", "sha256": "afd5d8dd219c7628ec4db890c254370ef56ae4833a3638b01c1540f00fa0c22e"},
+    "normal": {"file": "rintamamiestalo_side_entry_normal.png", "sha256": "c99a98507146f8e32b33d5a92ad4a27b506adbc7b48cf75ff004efd304876b54"},
     "emission": {"file": "rintamamiestalo_side_entry_emission.png", "sha256": "e9c16905eb323071ffb4dc3f61314e16ce7b6d744b693198cecf906b5eff49fb"}
   },
   "variants": [
-    {"id": "red", "albedo": "rintamamiestalo_side_entry_albedo_red.png", "sha256": "7dc9577eac3a3a5270a9ac0549977d59b78636d9399043704b3b2d44acd6d847"},
-    {"id": "yellow", "albedo": "rintamamiestalo_side_entry_albedo_yellow.png", "sha256": "169c62bb03b5d33ff618f76e798fa76311b21881fd3884dcabbdffe24635c1b8"},
-    {"id": "white", "albedo": "rintamamiestalo_side_entry_albedo_white.png", "sha256": "ab941fa25aebe3c3e70b41da505e33b3f0fbf1a4c3e0e5dc0e8266731ee02af4"},
-    {"id": "blue", "albedo": "rintamamiestalo_side_entry_albedo_blue.png", "sha256": "b6998974d05470046b8a999b60d2ac84014f01c3d90d9d996b94da974d9799ac"},
-    {"id": "green", "albedo": "rintamamiestalo_side_entry_albedo_green.png", "sha256": "6fe38ed29bd34261f67c572ca9db512299359447160fde7a548aac1bb5b69015"}
+    {"id": "red", "albedo": "rintamamiestalo_side_entry_albedo_red.png", "sha256": "c5cd862e95f9a1405b57b54a7a09beb0bb979f1a0432b81fb80c75a7ac8c4d48"},
+    {"id": "yellow", "albedo": "rintamamiestalo_side_entry_albedo_yellow.png", "sha256": "1c33417a9b81b918c85af7bfa11f3fa1790eaf7b66158f5c127ef55eaf193fd0"},
+    {"id": "white", "albedo": "rintamamiestalo_side_entry_albedo_white.png", "sha256": "ef39f276f2c0cd87f942de463680d415fafe79c80e5d53fc313b0128a549d1c9"},
+    {"id": "blue", "albedo": "rintamamiestalo_side_entry_albedo_blue.png", "sha256": "2f584861b4feb45226b1caeeb92bc09e6b4f2f619e6897ef844e08e8fcb0742f"},
+    {"id": "green", "albedo": "rintamamiestalo_side_entry_albedo_green.png", "sha256": "8668bf9e82b64e0b42cc93b0c40dac433d160bb812e06182876297ab7b3c6f61"}
   ],
   "default_variant": "red",
-  "preview": {"file": "../preview.png", "sha256": "96fe2143b03f7c011d2778f3b8fc4cec711085e015adda144213e6b4053ceeef"},
+  "preview": {"file": "../preview.png", "sha256": "c48fb09a70380924b9b924bf5d95f9644bc37111ce188554bbbdae86eb3bde26"},
   "hero": false
 }

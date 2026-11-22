@@ -3,7 +3,7 @@
   "version": 1,
   "name": "rivitalo_brick_gable",
   "path": "buildings/residential/rivitalo_brick_gable",
-  "source": {"commit": "2dbe474483bc446451ecf6106283b03f45b59394", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "8774a1c69a8fada230ec83d9d8084f650a46d256", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-15.69, 0.0, -7.72], "max": [15.69, 8.8475, 7.72]},
   "footprint": [
@@ -48,10 +48,10 @@
     {"id": "unit_4_balcony", "kind": "balcony", "position": [13.89, 3.4375, -0.88], "facing": [0.0, 0.0, -1.0], "width_m": 1.0, "height_m": 2.1, "main": false}
   ],
   "lods": [
-    {"file": "rivitalo_brick_gable_lod0.glb", "triangles": 5652, "sha256": "f8e35c9bd529e031e13a45a5bf77cc747262231210ffe7a16817e0dbaf38d7b2"},
-    {"file": "rivitalo_brick_gable_lod1.glb", "triangles": 3686, "sha256": "d9f3eeb7c27f8dd22bc2ff283337f4d0084a41180fd949c53ad17b5511e1cd36"},
-    {"file": "rivitalo_brick_gable_lod2.glb", "triangles": 1172, "sha256": "88739c2ad7157870ded449251bb66f8864ad718741c9892b1075795c532089c0"},
-    {"file": "rivitalo_brick_gable_lod3.glb", "triangles": 492, "sha256": "b8baa8dc20500277d383f84bc54dd58ea7fe052fc2744750ca9d253646fc7b7d"}
+    {"file": "rivitalo_brick_gable_lod0.glb", "triangles": 5652, "sha256": "c2f41bee357cb9e84df373feb36c6048b51f8df9fe7881d1517484b7e866c7c8"},
+    {"file": "rivitalo_brick_gable_lod1.glb", "triangles": 3686, "sha256": "32dd5881a63d6a3fd1828cb742626cfc89aa940408cb48263335ae439651a4fd"},
+    {"file": "rivitalo_brick_gable_lod2.glb", "triangles": 1172, "sha256": "a088d4cd071f663b9af4bd58a66ae35ce48ee7d68cd1dca94898053cb83b0570"},
+    {"file": "rivitalo_brick_gable_lod3.glb", "triangles": 492, "sha256": "185cf8cafe545869e1d0fa4b028231b79b0a94863da7ea2bf2bccf3f8cf2b928"}
   ],
   "textures": {
     "orm": {"file": "rivitalo_brick_gable_orm.png", "sha256": "0e4f3399f2d79dfe15ed4b0e668113f6cfbb427507decbe38c58cd96c6a25082"},
@@ -59,13 +59,13 @@
     "emission": {"file": "rivitalo_brick_gable_emission.png", "sha256": "8ff4d614dd0c4fcfc2cca4ec150340f5f0efca6a1940483e100c48f5b3a73700"}
   },
   "variants": [
-    {"id": "brown", "albedo": "rivitalo_brick_gable_albedo_brown.png", "sha256": "9de77523c21fd14ade2662fb8d4b0250c2a2ca57969bd9656f8e6644b8af9ac4"},
-    {"id": "red", "albedo": "rivitalo_brick_gable_albedo_red.png", "sha256": "b90acf842968421589b29bdbcbcde08428a74ba01c9c9725d943258ae64593f3"},
-    {"id": "ochre", "albedo": "rivitalo_brick_gable_albedo_ochre.png", "sha256": "33765dda27f1d2674b7ce343a749f90b8aa4f840648f35a93659e9943a8bfcfe"},
-    {"id": "grey", "albedo": "rivitalo_brick_gable_albedo_grey.png", "sha256": "14e693947a91ab0e5081806d57f291d996fdbf742add7a8071706f2a0afb1998"},
-    {"id": "green", "albedo": "rivitalo_brick_gable_albedo_green.png", "sha256": "c2d3de283985907b53aaf6db29521279e8f8f3824cdea140007ea3ca7e24b142"}
+    {"id": "brown", "albedo": "rivitalo_brick_gable_albedo_brown.png", "sha256": "e8342f8a03765668544c6c097ca18cf9a423d0e44193c55d3a1883b390a5da45"},
+    {"id": "red", "albedo": "rivitalo_brick_gable_albedo_red.png", "sha256": "3d6f166d7cf9903256a48304bf3edd8e322816ce4e05316ce87aa19608d4a0a5"},
+    {"id": "ochre", "albedo": "rivitalo_brick_gable_albedo_ochre.png", "sha256": "c2db604d2f790a1dad8f3d32bf76f126c2bb1883e86be6db097a1c09dab0fa1f"},
+    {"id": "grey", "albedo": "rivitalo_brick_gable_albedo_grey.png", "sha256": "b2ba97edb50ef4c5840827e449027eb3023dcf6e4ce7d0c302883e0bc739ad0a"},
+    {"id": "green", "albedo": "rivitalo_brick_gable_albedo_green.png", "sha256": "7453901f162ff1b5dece6bcca721cd8ba6cc494b7e18856479f89280e03dab24"}
   ],
   "default_variant": "brown",
-  "preview": {"file": "../preview.png", "sha256": "5f3e2cde16023a1db2939204651b9ee28d582f02c81cb96afafbfae6ea13aa51"},
+  "preview": {"file": "../preview.png", "sha256": "80381823b2c7177514f12c0612cd5be8b79a0e6334d955ff315be81415ddfb07"},
   "hero": false
 }

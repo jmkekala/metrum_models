@@ -3,7 +3,7 @@
   "version": 1,
   "name": "rintamamiestalo_porch",
   "path": "buildings/residential/rintamamiestalo_porch",
-  "source": {"commit": "2dbe474483bc446451ecf6106283b03f45b59394", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "cc56dce95f080b05b9c3d18e20aa81b337088d27", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-5.35, 0.0, -6.84], "max": [5.35, 9.5625, 6.84]},
   "footprint": [
@@ -26,24 +26,24 @@
     {"id": "back", "kind": "service", "position": [1.5, 0.7, -5.1], "facing": [0.0, 0.0, -1.0], "width_m": 0.9, "height_m": 2.1, "main": false}
   ],
   "lods": [
-    {"file": "rintamamiestalo_porch_lod0.glb", "triangles": 2642, "sha256": "9729cbe0649a29cace4df2d3f04418d3e8033130c25acabca2cf53e9340b75fb"},
-    {"file": "rintamamiestalo_porch_lod1.glb", "triangles": 2054, "sha256": "2082a0e4daf4387170fd4c25969010abfe17953b3a5094d9978f99d262dc4f6a"},
-    {"file": "rintamamiestalo_porch_lod2.glb", "triangles": 682, "sha256": "16e15d89c79c178db21eceb8937b7b98b7252288545d97af2ea12f5da18d6a66"},
-    {"file": "rintamamiestalo_porch_lod3.glb", "triangles": 342, "sha256": "ace93d726fda80fa9d4a9e8be66fd58ffd66efbaa636010254375368034c4759"}
+    {"file": "rintamamiestalo_porch_lod0.glb", "triangles": 2642, "sha256": "36378b19fbad06db9e00450fd81029a60427d97da0a892402b98cc9e7081aac2"},
+    {"file": "rintamamiestalo_porch_lod1.glb", "triangles": 2054, "sha256": "f722381972f024ae9bb81123353e37622aad9d3c22f9903d9c048726fc7e2ee2"},
+    {"file": "rintamamiestalo_porch_lod2.glb", "triangles": 682, "sha256": "abc1f4586867e096665ba09ae0851d89ec4cee7834130d874152a84753ba9926"},
+    {"file": "rintamamiestalo_porch_lod3.glb", "triangles": 342, "sha256": "43da41a09e1fe90baea3cbea352ea5723e1d7565840f387c116f7e8e75172c97"}
   ],
   "textures": {
-    "orm": {"file": "rintamamiestalo_porch_orm.png", "sha256": "24096798410076e44a917c664838348a7de5c205db8266ceb0cd331211ec4bc2"},
-    "normal": {"file": "rintamamiestalo_porch_normal.png", "sha256": "278e6b9a5f23545b11fc3bcace37299f657c74c619e36cfd5128c68aa5935a2b"},
+    "orm": {"file": "rintamamiestalo_porch_orm.png", "sha256": "afd5d8dd219c7628ec4db890c254370ef56ae4833a3638b01c1540f00fa0c22e"},
+    "normal": {"file": "rintamamiestalo_porch_normal.png", "sha256": "c99a98507146f8e32b33d5a92ad4a27b506adbc7b48cf75ff004efd304876b54"},
     "emission": {"file": "rintamamiestalo_porch_emission.png", "sha256": "e9c16905eb323071ffb4dc3f61314e16ce7b6d744b693198cecf906b5eff49fb"}
   },
   "variants": [
-    {"id": "red", "albedo": "rintamamiestalo_porch_albedo_red.png", "sha256": "7dc9577eac3a3a5270a9ac0549977d59b78636d9399043704b3b2d44acd6d847"},
-    {"id": "yellow", "albedo": "rintamamiestalo_porch_albedo_yellow.png", "sha256": "169c62bb03b5d33ff618f76e798fa76311b21881fd3884dcabbdffe24635c1b8"},
-    {"id": "white", "albedo": "rintamamiestalo_porch_albedo_white.png", "sha256": "ab941fa25aebe3c3e70b41da505e33b3f0fbf1a4c3e0e5dc0e8266731ee02af4"},
-    {"id": "blue", "albedo": "rintamamiestalo_porch_albedo_blue.png", "sha256": "b6998974d05470046b8a999b60d2ac84014f01c3d90d9d996b94da974d9799ac"},
-    {"id": "green", "albedo": "rintamamiestalo_porch_albedo_green.png", "sha256": "6fe38ed29bd34261f67c572ca9db512299359447160fde7a548aac1bb5b69015"}
+    {"id": "red", "albedo": "rintamamiestalo_porch_albedo_red.png", "sha256": "c5cd862e95f9a1405b57b54a7a09beb0bb979f1a0432b81fb80c75a7ac8c4d48"},
+    {"id": "yellow", "albedo": "rintamamiestalo_porch_albedo_yellow.png", "sha256": "1c33417a9b81b918c85af7bfa11f3fa1790eaf7b66158f5c127ef55eaf193fd0"},
+    {"id": "white", "albedo": "rintamamiestalo_porch_albedo_white.png", "sha256": "ef39f276f2c0cd87f942de463680d415fafe79c80e5d53fc313b0128a549d1c9"},
+    {"id": "blue", "albedo": "rintamamiestalo_porch_albedo_blue.png", "sha256": "2f584861b4feb45226b1caeeb92bc09e6b4f2f619e6897ef844e08e8fcb0742f"},
+    {"id": "green", "albedo": "rintamamiestalo_porch_albedo_green.png", "sha256": "8668bf9e82b64e0b42cc93b0c40dac433d160bb812e06182876297ab7b3c6f61"}
   ],
   "default_variant": "red",
-  "preview": {"file": "../preview.png", "sha256": "07432de683bf0531fbbc51b7b7c81d208bfb61433f18fcef0e6260040a4b5d84"},
+  "preview": {"file": "../preview.png", "sha256": "0f88c0ad36082d1f81b4ecb07132bbd135aa08afe20e6009e50bd91c8e0cb3aa"},
   "hero": false
 }
