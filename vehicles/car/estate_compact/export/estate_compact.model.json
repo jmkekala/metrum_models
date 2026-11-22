@@ -1,10 +1,10 @@
 {
   "schema": "metrum-model-facts",
-  "version": 2,
+  "version": 3,
   "kind": "vehicle",
   "name": "estate_compact",
   "path": "vehicles/car/estate_compact",
-  "source": {"commit": "15ef73d958bdffc3913cbd4efaecfdd9f31646b0", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "5eff59450db6f1c28f3c7e43252c70e9202d24a5", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-1.01, 0.0, -2.24], "max": [1.01, 1.468, 2.24]},
   "body": {
@@ -58,6 +58,13 @@
     {"group": "glass_rear", "id": 35, "area_m2": 0.398}
   ],
   "cargo": null,
+  "doors": [
+    {"side": "left", "row": "front", "centre": [0.895, 0.0, 0.3675], "width_m": 1.135},
+    {"side": "right", "row": "front", "centre": [-0.895, 0.0, 0.3675], "width_m": 1.135},
+    {"side": "left", "row": "rear", "centre": [0.895, 0.0, -0.58], "width_m": 0.76},
+    {"side": "right", "row": "rear", "centre": [-0.895, 0.0, -0.58], "width_m": 0.76},
+    {"side": "rear", "row": "cargo", "centre": [0.0, 0.0, -2.24], "width_m": 1.15}
+  ],
   "coupling": null,
   "interior": null,
   "lods": [
