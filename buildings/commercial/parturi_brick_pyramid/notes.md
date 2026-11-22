@@ -23,14 +23,21 @@ The public side faces `-Y`:
   centred over the two windows;
 - a square **light box** on two arms on the pier beside the lobby, standing
   out at right angles to the wall: white opal faces with PARTURI in deep blue
-  and this asset's own comb-and-scissors mark.
+  over this asset's own comb-and-scissors mark, which takes most of the face;
+- the period's small things round the door: on the pier left of the lobby a
+  box wall lamp with an opal diffuser under a lit blue house-number plate,
+  on the pier right of it a framed opening-hours board (abstract marks, no
+  legible text), a ceiling light in the lobby's soffit and a letter plate in
+  the door leaf's bottom rail.
 
 The east wall has a two-light side window and a small staff window, the rear
-the service door under a steel canopy and a high window, the west the meter
-cupboard and an air louvre. On the roof: a louvred attic vent hood on the
-front slope, a sheet-steel ventilation housing on the ridge (serviced, so the
-roof safety kit climbs to it at the back), a soil vent on the rear slope.
-Gutters on all four eaves, downpipes at two diagonal corners.
+the service door under a steel canopy with a wall lamp beside it and a high
+window, the west the meter cupboard, a small high WC window and an air
+louvre. On the roof: a louvred attic vent hood on the front slope under a
+cap plate, a sheet-steel ventilation housing on the ridge with louvred sides,
+a flashing skirt and a hipped lid (serviced, so the roof safety kit climbs to
+it at the back), a soil vent on the rear slope. Gutters on all four eaves,
+downpipes at two diagonal corners.
 
 Generic and period-correct: no shop name, no brand, no barber pole (a much
 later idiom here). Lettering is stroked from centrelines in `facade_atlas.py`;
@@ -39,8 +46,8 @@ no font file.
 ## Category and secondary use
 
 `buildings/commercial/`. No secondary use: one salon room with a staff room
-and WC behind it, which the side, staff and rear windows and the service
-door imply.
+and WC behind it, which the side, staff, rear and west windows and the
+service door imply.
 
 ## Hero/landmark status
 
@@ -55,7 +62,8 @@ wide margins.
   sets them; along Y the light box at the front (its outer edge 0.85 m off the
   wall) and the wall ladder at the back (its rails' fronts 0.633 m off the
   rear wall). Pivot offset from the wall plan's centre: (0, -0.108) m.
-- Height: **5.904 m** to the ventilation housing's lid; ridge 5.344 m.
+- Height: **5.954 m** to the ridge of the ventilation housing's hipped lid;
+  ridge 5.344 m.
 - Fits the 20 x 20 m lot with about 10 m of forecourt when set at the back.
 
 ## Story height
@@ -83,7 +91,7 @@ course line 31).
 | --- | --- | --- | --- | --- | --- |
 | front (x2) | front | 1.8 m | **0.859 m** | 2.363 m | top light over the 2.10 m transom bar; sheet sill 0.773–0.859 m |
 | side | east | 1.4 m | 0.859 m | 2.363 m | two lights below the transom bar, top light |
-| small (x2) | east, rear | 0.9 m | **1.289 m** | 2.363 m | one opening light |
+| small (x3) | east, rear, west | 0.9 m | **1.289 m** | 2.363 m | one opening light |
 
 All heads are on the entrance's head line; the transom bars on the door's
 2.10 m leaf head. The highest sill, 1.289 m, is under the 1.4 m chest-high
@@ -114,10 +122,12 @@ Closed solids unioned with Blender's exact boolean
    sections along each hip and the ridge, 0.18 m wide, 35 mm proud, each hip
    cap stopping 0.2 m short of its eave corner so nothing passes the fascia;
 4. **the ventilation housing** on the ridge, 1.0 x 0.8 m, 0.50 m over the
-   ridge, foot buried 0.45 m, with a 60 mm lid overhanging 50 mm
-   (LOD0/LOD1; a bare box from LOD2);
+   ridge, foot buried 0.45 m (`housing_mode()`; see below);
 5. **the attic vent hood** on the front slope: 0.9 m wide, its louvred front
    0.40 m tall at y = -2.6 m, its top falling 3° forward back into the slope;
+   to LOD1 four modelled louvre blades and a cap plate 55 mm thick
+   oversailing the front 60 mm and the sides 30 mm, its front edge a drip
+   (`hood_mode()`);
 6. **the sign band** (LOD0/LOD1): 9.6 x 0.56 m, 0.10 m proud of the brick,
    its back in the wall and its top in the roof slab;
 7. **the light box:** 0.70 x 0.70 x 0.15 m at x = -1.2 m, z 2.25–2.95 m,
@@ -126,7 +136,8 @@ Closed solids unioned with Blender's exact boolean
 8. **the rear canopy** (to LOD2): a 1.5 x 0.6 x 0.1 m steel tray over the
    service door;
 9. **a soil vent** (LOD0/LOD1) on the rear slope, octagonal, r 0.06 m;
-10. **downpipes** and the **roof safety kit** (below).
+10. **the small fittings** (`fitting_solids()`, below);
+11. **downpipes** and the **roof safety kit** (below).
 
 Openings: LOD0/LOD1 recess the glass and doors 0.12 m (brick reveals, sheet
 sill) with the sheet sill and the soldier course flush on the wall; the lobby
@@ -134,11 +145,50 @@ is a 0.9 m recess through LOD2; LOD2 paints the windows and the service door
 flush; LOD3 paints the lobby flush too (`item_mode()`). Ground-standing
 openings get no floor of their own; the body's floor cap closes them.
 
-Authored parameters: `facade_atlas.py`'s plan, heights, pitch, `ITEMS` and
-regions; `build.py`'s `WALLS`, the light box, band, canopy, hood, vent and
-cap constants, `DOWNPIPES`, the kit, and the per-tier switches
-(`item_mode()`, `caps_kept()`, `band_modelled()`, `arms()`,
-`canopy_kept()`, `housing_lid()`, `vent_kept()`).
+Authored parameters: `facade_atlas.py`'s plan, heights, pitch, `ITEMS`,
+the housing, louvre and fitting sizes and the regions; `build.py`'s `WALLS`,
+the light box, band, canopy, hood, vent, cap and fitting constants,
+`DOWNPIPES`, the kit, and the per-tier switches (`item_mode()`,
+`caps_kept()`, `band_modelled()`, `arms()`, `canopy_kept()`,
+`housing_mode()`, `hood_mode()`, `fittings()`, `vent_kept()`).
+
+### Ventilation housing
+
+A sheet-steel box on the ridge, built to read as a vent housing rather
+than a chimney:
+
+- **Louvred sides:** on each of the four sides, four sawtooth blades every
+  75 mm between 0.13 and 0.43 m over the ridge, inset 70 mm from the
+  corners: each a solid whose sloping face runs from the side down and out
+  35 mm to its drip 50 mm below, over a level underside in shadow. They sit
+  exactly on painted blade strips over dark slots (`louvre_face()`), so the
+  tiers that drop them show the same louvre painted, the slope in the
+  height channel.
+- **Flashing skirt:** a prism along X round the foot, 30 mm off the sides,
+  its top following both slopes 0.10 m above the sheet, in the roof's
+  lighter flashing colour.
+- **Lid:** a 60 mm drip edge oversailing the sides 80 mm, under a hipped
+  top rising 70 mm; its underside in shadow.
+- Tiers (`housing_mode()`): all of it to LOD1; at LOD2 a plain 80 mm
+  oversailing slab lid on the box, louvres painted; at LOD3 the bare box.
+
+### Small fittings
+
+Boxes let 20 mm into the brick, their faces on 128 px/m art
+(`paint_fittings()`):
+
+| Fitting | Where | Size (w x h x d) | Tiers |
+| --- | --- | --- | --- |
+| box wall lamp, opal diffuser in a brown frame | front, pier left of the lobby, s 0.55, z 1.98 | 0.18 x 0.30 x 0.13 m | LOD0–LOD2 |
+| lit house number `14`, blue enamel field | over the lamp, z 2.38 | 0.34 x 0.22 x 0.03 m | LOD0–LOD2 |
+| opening-hours board | front, pier right of the lobby, s 3.80, z 1.25 | 0.30 x 0.40 x 0.025 m | LOD0–LOD1 |
+| lobby ceiling light | the lobby soffit's centre | 0.30 x 0.30 x 0.07 m | LOD0–LOD1 |
+| box wall lamp | rear, right of the canopy, s 8.0, z 1.98 | as the front lamp | LOD0–LOD1 |
+
+The letter plate (0.30 x 0.08 m, brushed metal over a dark slit) is painted
+in the entrance leaf's bottom rail. `check_layout()` keeps each fitting on
+its pier, clear of corners, openings, the band, the light box and the
+canopy, and the front lamp over head height.
 
 ### Rainwater
 
@@ -170,28 +220,33 @@ Measured on the exported GLBs by `scripts/validate_asset.py`:
 
 | Tier | Triangles | Ceiling | Status |
 | --- | --- | --- | --- |
-| `LOD0` | 1,568 | 12,000 | far under |
-| `LOD1` | 1,228 | 4,000 | far under |
-| `LOD2` | 442 | 1,500 | under |
-| `LOD3` | 232 | 500 | under |
+| `LOD0` | 1,986 | 12,000 | far under |
+| `LOD1` | 1,646 | 4,000 | far under |
+| `LOD2` | 500 | 1,500 | under |
+| `LOD3` | 238 | 500 | under |
 
 Where they go at LOD0: the roof kit and the two bent downpipes (about 600
 together, mostly the ladders' rung holes and the pipes' bends), the body's
-cells round eleven openings with their reveals and the lobby, the roof solid
-with the five flashing caps cut into it, the housing and lid, the hood, the
+cells round twelve openings with their reveals and the lobby, the roof solid
+with the five flashing caps cut into it, the housing with its 16 louvre
+blades, skirt and hipped lid (about 330 with the hood's four blades and cap),
+the hood, the five fittings (about 90 with their cuts in the brick), the
 sign band, the light box and arms, the canopy and the vent.
 
 - `LOD0` → `LOD1` (−340): rungs halved, downpipes 4-sided.
-- `LOD1` → `LOD2` (−786): flashings, sign band, housing lid, vent and one
-  light-box arm go; windows and the service door paint flush; kit to every
-  fourth rung without brackets; downpipes straight; coplanar boolean splits
-  dissolved.
-- `LOD2` → `LOD3` (−210): the lobby paints flush, the canopy and the kit go
-  (the wall ladder's bare rails stay), downpipes 3-sided.
+- `LOD1` → `LOD2` (−1,146): flashings, sign band, louvre blades, skirt,
+  hipped lid (for a plain slab), hood cap, vent, three of the five fittings
+  and one light-box arm go; windows and the service door paint flush; kit
+  to every fourth rung without brackets; downpipes straight; coplanar
+  boolean splits dissolved.
+- `LOD2` → `LOD3` (−262): the lobby paints flush, the canopy, the housing's
+  lid, the front lamp, the house number and the kit go (the wall ladder's
+  bare rails stay), downpipes 3-sided.
 
 Between the catalog's sheds and shops (300–1,000) and its detached houses
 (about 2,600): a small box, but with a pitched roof, its safety kit and
-pipes, eleven openings and two signs, where the flat-roofed shops have no kit.
+pipes, a louvred vent housing, twelve openings, two signs and the fittings
+round its door, where the flat-roofed shops have no kit.
 
 ## LOD review
 
@@ -199,20 +254,22 @@ Authoring review with `scripts/review_asset.py`: perspective, **1920 x 1080**,
 **50° vertical FOV**, distance along the view direction to the centre of the
 visible front wall, noon sun, emission off; tiers 0–3 at **35, 70 and 120 m**,
 front and oblique; and the oblique at 35 and 120 m by night with emission on.
-Renders in `review/small_shops_2026_11_22/parturi_brick_pyramid/lod/` and
-`night/` (not committed). Intended switches: the catalog's 35 / 70 / 120 m.
+Renders in `review/small_shops_2026_11_22/parturi_brick_pyramid_polish/`
+(`after_lod/`, `after_night_lod/`; not committed). Intended switches: the
+catalog's 35 / 70 / 120 m.
 
 | Switch | Distance | Verdict |
 | --- | --- | --- |
 | `LOD0` → `LOD1` | 35 m | Indistinguishable: only rung count and pipe sides change. |
-| `LOD1` → `LOD2` | 70 m | Holds. The flashings' highlight lines go, but the change of light between slopes still draws the hips; the band's letters are painted at the same place and colour; flush windows keep frames, transom bars, blinds and dark glass. The lobby stays a recess. |
-| `LOD2` → `LOD3` | 120 m | Holds. The lobby goes flat with its screen painted on the wall; at 120 m it is a dark rectangle either way. The ladder's rails remain as two thin lines at the back. |
+| `LOD1` → `LOD2` | 70 m | Holds. The flashings' highlight lines go, but the change of light between slopes still draws the hips; the band's letters are painted at the same place and colour; flush windows keep frames, transom bars, blinds and dark glass. The housing's blades, skirt and hipped lid give way to a slab lid over the painted louvre, which still reads as striped at 70 m; the hood loses its blades and cap the same way. The opening-hours board, lobby light and rear lamp (a few pixels each) go. The lobby stays a recess. |
+| `LOD2` → `LOD3` | 120 m | Holds. The lobby goes flat with its screen painted on the wall; at 120 m it is a dark rectangle either way. The housing loses its lid (under a pixel), the front lamp and house number go. The ladder's rails remain as two thin lines at the back. |
 
 Kept on every tier: the pyramid roof and its eave line, the ridge housing and
 the front vent hood (the roofline), the light box (it also sets the front
 plan bound), the sign band's PARTURI, brick and plinth, window rhythm and
 dark glass, the downpipes. A consumer switching by screen size may show
-`LOD3` near: it still has every opening, both signs and the roof features.
+`LOD3` near: it still has every opening, both signs and the roof features,
+but no fittings and a lidless housing.
 At 35 m `LOD2` shows its flush windows as flat by their missing reveal
 shadow; acceptable for a 70 m switch. One origin for all four tiers
 (`asset_build.build_all()`).
@@ -226,11 +283,13 @@ time nor VRAM.
 Welded manifold check, all four tiers: **0 boundary edges, 0 edges with more
 than two faces, 0 loose vertices or edges**.
 
-Sampled hidden-surface test (40 rays per face): `LOD0` 53/1,568 (3.4 %),
-`LOD1` 44/1,228, `LOD2` 5/442, `LOD3` 8/232. Inspected by position: on
+Sampled hidden-surface test (40 rays per face): `LOD0` 51/1,986 (2.6 %),
+`LOD1` 42/1,646, `LOD2` 5/500, `LOD3` 8/238. Inspected by position: on
 LOD0–LOD2 they are the **roof ladder's rails and rungs' undersides**, 80 mm
 over the sheet (x ±0.22 m on the rear slope, z 4.6–4.9 m), and the light
-box's arms in its 0.15 m gap; on LOD3 the **wall ladder's bare rails' backs**,
+box's arms in its 0.15 m gap (the count did not grow with the louvre
+blades, skirt, lids and fittings, and the largest candidates are still on
+the ladder); on LOD3 the **wall ladder's bare rails' backs**,
 0.57 m off the rear wall, whose rays mostly hit the wall and the eave. All
 exterior surface; nothing buried. The union of closed solids leaves one
 volume's boundary, so there are no partitions or duplicate surfaces; the
@@ -240,11 +299,15 @@ The body's floor at z = 0 is kept as the closed shell's bottom.
 ## Known simplifications
 
 - **Gutters are painted** on the fascia; downpipes and the kit are modelled.
+  A modelled gutter would stand about 0.12 m proud of the fascia, into the
+  rear wall ladder's path outside the eave.
 - **Soldier courses, sheet sills, frames, transom bars, the door's stiles,
-  handle and kick rail, blinds, the meter cupboard, the louvre and the
-  housing's and hood's louvres are painted**, all under the relief threshold.
-- The lobby has **no ceiling lamp, mat or step**; the entrance is at grade.
-- The rear door has a **canopy but no wall lamp**.
+  handle and kick rail, blinds, the meter cupboard and the wall louvre are
+  painted**, all under the relief threshold. The housing's and hood's
+  louvre blades are modelled to LOD1 and painted beyond.
+- The lobby has **no mat or step**; the entrance is at grade.
+- The **letter plate** in the door leaf and the opening-hours board's marks
+  are painted; the board, lamps and house number are modelled boxes.
 - **Glass is opaque**; the salon is `glazing.py`'s room behind it.
 - The light box's art is **one image on both faces**, each mapped to read
   left to right from its side.
@@ -278,37 +341,68 @@ Four bands run the full width and tile in U:
 Regions above them at 64 px/m: the lobby screen with its soldier lintel
 (141 x 171 px), the front window, side window and small window (each with
 sheet sill and soldier course), the service door, the meter cupboard, the
-louvre, the housing's side (64 x 61), the sign band (614 x 44), and a row of
-16 px patches; the light box face is 112 x 112 px at **160 px/m**.
+louvre, the sign band (614 x 44), and a row of 16 px patches; the light box
+face is 112 x 112 px at **160 px/m**. At **128 px/m**, in the row over the
+sign band: the housing's two side widths (128 x 122 and 102 x 122 px) and the
+hood's front (115 x 83), where the louvres' 75 mm blades and 25 mm slots need
+the texels, and the fittings' faces (lamp front and side, house number,
+opening-hours board).
 `check_regions()` fails the bake on overlap, run-off or a band collision,
 `check_bands()` on a stray id in a band.
 
 ### The brick
 
-True size: a **285 x 85 mm module**, joints included (56 stretchers across
-the 16 m band, a course 5.5 px), 12 mm recessed joints in their own mortar
-colour, stretcher bond, each brick's tone hashed from its index so the band
-wraps exactly; a few harder-fired darker bricks. Soldier courses are bricks
-on end, 3.5 courses tall, a shade darker so they read as lintels.
+True size: a **285.7 x 85.9 mm module**, joints included (56 stretchers
+across the 16 m band, 18.29 px; a course 5.5 px), 12 mm (0.75 px) recessed
+joints in their own mortar colour, stretcher bond, each brick's tone hashed
+from its index so the band wraps exactly; a few harder-fired darker bricks.
+The plinth brick is the same module and bond; its joints are pointed in a
+darker mortar (`PLINTH_JOINT`, 0.62 of the walling mortar's shade), as at the
+foot of a wall: pale joints round dark bricks drew a coarse white grid that
+made the plinth bricks read larger than the walling. Soldier courses are
+bricks on end, 3.5 courses tall, a shade darker so they read as lintels.
+
+Measured against `buildings/commercial/lahikauppa_corner` with identical
+`review_asset.py` settings (front, noon, 20 and 35 m): both atlases are
+64 px/m and render equally sharp. That asset's brick is a smaller module,
+250 x 78 mm with 15.6 mm joints darkened in the brick's own colour; this one
+keeps the 285 x 86 mm module of the Finnish 285 x 85 mm brick, so its
+courses are about 10 % taller. Neither is corrected to the other: this
+module is the Finnish standard brick's and stays.
 
 ### Lettering and pictogram
 
 - Band: `PARTURI`, 22 px cap (0.34 m letters), 4.6 px stroke, cream, 20 mm
   proud in the height channel, with a soft shadow ring, centred at s = 6.7 m.
-- Light box: `PARTURI`, 14 px cap at 160 px/m (88 mm letters), deep blue,
-  and under it the comb-and-scissors mark drawn with canvas strokes, discs
-  and rings (`pictogram()`): a tilted comb, teeth down, and open scissors
-  crossing its end.
+- Light box: `PARTURI`, 14 px cap at 160 px/m (88 mm letters, 3.8 px
+  stroke), deep blue, across the top; under it the comb-and-scissors mark
+  (`pictogram()`), fitted to the rest of the face, about 102 x 62 px
+  (0.64 x 0.39 m) of the 112 px face: a level comb, a solid rounded back
+  over a fringe of 12 teeth, and just past its end an open pair of
+  scissors, two tapering blades (polygons, `poly()`) up and to the right
+  and two bold finger rings below. Drawn bold so the shapes, not the
+  detail, carry: box-filtered to the face's projected size, it reads as a
+  comb and scissors at 20 m (40 px face) and still as a dark comb bar and a
+  ringed X at 35 m (23 px).
+- The box stays 0.70 m: its inner edge must stand 0.13 m off the brick to
+  clear the sign band and its outer edge sets the front plan bound, so a
+  larger face would move the plan bounds and the pivot for about 3 px more
+  at 35 m.
+- House number: `14` at 0.14 m, 3.4 px stroke at 128 px/m.
 
 ### Texel density
 
 64 px/m on walls, openings and the sign band. Deviations: roof 64 along the
 eave x 48 up the slope; light box 160 px/m; soffit 64 out from the wall but
-the lobby soffit compressed 2x across its 0.9 m depth; housing and hood
-fronts 64. Relief for the normal map: brick faces 6 mm, frames 25 mm, roof
-seams 25 mm, gutter roll 60 mm, letters 20 mm, pressed sheet lines 4 mm,
-soffit grooves 3 mm; glass and the light box face flat. Supersampled
-`atlas.SS` = 4.
+the lobby soffit compressed 2x across its 0.9 m depth; the housing's sides,
+the hood's front and the fittings 128 px/m (louvre blades and slots, the
+lamps' frames and the number's figures need the texels; each surface is
+under 1 m², so the sharper patch does not show beside the 64 px/m walls at
+any review distance). Relief for the normal map: brick faces 6 mm, frames
+25 mm, roof seams 25 mm, gutter roll 60 mm, letters 20 mm, louvre blades
+35 mm (their slope, for the tiers without the modelled blades), pressed
+sheet lines 4 mm, soffit grooves 3 mm; glass and the light box face flat.
+Supersampled `atlas.SS` = 4.
 
 ### Padding and filtering
 
@@ -317,8 +411,10 @@ Bands 4–6 rows apart, each painting 2 rows past its edge; regions keep a
 (`scripts/review_atlas_mips.py`): mip 3 on LOD1–LOD3 (oblique and grazing,
 75 and 125 m), mip 4 on LOD2/LOD3 (front and oblique, 75 and 125 m). Brick,
 plinth, roof, fascia and glass keep their colours; no roof brown leaks into
-the brick or the band; the gutter line holds. At mip 4 the band's letters
-(about 1.4 texels tall) smear into a lighter strip, expected and accepted.
+the brick or the band; the gutter line holds; the fitting and housing art
+in its new 128 px/m row leaks into nothing. At mip 4 the band's letters
+(about 1.4 texels tall) smear into a lighter strip and the housing's painted
+louvres into an even darker brown, expected and accepted.
 **Pending:** the consumer's sampler and shipped mipmaps.
 
 ### Weathering
@@ -328,13 +424,14 @@ plinth and the brick above it, light efflorescence low on the masonry,
 shelter dust under the eave, dirt in the joints (cavity), long runs and
 eave dirt on the roof band, runs under the gutter on the fascia, dirt on the
 sheet sills and frame feet, the screen's kick panels, the service door's
-foot and handle, runs on the housing, dust on the meter cupboard's foot.
-Glass, the light box and the letters stay clean.
+foot and handle, runs on the housing's sides and the hood's front, dust on
+the meter cupboard's foot. Glass, the light box, the letters, the house
+number and the opening-hours sheet stay clean.
 
 ## Glazing treatment
 
 - Measured by `scripts/validate_asset.py`, all four variants: glass mean
-  **sRGB 59**, linear **0.040**, **0.27–0.34x** the trim; darker than the
+  **sRGB 59**, linear **0.040**, **0.26–0.27x** the trim; darker than the
   brown frames round it.
 - Roughness **0.08** (`glazing.ROUGHNESS`), metallic 0.
 - Panes painted by `glazing.rooms()` on the finished albedo. The two front
@@ -365,19 +462,25 @@ doors move a little with each brick; the plinth stays dark brown; the signs
 
 - **Glazing, neutral, each pane a lit room** (`glazing.night_rooms()`): the
   lobby screen (leaf, sidelight, transom light), the front windows, the side
-  window, both small windows, the meter cupboard's reading window.
-- **Two luminous fixtures in their own colours**, which the validator
-  reports as 12,672 coloured fixture pixels:
+  window, the three small windows, the meter cupboard's reading window.
+- **Luminous fixtures in their own colours**, which the validator reports
+  as 16,242 coloured fixture pixels:
   - the light box: its opal face warm white (255, 228, 170), its letters and
     mark deep blue (52, 84, 200); its rim black;
-  - the band's cut letters, cream (255, 214, 140); the brown field black.
+  - the band's cut letters, cream (255, 214, 140); the brown field black;
+  - the two wall lamps' opal diffusers, the lobby's ceiling light and the
+    house number's figures and inner rim, the same opal warm white; the
+    lamps' frames, the number's blue field and the opening-hours board
+    stay black. At LOD2 the front lamp and the number remain; LOD3 has no
+    fittings.
 - **Default off:** `emissiveFactor [0, 0, 0]` on all four tiers with the
   `emissiveTexture` binding intact.
 - **Reference lit factor** linear **(1.0, 0.88, 0.72)**, a salon's
   fluorescent tubes (`LIT_FACTOR`).
-- **Control granularity: one.** Glass, light box and letters share the
-  material and its one emission factor; a separately switched sign would need
-  a second material slot. No occupancy or schedule baked in.
+- **Control granularity: one.** Glass, light box, letters, lamps and the
+  house number share the material and its one emission factor; a separately
+  switched sign or lamp would need a second material slot. No occupancy or
+  schedule baked in.
 - `variants.png`: all four colours at `LOD0`, a day row (emission off) over
   a night row at the reference factor (`scripts/variant_previews.py`: Cycles,
   fixed camera, exposure and colour management between rows). The light on
@@ -449,12 +552,21 @@ Completed in this repository:
     vent, darkened the soldier courses, enlarged the mark and refitted the
     light box's lettering; LOD1–LOD3 views;
   - pass 3: preview, variants day/night, LOD distance pairs, night tiers and
-    mip stress renders (LOD review, Texture set).
+    mip stress renders (LOD review, Texture set);
+  - polish pass (two iterations, before/after with `review_compare.py` at
+    front and oblique 20, 35 and 70 m by day and 20 and 35 m by night, and
+    the light box face-on along the street at 20 and 35 m): the bolder
+    pictogram, the louvred housing and hood, the fittings, the west window,
+    the plinth's darker joints; brick scale checked against
+    `lahikauppa_corner` at 20 and 35 m (Texture set); LOD pairs at 35, 70 and
+    120 m, night tiers at 35 and 120 m, mip 3 and mip 4 stress renders
+    repeated after the atlas layout change.
 - GLB material bindings and image sources.
 - Manifold and hidden-surface checks, all tiers; candidates explained.
 - Glazing against the Style Direction band, all four variants.
 - Palette: muted brick, brown steel and aluminium, stained boards; the only
-  saturated colours are the light box's deep blue and the lit letters. No
+  saturated colours are the deep blue of the light box, the house number and
+  the opening-hours heading, and the lit letters. No
   lighting baked into any albedo.
 - A generic composite: no real building, shop name or mark.
 
@@ -473,3 +585,16 @@ Pending, outside this repository:
   review done on rendered views (`render_views()`, `scripts/review_asset.py`).
 - Textures baked with **CPython 3.14.10, numpy 2.5.5, scipy 1.18.1 and Pillow
   13.0.0**: `python3 facade_atlas.py export`.
+
+## Revision log
+
+- **2026-11-22, polish:** the light box's comb-and-scissors redrawn bold and
+  given most of the face, PARTURI rebalanced over it (box size unchanged);
+  the ridge housing given modelled louvre blades, a flashing skirt and a
+  hipped drip-edge lid, the front hood blades and a cap plate, both on new
+  128 px/m louvre art; a wall lamp, a lit house number, an opening-hours
+  board, a lobby ceiling light, a letter plate and a rear wall lamp; a small
+  WC window on the west wall; the plinth's joints pointed darker. Brick
+  module measured and kept at 285.7 x 85.9 mm. Triangles LOD0–LOD3 1,568 /
+  1,228 / 442 / 232 → 1,986 / 1,646 / 500 / 238; plan bounds, pivot and
+  doors unchanged, height 5.904 → 5.954 m.

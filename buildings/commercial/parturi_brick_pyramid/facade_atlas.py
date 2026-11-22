@@ -23,8 +23,10 @@ The atlas is a trim sheet. Four bands run the full width and tile in U:
 Above them, one region for everything singular: the lobby's glazed screen,
 the windows and the service door (each with the soldier course over it and,
 for a window, the sheet sill under it), the meter cupboard, the louvre, the
-ventilation housing, the projecting light box's face, and the lettered sign
-band across the front. A row of flat 16 px patches serves faces that take one
+projecting light box's face, and the lettered sign band across the front;
+over the band, at 128 px/m, the ventilation housing's louvred sides, the
+front hood's louvred face and the small fittings (wall lamp, house number,
+opening-hours board). A row of flat 16 px patches serves faces that take one
 colour. atlas.pad() fills every sample no region claims.
 
 The brick is drawn at its true size: a 285 x 85 mm module, joints included
@@ -156,19 +158,51 @@ ITEM_REGION = {
     "meter": _region(500, 516, "meter"),
     "louvre": _region(544, 516, "louvre"),
 }
-# the ventilation housing: one side's run (up to 1.0 m) by its height
+# The ventilation housing on the ridge, a sheet-steel box: louvred sides
+# (sawtooth blades, modelled to LOD1, painted on every tier), a flashing
+# skirt where it meets the slopes, a hipped lid with a drip edge.
 HOUSING_HALF = (0.5, 0.4)   # half its plan, along X and Y
 HOUSING_BURY = 0.45         # below the ridge, into the roof
 HOUSING_UP = 0.50           # above the ridge to its lid
-HOUSING_LID = (0.06, 0.05)  # lid thickness, overhang
-HOUSING = (584, 516, 64.0, (HOUSING_BURY + HOUSING_UP) * PPM)
+HOUSING_LID = (0.06, 0.08)  # the lid's drip edge depth, overhang
+HOUSING_LID_RISE = 0.07     # the lid's hipped top over its drip edge
+SKIRT = (0.03, 0.10)        # the flashing skirt: off the housing, up the roof
+# Louvres, on the housing's sides and the front hood alike: blades every
+# LOUV_P, each a sawtooth LOUV_T tall standing LOUV_D off the face, inset
+# LOUV_INSET from the face's sides; z of the top blade's top and the lowest
+# blade's foot over the sheet below (housing: over the ridge).
+LOUV_P, LOUV_T, LOUV_D, LOUV_INSET = 0.075, 0.05, 0.035, 0.07
+LOUV_Z = (0.13, 0.43)       # housing, over the ridge
+HOOD_LOUV_Z = (0.06, 0.36)  # front hood, over the sheet at its face
+HOUSING_PPM = 128.0         # the louvres' blades and slots need the texels
+_HH = HOUSING_BURY + HOUSING_UP
+HOUSING_X = (4, 760, 2 * HOUSING_HALF[0] * HOUSING_PPM, _HH * HOUSING_PPM)   # faces along X
+HOUSING_Y = (140, 760, 2 * HOUSING_HALF[1] * HOUSING_PPM, _HH * HOUSING_PPM)  # faces along Y
+HOOD_W = 0.9               # the front hood's width
+HOOD_FACE = 0.40            # its louvred front's height over the sheet
+HOOD_FOOT = 0.25            # how far its front runs below the sheet
+HOOD_H = HOOD_FOOT + HOOD_FACE
+HOOD =(250, 760, HOOD_W * HOUSING_PPM, HOOD_H * HOUSING_PPM)
 SIGN_BOX_M = 0.70           # the light box's face, square
 SIGN_BOX = (656, 516, SIGN_BOX_M * SIGN_PPM, SIGN_BOX_M * SIGN_PPM)
 SIGN_BAND = (4, 700, (SIGN_BAND_S[1] - SIGN_BAND_S[0]) * PPM, (Z_TOP - Z_BAND0) * PPM)
 
+# The small fittings on the front and rear walls, at 128 px/m: a box wall
+# lamp (front face, side face), the lit house number, and the framed
+# opening-hours board by the lobby. Sizes in metres: (width, height, depth).
+FIT_PPM = 128.0
+LAMP_M = (0.18, 0.30, 0.13)
+NUMBER_M = (0.34, 0.22, 0.03)
+HOURS_M = (0.30, 0.40, 0.025)
+LOBBY_LAMP_M = (0.30, 0.30, 0.07)
+LAMP_FRONT = (372, 760, LAMP_M[0] * FIT_PPM, LAMP_M[1] * FIT_PPM)
+LAMP_SIDE = (400, 760, LAMP_M[2] * FIT_PPM, LAMP_M[1] * FIT_PPM)
+NUMBER = (428, 760, NUMBER_M[0] * FIT_PPM, NUMBER_M[1] * FIT_PPM)
+HOURS = (480, 760, HOURS_M[0] * FIT_PPM, HOURS_M[1] * FIT_PPM)
+
 PATCH_NAMES = ("blank", "reveal", "sill_top", "flashing", "lid", "sign_rim",
                "bracket", "band_edge", "canopy_top", "canopy_edge", "canopy_under",
-               "screen_frame")
+               "screen_frame", "blade", "shadow", "opal", "lamp_body")
 PATCHES = {n: (4 + 20 * i, 1000, 16, 16) for i, n in enumerate(PATCH_NAMES)}
 
 # ----------------------------------------------------------- material ids
@@ -176,6 +210,8 @@ ID_BLANK, ID_PLINTH, ID_BRICK, ID_MORTAR, ID_ROOF, ID_FASCIA = 0, 1, 2, 3, 4, 5
 ID_SOFFIT, ID_FRAME, ID_GLASS, ID_DOOR, ID_GUTTER = 6, 7, 8, 9, 10
 ID_SIGN_W, ID_SIGN_INK, ID_SIGN_RIM, ID_LETTER, ID_METAL = 11, 12, 13, 14, 15
 ID_SEAL = 16                # black rubber and the dark gap round a leaf
+ID_PAPER = 17               # the opening-hours sheet: lit by nothing
+ID_PLATE = 18               # the house number's enamelled field, unlit
 
 # (roughness, metallic). The roof, fascia, gutter and frames are factory
 # polyester-coated steel and aluminium: painted, so not metallic.
@@ -185,7 +221,8 @@ SURFACE = {
     ID_SOFFIT: (0.78, 0.0), ID_FRAME: (0.40, 0.0), ID_GLASS: (glazing.ROUGHNESS, 0.0),
     ID_DOOR: (0.48, 0.0), ID_GUTTER: (0.40, 0.0), ID_SIGN_W: (0.22, 0.0),
     ID_SIGN_INK: (0.22, 0.0), ID_SIGN_RIM: (0.42, 0.0), ID_LETTER: (0.36, 0.0),
-    ID_METAL: (0.50, 0.60), ID_SEAL: (0.70, 0.0),
+    ID_METAL: (0.50, 0.60), ID_SEAL: (0.70, 0.0), ID_PAPER: (0.30, 0.0),
+    ID_PLATE: (0.30, 0.0),
 }
 
 # ---------------------------------------------------------------- palettes
@@ -216,6 +253,7 @@ FIXED = {
     ID_SIGN_W: (232, 230, 222), ID_SIGN_INK: (34, 48, 104),
     ID_SIGN_RIM: (52, 58, 72), ID_LETTER: (226, 212, 178),
     ID_METAL: (128, 126, 120), ID_SEAL: (34, 33, 32),
+    ID_PAPER: (214, 212, 202), ID_PLATE: (34, 48, 104),
 }
 
 # The candidate-glazing mask doubles as the emission map. Glass is neutral
@@ -225,7 +263,10 @@ FIXED = {
 # validator's 24): a bright neutral pixel would be measured as glazing. The
 # light box's opal face glows a warm white and its letters and pictogram a
 # deep blue through the acrylic; the band's brown field stays dark and only
-# its cut letters, backlit, glow cream.
+# its cut letters, backlit, glow cream. The wall lamps' opal diffusers, the
+# lobby's ceiling light and the house number's figures are the same opal
+# (ID_SIGN_W) and glow the same warm white; the number's blue field and the
+# opening-hours sheet stay dark.
 EMIT = {ID_GLASS: (255, 255, 255), ID_SIGN_W: (255, 228, 170),
         ID_SIGN_INK: (52, 84, 200), ID_LETTER: (255, 214, 140)}
 # Linear RGB: a lit salon's fluorescent tubes, not a living room's lamp.
@@ -267,7 +308,7 @@ def _arc(cx, cy, rx, ry, a0, a1, n=16):
 
 
 # A plain geometric sans, stroked centrelines on a unit em: y = 0 the
-# baseline, y = 1 the cap line, the advance first. Only P A R T U I.
+# baseline, y = 1 the cap line, the advance first. Only P A R T U I, 1, 4.
 GLYPHS = {
     "P": (0.62, [[(0.00, 0.00), (0.00, 1.00), (0.30, 1.00)]
                  + _arc(0.30, 0.755, 0.32, 0.245, 90, -90, 10)
@@ -283,6 +324,9 @@ GLYPHS = {
                  + _arc(0.33, 0.24, 0.33, 0.24, 180, 360, 12)
                  + [(0.66, 1.00)]]),
     "I": (0.00, [[(0.00, 0.00), (0.00, 1.00)]]),
+    # the house number's two figures
+    "1": (0.40, [[(0.06, 0.78), (0.36, 1.00), (0.36, 0.00)]]),
+    "4": (0.66, [[(0.50, 0.00), (0.50, 1.00), (0.00, 0.30), (0.66, 0.30)]]),
 }
 
 
@@ -327,9 +371,16 @@ def bond(c, x0, x1, y0, y1, y_ref, x_ref=0.0, plinth_rows=None):
     if plinth_rows is not None:
         brick = np.where(yy < plinth_rows, ID_PLINTH, ID_BRICK).astype(np.uint8)
     c.mid[sy, sx] = np.where(joint, ID_MORTAR, brick).astype(np.uint8)
-    c.shade[sy, sx] = np.where(joint, 1.0, tone)
+    # the plinth is pointed in a darker, cement-rich mortar, as engineering
+    # brick at the foot of a wall is: pale joints round dark bricks drew a
+    # coarse white grid that read as oversized brick
+    jshade = 1.0 if plinth_rows is None else np.where(yy < plinth_rows, PLINTH_JOINT, 1.0)
+    c.shade[sy, sx] = np.where(joint, jshade, tone)
     c.ao[sy, sx] = np.where(joint, 0.76, 1.0)
     c.height[sy, sx] = np.where(joint, 0.0, BRICK_FACE)
+
+
+PLINTH_JOINT = 0.62         # the plinth's mortar, as a shade of the walling's
 
 
 def soldier(c, x0, x1, y0, y1):
@@ -529,6 +580,11 @@ def paint_screen(c):
     hx = lx1 - g - st - 5.0
     bar(c, hx - 1.4, hx + 1.4, y + m(0.80), y + m(1.40), mid=ID_METAL, h=0.05)
     c.disc(hx + 2.5, y + m(1.02), 1.1, ID_METAL, 0.8, 0.8, height=0.03)
+    # a letter plate in the kick rail: a brushed flap over its dark slit
+    mx = (lx0 + lx1) / 2.0
+    bar(c, mx - m(0.15), mx + m(0.15), y + m(0.085), y + m(0.165), mid=ID_METAL, shade=0.95,
+        ao=0.9, h=0.006)
+    c.paint(mx - m(0.13), mx + m(0.13), y + m(0.118), y + m(0.132), ID_SEAL, 0.7, 0.6, height=0.0)
     # the sidelight's kick panel
     bar(c, lx1 + f, x + w - f, y, y + m(0.45), shade=0.94, axes="y")
     c.mul(lx1 + f, x + w - f, y + m(0.45), y + m(0.45) + 2, 0.86, ao=0.84)
@@ -585,20 +641,107 @@ def paint_louvre(c):
     c.height[sy, sx] = 0.010 * np.clip(t / 2.4, 0, 1)
 
 
-def paint_housing(c):
-    """The ventilation housing's sides: brown sheet, louvred in the band
-    above the roof, the lowest part buried in the slope."""
-    x, y, w, h = HOUSING
+def blade_tops(z0, z1):
+    """The louvre blades' top edges, top first, for a band from z0 to z1:
+    every LOUV_P from z1 down while a whole blade fits."""
+    tops, z = [], z1
+    while z - LOUV_T > z0 - 1e-6:
+        tops.append(z)
+        z -= LOUV_P
+    return tops
+
+
+def louvre_face(c, rect, z0, z1, lid=True):
+    """A sheet-steel face with a louvre band in it: brown sheet, and between
+    LOUV_INSET of each side and z0..z1 (metres up the region) the blades,
+    each a sloping strip that rises out of the face to its drip, over the
+    dark slot below it. The blades are modelled up close (build.py), sitting
+    exactly on their painted strips; farther tiers show this painting
+    alone, the slope in the height channel."""
+    x, y, w, h = rect
+    ppm = HOUSING_PPM
     c.paint(x, x + w, y, y + h, ID_FASCIA, 1.0, 0.92, height=0.0)
-    z0 = y + m(HOUSING_BURY + 0.10)
-    z1 = y + m(HOUSING_BURY + HOUSING_UP - 0.08)
-    _frame(c, (x + 3, z0, w - 6, z1 - z0), 1.5, ID_FASCIA, 0.9, 0.86, 0.01)
-    sy, sx, Y, X = c.field(x + 4.5, x + w - 4.5, z0 + 1.5, z1 - 1.5)
-    t = (Y - z0) % 2.6
-    c.shade[sy, sx] = np.where(t < 1.0, 0.52, 1.0)
-    c.ao[sy, sx] = np.where(t < 1.0, 0.6, 0.9)
-    c.height[sy, sx] = 0.010 * np.clip(t / 2.6, 0, 1)
-    c.mul(x, x + w, y + h - 3, y + h, 0.82, ao=0.80)          # under the lid
+    a0, a1 = x + LOUV_INSET * ppm, x + w - LOUV_INSET * ppm
+    tops = blade_tops(z0, z1)
+    low = tops[-1] - LOUV_P
+    # the louvre's own frame, a pressed edge round the band
+    _frame(c, (a0 - 3, y + low * ppm - 3, a1 - a0 + 6, (z1 - low) * ppm + 6), 2.0,
+           ID_FASCIA, 0.92, 0.84, 0.008)
+    c.paint(a0, a1, y + low * ppm, y + z1 * ppm, ID_SEAL, 0.62, 0.40, height=0.0)
+    for zt in tops:
+        b0, b1 = y + (zt - LOUV_T) * ppm, y + zt * ppm
+        sy, sx, Y, X = c.field(a0, a1, b0, b1)
+        t = np.clip((b1 - Y) / (b1 - b0), 0.0, 1.0)
+        c.mid[sy, sx] = ID_FASCIA
+        c.shade[sy, sx] = 1.06 - 0.24 * t
+        c.ao[sy, sx] = 0.95
+        c.height[sy, sx] = LOUV_D * t
+        # the slot under each blade is darkest at its back
+        c.mul(a0, a1, b0 - 2.5, b0, 0.70, ao=0.35)
+    if lid:
+        c.mul(x, x + w, y + h - 4, y + h, 0.80, ao=0.78)       # under the lid
+
+
+def paint_housing(c):
+    """The ventilation housing's sides (two widths) and the front hood's
+    louvred face, all at HOUSING_PPM."""
+    for rect in (HOUSING_X, HOUSING_Y):
+        louvre_face(c, rect, HOUSING_BURY + LOUV_Z[0], HOUSING_BURY + LOUV_Z[1])
+    louvre_face(c, HOOD, HOOD_FOOT + HOOD_LOUV_Z[0], HOOD_FOOT + HOOD_LOUV_Z[1])
+
+
+def paint_fittings(c):
+    """The wall lamps' faces, the house number and the opening-hours board,
+    at FIT_PPM."""
+    k = FIT_PPM
+    # the lamp: a brown aluminium frame round an opal diffuser, crossed by
+    # two thin bars, and a darker cap at its top
+    for rect in (LAMP_FRONT, LAMP_SIDE):
+        x, y, w, h = rect
+        c.paint(x, x + w, y, y + h, ID_SIGN_W, 0.96, 1.0, height=0.0)
+        _frame(c, rect, 2.2, ID_FRAME, 1.0, 0.86, 0.006)
+        for f in (0.36, 0.64):
+            yy = y + h * f
+            bar(c, x, x + w, yy - 0.7, yy + 0.7, h=0.004, axes="y")
+        c.paint(x, x + w, y + h - 4.5, y + h, ID_FRAME, 0.86, 0.8, height=0.006)
+    # the lit house number: an enamelled blue field, a light rim and the
+    # figures 14, which light with the lamp
+    x, y, w, h = NUMBER
+    c.paint(x, x + w, y, y + h, ID_PLATE, 1.0, 1.0, height=0.0)
+    _frame(c, NUMBER, 1.6, ID_SIGN_RIM, 1.0, 0.9, 0.004)
+    _frame(c, (x + 3.0, y + 3.0, w - 6.0, h - 6.0), 0.9, ID_SIGN_W)
+    cap, weight = 0.14 * k, 3.4
+    wide = text_width("14", cap, 0.18, weight)
+    text(c, "14", x + (w - wide) / 2.0, y + (h - cap) / 2.0, cap, weight, ID_SIGN_W, 0.18)
+    # the opening-hours board: a brown frame round a white sheet with a blue
+    # heading bar and rows of day-and-hour marks, no legible text
+    x, y, w, h = HOURS
+    c.paint(x, x + w, y, y + h, ID_PAPER, 1.0, 1.0, height=0.0)
+    _frame(c, HOURS, 2.6, ID_FRAME, 1.0, 0.86, 0.010)
+    c.paint(x + 4.5, x + w - 4.5, y + h - 11.0, y + h - 5.0, ID_PLATE, 1.0, 1.0)
+    for i in range(6):
+        yy = y + h - 16.0 - i * 4.6
+        c.paint(x + 5.0, x + 5.0 + 9.0, yy - 1.4, yy, ID_PAPER, 0.46, 1.0)
+        c.paint(x + w - 5.0 - 13.0, x + w - 5.0, yy - 1.4, yy, ID_PAPER, 0.46, 1.0)
+    c.paint(x + 5.0, x + w - 5.0, y + 6.0, y + 7.2, ID_PAPER, 0.62, 1.0)
+
+
+def poly(c, pts, mid, shade=None, ao=None, height=None):
+    """A filled polygon, even-odd, anti-aliased by the canvas."""
+    xs, ys = [p[0] for p in pts], [p[1] for p in pts]
+
+    def test(X, Y):
+        inside = np.zeros(X.shape, bool)
+        n = len(pts)
+        for i in range(n):
+            (x0, y0), (x1, y1) = pts[i], pts[(i + 1) % n]
+            if y0 == y1:
+                continue
+            cross = (y0 > Y) != (y1 > Y)
+            xi = x0 + (Y - y0) * (x1 - x0) / (y1 - y0)
+            inside ^= cross & (X < xi)
+        return inside
+    c.shape(min(xs) - 1, max(xs) + 1, min(ys) - 1, max(ys) + 1, test, mid, shade, ao, height)
 
 
 def _rot(p, a):
@@ -606,55 +749,74 @@ def _rot(p, a):
     return (p[0] * ca - p[1] * sa, p[0] * sa + p[1] * ca)
 
 
+# The pictogram's extent in its own units, (u0, u1, v0, v1), for fitting it.
+PICTO_BOX = (-3.8, 3.05, -1.98, 2.22)
+
+
 def pictogram(c, cx, cy, s, mid):
-    """This asset's comb and scissors: a straight comb laid at a slight
-    tilt, its teeth down, and an open pair of scissors crossing its right
-    end, blades up and to the right, finger rings below. *s* is pixels per
-    unit; (cx, cy) the mark's centre."""
-    tilt = math.radians(-8.0)
+    """This asset's comb and scissors, drawn bold so they read as shapes at
+    a distance: a straight comb lying level, a solid back over a fringe of
+    teeth, and to its right an open pair of scissors, the two blades tapering
+    up and to the right from the pivot, the two finger rings below and to the
+    left. *s* is pixels per unit; (cx, cy) the centre of PICTO_BOX."""
+    u_c = (PICTO_BOX[0] + PICTO_BOX[1]) / 2.0
+    v_c = (PICTO_BOX[2] + PICTO_BOX[3]) / 2.0
 
     def P(u, v):
-        x, y = _rot((u, v), tilt)
-        return (cx + x * s, cy + y * s)
-    # the comb: a spine and a row of teeth, finer toward one end
-    c.stroke(P(-3.0, 0.75), P(0.2, 0.75), 0.60 * s, mid)
-    n = 19
-    for k in range(n):
-        u = -2.85 + 2.9 * k / (n - 1)
-        length = 0.80 if k < n // 2 else 0.62
-        c.stroke(P(u, 0.60), P(u, 0.60 - length), 0.14 * s, mid)
-    # the scissors, open, crossing the comb's end: two blades from the
-    # pivot up to the right, two finger rings down to the left
-    pv = (0.55, 0.10)
-    for sign in (1.0, -1.0):
-        a = math.radians(40.0 + sign * 17.0)
-        tip = (pv[0] + 2.6 * math.cos(a), pv[1] + 2.6 * math.sin(a))
-        c.stroke(P(*pv), P(*tip), 0.26 * s, mid)
-        mid_b = (pv[0] + 1.3 * math.cos(a), pv[1] + 1.3 * math.sin(a))
-        c.stroke(P(*pv), P(*mid_b), 0.40 * s, mid)
-        b = math.radians(40.0) + math.pi - sign * 0.42
-        ring = (pv[0] + 1.25 * math.cos(b), pv[1] + 1.25 * math.sin(b))
-        c.stroke(P(*pv), P(*ring), 0.26 * s, mid)
+        return (cx + (u - u_c) * s, cy + (v - v_c) * s)
+    # the comb: its back a rounded bar, the teeth hanging from it
+    x0, y0 = P(-3.8, 0.88)
+    x1, y1 = P(0.2, 1.60)
+    c.rounded_rect(x0, y0, x1 - x0, y1 - y0, 0.24 * s, mid)
+    u = -3.60
+    while u < 0.10:
+        c.paint(*_span(P(u - 0.09, 0.17), P(u + 0.09, 0.95)), mid=mid)
+        u += 0.31
+    # the scissors, their pivot just past the comb's end: each blade and its
+    # handle one piece through the pivot
+    pv = (0.40, -0.18)
+    for blade, length in ((58.0, 2.75), (20.0, 2.75)):
+        a = math.radians(blade)
+        d = (math.cos(a), math.sin(a))
+        n = (-d[1], d[0])
+        tip = (pv[0] + length * d[0], pv[1] + length * d[1])
+        back = (pv[0] - 0.30 * d[0], pv[1] - 0.30 * d[1])
+        poly(c, [P(back[0] + n[0] * 0.31, back[1] + n[1] * 0.31),
+                 P(tip[0] + n[0] * 0.09, tip[1] + n[1] * 0.09),
+                 P(tip[0] - n[0] * 0.09, tip[1] - n[1] * 0.09),
+                 P(back[0] - n[0] * 0.31, back[1] - n[1] * 0.31)], mid)
+        ring = (pv[0] - 1.36 * d[0], pv[1] - 1.36 * d[1])
+        c.stroke(P(*pv), P(ring[0] + 0.45 * d[0], ring[1] + 0.45 * d[1]), 0.36 * s, mid)
         rx, ry = P(*ring)
-        c.disc(rx, ry, 0.50 * s, mid, inner=0.27 * s)
+        c.disc(rx, ry, 0.64 * s, mid, inner=0.32 * s)
     px, py = P(*pv)
-    c.disc(px, py, 0.14 * s, ID_SIGN_W)
+    c.disc(px, py, 0.11 * s, ID_SIGN_W)
+
+
+def _span(p0, p1):
+    """(x0, x1, y0, y1) of the rectangle with corners p0 and p1."""
+    return (min(p0[0], p1[0]), max(p0[0], p1[0]), min(p0[1], p1[1]), max(p0[1], p1[1]))
 
 
 def paint_sign_box(c):
     """The projecting light box's face, both sides alike: an opal white face
-    in a thin dark rim, PARTURI in deep blue capitals across the top and
-    the comb-and-scissors mark under it. 160 px/m, denser than the walls,
-    so the word holds up at the distance a projecting sign is read from."""
+    in a dark rim, PARTURI in deep blue capitals across the top and under it
+    the comb-and-scissors mark, which takes most of the face: it is what
+    says barber from down the street, where the word is too small to read.
+    160 px/m, denser than the walls."""
     x, y, w, h = SIGN_BOX
+    q = w / 112.0                                   # the layout was set on a 112 px face
     c.paint(x, x + w, y, y + h, ID_SIGN_W, 1.0, 1.0, height=0.0)
-    _frame(c, SIGN_BOX, 2.5, ID_SIGN_RIM, 1.0, 0.86)
-    _frame(c, (x + 5.5, y + 5.5, w - 11, h - 11), 1.1, ID_SIGN_INK)
-    cap, weight, tr = 14.0, 3.0, 0.10
+    _frame(c, SIGN_BOX, 3.0 * q, ID_SIGN_RIM, 1.0, 0.86)
+    _frame(c, (x + 3.0 * q, y + 3.0 * q, w - 6.0 * q, h - 6.0 * q), 1.0 * q, ID_SIGN_INK)
+    cap, weight, tr = 14.0 * q, 3.8 * q, 0.10
     word = "PARTURI"
     wide = text_width(word, cap, tr, weight)
-    text(c, word, x + (w - wide) / 2.0, y + h - 15.0 - cap, cap, weight, ID_SIGN_INK, tr)
-    pictogram(c, x + w * 0.54, y + h * 0.35, 12.5, ID_SIGN_INK)
+    text(c, word, x + (w - wide) / 2.0, y + h - 8.5 * q - cap, cap, weight, ID_SIGN_INK, tr)
+    u0, u1, v0, v1 = PICTO_BOX
+    room_w, room_h = w - 10.0 * q, h - cap - 25.0 * q
+    s = min(room_w / (u1 - u0), room_h / (v1 - v0))
+    pictogram(c, x + w / 2.0, y + 7.0 * q + room_h / 2.0, s, ID_SIGN_INK)
 
 
 def paint_sign_band(c):
@@ -699,6 +861,10 @@ def paint_patches(c):
         "canopy_edge": (ID_FASCIA, 1.0, 0.92),
         "canopy_under": (ID_SOFFIT, 0.82, 0.78),
         "screen_frame": (ID_FRAME, 0.9, 0.80),
+        "blade": (ID_FASCIA, 1.04, 0.95),
+        "shadow": (ID_FASCIA, 0.45, 0.55),
+        "opal": (ID_SIGN_W, 1.0, 1.0),
+        "lamp_body": (ID_FRAME, 0.90, 0.85),
     }
     for name, (mid, sh, ao) in spec.items():
         x, y, w, h = PATCHES[name]
@@ -718,7 +884,9 @@ def check_regions():
     """Fail the bake if two regions overlap, collide with the bands, run off
     the sheet, or leave their density."""
     rects = dict(ITEM_REGION)
-    rects.update({"housing": HOUSING, "sign_box": SIGN_BOX, "sign_band": SIGN_BAND})
+    rects.update({"housing_x": HOUSING_X, "housing_y": HOUSING_Y, "hood": HOOD,
+                  "sign_box": SIGN_BOX, "sign_band": SIGN_BAND, "lamp_front": LAMP_FRONT,
+                  "lamp_side": LAMP_SIDE, "number": NUMBER, "hours": HOURS})
     rects.update(PATCHES)
     bands_top = SOF_Y0 + SOF_H + PAD
     names = sorted(rects)
@@ -748,7 +916,7 @@ def weather(c):
     plinth's soil land the same on every wall. Signs and glass stay clean."""
     steel = (ID_ROOF, ID_FASCIA, ID_GUTTER, ID_METAL, ID_FRAME, ID_DOOR)
     w = weathering.Weather(c, clean=(ID_GLASS, ID_SIGN_W, ID_SIGN_INK, ID_SIGN_RIM,
-                                     ID_LETTER, ID_SEAL), steel=steel)
+                                     ID_LETTER, ID_SEAL, ID_PAPER, ID_PLATE), steel=steel)
     w.grime()
     w.fade((ID_DOOR, ID_FASCIA, ID_SOFFIT, ID_FRAME))
     w.wash((ID_BRICK, ID_MORTAR))
@@ -778,8 +946,8 @@ def weather(c):
     f = m(0.03)
     w.door(x + f, x + rw - f, y, y + m(ITEMS["service_door"]["z1"]), (ID_DOOR,),
            handle=(x + rw - f - 7, y + m(1.02)))
-    x, y, rw, rh = HOUSING
-    w.runs(x, x + rw, y, y + rh, (ID_FASCIA,), 0.16, fall=10.0)
+    for x, y, rw, rh in (HOUSING_X, HOUSING_Y, HOOD):
+        w.runs(x, x + rw, y, y + rh, (ID_FASCIA,), 0.16, fall=10.0)
     x, y, rw, rh = ITEM_REGION["meter"]
     w.add("D", x, x + rw, y, y + m(0.3), 0.08, (ID_METAL,))
     return w
@@ -801,6 +969,7 @@ def paint(ss=atlas.SS):
     paint_meter(c)
     paint_louvre(c)
     paint_housing(c)
+    paint_fittings(c)
     paint_sign_box(c)
     paint_sign_band(c)
     paint_patches(c)

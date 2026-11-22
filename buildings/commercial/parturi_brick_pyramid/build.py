@@ -23,19 +23,22 @@ the brick, left of centre, its glazed screen (the door leaf and a sidelight
 under a transom light) at the back, and two windows to its right, all under
 soldier courses on one head line. A brown sheet band under the eave carries
 PARTURI in cut cream letters over the windows, and a square light box on a
-bracket stands out from the pier beside the lobby. The east wall has the
-side window and a small staff window, the rear the service door under a
-small canopy and a high window, the west the meter cupboard and an air
-louvre. A sheet-metal ventilation housing sits on the ridge; the roof safety
-kit reaches it from the back. Gutters run round all four eaves, with two
-downpipes at diagonally opposite corners.
+bracket stands out from the pier beside the lobby; a wall lamp under a lit
+house number, an opening-hours board and a lobby ceiling light are the small
+things round the door. The east wall has the side window and a small staff
+window, the rear the service door under a small canopy with a wall lamp and
+a high window, the west the meter cupboard, a small WC window and an air
+louvre. A louvred sheet-metal ventilation housing sits on the ridge; the
+roof safety kit reaches it from the back. Gutters run round all four eaves,
+with two downpipes at diagonally opposite corners.
 
 Construction: closed solids unioned with Blender's exact boolean
 (asset_build.union, snapped to 0.1 mm) -- the body (the wall ring with its
 recesses, capped with a floor and a lid), the roof (hip slopes, fascia,
 soffit and underside as one solid), the hip and ridge flashings, the
-housing, the sign band, the light box and its arms, the canopy, the
-downpipes and the roof safety kit.
+housing with its louvre blades, skirt and lid, the hood with its blades and
+cap, the fittings, the sign band, the light box and its arms, the canopy,
+the downpipes and the roof safety kit.
 
 Every number the mesh and the atlas share is imported from facade_atlas.py.
 """
@@ -94,7 +97,7 @@ WALLS = [
     dict(name="rear", p0=(HX, HY), p1=(-HX, HY), u=6.3,
          items=[("small_window", 2.3), ("service_door", 7.0)]),
     dict(name="west", p0=(-HX, HY), p1=(-HX, -HY), u=9.7,
-         items=[("meter", 2.0), ("louvre", 5.0)]),
+         items=[("meter", 2.0), ("small_window", 3.5), ("louvre", 5.0)]),
 ]
 WALL = {w["name"]: w for w in WALLS}
 
@@ -118,12 +121,27 @@ CANOPY_Z = (2.46, 2.56)
 
 # The louvred attic vent on the front slope: a small hood whose vertical
 # front carries the louvre and whose nearly level top runs back into the
-# slope. HOOD_Y is its front's y, HOOD_FACE the louvre's height over the
-# sheet there, HOOD_FALL the top's fall toward the front.
-HOOD_X = 0.45
+# slope, under a cap plate that oversails its front and sides. HOOD_Y is
+# its front's y, L.HOOD_FACE the front's height over the sheet there,
+# HOOD_FALL the top's fall toward the front.
+HOOD_X = L.HOOD_W / 2.0
 HOOD_Y = -2.6
-HOOD_FACE = 0.40
+HOOD_FACE = L.HOOD_FACE
 HOOD_FALL = 0.052
+HOOD_CAP = (0.06, 0.03, 0.020, 0.035)   # cap: oversail front, sides; above, below the top
+
+# The small fittings, each a box on its wall (facade_atlas.LAMP_M etc. give
+# their sizes): s at the centre along the wall, z of the foot. The wall lamp
+# and the lit house number stand one over the other on the pier left of the
+# lobby, the opening-hours board on the pier right of it under the light
+# box's arms, a ceiling light in the lobby's soffit, and the same wall lamp
+# again by the service door.
+FRONT_LAMP = (0.55, 1.98)
+NUMBER_AT = (0.55, 2.38)
+HOURS_AT = (3.80, 1.25)
+REAR_LAMP = (8.00, 1.98)
+LOBBY_LAMP_OUT = -0.45                  # the ceiling light's centre, off the front wall
+FIT_BURY = 0.02                         # every fitting's back, into the brick
 # a plain soil vent pipe on the rear slope (LOD0/LOD1): (x, y), radius, height
 VENT = ((-2.0, 2.2), 0.06, 0.55)
 
@@ -183,8 +201,26 @@ def canopy_kept(level):
     return level < 3
 
 
-def housing_lid(level):
+def housing_mode(level):
+    """The ridge housing: "full" to LOD1 (modelled louvre blades, the
+    flashing skirt, the hipped lid with its drip edge); "lid" at LOD2, a box
+    under a plain overhanging lid, the louvres painted; "box" at LOD3."""
+    return ("full", "full", "lid", "box")[level]
+
+
+def hood_mode(level):
+    """The front hood: its louvre blades and cap plate to LOD1; from LOD2
+    the bare wedge, its louvres painted."""
     return level < 2
+
+
+def fittings(level):
+    """Which small fittings a tier keeps: everything to LOD1; at LOD2 the
+    front lamp and the house number, the two lit points on the street side
+    at night; none at LOD3."""
+    if level < 2:
+        return ("front_lamp", "number", "hours", "lobby_lamp", "rear_lamp")
+    return ("front_lamp", "number") if level < 3 else ()
 
 
 def vent_kept(level):
@@ -617,25 +653,105 @@ def box(x0, x1, y0, y1, z0, z1, side, top, bottom):
     return B
 
 
+def uv_region(rect, fr, s0, z0, ppm):
+    """A face in wall frame *fr* onto an atlas region: s0 along the face and
+    z0 up it at the region's corner, *ppm* texels a metre."""
+    x, y, _w, _h = rect
+    return lambda co: (x + (fr.s_of(co) - s0) * ppm, y + (co.z - z0) * ppm)
+
+
+def blades(fr, s0, s1, tops, name):
+    """Sawtooth louvre blades on the face of frame *fr*, from s0 to s1 along
+    it: under each top edge in *tops* a solid whose sloping face runs from
+    the face down and out LOUV_D to its drip, LOUV_T below, and whose level
+    underside runs back into the face; its back is buried 10 mm."""
+    T, D = L.LOUV_T, L.LOUV_D
+    blade, shadow = uv_patch("blade"), uv_patch("shadow")
+    out = []
+    for i, zt in enumerate(tops):
+        B = Builder()
+        sec = [(-0.01, zt + 0.01 * T / D), (D, zt - T), (-0.01, zt - T)]
+        a = [fr.P(s0, z, o) for o, z in sec]
+        b = [fr.P(s1, z, o) for o, z in sec]
+        B.face([a[0], a[1], b[1], b[0]], blade)
+        B.face([a[1], a[2], b[2], b[1]], shadow)
+        B.face([a[2], a[0], b[0], b[2]], shadow)
+        B.face([a[2], a[1], a[0]], blade)
+        B.face([b[0], b[1], b[2]], blade)
+        out.append((B, "tmp_%s%d" % (name, i)))
+    return out
+
+
+def hip_lid(x0, x1, y0, y1, zb, zd, rise):
+    """A lid: a slab from zb to its drip edge's top zd, under a hipped top
+    rising *rise* to a ridge along X (equal pitches)."""
+    B = Builder()
+    cx, cy = (x0 + x1) / 2.0, (y0 + y1) / 2.0
+    half = max((x1 - x0) - (y1 - y0), 0.0) / 2.0
+    r0, r1 = (cx - half, cy, zd + rise), (cx + half, cy, zd + rise)
+    ring = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
+    drip, top, under = uv_patch("lid"), uv_patch("canopy_top"), uv_patch("shadow")
+    for k in range(4):
+        (ax, ay), (bx, by) = ring[k], ring[(k + 1) % 4]
+        B.face([(ax, ay, zb), (bx, by, zb), (bx, by, zd), (ax, ay, zd)], drip)
+    B.face([(x0, y0, zd), (x1, y0, zd), r1, r0], top)
+    B.face([(x1, y0, zd), (x1, y1, zd), r1], top)
+    B.face([(x1, y1, zd), (x0, y1, zd), r0, r1], top)
+    B.face([(x0, y1, zd), (x0, y0, zd), r0], top)
+    B.face([(x, y, zb) for x, y in reversed(ring)], under)
+    return B
+
+
 def housing(level):
-    """The ventilation housing on the ridge: a sheet-steel box, louvred
-    above the roof, its foot buried in both slopes, under a lid with a
-    small overhang (LOD0/LOD1)."""
+    """The ventilation housing on the ridge, a sheet-steel box whose foot is
+    buried in both slopes. Up close (housing_mode "full") its four sides
+    carry modelled louvre blades over their painted slots, a flashing skirt
+    follows the slopes round its foot 0.10 m up, and a hipped lid oversails
+    it with a drip edge; at LOD2 the lid is a plain slab; at LOD3 the box
+    stands bare. Each side maps onto the housing art of its width."""
+    mode = housing_mode(level)
     hx, hy = L.HOUSING_HALF
     z0 = L.Z_RIDGE - L.HOUSING_BURY
     z1 = L.Z_RIDGE + L.HOUSING_UP
-    x, y, _w, _h = L.HOUSING
-
-    def side(axis):
-        if axis == "x":
-            return lambda co: (x + (co.x + hx) * PPM, y + (co.z - z0) * PPM)
-        return lambda co: (x + (co.y + hy) * PPM, y + (co.z - z0) * PPM)
+    k = L.HOUSING_PPM
+    corners = [(-hx, -hy), (hx, -hy), (hx, hy), (-hx, hy)]
+    frames = [Frame(corners[i], corners[(i + 1) % 4]) for i in range(4)]
+    rects = [L.HOUSING_X, L.HOUSING_Y, L.HOUSING_X, L.HOUSING_Y]
+    B = Builder()
+    for fr, rect in zip(frames, rects):
+        B.face([fr.P(0.0, z0), fr.P(fr.L, z0), fr.P(fr.L, z1), fr.P(0.0, z1)],
+               uv_region(rect, fr, 0.0, z0, k))
     lid = uv_patch("lid")
-    out = [(box(-hx, hx, -hy, hy, z0, z1, side, lid, lid), "tmp_housing")]
-    if housing_lid(level):
-        t, o = L.HOUSING_LID
-        out.append((box(-hx - o, hx + o, -hy - o, hy + o, z1 - 0.01, z1 + t,
-                        lambda a: lid, lid, lid), "tmp_lid"))
+    B.face([(x, y, z1) for x, y in corners], lid)
+    B.face([(x, y, z0) for x, y in reversed(corners)], lid)
+    out = [(B, "tmp_housing")]
+    if mode == "box":
+        return out
+    d, o = L.HOUSING_LID
+    if mode == "lid":
+        out.append((box(-hx - o, hx + o, -hy - o, hy + o, z1 - 0.02, z1 + d,
+                        lambda a: lid, lid, uv_patch("shadow")), "tmp_lid"))
+        return out
+    out.append((hip_lid(-hx - o, hx + o, -hy - o, hy + o, z1 - 0.02, z1 - 0.02 + d,
+                        L.HOUSING_LID_RISE), "tmp_lid"))
+    tops = L.blade_tops(L.Z_RIDGE + L.LOUV_Z[0], L.Z_RIDGE + L.LOUV_Z[1])
+    for i, fr in enumerate(frames):
+        out += blades(fr, L.LOUV_INSET, fr.L - L.LOUV_INSET, tops, "blade%d_" % i)
+    # the skirt: a prism along X whose top follows both slopes SKIRT[1] up
+    e, up = L.SKIRT
+    ye = hy + e
+    zs = L.Z_RIDGE - L.TAN * ye + up
+    sec = [(-ye, z0 + 0.05), (ye, z0 + 0.05), (ye, zs), (0.0, L.Z_RIDGE + up), (-ye, zs)]
+    S = Builder()
+    fl = uv_patch("flashing")
+    xa, xb = -hx - e, hx + e
+    n = len(sec)
+    for i in range(n):
+        (ya, za), (yb, zb) = sec[i], sec[(i + 1) % n]
+        S.face([(xa, ya, za), (xa, yb, zb), (xb, yb, zb), (xb, ya, za)], fl)
+    S.face([(xa, yy, zz) for yy, zz in reversed(sec)], fl)
+    S.face([(xb, yy, zz) for yy, zz in sec], fl)
+    out.append((S, "tmp_skirt"))
     return out
 
 
@@ -645,32 +761,98 @@ def roof_z(x, y):
     return L.Z_FT + L.TAN * min(EY + y, EY - y, EX + x, EX - x)
 
 
-def hood():
-    """The louvred attic vent on the front slope: a closed solid whose
-    section across X is its vertical louvred front, its top falling
-    HOOD_FALL a metre toward the front, and a back and a foot buried in the
-    roof; the union keeps what stands above the sheet."""
-    zf = roof_z(0.0, HOOD_Y)
-    top_f = zf + HOOD_FACE
-    yb = HOOD_Y + HOOD_FACE / (L.TAN - HOOD_FALL) + 0.15
-    sec = [(HOOD_Y, zf - 0.25), (HOOD_Y, top_f),
-           (yb, top_f + (yb - HOOD_Y) * HOOD_FALL), (yb, zf - 0.25)]
-    x, y, _w, _h = L.HOUSING
-    # the housing's louvre art: the face's sheet-level foot at the region's
-    # buried part's top, so the louvre band sits in the visible face
-    v0 = zf - (L.HOUSING_BURY + 0.04)
-    louvre = lambda co: (x + (co.x + HOOD_X) * PPM, y + (co.z - v0) * PPM)  # noqa: E731
-    fns = (louvre, uv_patch("canopy_top"), uv_patch("blank"), uv_patch("blank"))
+def _prism_x(x0, x1, sec, fns, end):
+    """A closed prism along X from x0 to x1 over the (y, z) section *sec*;
+    fns[k] maps the face over the section's edge k, *end* both ends."""
     B = Builder()
     n = len(sec)
     for k in range(n):
         (y0, z0), (y1, z1) = sec[k], sec[(k + 1) % n]
-        B.face([(-HOOD_X, y0, z0), (HOOD_X, y0, z0), (HOOD_X, y1, z1), (-HOOD_X, y1, z1)],
-               fns[k])
-    side = uv_patch("lid")
-    B.face([(-HOOD_X, yy, zz) for yy, zz in sec], side)
-    B.face([(HOOD_X, yy, zz) for yy, zz in reversed(sec)], side)
+        B.face([(x0, y0, z0), (x1, y0, z0), (x1, y1, z1), (x0, y1, z1)], fns[k])
+    B.face([(x0, yy, zz) for yy, zz in sec], end)
+    B.face([(x1, yy, zz) for yy, zz in reversed(sec)], end)
     return B
+
+
+def hood(level):
+    """The louvred attic vent on the front slope: a closed solid whose
+    section across X is its vertical louvred front, its top falling
+    HOOD_FALL a metre toward the front, and a back and a foot buried in the
+    roof; the union keeps what stands above the sheet. Up close
+    (hood_mode()) the front carries modelled blades over its painted slots
+    and a cap plate oversails the top, front and sides, its front edge a
+    drip; farther, the wedge alone with the louvre painted."""
+    zf = roof_z(0.0, HOOD_Y)
+    top_f = zf + HOOD_FACE
+    foot = zf - L.HOOD_FOOT
+    yb = HOOD_Y + HOOD_FACE / (L.TAN - HOOD_FALL) + 0.15
+    sec = [(HOOD_Y, foot), (HOOD_Y, top_f),
+           (yb, top_f + (yb - HOOD_Y) * HOOD_FALL), (yb, foot)]
+    front = Frame((-HOOD_X, HOOD_Y), (HOOD_X, HOOD_Y))
+    louvre = uv_region(L.HOOD, front, 0.0, foot, L.HOUSING_PPM)
+    fns = (louvre, uv_patch("canopy_top"), uv_patch("blank"), uv_patch("blank"))
+    out = [(_prism_x(-HOOD_X, HOOD_X, sec, fns, uv_patch("lid")), "tmp_hood")]
+    if not hood_mode(level):
+        return out
+    tops = L.blade_tops(zf + L.HOOD_LOUV_Z[0], zf + L.HOOD_LOUV_Z[1])
+    out += blades(front, L.LOUV_INSET, L.HOOD_W - L.LOUV_INSET, tops, "hood_blade")
+    f, s, above, below = HOOD_CAP
+    ya = HOOD_Y - f
+
+    def top(yy, dz):
+        return top_f + (yy - HOOD_Y) * HOOD_FALL + dz
+    cap_sec = [(ya, top(ya, -below)), (yb, top(yb, -below)), (yb, top(yb, above)),
+               (ya, top(ya, above))]
+    lid = uv_patch("lid")
+    out.append((_prism_x(-HOOD_X - s, HOOD_X + s, cap_sec,
+                         (uv_patch("shadow"), uv_patch("blank"), uv_patch("canopy_top"), lid),
+                         lid), "tmp_hood_cap"))
+    return out
+
+
+def fitting_solids(level):
+    """The small fittings this tier keeps (fittings()), each a box let
+    FIT_BURY into its wall, its faces on the atlas's fitting art."""
+    k = L.FIT_PPM
+    fr, rear = frame_of("front"), frame_of("rear")
+    out = []
+    lamp_top, opal, rim = uv_patch("lamp_body"), uv_patch("opal"), uv_patch("sign_rim")
+
+    def lamp(fr, at, name):
+        w, h, d = L.LAMP_M
+        s0, z0 = at[0] - w / 2.0, at[1]
+        x, y, _w, _h = L.LAMP_SIDE
+        ends = lambda co: (x + fr.out_of(co) * k, y + (co.z - z0) * k)  # noqa: E731
+        out.append((wall_box(fr, s0, s0 + w, -FIT_BURY, d, z0, z0 + h,
+                             uv_region(L.LAMP_FRONT, fr, s0, z0, k), lamp_top, opal, ends),
+                    name))
+    for what in fittings(level):
+        if what == "front_lamp":
+            lamp(fr, FRONT_LAMP, "tmp_front_lamp")
+        elif what == "rear_lamp":
+            lamp(rear, REAR_LAMP, "tmp_rear_lamp")
+        elif what == "number":
+            w, h, d = L.NUMBER_M
+            s0, z0 = NUMBER_AT[0] - w / 2.0, NUMBER_AT[1]
+            out.append((wall_box(fr, s0, s0 + w, -FIT_BURY, d, z0, z0 + h,
+                                 uv_region(L.NUMBER, fr, s0, z0, k), rim, rim, rim),
+                        "tmp_number"))
+        elif what == "hours":
+            w, h, d = L.HOURS_M
+            s0, z0 = HOURS_AT[0] - w / 2.0, HOURS_AT[1]
+            edge = uv_patch("lamp_body")
+            out.append((wall_box(fr, s0, s0 + w, -FIT_BURY, d, z0, z0 + h,
+                                 uv_region(L.HOURS, fr, s0, z0, k), edge, edge, edge),
+                        "tmp_hours"))
+        elif what == "lobby_lamp":
+            w, d, h = L.LOBBY_LAMP_M
+            sc = dict(WALL["front"]["items"])["screen"]
+            zt = L.ITEMS["screen"]["z1"]
+            out.append((wall_box(fr, sc - w / 2.0, sc + w / 2.0, LOBBY_LAMP_OUT - d / 2.0,
+                                 LOBBY_LAMP_OUT + d / 2.0, zt - h, zt + 0.03,
+                                 lamp_top, uv_patch("blank"), opal, lamp_top),
+                        "tmp_lobby_lamp"))
+    return out
 
 
 def vent_pipe():
@@ -778,7 +960,8 @@ def build_lod(level):
     if caps_kept(level):
         parts += [to_object(B, n) for B, n in caps()]
     parts += [to_object(B, n) for B, n in housing(level)]
-    parts.append(to_object(hood(), "tmp_hood"))
+    parts += [to_object(B, n) for B, n in hood(level)]
+    parts += [to_object(B, n) for B, n in fitting_solids(level)]
     if vent_kept(level):
         parts.append(to_object(vent_pipe(), "tmp_vent"))
     if band_modelled(level):
@@ -902,8 +1085,43 @@ def check_layout():
     avoid = [(k, l, r) for k, l, r, b, t in rects["rear"]]
     avoid.append(("canopy", CANOPY_S[0], CANOPY_S[1]))
     bad += RS.problems(WALL_LADDER, "the wall ladder", avoid)
-    if (HY - hy) - abs(ROOF_TOP_OUT) < 0.2:
-        bad.append("the roof ladder runs into the housing")
+    if (HY - hy - max(o, L.SKIRT[0])) - abs(ROOF_TOP_OUT) < 0.2:
+        bad.append("the roof ladder runs into the housing, its skirt or its lid")
+    # the louvre blades: a whole blade fits each band, and they stay clear
+    # of the skirt below and the lid above
+    tops = L.blade_tops(L.Z_RIDGE + L.LOUV_Z[0], L.Z_RIDGE + L.LOUV_Z[1])
+    if len(tops) < 3:
+        bad.append("the housing's louvre has fewer than three blades")
+    if tops[-1] - L.LOUV_T < L.Z_RIDGE + L.SKIRT[1] + 0.02:
+        bad.append("the housing's lowest blade sits on the skirt")
+    if tops[0] > L.Z_RIDGE + L.HOUSING_UP - 0.04:
+        bad.append("the housing's top blade runs under the lid")
+    if len(L.blade_tops(L.HOOD_LOUV_Z[0], L.HOOD_LOUV_Z[1])) < 3 or \
+            L.HOOD_LOUV_Z[1] > HOOD_FACE - HOOD_CAP[3]:
+        bad.append("the hood's louvre does not fit under its cap")
+    # the fittings: on their piers, clear of openings, corners and each other
+    front = {k: (l, r, b, t) for k, l, r, b, t in rects["front"]}
+    lw, lh, _ = L.LAMP_M
+    nw, nh, _ = L.NUMBER_M
+    hw, hh, _ = L.HOURS_M
+    lamp_r = FRONT_LAMP[0] + lw / 2.0
+    if FRONT_LAMP[0] - nw / 2.0 < 0.3 or max(lamp_r, NUMBER_AT[0] + nw / 2.0) > \
+            front["screen"][0] - 0.2:
+        bad.append("the front lamp or the house number crowds the corner or the lobby")
+    if FRONT_LAMP[1] + lh > NUMBER_AT[1] - 0.08 or NUMBER_AT[1] + nh > L.Z_BAND0 - 0.08:
+        bad.append("the front lamp, the house number and the band overlap")
+    if FRONT_LAMP[1] < 1.9:
+        bad.append("the front lamp hangs below head height")
+    win = min(l for k, l, r, b, t in rects["front"] if k == "window")
+    if not (front["screen"][1] + 0.15 < HOURS_AT[0] - hw / 2.0 and
+            HOURS_AT[0] + hw / 2.0 < win - 0.15 and HOURS_AT[1] + hh < BOX_Z[0] - 0.3):
+        bad.append("the opening-hours board crowds the lobby, a window or the light box")
+    if abs(LOBBY_LAMP_OUT) + L.LOBBY_LAMP_M[1] / 2.0 > L.ITEMS["screen"]["depth"] - 0.1:
+        bad.append("the lobby light reaches the screen")
+    rear_d = rear["service_door"]
+    if not (CANOPY_S[1] + 0.1 < REAR_LAMP[0] - lw / 2.0 and REAR_LAMP[0] + lw / 2.0 < 9.6):
+        bad.append("the rear lamp crowds the canopy or the corner (door at %.2f-%.2f)"
+                   % (rear_d[0], rear_d[1]))
     # plan bounds within the brief's 11.5 x 9.5 m
     front_y = HY + BOX_OUT[1]
     rear_y = HY + WALL_LADDER.standoff + RS.RAIL_D
