@@ -218,13 +218,49 @@ U_OFF = {"front_w": 0.0, "front_e": 7.2, "dormer_front": 2.8, "east": 3.3,
          "join_w": 0.0, "join_e": 0.0, "cheek_e": 4.1, "cheek_w": 11.7,
          "porch_w": 2.2, "porch_front": 0.3, "porch_e": 5.7}
 
-# Downpipes (scripts/downpipes.py): one from each eave's gutter, at
-# diagonally opposite corners, so each gable end shows one: the front's at
-# its east end, the rear's at its west. The porch and the dormer take the
-# middle of the front, so each eave's gutter drains to its outer end.
-DOWNPIPE_SPOTS = [("front_e", HX - BX1 - DP.CORNER), ("rear_w", HX + BX0 - DP.CORNER)]
+# Downpipes (scripts/downpipes.py): one from every gutter. The porch and the
+# dormer take the middle of the front, so the main front eave is two runs,
+# each draining to its outer end: the east run's pipe at the front's east
+# corner, the west run's at its west corner. The rear eave's is at its west
+# end, diagonally opposite the east one, so each gable end shows one or two.
+DOWNPIPE_SPOTS = [("front_e", HX - BX1 - DP.CORNER), ("rear_w", HX + BX0 - DP.CORNER),
+                  ("front_w", DP.CORNER)]
 DOWNPIPES = [DP.eave_pipe(WALLS[w].p0, WALLS[w].p1, s, L.Z_EAVE, TAN, EAVE_OV)
              for w, s in DOWNPIPE_SPOTS]
+
+
+class DeckPipe(DP.Pipe):
+    """A downpipe that ends on a deck at *floor* instead of the ground: the
+    shoe (or an unbent pipe's open end) stands as far over the deck as
+    downpipes.py stands it over the ground."""
+
+    def __init__(self, pipe, floor):
+        self.__dict__.update(pipe.__dict__)
+        self.floor = floor
+
+    def path(self, bent=True):
+        top = DP.Pipe.path(self, bent)
+        top = top[:-1] if not bent else top[:-2]
+        if not bent:
+            return top + [(DP.OUT, self.floor + DP.FOOT)]
+        z0, k = DP.SHOE
+        return top + [(DP.OUT, self.floor + z0), (DP.OUT + k, self.floor + z0 - k)]
+
+
+# The dormer's gutter drains down the dormer front at its east end, clear of
+# the balcony door, onto the deck; the deck drains through a short spout in
+# the parapet's east side, near its front corner, clear of the porch window
+# and away from the entrance. The spout takes the gutter's steel like the
+# pipes and is a closed box run into the parapet: 0.12 x 0.08 m, 0.25 m out.
+DORMER_PIPE_S = (BX1 - BX0) - DP.CORNER          # dormer_front, s = x + 2.2
+DORMER_PIPE = DeckPipe(DP.eave_pipe(WALLS["dormer_front"].p0, WALLS["dormer_front"].p1,
+                                    DORMER_PIPE_S, DZ_EAVE, D_PITCH, EAVE_OV), DECK_Z)
+SPOUT_S = 0.35                                   # porch_e, s = y + 6.6
+SPOUT_W, SPOUT_H, SPOUT_OUT = 0.12, 0.08, 0.25
+# The last tier with the spout and the dormer's pipe. At the LOD2/LOD3 switch
+# (about 113 m) both are under a pixel across, the pipe mostly behind the
+# parapet, and LOD3 has no 13 triangles to spare for it under its ceiling.
+SPOUT_LAST = 2
 
 # Roof safety kit (scripts/roof_safety.py), the sweep's way to the chimney.
 # The porch and the dormer take the front, and its outer pieces are too short
@@ -340,6 +376,18 @@ def dormer_roof():
     return K.slab("x", 0.0, sec, kinds, BX0 - D_RAKE_OV, BX1 + D_RAKE_OV, fns)
 
 
+def spout():
+    """The deck's outlet: a closed box through the parapet's east side just
+    over the deck, its inner end buried in the parapet, sampling the
+    gutter's rows (PIPE_STRIP) like the downpipes."""
+    y = WALLS["porch_e"].p0[1] + SPOUT_S
+    z0 = DECK_Z + 0.02
+    return RS.box(RS.Mesh(RS.Paint(L.ATLAS, strip=L.PIPE_STRIP)), (BX1, y, z0),
+                  (1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0),
+                  (-PARAPET_T / 2.0, SPOUT_OUT), (-SPOUT_W / 2.0, SPOUT_W / 2.0),
+                  (0.0, SPOUT_H))
+
+
 # ================================================================ assembly
 def build_lod(level):
     base = to_object(west_block(level), "tmp_west")
@@ -355,7 +403,11 @@ def build_lod(level):
         to_object(dormer_roof(), "tmp_dormer_roof"),
         to_object(K.chimney(CHIMNEY), "tmp_chimney"),
     ]
-    return K.tier(level, base, parts, STEPS, (CANOPY_X, HY), DOWNPIPES, ROOF_KIT, HANDRAILS)
+    deck = level <= SPOUT_LAST
+    if deck:
+        parts.append(to_object(spout(), "tmp_spout"))
+    return K.tier(level, base, parts, STEPS, (CANOPY_X, HY),
+                  DOWNPIPES + ([DORMER_PIPE] if deck else []), ROOF_KIT, HANDRAILS)
 
 
 def check_layout():
@@ -409,6 +461,21 @@ def check_layout():
     for (w, _s), pipe in zip(DOWNPIPE_SPOTS, DOWNPIPES):
         avoid = [(k,) + K.item_rects(k, c, z)[0][:2] for k, c, z in WALLS[w].items]
         problems += DP.problems(pipe, "the %s downpipe" % w, avoid)
+    # the dormer's pipe: clear of the dormer's corners and the balcony door,
+    # and its shoe over the deck, inside the parapet
+    dormer = WALLS["dormer_front"]
+    avoid = [(k,) + K.item_rects(k, c, z)[0][:2] for k, c, z in dormer.items]
+    problems += DP.problems(DORMER_PIPE, "the dormer downpipe", avoid)
+    foot = DORMER_PIPE.point(0.0, DORMER_PIPE.path()[-1][0] + DP.A, 0.0)
+    if not (BX0 + PARAPET_T < foot.x - DP.A and foot.x + DP.A < BX1 - PARAPET_T
+            and PY_FRONT + PARAPET_T < foot.y < -HY):
+        problems.append("the dormer downpipe's shoe is not over the deck")
+    # the spout: clear of the porch's front corner board and its window
+    porch_e = WALLS["porch_e"]
+    win = [K.item_rects(k, c, z)[0] for k, c, z in porch_e.items]
+    lo, hi = SPOUT_S - SPOUT_W / 2.0, SPOUT_S + SPOUT_W / 2.0
+    if lo < L.CW + 0.05 or any(hi > r[0] - 0.05 and lo < r[1] + 0.05 for r in win):
+        problems.append("the deck's spout crowds the porch's corner or window")
     # the roof kit: the wall ladder clear of the rear's corners, openings,
     # back steps, canopy and downpipe, in the rear line's s = 5 - x; the
     # walkway behind the stack, clear of it and of the ridge

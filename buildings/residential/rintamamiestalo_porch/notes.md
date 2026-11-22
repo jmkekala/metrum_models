@@ -233,7 +233,12 @@ the head of the flight and one on the bottom tread.
 - There are no balusters, because a see-through infill would need alpha.
 - They stand inside the steps' footprint and well under the eaves, so no
   tier's bounds change.
-- They are on `LOD0` and `LOD1` and go at `LOD2`.
+- They are unioned with the steps on `LOD0` and `LOD1`. `LOD2` keeps them
+  lean (the family module's `RAILS`): the same rail and posts as separate
+  closed solids that touch nothing, appended after the weld at 60 triangles
+  a flight, so the rail's line over the steps survives the `LOD1`/`LOD2`
+  switch at about 55 m. They go at `LOD3`, where a 45 mm rail is a third of
+  a pixel.
 
 ## Per-tier triangle counts
 
@@ -241,8 +246,13 @@ the head of the flight and one on the bottom tread.
 | --- | --- | --- | --- |
 | `LOD0` | 2642 | 12,000 | casing rings, reveals and glass on every window and door on all four elevations, cellar lights recessed, corner boards, stepped treads, canopy, open chimney flue; two downpipes, eight-sided with swan-neck and shoe; roof safety kit with every rung, brackets and posts; a handrail on each flight |
 | `LOD1` | 2054 | 4,000 | each opening becomes one recess the size of its casing (casing painted on the recessed plane); cellar lights and vent go flush; downpipes four-sided; kit with every other rung; handrails kept |
-| `LOD2` | 682 | 1,500 | openings flush; corner-board paint retained; cellar lights and vent dropped; redundant coplanar subdivisions dissolved; downpipes straight, no swan-neck or shoe; kit with every fourth rung, no brackets or posts; handrails dropped |
-| `LOD3` | 342 | 500 | bathroom and porch windows dropped, back canopy dropped, steps become ramps; corner-board paint retained; downpipes three-sided; roof safety kit dropped |
+| `LOD2` | 854 | 1,500 | openings flush, the cellar lights and gable vents among them; corner-board paint retained; redundant coplanar subdivisions dissolved; downpipes straight, no swan-neck or shoe; kit with every fourth rung, no brackets or posts; handrails lean (separate solids, 120) |
+| `LOD3` | 436 | 500 | every opening still flush, the bathroom and porch windows, cellar lights and vents included; back canopy dropped, steps become ramps; corner-board paint retained; downpipes three-sided; roof safety kit and handrails dropped |
+
+The small openings kept as flush quads on the far tiers cost about 8-10
+triangles each with the hole they leave in their wall: 52 at `LOD2` (four
+cellar lights, two vents) and 94 at `LOD3` (with the bathroom and two porch
+windows).
 
 **`LOD0`–`LOD2` sit far under their ceilings, and that is correct rather
 than something to pad.** The building is a 10 × 8 m box with one gable roof, a porch
@@ -262,9 +272,9 @@ tiers. Most of it is the rungs with the holes they leave in the rails,
 and the brackets and posts with the squares they cut in the wall and the
 sheet.
 
-**The handrails cost 322, 318, 0 and 0 triangles** on the four tiers: two
+**The handrails cost 322, 318, 120 and 0 triangles** on the four tiers: two
 rails in two runs each, the posts, and the squares the posts cut in the
-landings and treads. At about an eighth of `LOD0` they cost more than the
+landings and treads; on `LOD2` the lean rails, 60 a flight, cut nothing. At about an eighth of `LOD0` they cost more than the
 downpipes and far less than the roof kit, and leave `LOD0` and `LOD1` far
 under their ceilings.
 
@@ -272,6 +282,33 @@ under their ceilings.
 pipes' own faces and the holes they leave in the soffit together.
 
 ## LOD review
+
+### Consumer screen-size switches
+
+The consumer switches by screen size, at about 1.8, 4 and 8 times the
+house's largest bounds dimension (13.68 m): **`LOD0`/`LOD1` at 24.6 m,
+`LOD1`/`LOD2` at 54.7 m, `LOD2`/`LOD3` at 109.4 m**, measured from the camera
+to the centre of `LOD0`'s bounds, at 1080p with a 75° vertical FOV
+(1920×1080 renders of the reimported tiers in `scripts/review_asset.py`'s
+scene, cropped to the house). Each pair was rendered front, corner and eye
+level by noon and from the corner at night with the reference emission, and
+from the yard side (160°) by noon and night
+(`review/older_audit_2026_11_22/fix_residential/rintamamiestalo_porch/`).
+
+- `LOD0`→`LOD1` at 24.6 m: rings become single recesses; nothing goes.
+- `LOD1`→`LOD2` at 54.7 m: the openings go flat (the casings' outlines in
+  the difference image), as CLAUDE.md expects. The cellar lights and gable
+  vents, 9 × 6 px there, stay as flush quads and the cellar lights stay lit
+  at night; the handrails stay as lean solids. Before this pass all three
+  went at this switch.
+- `LOD2`→`LOD3` at 109.4 m: the bathroom and porch windows, 5-7 px, stay and
+  stay lit; what changes is the steps' banding becoming a ramp's even slope
+  inside a 10 × 6 px patch, the lean handrails going (a third of a pixel),
+  and the back canopy. The night pair differs by a mean of 0.10 (0.23
+  before), with no pixel over 24.
+
+The older review below used the catalog's 50° review camera at 35/70/120 m;
+it is kept for what it measured, but the switches above are the consumer's.
 
 **The chimney flue stays recessed on every tier**, where the windows go flush
 at `LOD2`. Two flush versions were rendered and dropped. Painted flush from
@@ -367,9 +404,9 @@ side the ladder's line over the eave can be found missing, not at a glance.
 oblique and rear at 12 and 40 m under noon, before (`before/`) and after
 (`after_one/`), and `LOD1` against `LOD2` at 70 m (`switch70/`). At 40 m the
 rails and posts read clearly against the plinth and the treads, and `LOD1`
-keeps them whole. At 70 m they are about two pixels wide, and a side-by-side
-comparison shows them gone on `LOD2`. Within the steps' mass that is not
-visible at a glance.
+keeps them whole. At 70 m they are about two pixels wide; that pass's `LOD2`
+had dropped them, which a side-by-side comparison showed. `LOD2` now keeps
+them lean (Consumer screen-size switches above).
 
 ## Interior geometry
 
@@ -379,8 +416,12 @@ Measured with `scripts/validate_asset.py` on the exports:
 | --- | --- | --- |
 | `LOD0` | 44 of 2642 | 1.7 % |
 | `LOD1` | 30 of 2054 | 1.5 % |
-| `LOD2` | 10 of 682 | 1.5 % |
-| `LOD3` | 2 of 342 | 0.6 % |
+| `LOD2` | 30 of 854 | 3.5 % |
+| `LOD3` | 3 of 436 | 0.7 % |
+
+On `LOD2` the lean handrails add most of the candidates: the rails'
+undersides over the treads and the landing posts' faces toward the wall,
+exterior surface where most sampled rays meet the steps or the wall.
 
 The roof safety kit adds most of the candidates: the roof ladder's rung
 undersides, a few centimetres over the sheet, and the walkway plank's
@@ -415,9 +456,14 @@ candidate: its lining and floor see the sky up the shaft.
   onto open ground, with no splash block.
 - **No inside-corner board** where the porch meets the main wall; only convex
   corners get one.
-- **Windows pop from recessed to flat at the `LOD1`→`LOD2` switch**, as
-  CLAUDE.md expects. The bathroom and porch windows vanish at `LOD3`, where
-  they are about 5 px.
+- **Windows go from recessed to flat at the `LOD1`→`LOD2` switch**, as
+  CLAUDE.md expects. No opening is dropped on any tier: the cellar lights,
+  the gable vents and the bathroom and porch windows stay to `LOD3` as flush
+  quads.
+- **The steps become ramps at `LOD3`**, keeping their footprint. At the
+  `LOD2`/`LOD3` switch (about 109 m) a 0.17 m riser is about one pixel, and
+  the change is a shading change inside a 10 x 6 px patch: the treads'
+  light-dark banding becomes one even slope.
 
 ## Texture set
 
@@ -470,7 +516,15 @@ candidate: its lining and floor see the sky up the shaft.
   0.08 and metallic 0. It is opaque, and nothing is reflected into the
   albedo. See Glazing treatment below for the measured values.
 - Roughness separates the materials: siding 0.74, trim 0.58, sashes 0.50,
-  glass 0.08, concrete 0.90, roof steel 0.42 with metallic 0.25, brick 0.86.
+  glass 0.08, concrete 0.90, brick 0.86, and the painted steel of the roof,
+  gutter, flashing and drip caps 0.46 (the chimney cap 0.48). Painted steel
+  is dielectric, metallic 0: the paint is what the light sees. The door
+  handles are the one bare metal (0.35, metallic 0.80). A ±0.04 roughness
+  noise on a 20 px blur varies the timber and concrete; the painted steel
+  takes none. With the roof at metallic 0.25 and that noise on it, the
+  sunward slope showed dark blotches about 2 m across at every distance; a
+  finer noise (3 px) only turned them into mottle, so the steel is even and
+  its variation is the weathering's runs and chalking.
 - The chimney flue is soot: a `flue` patch, the blank patch darkened to about sRGB 34 with AO
   0.35, in a row of its own above the other patches (x 750, y 866). It
   lines and floors the open flue on every tier.
@@ -640,7 +694,8 @@ eight unique 1024² images: five albedos, one ORM, one normal map, one emission.
 
 **Game control.** Every GLB defaults to `emissiveFactor = [0, 0, 0]`, with
 the texture binding retained. A reference lit factor is linear RGB
-`[1.0, 0.55, 0.23]`; scale it toward zero to dim or switch off. Saved
+`[1.0, 0.88, 0.72]`, the warm white the newer catalog assets use (the family
+module's `TINT`); scale it toward zero to dim or switch off. Saved
 `source.blend` uses the same linked mask/tint and emission strength zero.
 `scripts/window_emission.py` exports a positive reference state, then writes
 the default-off core glTF factor while preserving the texture. No emission
@@ -720,12 +775,12 @@ blender --background source.blend --python build.py  # meshes, preview, variants
 ```
 
 Textures first, because the UVs index into the atlas and the renders read it.
-The headless run ends by saving `source.blend`, as the three siblings' scripts
-already did; before the gable-window revision this one left the saved file to
-be written by hand.
-`facade_atlas.py` is also the single source of the numbers the two scripts
-share: `build.py` imports z-levels, opening sizes and region rects from it
-rather than repeating them. Re-running the build reproduces the four `.glb`
+The headless run ends by saving `source.blend`.
+The family module `scripts/rintamamiestalo.py` holds what the four
+rintamamiestalo houses share: the atlas, the mesh kit, the tier policy, the
+ORM table and the night tint. `facade_atlas.py` names this house's layout
+(`rintamamiestalo.Layout`), the single source of the numbers the two scripts
+share, and `build.py` keeps the massing, walls, checks and facts. Re-running the build reproduces the four `.glb`
 files byte for byte, which was checked between an interactive and a headless
 run, and again over consecutive headless runs after the fixes above.
 
@@ -741,11 +796,10 @@ and the validator confirms uri-only images on every tier.
 first asset. Only the distance differs, because that camera frames a 49 m hall:
 `_fit_camera()` keeps the line of sight and moves the camera until the
 bounding box fills the frame with an 8 % margin. That is a rule a later asset
-can follow unchanged. The flat grey world rather than a studio HDRI is the
-deviation `brick_clocktower_hall/notes.md` already records, kept so the two
-previews stay comparable. That note asked for it to be settled before a second
-asset landed, and it is still open: switching to an HDRI now means
-re-rendering both previews, which is one headless run per asset.
+can follow unchanged. The world is `scripts/asset_build.py`'s neutral flat
+grey with its sun, the same for every catalog asset, which is what CLAUDE.md
+asks of a preview (a neutral world and sun, or an authoring-only studio HDRI);
+it is not a deviation.
 
 The material, the export and the previews are `scripts/asset_build.py`'s,
 shared by every asset: `build.py` keeps this building's massing, UVs and
@@ -833,6 +887,21 @@ Checked here, in Blender:
   the only additions, and the bounds and the pivot are unchanged.
   `scripts/validate_asset.py` still reports no failures or warnings.
 
+- The 2026-11-22 audit fixes (Revision log), as CLAUDE.md asks of a change
+  to a finished asset: the folder snapshotted into
+  `review/older_audit_2026_11_22/fix_residential/rintamamiestalo_porch/before/`
+  first, then the same sets rendered from the snapshot and from the rebuild
+  and compared (`compare/`): the tier pairs at the consumer's switches
+  (front, corner, eye, rear, noon and night; LOD review), `LOD0` front and
+  oblique at 20 and 35 m under noon and the reversed sun, and an aerial and
+  an oblique at 25 m under noon and morning sun for the roof. The roof's
+  blotches are gone at 25 m, the gutter, pipes and flashing read as painted
+  steel, the far tiers keep every opening and the `LOD2` rails, and nothing
+  else changed. Only the ORM changed among the PNGs; albedos, normal map and
+  emission are byte-identical. `scripts/validate_asset.py`: 58 PASS, 0 FAIL,
+  9 MANUAL, 1 WARN (`source.dirty` true, expected until the sidecar is
+  rewritten from a committed tree).
+
 Pending, and outside this repository:
 
 - Consumer filtering: `atlas.pad()` fills every gutter, but coarse mips can
@@ -845,7 +914,8 @@ Pending, and outside this repository:
 
 ## Tooling versions
 
-- **Blender 5.2.2 LTS**, which saved the current `source.blend`.
+- **Blender 5.3.0**, which saved the current `source.blend` and built and
+  validated the current exports.
 - **Blender Lab "MCP" extension v1.0.3** (`lab_blender_org/mcp`, requires
   Blender ≥ 5.1).
 - **CPython 3.14.10 with numpy 2.5.5, scipy 1.18.1 and Pillow 13.0.0** for the
@@ -857,6 +927,17 @@ only sets them when a node tree is missing.
 
 ## Revision log
 
+- **2026-11-22 — audit fixes: far-tier openings, lean handrails, painted
+  steel, night tint.** In the family module `scripts/rintamamiestalo.py`:
+  the cellar lights, gable vents and the bathroom and porch windows stay to
+  `LOD3` as flush quads; the handrails stay on `LOD2` as lean solids; painted
+  steel (roof, gutter, flashing, drip caps, chimney cap) is dielectric at
+  roughness 0.46-0.48 with no roughness noise; the reference lit factor is
+  `[1.0, 0.88, 0.72]`. Triangle counts changed from 2642 / 2054 / 682 / 342
+  to 2642 / 2054 / 854 / 436. Only the ORM changed among the PNGs; the GLBs,
+  `source.blend`, the sidecar, `preview.png` and `variants.png` were
+  regenerated. Notes corrected where stale (the Blender version, the
+  consumer's switch distances, the preview world).
 - **2026-11-22 — rounded chimney brick.** The chimney's `brickwork.paint()`
   call counts its courses from the cap with the painter's `y_ref` instead of
   computing the foot itself (same bond and tones; the cut course at the

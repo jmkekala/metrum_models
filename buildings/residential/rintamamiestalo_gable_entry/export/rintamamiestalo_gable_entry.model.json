@@ -3,7 +3,7 @@
   "version": 1,
   "name": "rintamamiestalo_gable_entry",
   "path": "buildings/residential/rintamamiestalo_gable_entry",
-  "source": {"commit": "19698c46f850176a6967257d7c820c851fcfc5d0", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "a828f11675e7263b565b532182cf59633efb3e14", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-4.54, 0.0, -7.49], "max": [4.54, 9.5625, 7.49]},
   "footprint": [
@@ -25,11 +25,11 @@
   "lods": [
     {"file": "rintamamiestalo_gable_entry_lod0.glb", "triangles": 2572, "sha256": "147efce7a88461b7e3a82fed07a29b8c5c17b4b44aadd21aff9d4dc1644eb7c0"},
     {"file": "rintamamiestalo_gable_entry_lod1.glb", "triangles": 2008, "sha256": "63fdb92e4433f0bae628c79c4a85b481ef2d94a6924ff9fba989dc7a1c25117c"},
-    {"file": "rintamamiestalo_gable_entry_lod2.glb", "triangles": 762, "sha256": "03d2d17c9173d87f716dda3179258937744ffb9d4e0927407c85c03c13b93f27"},
-    {"file": "rintamamiestalo_gable_entry_lod3.glb", "triangles": 470, "sha256": "70b9b261e64678236479eaaa30f8bc4b60ac57c7ab357498ff652781721d704a"}
+    {"file": "rintamamiestalo_gable_entry_lod2.glb", "triangles": 912, "sha256": "1004a028c6b68e52e5da1697d9e33810e5e953493ab34223e3489dcf2809a9a0"},
+    {"file": "rintamamiestalo_gable_entry_lod3.glb", "triangles": 488, "sha256": "c3c9bbc24a9145e7687dbba1b2fff873027ae8efb5a2832c7eff38041b059065"}
   ],
   "textures": {
-    "orm": {"file": "rintamamiestalo_gable_entry_orm.png", "sha256": "2e7c884af2a4623b5edd37e0a840767580ddc14bc0d0e881167581249a95a3c8"},
+    "orm": {"file": "rintamamiestalo_gable_entry_orm.png", "sha256": "d14cfacc0dc4743ff0fc2d4800321f4bef9e8944c0f2c4cfcf6da79997b4476e"},
     "normal": {"file": "rintamamiestalo_gable_entry_normal.png", "sha256": "81869098bdb7e478c5d830d959bc7f7aa30c17ce1c7178850978f08dc5fcc5ab"},
     "emission": {"file": "rintamamiestalo_gable_entry_emission.png", "sha256": "e83a374f3040116c37f6bd0ae1e98745978c3a8ba2fc791a5206897fbb1ccc0c"}
   },
@@ -41,6 +41,6 @@
     {"id": "green", "albedo": "rintamamiestalo_gable_entry_albedo_green.png", "sha256": "7793ed3284d799f4d5358744dd469ab70fd41c7e16552fddaf2e84e15707bee1"}
   ],
   "default_variant": "red",
-  "preview": {"file": "../preview.png", "sha256": "b8146661ef5c7a81a3a42ee9f53fca86f03e1f3b952c1a8423874bafeb33d3ee"},
+  "preview": {"file": "../preview.png", "sha256": "27cf679e43cc511f906b4534b47f2e46c449878dec2db709a2e1e5452dae4383"},
   "hero": false
 }

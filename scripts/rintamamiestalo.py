@@ -57,8 +57,10 @@ normal map; shade carries tone, wear and the occlusion in laps and joints.
 Weather is scripts/weathering.py's: weather() says where it goes.
 
 What later fixes change once for all four lives in one place each: the tier
-policy (ITEM_MODES, CANOPY_LAST, RAMP_FROM, DISSOLVE_FROM; downpipes,
-the roof kit and handrails keep theirs in their own scripts), the ORM table
+policy (ITEM_MODES with a house's exceptions in ITEM_MODES_HOUSE,
+CANOPY_LAST, RAMP_FROM, RAILS, DISSOLVE_FROM; the downpipes and the roof kit
+keep theirs in their own scripts, but for a house's own downpipe tiers in
+DOWNPIPE_MODES_HOUSE), the ORM table
 (SURFACE, with the roughness noise in export()) and the night tint (TINT).
 
 Imports numpy alone at the top (with the atlas scripts, which do the same),
@@ -162,17 +164,22 @@ PATCH_NAMES = ("trim", "soffit", "reveal", "blank", "tread", "cap", "barge")
 ID_WALL, ID_TRIM, ID_SASH, ID_GLASS, ID_PLINTH, ID_METAL = 0, 1, 2, 3, 4, 5
 ID_ROOF, ID_DOOR, ID_BRICK, ID_MORTAR, ID_CAP, ID_BLANK, ID_HANDLE, ID_DECK = (
     6, 7, 8, 9, 10, 11, 12, 13)
-# The ORM table: (roughness, metallic). Painted steel stays mostly dielectric
-# (the paint is what the light sees) but gets a little metallic so it
-# separates from the timber beside it. ID_DECK only where a house has the
-# deck strip; an id a house does not paint changes none of its texels.
+# The ORM table: (roughness, metallic). Painted steel (the roof, the gutter,
+# flashing and drip caps, the chimney cap) is dielectric: the paint is what
+# the light sees. It separates from the timber beside it by its roughness,
+# and it takes no roughness noise (PAINTED_STEEL, export()): a metallic
+# sheet, and noise at the scale of metres, put dark blotches about 2 m
+# across on the sunward slope at every distance. The door handles are the
+# one bare metal. ID_DECK only where a house has the deck strip; an id a
+# house does not paint changes none of its texels.
 SURFACE = {
     ID_WALL: (0.74, 0.0), ID_TRIM: (0.58, 0.0), ID_SASH: (0.50, 0.0),
-    ID_GLASS: (0.08, 0.0), ID_PLINTH: (0.90, 0.0), ID_METAL: (0.40, 0.30),
-    ID_ROOF: (0.42, 0.25), ID_DOOR: (0.55, 0.0), ID_BRICK: (0.86, 0.0),
-    ID_MORTAR: (0.92, 0.0), ID_CAP: (0.48, 0.35), ID_BLANK: (0.95, 0.0),
+    ID_GLASS: (0.08, 0.0), ID_PLINTH: (0.90, 0.0), ID_METAL: (0.46, 0.0),
+    ID_ROOF: (0.46, 0.0), ID_DOOR: (0.55, 0.0), ID_BRICK: (0.86, 0.0),
+    ID_MORTAR: (0.92, 0.0), ID_CAP: (0.48, 0.0), ID_BLANK: (0.95, 0.0),
     ID_HANDLE: (0.35, 0.80), ID_DECK: (0.80, 0.0),
 }
+PAINTED_STEEL = (ID_ROOF, ID_METAL, ID_CAP)
 
 # ---------------------------------------------------------------- palettes
 # Traditional Finnish house paints, kept muted: punamulta red, ochre yellow,
@@ -780,7 +787,8 @@ def export(L, out_dir, ss=atlas.SS):
     c = paint(L, ss)
     cav = atlas.cavity(c, radius_px=1.5, depth_m=0.012)
     c.weather.dust(cav, (ID_WALL,))                  # along the laps
-    rough = 0.04 * atlas.noise(c, 13, 20.0)
+    # timber and concrete vary in roughness; painted steel stays even
+    rough = 0.04 * atlas.noise(c, 13, 20.0) * ~np.isin(c.mid, PAINTED_STEEL)
     path = os.path.join(out_dir, L.ASSET)
     written = [atlas.save(atlas.orm(c, SURFACE, rough, 0.5 * cav), path + "_orm.png"),
                atlas.save(atlas.normal_map(c, flat_ids=(ID_GLASS,)), path + "_normal.png"),
@@ -839,28 +847,52 @@ CANOPY_T = 0.12
 #           recessed plane. Half the wall breakpoints for the same shadow.
 #   flush - the casing rect as a flat quad in the wall.
 #   None  - dropped.
+# The consumer switches by screen size, at about 1.8, 4 and 8 times a house's
+# largest dimension (25 / 55 / 110 m on these): every opening is kept to the
+# last tier, the small ones as flush quads (about 8 triangles each with the
+# hole they leave), so the cellar lights and the gable vent, 9 x 6 px at the
+# LOD1/LOD2 switch, and the bath and porch windows, 5-7 px at LOD2/LOD3, stay
+# by day and stay lit at night.
 ITEM_MODES = {
-    "cellar": ("ring", "flush", None, None),
-    "vent": ("flush", "flush", None, None),
-    # under a metre across: about 5 px at LOD3's 120 m, so they go
-    "bath": ("ring", "cut", "flush", None),
-    "porch": ("ring", "cut", "flush", None),
+    "cellar": ("ring", "flush", "flush", "flush"),
+    "vent": ("flush", "flush", "flush", "flush"),
 }
 ITEM_MODES_DEFAULT = ("ring", "cut", "flush", "flush")
+# A house's own exceptions to ITEM_MODES, kind -> modes (none at present).
+ITEM_MODES_HOUSE = {}
+# A house's own downpipe tiers, replacing downpipes.MODES, where its LOD3
+# cannot keep every small opening under the 500 ceiling. The gable entry's
+# terrace, railings and balcony leave its LOD3 30 triangles, and its five
+# small openings take 44: its two pipes (26) go at LOD3 instead, where a
+# 0.1 m pipe is 0.6 px beside its corner board at the switch (about 120 m),
+# while a gable vent's pale louvre is a 3.7 x 2.8 px spot on the red gable.
+DOWNPIPE_MODES_HOUSE = {
+    "rintamamiestalo_gable_entry": ((8, True), (4, True), (4, False), (0, False)),
+}
 CANOPY_LAST = 2          # the last tier with the back-door canopy
 RAMP_FROM = 3            # from this tier each flight of steps is its ramp
+# How each tier keeps the handrails (scripts/handrails.py): "union", joined to
+# the steps through the build's union; "lean", the same rail and posts as
+# separate solids appended after the weld (60 triangles a flight), which
+# keeps the rail's line over the steps at the LOD1/LOD2 switch; None, gone:
+# at the LOD2/LOD3 switch a 45 mm rail is a third of a pixel.
+RAILS = ("union", "union", "lean", None)
 # From this tier the weld is followed by a dissolve of coplanar faces, which
 # recovers the cost of the persistent corner paint from the boolean's
 # subdivisions, keeping UV and material seams and every architectural edge.
 DISSOLVE_FROM = 2
 
-# The reference lit factor for previews (asset_build.Asset's tint); None is
-# asset_build's catalog default.
-TINT = None
+# The reference lit factor for previews (asset_build.Asset's tint): the
+# warm-white lamplight the newer assets use, not asset_build's older orange
+# default.
+TINT = (1.0, 0.88, 0.72)
 
 
-def item_mode(kind, level):
-    return ITEM_MODES.get(kind, ITEM_MODES_DEFAULT)[level]
+def item_mode(kind, level, house=None):
+    """How opening *kind* is built at *level* on the house named *house*."""
+    modes = (ITEM_MODES_HOUSE.get(house, {}).get(kind)
+             or ITEM_MODES.get(kind, ITEM_MODES_DEFAULT))
+    return modes[level]
 
 
 class Peak:
@@ -966,7 +998,7 @@ class Kit:
     def build_item(self, B, fr, kind, s, z, level):
         """Faces for one opening; returns the hole it needs in its wall region."""
         SB = self.SB
-        mode = item_mode(kind, level)
+        mode = item_mode(kind, level, self.L.ASSET)
         (ol, orr, ob, ot), (il, ir, ib, it) = self.item_rects(kind, s, z)
         fn = self.uv_item(fr, kind, ol, ob)
         depth = REVEAL_DEPTH.get(kind, REVEAL_DEFAULT)
@@ -1045,7 +1077,7 @@ class Kit:
 
         rect = {}
         for kind, s, z in items:
-            if item_mode(kind, level):
+            if item_mode(kind, level, L.ASSET):
                 rect[(kind, s, z)] = self.item_rects(kind, s, z)[0]
 
         splits = [z0 for z0, _, _ in bands[1:]]
@@ -1274,12 +1306,14 @@ class Kit:
         solids (*base* and *parts*, objects in union order) with what every
         house adds after them, in this order: the back-door canopy
         (*canopy*: (x range, rear wall y)) to CANOPY_LAST, each of *flights*
-        (Steps), the downpipes, the roof kit and the handrails, each at its
-        own script's tier; then the union, the weld, the dissolve from
-        DISSOLVE_FROM. *kit_extents* is for a house whose wall ladder sets
-        its extents: where the kit goes, its bare rails are appended after
-        the weld and the dissolve, whose greedy passes the extra faces would
-        otherwise reorder (roof_safety.append())."""
+        (Steps), the downpipes and the roof kit, each at its own script's
+        tier, and the handrails as RAILS says; then the union, the weld,
+        the dissolve from DISSOLVE_FROM. *kit_extents* is for a house whose
+        wall ladder sets its extents: where the kit goes, its bare rails are
+        appended after the weld and the dissolve, whose greedy passes the
+        extra faces would otherwise reorder (roof_safety.append()); so are
+        lean handrails."""
+        import copy
         import bmesh
         import downpipes as DP
         import handrails as HR
@@ -1291,14 +1325,18 @@ class Kit:
             prof = f.low if level >= RAMP_FROM else f.profile
             parts.append(to_object(self.steps(f.a0, f.a1, f.wall, f.outward, prof, axis=f.axis),
                                    f.name))
+        pipe_modes = DOWNPIPE_MODES_HOUSE.get(self.L.ASSET, DP.MODES)
         parts += [to_object(B, name) for B, name in
-                  DP.solids(downpipes, *DP.MODES[level], PIPE_STRIP, ATLAS)]
+                  DP.solids(downpipes, *pipe_modes[level], PIPE_STRIP, ATLAS)]
         kit = RS.solids(roof_kit, level, RS.Paint(ATLAS, strip=PIPE_STRIP),
                         extents=kit_extents)
         bare = kit_extents and RS.MODES[level][0] is None    # the rails alone, clear of all
         parts += [] if bare else [to_object(B, name) for B, name in kit]
-        parts += [to_object(B, name) for B, name in
-                  HR.solids(handrails, level, RS.Paint(ATLAS, strip=PIPE_STRIP))]
+        rails = RAILS[level]
+        every = (True,) * 4
+        if rails == "union":
+            parts += [to_object(B, name) for B, name in
+                      HR.solids(handrails, level, RS.Paint(ATLAS, strip=PIPE_STRIP), every)]
         obj = union(base, parts)
         obj.name = "{}_LOD{}".format(self.L.ASSET, level)
         obj.data.name = obj.name + "_mesh"
@@ -1316,6 +1354,18 @@ class Kit:
         bm.free()
         if bare:
             RS.append(obj, kit)
+        if rails == "lean":
+            lean = []
+            for f in handrails:
+                f = copy.copy(f)
+                f.lean = True
+                # a rail set on the flight's edge (inset 0) runs into the
+                # railing it continues; lean, it must clear it, so it moves
+                # in by half its width and two gaps, 2.6 cm
+                f.inset = max(f.inset, HR.RAIL / 2.0 + 2.0 * RS.LEAN_GAP)
+                lean.append(f)
+            RS.append(obj, HR.solids(lean, level, RS.Paint(ATLAS, strip=PIPE_STRIP), every),
+                      check=True)
         return obj
 
     # ------------------------------------------------------------- checks

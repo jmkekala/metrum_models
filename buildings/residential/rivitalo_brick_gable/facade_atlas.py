@@ -212,14 +212,14 @@ def item_size_px(kind):
 ID_BLANK, ID_PLINTH, ID_WOOD, ID_VBOARD, ID_BRICK, ID_ROOF = 0, 1, 2, 3, 4, 5
 ID_TRIM, ID_SASH, ID_GLASS, ID_DOOR, ID_METAL, ID_POST = 6, 7, 8, 9, 10, 11
 ID_SOFFIT, ID_FENCE, ID_RAIL, ID_PAVE, ID_HANDLE = 12, 13, 14, 15, 16
-# (roughness, metallic). Galvanised posts and the gutter are the only real
-# metals; painted steel stays mostly dielectric, because the paint is what the
-# light sees.
+# (roughness, metallic). The galvanised posts are the only bare metal; the
+# painted steel (gutter, drip caps, coping, vents, ridge flashing) is
+# dielectric, because the paint is what the light sees.
 SURFACE = {
     ID_BLANK: (0.95, 0.0), ID_PLINTH: (0.90, 0.0), ID_WOOD: (0.72, 0.0),
     ID_VBOARD: (0.74, 0.0), ID_BRICK: (0.82, 0.0), ID_ROOF: (0.86, 0.0),
     ID_TRIM: (0.48, 0.0), ID_SASH: (0.46, 0.0), ID_GLASS: (0.08, 0.0),
-    ID_DOOR: (0.50, 0.0), ID_METAL: (0.38, 0.35), ID_POST: (0.42, 0.65),
+    ID_DOOR: (0.50, 0.0), ID_METAL: (0.48, 0.0), ID_POST: (0.42, 0.65),
     ID_SOFFIT: (0.76, 0.0), ID_FENCE: (0.78, 0.0), ID_RAIL: (0.70, 0.0),
     ID_PAVE: (0.88, 0.0), ID_HANDLE: (0.32, 0.80),
 }
@@ -624,32 +624,100 @@ def paint_bay(c, rect, panels, items, alcove=None):
 
     The openings are the same rectangles build.py cuts at the upper tiers, drawn
     at this region's scale, so a window does not move across the LOD2/LOD3
-    switch — only its reveal goes. Flat: see the relief note above.
+    switch — only its reveal goes. Their glass is the cut window's glass,
+    drawn at its own insets (the frame, a wide window's mullion, a glazed
+    door's solid foot, the front door's narrow light), so the lit area does
+    not shrink at the switch either; match_bays() then lights it as the
+    window's own region is lit. Flat: see the relief note above.
     """
     x0, y0, w, h = rect
+    k = PPM3
     for s0, s1, band in panels:
         _lod3_panel(c, x0, y0, h, s0, s1, band)
     if alcove is not None:
         s0, s1, z0, z1, _d = alcove
-        c.paint(x0 + s0 * PPM3, x0 + s1 * PPM3, y0 + z0 * PPM3, y0 + z1 * PPM3,
+        c.paint(x0 + s0 * k, x0 + s1 * k, y0 + z0 * k, y0 + z1 * k,
                 ID_BLANK, 0.55, 0.42)
     for kind, s, z in items:
         ow, oh, cs, cb, ct = OPENINGS[kind]
-        l, r = x0 + (s - ow / 2 - cs) * PPM3, x0 + (s + ow / 2 + cs) * PPM3
-        b, t = y0 + (z - cb) * PPM3, y0 + (z + oh + ct) * PPM3
-        il, ir = x0 + (s - ow / 2) * PPM3, x0 + (s + ow / 2) * PPM3
-        ib, it = y0 + z * PPM3, y0 + (z + oh) * PPM3
+        l, r = x0 + (s - ow / 2 - cs) * k, x0 + (s + ow / 2 + cs) * k
+        b, t = y0 + (z - cb) * k, y0 + (z + oh + ct) * k
+        il, ir, ib, it = bay_opening(rect, kind, s, z)
         c.paint(l, r, b, t, ID_TRIM, 1.0, 1.0)
         c.mul(l, r, t - 1, t, 0.78, ao=0.8)
         if kind == "door_front":
+            # paint_door()'s leaf and its narrow light beside the lock stile
             c.paint(il, ir, ib, it, ID_DOOR, 0.86, 0.8)
+            c.paint(il + 0.16 * k, il + 0.34 * k, ib + 0.82 * k, ib + 1.86 * k,
+                    ID_GLASS, 0.86, 0.85)
         elif kind == "door_glazed":
+            # paint_door()'s glazed leaf: an 85 mm frame, solid to 0.34 m
+            f = 0.085 * k
             c.paint(il, ir, ib, it, ID_SASH, 1.0, 1.0)
-            c.paint(il + 1, ir - 1, y0 + (z + 0.34) * PPM3, it - 1, ID_GLASS, 0.90, 0.9)
+            c.paint(il + f, ir - f, ib + 0.34 * k, it - f, ID_GLASS, 0.90, 0.9)
         else:
+            # paint_opening()'s window: a 55 mm frame, and a mullion on the
+            # wide two-light unit
+            f = 0.055 * k
             c.paint(il, ir, ib, it, ID_SASH, 1.0, 1.0)
-            c.paint(il + 1, ir - 1, ib + 1, it - 1, ID_GLASS, 0.92, 0.9)
-            c.mul(il + 1, ir - 1, it - 2, it - 1, 0.84, ao=0.8)
+            c.paint(il + f, ir - f, ib + f, it - f, ID_GLASS, 0.92, 0.9)
+            if ow > 2.2:
+                mx = (il + ir) / 2.0
+                c.paint(mx - f, mx + f, ib, it, ID_SASH, 1.0, 1.0)
+            c.mul(il + f, ir - f, it - f - 1, it - f, 0.84, ao=0.8)
+
+
+def bay_opening(rect, kind, s, z):
+    """The opening's own rect (inside its casing) in a painted bay, pixels."""
+    x0, y0, _w, _h = rect
+    ow, oh = OPENINGS[kind][:2]
+    return (x0 + (s - ow / 2) * PPM3, x0 + (s + ow / 2) * PPM3,
+            y0 + z * PPM3, y0 + (z + oh) * PPM3)
+
+
+def _box_sum(cum, x0, x1, y0, y1):
+    """Sum of an image over the continuous box [x0, x1] x [y0, y1], pixels as
+    constant squares, from its summed-area table *cum* (H+1, W+1, C): the
+    table is bilinear inside each pixel, so interpolating it is exact."""
+    def at(x, y):
+        i, j = int(np.floor(y)), int(np.floor(x))
+        i, j = min(i, cum.shape[0] - 2), min(j, cum.shape[1] - 2)
+        fy, fx = y - i, x - j
+        return ((1 - fy) * ((1 - fx) * cum[i, j] + fx * cum[i, j + 1])
+                + fy * ((1 - fx) * cum[i + 1, j] + fx * cum[i + 1, j + 1]))
+    return at(x1, y1) - at(x0, y1) - at(x1, y0) + at(x0, y0)
+
+
+def match_bays(em):
+    """Light each opening of the painted LOD3 bays as its cut window is lit
+    at the tiers above: every bay pixel the opening's rect covers takes the
+    mean of the night emission (glazing.night_rooms()) over the part of the
+    window's own region it stands for, times the share of the pixel the
+    opening covers, so a bay window has the cut window's lit area, level
+    and room falloff, box-filtered down to the bay's 14 px/m. Without it
+    night_rooms() gives each small bay pane a room of its own, dimmer and
+    smaller than the window's."""
+    em = np.asarray(em, np.float64)
+    cum = np.zeros((em.shape[0] + 1, em.shape[1] + 1, em.shape[2]))
+    cum[1:, 1:] = em.cumsum(0).cumsum(1)
+    out = em.copy()
+    scale = PPM / PPM3
+    for rect, items in ((LOD3_FRONT, FRONT_UNIT), (LOD3_REAR, REAR_GF_UNIT + REAR_UP_UNIT)):
+        for kind, s, z in items:
+            il, ir, ib, it = bay_opening(rect, kind, s, z)
+            ix, iy = ITEM_ORIGIN[kind]
+            ox0, oy0 = ix + m(OPENINGS[kind][2]), iy + m(OPENINGS[kind][3])
+            for row in range(int(np.floor(ib)), int(np.ceil(it))):
+                b0, b1 = max(row, ib), min(row + 1, it)
+                for col in range(int(np.floor(il)), int(np.ceil(ir))):
+                    a0, a1 = max(col, il), min(col + 1, ir)
+                    if a1 <= a0 or b1 <= b0:
+                        continue
+                    u0, u1 = ox0 + (a0 - il) * scale, ox0 + (a1 - il) * scale
+                    v0, v1 = oy0 + (b0 - ib) * scale, oy0 + (b1 - ib) * scale
+                    mean = _box_sum(cum, u0, u1, v0, v1) / ((u1 - u0) * (v1 - v0))
+                    out[row, col] = mean * (a1 - a0) * (b1 - b0)
+    return out
 
 
 # ------------------------------------------------------------------ checks
@@ -778,8 +846,8 @@ def export(out_dir, ss=atlas.SS):
     path = os.path.join(out_dir, ASSET)
     written = [atlas.save(atlas.orm(c, SURFACE, rough, 0.5 * cav), path + "_orm.png"),
                atlas.save(atlas.normal_map(c, flat_ids=(ID_GLASS,)), path + "_normal.png"),
-               atlas.save(glazing.night_rooms(atlas.coverage(c, ID_GLASS) > 0,
-                                          atlas.emission(c, ID_GLASS)),
+               atlas.save(match_bays(glazing.night_rooms(atlas.coverage(c, ID_GLASS) > 0,
+                                                     atlas.emission(c, ID_GLASS))),
                           path + "_emission.png")]
     glass = atlas.coverage(c, ID_GLASS) >= 0.5
     for v in VARIANTS:

@@ -3,7 +3,7 @@
   "version": 1,
   "name": "rintamamiestalo_porch",
   "path": "buildings/residential/rintamamiestalo_porch",
-  "source": {"commit": "a6b404dc223f0a2d7ffd7a10cdb8b9755ef47b8a", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "1ae4b7c8e22e9556f2646e0f96f62bfe080dcf84", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-5.35, 0.0, -6.84], "max": [5.35, 9.5625, 6.84]},
   "footprint": [
@@ -28,11 +28,11 @@
   "lods": [
     {"file": "rintamamiestalo_porch_lod0.glb", "triangles": 2642, "sha256": "36378b19fbad06db9e00450fd81029a60427d97da0a892402b98cc9e7081aac2"},
     {"file": "rintamamiestalo_porch_lod1.glb", "triangles": 2054, "sha256": "f722381972f024ae9bb81123353e37622aad9d3c22f9903d9c048726fc7e2ee2"},
-    {"file": "rintamamiestalo_porch_lod2.glb", "triangles": 682, "sha256": "abc1f4586867e096665ba09ae0851d89ec4cee7834130d874152a84753ba9926"},
-    {"file": "rintamamiestalo_porch_lod3.glb", "triangles": 342, "sha256": "43da41a09e1fe90baea3cbea352ea5723e1d7565840f387c116f7e8e75172c97"}
+    {"file": "rintamamiestalo_porch_lod2.glb", "triangles": 854, "sha256": "0efac349140eac1151d81a60e82936fdc59a7a420fb654c781caeec32ed82f28"},
+    {"file": "rintamamiestalo_porch_lod3.glb", "triangles": 436, "sha256": "47584cb67c7d7fb0c811a05a8ac50aab88ba80c1b3d6231abd324f4446fd64f2"}
   ],
   "textures": {
-    "orm": {"file": "rintamamiestalo_porch_orm.png", "sha256": "92e54e810511038f28fbb2d168826ee0e7d6520a82604a949d43f02094fd667c"},
+    "orm": {"file": "rintamamiestalo_porch_orm.png", "sha256": "4ddfa51192970569fa0c25017e1146d4a232baebcfd66b294ec93f4b4f7aaba1"},
     "normal": {"file": "rintamamiestalo_porch_normal.png", "sha256": "a3772fc7662acf90ca9dd5596b07dc0e249e251ac0e425380abc7b146f6d90f2"},
     "emission": {"file": "rintamamiestalo_porch_emission.png", "sha256": "e9c16905eb323071ffb4dc3f61314e16ce7b6d744b693198cecf906b5eff49fb"}
   },
@@ -44,6 +44,6 @@
     {"id": "green", "albedo": "rintamamiestalo_porch_albedo_green.png", "sha256": "d5d75f9086dd1045697a6dd7960cd22b0e2f93672ff7af211443b22df976b982"}
   ],
   "default_variant": "red",
-  "preview": {"file": "../preview.png", "sha256": "91e3b8910673cb8463805ca1af35faa478d46548499f562d5e2ef3bf111c64bb"},
+  "preview": {"file": "../preview.png", "sha256": "c97d9d80533dc554ee510eba9fa2f22f6c3b30eb6048be226c303c32866cdd80"},
   "hero": false
 }

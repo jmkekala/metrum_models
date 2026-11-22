@@ -3,7 +3,7 @@
   "version": 1,
   "name": "rintamamiestalo_side_entry",
   "path": "buildings/residential/rintamamiestalo_side_entry",
-  "source": {"commit": "cf32062c2e69b02e7b542b2d6d8d43792f991d95", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "03ed1dbfc5db7ef3285ad85fc20d2f8f5dcf979d", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-5.35, 0.0, -6.22], "max": [5.35, 9.5625, 6.22]},
   "footprint": [
@@ -26,11 +26,11 @@
   "lods": [
     {"file": "rintamamiestalo_side_entry_lod0.glb", "triangles": 2624, "sha256": "0144a7b4802a3b2e62d824c8fa0f0252fa6b1d5bf886935c6cc5726e2633211a"},
     {"file": "rintamamiestalo_side_entry_lod1.glb", "triangles": 2048, "sha256": "18c5ccb03a0793eaa1b141f43bc1443a6f966a4a5ca2e107dc7f40d7edc204e8"},
-    {"file": "rintamamiestalo_side_entry_lod2.glb", "triangles": 686, "sha256": "8ae2551299f8f10d45bc0c432a5289c3cee508c613f7fb859b47a90d18acd46d"},
-    {"file": "rintamamiestalo_side_entry_lod3.glb", "triangles": 352, "sha256": "f451c909c5d20649fdfc27b893dc3d207fee5c9a932cdc396a38042fbc6e0d12"}
+    {"file": "rintamamiestalo_side_entry_lod2.glb", "triangles": 864, "sha256": "ad6c43aa9d95c48335e70570901179244a162eb8dd396a3a354cc6490bdcf682"},
+    {"file": "rintamamiestalo_side_entry_lod3.glb", "triangles": 442, "sha256": "197a49b96eb48f354a0caecb24f7915526aadf53953750e5120b1daa870cdde1"}
   ],
   "textures": {
-    "orm": {"file": "rintamamiestalo_side_entry_orm.png", "sha256": "92e54e810511038f28fbb2d168826ee0e7d6520a82604a949d43f02094fd667c"},
+    "orm": {"file": "rintamamiestalo_side_entry_orm.png", "sha256": "4ddfa51192970569fa0c25017e1146d4a232baebcfd66b294ec93f4b4f7aaba1"},
     "normal": {"file": "rintamamiestalo_side_entry_normal.png", "sha256": "a3772fc7662acf90ca9dd5596b07dc0e249e251ac0e425380abc7b146f6d90f2"},
     "emission": {"file": "rintamamiestalo_side_entry_emission.png", "sha256": "e9c16905eb323071ffb4dc3f61314e16ce7b6d744b693198cecf906b5eff49fb"}
   },
@@ -42,6 +42,6 @@
     {"id": "green", "albedo": "rintamamiestalo_side_entry_albedo_green.png", "sha256": "d5d75f9086dd1045697a6dd7960cd22b0e2f93672ff7af211443b22df976b982"}
   ],
   "default_variant": "red",
-  "preview": {"file": "../preview.png", "sha256": "bf70debad7bef2c5072de15ff0c11db87ec717e865f5300c36ca1feb63ef308b"},
+  "preview": {"file": "../preview.png", "sha256": "9a68a0c843725baa3246286efdda9dec54ae871427e655434903673be3373e0c"},
   "hero": false
 }

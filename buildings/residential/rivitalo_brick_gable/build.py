@@ -74,7 +74,10 @@ import shell_build as SB  # noqa: E402
 from shell_build import InwardFrame, fill_region, overlap, rect_poly  # noqa: E402
 
 asset_build.check_toolchain()
-BUILD = asset_build.Asset(ASSET, HERE, L.VARIANTS, L.DEFAULT_VARIANT)
+# The reference lit factor for previews: the warm-white lamplight the newer
+# assets use, not asset_build's older orange default.
+TINT = (1.0, 0.88, 0.72)
+BUILD = asset_build.Asset(ASSET, HERE, L.VARIANTS, L.DEFAULT_VARIANT, tint=TINT)
 get_material, export_all = BUILD.material, BUILD.export_all
 render_preview, render_variants = BUILD.render_preview, BUILD.render_variants
 Builder = functools.partial(SB.Builder, L.ATLAS)
@@ -169,14 +172,51 @@ ROOF_KIT = [
 ]
 
 
+# Small parts across the tiers. The consumer switches by screen size: LOD1/
+# LOD2 at about 125 m (4 x the 31 m length), LOD2/LOD3 at about 250 m. At
+# 125 m the ridge vents are 5 px boxes on the ridge, the entrance steps pale
+# 9 x 3 px slabs against the plinth, the posts pale one-pixel lines 17 px
+# tall against the dark terrace, and the walkway a line along the ridge, so
+# LOD2 keeps them, each in its cheapest form; at 250 m none is a pixel
+# across. The alcove steps stand in their shaded pocket, the roof ladder's
+# rails and the yard pipes are under 0.6 px at 125 m: they go at LOD2.
+VENTS_TO = 3             # the ridge vents: the last tier with them, plus one
+FRONT_STEPS_TO = 3       # the entrance steps
+ALCOVE_STEPS_TO = 2      # the yard door's step in its alcove
+# The balcony posts: "union", into the terrace and the roof; "lean", one
+# closed box each from the terrace to the roof's underside, outside the
+# balcony's edge and touching nothing (0.18 x 0.14 m, its outer face where
+# the post's is), appended after the weld at 12 triangles; None, gone. The
+# yard pipes hang on the unioned posts and go with them.
+POSTS = ("union", "union", "lean", None)
+
+
 def kit_modes():
     """The kit's tiers: roof_safety.MODES without the brackets and posts at
-    LOD1, which are under a pixel past 35 m and would take the tier past its
-    ceiling along a 22 m walkway. From LOD2 the vents the walkway serves are
-    gone, and the kit goes with them but for the wall ladder's bare rails,
-    which stand outside the rake, the building's west extreme, so every tier
-    keeps LOD0's bounds and pivot."""
-    return ((1, True), (2, False), (None, False), (None, False))
+    LOD1 and LOD2, which are under a pixel past 35 m and would take the tier
+    past its ceiling along a 22 m walkway. LOD2 keeps the walkway alone of
+    it (kit_parts()); at LOD3 the vents are gone, and the kit goes with them
+    but for the wall ladder's bare rails, which stand outside the rake, the
+    building's west extreme, so every tier keeps LOD0's bounds and pivot."""
+    return ((1, True), (2, False), (4, False), (None, False))
+
+
+def kit_parts(level):
+    """(kit pieces for the union, pieces appended after the weld) at *level*:
+    the whole kit at LOD0 and LOD1; at LOD2 the walkway serving the vents,
+    8 triangles, a line along the ridge at the switch where the roof
+    ladder's every fourth rung would cost 148 and the wall ladder's 164 for
+    rails under 0.3 px, so the wall ladder keeps only its bare rails, as at
+    LOD3, for the extents."""
+    paint = RS.Paint(L.ATLAS, strip=L.PIPE_STRIP)
+    modes = kit_modes()
+    bare = ((None, False),) * 4
+    if modes[level][0] is None:
+        return [], RS.solids(ROOF_KIT, level, paint, extents=True, modes=modes)
+    if level >= 2:
+        return (RS.solids(ROOF_KIT[2:], level, paint, modes=modes),
+                RS.solids(ROOF_KIT[:1], level, paint, extents=True, modes=bare))
+    return RS.solids(ROOF_KIT, level, paint, extents=True, modes=modes), []
 
 
 Z_APEX = roof_under(Y_RIDGE) + L.WALL_INTO_ROOF     # body's lid, inside the slab
@@ -258,8 +298,9 @@ def item_mode(kind, level):
         # The one opening that clears the 0.25 m relief test on its own: the
         # entrance is set 0.30 m back into the boarded panel, and that shadow is
         # what tells the row apart from a flat-fronted terrace. Kept recessed
-        # through LOD1 for that reason.
-        return ("ring", "cut", "flush", "flush")[level]
+        # through LOD2 for that reason: flush, the four doors visibly lose
+        # their shadow at the LOD1/LOD2 switch (about 125 m).
+        return ("ring", "cut", "cut", "flush")[level]
     return ("ring", "cut", "flush", "flush")[level]
 
 
@@ -683,6 +724,18 @@ def post(x):
                0.0, roof_under(Y_POST) + 0.12, "post", "blank")
 
 
+def lean_post(x):
+    """post()'s far-tier twin, a closed box touching nothing: the post's
+    outer part, from just outside the balcony's edge to its outer face, from
+    just over the terrace to just under the roof, with outward normals for
+    roof_safety.append()."""
+    g = RS.LEAN_GAP
+    B = box(x - POST, x + POST, Y_BALC + g, Y_POST + POST, 0.08 + g,
+            roof_under(Y_POST + POST) - g, "post", "post")
+    bmesh.ops.recalc_face_normals(B.bm, faces=B.bm.faces[:])
+    return B
+
+
 # ================================================================= ground
 def steps(a0, a1, wall, outward, profile, axis="y"):
     """A flight of steps: *profile* is (distance out from the wall, z), extruded
@@ -809,16 +862,17 @@ def build_lod(level):
     for i in range(UNITS + 1):
         parts.append(to_object(screen(-HX + i * UNIT_W, level),
                                "tmp_screen%d" % i))
-    if level < 2:
-        # A 0.18 m post is about 2.6 px across at LOD2's distance and 1.5 at
-        # LOD3's, and it stands inside the roof's own projection, so dropping it
+    if POSTS[level] == "union":
+        # Each post stands inside the roof's own projection, so dropping it
         # cannot move the plan. The parapet and the screens keep the balcony
         # reading once it is gone.
         for k in range(UNITS):
             for j, s in enumerate(POST_S):
                 parts.append(to_object(post(-HX + k * UNIT_W + s),
                                        "tmp_post%d_%d" % (k, j)))
-    if level < 2:
+    if level < VENTS_TO:
+        # the serviced stacks: about 5 px boxes on the ridge line at the
+        # LOD1/LOD2 switch, so they stay through LOD2
         for i, vx in enumerate(VENT_X):
             hx_, hy_, below, above = VENT
             parts.append(to_object(asset_build.open_stack(
@@ -826,25 +880,24 @@ def build_lod(level):
                 Z_RIDGE - below, Z_RIDGE + above, FLUE_WALL, FLUE_DEPTH,
                 uv_patch("cap"), uv_patch("cap"), uv_patch("flue"),
                 uv_patch("blank")), "tmp_vent%d" % i))
-    if level < 2:
-        # A 0.31 m step is about 2 px at LOD2's distance and both flights sit
-        # inside a projection every tier keeps — the roof in front, the balcony
-        # behind — so dropping them cannot move the plan's extents.
+    # Both flights sit inside a projection every tier keeps — the roof in
+    # front, the balcony behind — so dropping them cannot move the plan's
+    # extents.
+    if level < FRONT_STEPS_TO:
         for i, xc in enumerate(front_door_x()):
             parts.append(to_object(steps(xc - STEP_W / 2.0, xc + STEP_W / 2.0,
                                          Y_FRONT, -1.0, FRONT_STEP),
                                    "tmp_step_f%d" % i))
+    if level < ALCOVE_STEPS_TO:
         for i, (x0, x1) in enumerate(alcove_x()):
             parts.append(to_object(box(x0, x1, Y_REAR, Y_REAR + 0.45, 0.0,
                                        L.Z_FLOOR, "tread", "tread"),
                                    "tmp_step_r%d" % i))
-    # the yard pipes hang on the posts, and go with them
-    pipes = DOWNPIPES if level < 2 else FRONT_PIPES
-    kit = RS.solids(ROOF_KIT, level, RS.Paint(L.ATLAS, strip=L.PIPE_STRIP),
-                    extents=True, modes=kit_modes())
-    bare = kit_modes()[level][0] is None             # the rails alone, clear of all
+    # the yard pipes hang on the posts, and go with the unioned ones
+    pipes = DOWNPIPES if POSTS[level] == "union" else FRONT_PIPES
+    kit, appended = kit_parts(level)
     for B, name in yard_fences(level) + DP.solids(
-            pipes, *DP.MODES[level], L.PIPE_STRIP, L.ATLAS) + ([] if bare else kit):
+            pipes, *DP.MODES[level], L.PIPE_STRIP, L.ATLAS) + kit:
         parts.append(to_object(B, name))
     obj = union(base, parts)
     obj.name = "{}_LOD{}".format(ASSET, level)
@@ -868,10 +921,14 @@ def build_lod(level):
             delimit={'UV', 'MATERIAL'})
     bm.to_mesh(obj.data)
     bm.free()
-    if bare:
-        # after the weld and the dissolve, whose greedy passes the extra faces
-        # would otherwise reorder
-        RS.append(obj, kit)
+    # after the weld and the dissolve, whose greedy passes the extra faces
+    # would otherwise reorder: the wall ladder's bare rails where the kit has
+    # gone, and the lean posts
+    if appended:
+        RS.append(obj, appended)
+    if POSTS[level] == "lean":
+        RS.append(obj, [(lean_post(-HX + k * UNIT_W + s), "tmp_lean_post%d_%d" % (k, j))
+                        for k in range(UNITS) for j, s in enumerate(POST_S)], check=True)
     return obj
 
 

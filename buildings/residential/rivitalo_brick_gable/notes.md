@@ -140,7 +140,7 @@ and deletes the buried parts, so the result is the boundary of one empty volume.
 rim round one flue sunk 0.80 m to a floor, lined and floored in the `flue`
 patch (`asset_build.open_stack()`). The floor stays 0.15 m over the ridge, so
 the roof slab never reaches into the flue; `check_layout()` asserts it. The
-flue stays recessed on both tiers that keep the vents.
+flue stays recessed on all three tiers that keep the vents.
 
 Things in the builder worth knowing:
 
@@ -229,8 +229,8 @@ of the 0.6 m brick pier on each party line. Each rises into the soffit
 falls 0.25 m, steps back to the wall at 45 degrees, and ends in a shoe kicked
 0.15 m out. The yard eave oversails the wall by 2.2 m, so each dwelling's
 pipe drops straight from its gutter down the outer face of the balcony post
-nearer its east party line, 3 cm off the post, to a shoe; it goes with the
-posts at `LOD2`.
+nearer its east party line, 3 cm off the post, to a shoe; it goes at `LOD2`,
+where the posts become lean boxes and a pipe is 0.6 px across.
 
 Every pipe is 0.1 m and joined to nothing but the soffit it leaves, so it
 cuts no line through the wall's triangles. Its sides sample the middle five
@@ -270,11 +270,13 @@ the union joins to the roof.
 The tiers are the module's thinned to this row's budgets (`kit_modes()`):
 every rung with brackets and posts at `LOD0`; every other rung and the plank
 alone at `LOD1`, whose brackets and posts along the 22.5 m walkway would take
-it past its ceiling; and from `LOD2`, where the vents the walkway serves go,
-only the gable ladder's bare rails, three-sided, kept because they stand
-outside the rake and so set the row's west extent and its pivot. They touch
-nothing, so they join the tier after its weld and dissolve
-(`roof_safety.append()`), where they cannot change what those passes merge.
+it past its ceiling; at `LOD2` the walkway's plank alone, a line along the
+ridge beside the vents it serves (`kit_parts()`), with the gable ladder's
+bare rails; and at `LOD3`, where the vents go, only those rails, three-sided,
+kept because they stand outside the rake and so set the row's west extent
+and its pivot. The rails touch nothing, so they join the tier after its weld
+and dissolve (`roof_safety.append()`), where they cannot change what those
+passes merge.
 
 
 ## Per-tier triangle counts
@@ -283,8 +285,21 @@ nothing, so they join the tier after its weld and dissolve
 | --- | --- | --- | --- |
 | `LOD0` | 5652 | 12,000 | casing rings, reveals and glass on every window and door; the front door recessed 0.30 m; the yard alcove cut 1.4 m into the wall; seven downpipes, eight-sided with swan-neck and shoe; roof safety kit with every rung, brackets and posts |
 | `LOD1` | 3686 | 4,000 | each opening becomes one recess the size of its casing (casing painted on the recessed plane); the alcove and the door recess stay; downpipes four-sided; kit with every other rung, no brackets or posts |
-| `LOD2` | 1172 | 1,500 | openings flush; coplanar subdivisions dissolved; ridge vents, posts and steps dropped, and the kit with the vents but for the gable ladder's bare rails; plain fence runs collapse to one bay; the yard downpipes go with the posts, the street ones straight |
-| `LOD3` | 492 | 500 | street and yard walls painted, not cut (see below); street downpipes three-sided; the gable ladder's bare rails kept |
+| `LOD2` | 1496 | 1,500 | openings flush but for the front doors' recess; coplanar subdivisions dissolved; ridge vents kept, open; entrance steps kept, alcove steps dropped; posts as lean boxes; of the kit the walkway, and the gable ladder's bare rails; plain fence runs collapse to one bay; the yard downpipes dropped, the street ones straight |
+| `LOD3` | 492 | 500 | street and yard walls painted, not cut (see below); ridge vents, posts, entrance steps and the walkway dropped; street downpipes three-sided; the gable ladder's bare rails kept |
+
+**What `LOD2` keeps, and what it costs.** The consumer switches `LOD1`/`LOD2`
+at about 125 m. There the ridge vents are 5 px boxes on the ridge line, the
+entrance steps pale 9 x 3 px slabs against the dark plinth, the front doors'
+recesses their shadow, the posts pale one-pixel lines 17 px tall against the
+dark terrace and the walkway a line along the ridge, and each was seen to go
+at that switch. `LOD2` keeps each in its cheapest form: the vents as at
+`LOD1` (76 triangles), the front doors as one plain recess (40), the
+entrance steps (76), the walkway alone of the kit (8; the roof ladder's
+every fourth rung would cost 148 and the gable ladder's 164, for rails under
+0.3 px), and the posts as lean boxes touching nothing (96; unioned, with the
+yard pipes on them, 400). The alcove steps in their shaded pocket and the
+yard pipes, 0.6 px across, go. That is 1496 of 1,500.
 
 **`LOD0` sits far under its ceiling, and that is correct rather than
 something to pad.** The row is a 30 × 8 m box with one roof slab, a balcony, five screens
@@ -295,7 +310,7 @@ and bond, the piers, the gutter, the rafter ends, the fence boards and rails —
 belongs in the texture. Three things clear the 0.25 m relief test and are cut:
 the front door's 0.30 m recess, the 1.4 m yard alcove, and the balcony itself.
 
-**The roof safety kit costs 1990, 580, 16 and 16 triangles** on the four
+**The roof safety kit costs 1990, 580, 24 and 16 triangles** on the four
 tiers. At `LOD0` most of it is the ladders' rungs with their holes, and the
 walkway's 20 posts with the squares they cut in the sheet.
 
@@ -312,21 +327,24 @@ What that buys is the thing worth having: **the balcony, its parapet, all five
 screens between the balconies and every yard fence survive to the last tier**,
 so the back still reads as four private dwellings rather than one long shed.
 
-Three things do go at `LOD3`, and each is small and checked:
+These go at `LOD3`, and each is small and checked at the consumer's
+`LOD2`/`LOD3` switch, about 250 m:
 
-- **the eight terrace posts.** 0.18 m across is about 1.5 px at 120 m, and they
-  stand inside the roof's own projection, so dropping them cannot move the
-  plan. The parapet and the screens keep the balcony reading without them.
+- **the eight terrace posts.** 0.18 m across is about half a pixel there,
+  and they stand inside the roof's own projection, so dropping them cannot
+  move the plan. The parapet and the screens keep the balcony reading
+  without them.
+- **the ridge vents, the walkway and the entrance steps**, under three
+  pixels, one pixel and two pixels there.
 - **the four yard gates**, because the four back fence runs become one span at
   this tier. A 1.05 m leaf is about 9 px at 120 m. The party fences all stay,
   which is what makes four yards read as four.
 - **the yard alcove**, which is painted as a dark recess into the `LOD3_REAR`
   bay. At 1.3 m wide it is about 11 px at this distance.
 
-The ridge vents go at `LOD2`, as rooftop clutter should, and so do the entrance
-and alcove steps — a 0.31 m step is about 2 px at 70 m, and both sit inside a
-projection every tier keeps (the roof in front, the balcony behind), which
-`check_layout()` asserts.
+Both flights of steps sit inside a projection every tier keeps (the roof in
+front, the balcony behind), which `check_layout()` asserts, so dropping them
+cannot move the plan.
 
 Modelled trim — the roof slab, the balcony slab and parapet, the screens, the
 posts, the vents — is a few hundred triangles at `LOD0`, far under the
@@ -336,9 +354,36 @@ quarter-budget cap. Opening the vents' flues cost 16 triangles each, 32 on
 **The seven downpipes cost 442 and 222 triangles** at `LOD0` and `LOD1`, the
 pipes' own faces and the holes they leave in the soffits together. The three
 street pipes cost 46 at `LOD2` and 40 at `LOD3`, where they are three-sided,
-which leaves `LOD3` 24 under its ceiling.
+which leaves `LOD3` 8 under its ceiling.
 
 ## LOD review
+
+### Consumer screen-size switches
+
+The consumer switches by screen size, at about 1.8, 4 and 8 times the row's
+largest bounds dimension (31.38 m): **`LOD0`/`LOD1` at 56 m, `LOD1`/`LOD2`
+at 125 m, `LOD2`/`LOD3` at 251 m**, measured from the camera to the centre of
+`LOD0`'s bounds, at 1080p with a 75° vertical FOV (1920×1080 renders of the
+reimported tiers in `scripts/review_asset.py`'s scene, cropped to the row).
+Each pair was rendered front, corner and eye level by noon, from the corner
+at night with the reference emission, and from the yard (160°) by noon and
+night (`review/older_audit_2026_11_22/fix_residential/rivitalo_brick_gable/`).
+
+- `LOD0`→`LOD1` at 56 m: rings become single recesses; nothing goes.
+- `LOD1`→`LOD2` at 125 m: the openings go flat, which is all that shows now
+  (mean difference 0.42 front, 0.29 corner, 0.20 yard; 0.89, 0.57 and 0.65
+  before). The ridge vents, the front doors' recess, the entrance steps, the
+  posts and the walkway are kept (Per-tier triangle counts); the yard pipes,
+  0.6 px, and the alcove steps in their pocket go.
+- `LOD2`→`LOD3` at 251 m: the walls become the painted bays. Their lit
+  windows now match the cut ones (corner night mean difference 0.24, 99th
+  percentile 3; 0.90 and 26 before; yard night 0.47, was 0.79). The ridge
+  vents, about 2.5 px there, the walkway's line, the steps and the posts go,
+  which is where the small parts now change: `LOD3` has 8 triangles to spare
+  and two open stacks cost about 76.
+
+The older review below used the catalog's 50° review camera at 35/70/120 m;
+it is kept for what it measured, but the switches above are the consumer's.
 
 Compared with a perspective camera, 1920×1080, **50° vertical FOV**, distance
 measured along the view direction to the centre of the assessed wall, under the
@@ -391,7 +436,7 @@ Measured with `scripts/validate_asset.py` on the exports:
 | --- | --- | --- |
 | `LOD0` | 130 of 5652 | 2.3 % |
 | `LOD1` | 107 of 3686 | 2.9 % |
-| `LOD2` | 26 of 1172 | 2.2 % |
+| `LOD2` | 78 of 1496 | 5.2 % |
 | `LOD3` | 28 of 492 | 5.7 % |
 
 **All but the downpipes' backs are the inside of a balcony, and none is a
@@ -399,7 +444,9 @@ buried partition.** The backs face the brick or a post 3 cm away, and every
 sampled ray from them heads for it and meets it: 6-11 triangles a tier,
 exterior surface seen at a grazing angle. The roof ladder's rung undersides,
 a few centimetres over the sheet, and on `LOD2` and `LOD3` the backs of the
-gable ladder's bare rails, facing the gable, are the same case. The faces were listed and grouped by
+gable ladder's bare rails, facing the gable, are the same case; so, on
+`LOD2`, are the lean posts' backs, 1.5 mm off the balcony's edge, and the
+faces of the ridge vents' flues. The faces were listed and grouped by
 normal: the balcony decks (z 3.50, y 4.00–5.62), the parapets' inner faces (y
 5.62, z 3.50–4.54) and the screens' inner faces (x on the party lines). All are
 exterior boundary, the same case CLAUDE.md makes for recessed glass.
@@ -424,9 +471,10 @@ it. No wall stands inside the dwellings, by construction.
   gives the glass a visible shadow line at `LOD0`. The front door is the
   exception at 0.30 m, which is the type's own recessed entrance and clears the
   test on its own.
-- **Windows pop from recessed to flat at the `LOD1`→`LOD2` switch**, as
-  CLAUDE.md expects. The front door's 0.30 m recess is kept through `LOD1` for
-  that reason and goes at the same switch.
+- **Windows go from recessed to flat at the `LOD1`→`LOD2` switch**, as
+  CLAUDE.md expects. The front door's 0.30 m recess, which clears the relief
+  test on its own, is kept through `LOD2` as one plain recess and goes flat
+  at `LOD3`.
 - **Plain fence runs collapse from 2.5 m bays to one stretched bay at `LOD2`.**
   The boards are 0.125 m, about one pixel at 70 m, so what stretches is a
   pattern that is already sub-pixel. The gated back run keeps its bays until
@@ -451,8 +499,12 @@ it. No wall stands inside the dwellings, by construction.
   joint pattern would have to be either its own band or stretched. The balcony
   deck does get boards, because it can share the siding band at true scale.
 - **Only two ridge vents** stand for the row's roof stacks, on the party lines
-  either side of the middle. They are rooftop clutter and are dropped at
-  `LOD2`, where they are insignificant.
+  either side of the middle. They are kept through `LOD2` and dropped at
+  `LOD3`, where they are under three pixels at the switch.
+- **`LOD2`'s posts are lean boxes**: 0.18 × 0.14 m, the posts' outer part,
+  standing clear of the terrace, the balcony's edge and the roof by 1.5 mm,
+  appended after the weld; the yard downpipes that hang on the posts are
+  gone from `LOD2`, at 0.6 px there.
 - **The four dwellings are identical, not mirrored in pairs.** Real rows of
   this type are built both ways; unmirrored keeps one door per bay centred,
   which is what the brief asks for.
@@ -473,10 +525,21 @@ Eight unique 1024² images in total, one normal map among them.
   - the **roof band** is stretched up the slope to 12 px/m. A felt roof changes
     nothing along the slope but its sheet laps, which land every metre;
   - the **vertical board-and-batten band** keeps 64 px/m across the boards and
-    normalises V over whatever panel it clads, 10–20 px/m. Nothing changes
-    along a board but the grain;
-  - the **`LOD3` bay elevations** are 14 px/m, which at that tier's 120 m is a
-    105 px region for a bay about 72 px on screen.
+    normalises V over whatever panel it clads: measured on the `LOD0` export,
+    up to 26 px/m along the boards on the shortest panels, less on the
+    taller ones. Nothing changes along a board but the grain;
+  - the **`LOD3` bay elevations** are 14 px/m, which at that tier's switch
+    (about 250 m, Review status) is a 105 px region for a bay about 34 px on
+    screen.
+  - **The `LOD3` bays' openings are the cut windows' own.** Each opening in
+    a bay is painted at its cut window's insets (the 55 mm frame, the wide
+    unit's mullion, the glazed door's 85 mm frame and solid foot, the front
+    door's narrow light), and `match_bays()` writes its emission as the
+    window's own region's night emission box-filtered down to 14 px/m, so a
+    bay window has the cut window's lit area, level and room. Lit by
+    `glazing.night_rooms()` alone, each small bay pane had been given a room
+    of its own, dimmer and smaller than the window's, and the lit windows
+    shrank and dimmed at the `LOD2`/`LOD3` switch.
 - **A trim sheet, not one picture per elevation.** A 30 m elevation would need
   1920 px at 64 px/m. Instead the walls sample tiling bands — concrete plinth,
   lap siding, brick, board-and-batten, roof felt, fascia with its gutter, and
@@ -518,8 +581,12 @@ Eight unique 1024² images in total, one normal map among them.
   nothing is reflected into the albedo. See Glazing treatment below.
 - Roughness separates the materials: lap siding 0.72, board-and-batten 0.74,
   brick 0.82, roof felt 0.86, casings 0.48, sashes 0.46, glass 0.08, concrete
-  0.90, paving 0.88, soffit 0.76, fence boards 0.78, rails 0.70, gutter 0.38
-  with metallic 0.35, galvanised posts 0.42 with metallic 0.65.
+  0.90, paving 0.88, soffit 0.76, fence boards 0.78, rails 0.70, and the
+  painted steel (gutter, drip caps, coping, vents, ridge flashing) 0.48,
+  dielectric, metallic 0: the paint is what the light sees. The galvanised
+  posts are the one bare metal, 0.42 with metallic 0.65. The painted steel
+  was metallic 0.35, which darkened its diffuse and, where the weathering
+  stripped the metallic, mottled it.
 - **The ORM's AO reaches the engine.** The red channel is wired to a
   `glTF Material Output` group's Occlusion input, so the exporter writes an
   `occlusionTexture` pointing at the same PNG as `metallicRoughnessTexture`.
@@ -660,7 +727,8 @@ glazing participate. No interiors or extra geometry were added.
 All four GLBs bind the same external sRGB mask through `emissiveTexture` on
 UV0, shared across every colour and tier. Every GLB defaults to
 `emissiveFactor = [0, 0, 0]` with the texture binding retained; a reference lit
-factor is linear RGB `[1.0, 0.55, 0.23]`. The consumer owns occupancy, time and
+factor is linear RGB `[1.0, 0.88, 0.72]` (`build.py`'s `TINT`), the warm
+white the newer catalog assets use. The consumer owns occupancy, time and
 fading, and should keep that state per placed building — which matters here,
 since one placement is four households and a real row is never uniformly lit.
 Reused glazing UVs mean this is one building-wide control, not per-dwelling or
@@ -688,7 +756,10 @@ occupied. Averaged over the glass it is 55 % of the old full-white mask
 so at the same reference factor the windows read as warm lamplight rather than
 pale panels. Every window of one type samples the same atlas region, so every
 window of that type carries the same room; see the limit under Glazing
-treatment.
+treatment. The painted `LOD3` bays carry the same rooms: `match_bays()`
+writes each bay opening's emission from its window's own region, box-filtered
+to 14 px/m (Texture set), so lit windows keep their size and level at the
+`LOD2`/`LOD3` switch.
 
 ## Export
 
@@ -713,9 +784,9 @@ and the validator confirms uri-only images on every tier.
 **Preview.** Same camera orientation and lens, sun and flat grey world as the
 other assets; only the distance differs, and `_fit_camera()` keeps the line of
 sight and moves the camera until the bounding box fills the frame with an 8 %
-margin. The flat grey world rather than a studio HDRI is the deviation
-`brick_clocktower_hall/notes.md` records, kept so the previews stay comparable;
-that choice is still open across the catalog.
+margin. The neutral flat grey world and sun are `scripts/asset_build.py`'s,
+the same for every catalog asset, which is what CLAUDE.md asks of a preview;
+it is not a deviation.
 
 The material, the export and the previews are `scripts/asset_build.py`'s,
 shared by every asset: `build.py` keeps this building's massing, UVs and
@@ -775,6 +846,21 @@ ladder and the walkway are the only additions; the west extent grew 0.18 m
 and the pivot moved 0.09 m west with it. `scripts/validate_asset.py` still
 reports no failures or warnings.
 
+**The 2026-11-22 audit fixes, checked before against after** (Revision log):
+the folder snapshotted into
+`review/older_audit_2026_11_22/fix_residential/rivitalo_brick_gable/before/`
+first, then the same sets rendered from the snapshot and from the rebuild and
+compared (`compare/`): the tier pairs at the consumer's switches (front,
+corner, eye and yard, noon and night; LOD review) and `LOD0` front and oblique
+at 20 and 35 m under noon and the reversed sun, where the only change is the
+painted steel's shading (mean difference 0.07-0.26 / 255). The LOD3 bays were
+checked in the atlas against the cut windows' regions: glass at the same
+insets, emission the same rooms. Among the PNGs the albedos changed in the
+bay regions only, the emission there, the normal map in 50 texels of the bay
+door's light, and the ORM in the painted steel; `scripts/validate_asset.py`:
+58 PASS, 0 FAIL, 9 MANUAL, 1 WARN (`source.dirty` true, expected until the
+sidecar is rewritten from a committed tree).
+
 **Pending, and not claimed.** These need the consumer and are recorded as open
 rather than assumed:
 
@@ -789,12 +875,13 @@ rather than assumed:
 - the normal map in the consumer: MikkTSpace tangent generation on import and
   its filtering at distance;
 - the `LOD2`→`LOD3` switch, where the street and yard walls change from cut
-  openings to painted ones, judged against the consumer's actual switch
-  distance rather than the 120 m review assumption.
+  openings to painted ones, in the consumer's own renderer (reviewed here at
+  the consumer's 251 m screen-size switch, LOD review).
 
 ## Tooling versions
 
-- **Blender 5.2.2 LTS.**
+- **Blender 5.3.0**, which saved the current `source.blend` and built and
+  validated the current exports.
 - **Blender Lab "MCP" extension:** not used for this asset. It was built,
   exported and rendered in background Blender processes, and the MCP server was
   not connected during authoring.
@@ -808,6 +895,19 @@ only sets them when a node tree is missing.
 
 ## Revision log
 
+- **2026-11-22 — audit fixes: small parts through `LOD2`, matched `LOD3`
+  night windows, painted steel, night tint.** `LOD2` keeps the ridge vents,
+  the front doors' recess, the entrance steps, the walkway and the posts
+  (as lean boxes); the yard pipes and alcove steps go there. The painted
+  `LOD3` bays' glass is drawn at the cut windows' insets and lit by
+  `match_bays()` from the windows' own regions. Painted steel is dielectric
+  (0.48, metallic 0); the reference lit factor is `[1.0, 0.88, 0.72]`.
+  Triangle counts changed from 5652 / 3686 / 1172 / 492 to 5652 / 3686 /
+  1496 / 492. The albedos, emission, normal map and ORM, the GLBs,
+  `source.blend`, the sidecar, `preview.png` and `variants.png` were
+  regenerated. Notes corrected where stale (the Blender version, the
+  consumer's switch distances, the board-and-batten density, the preview
+  world).
 - **2026-11-22 — brick through the shared painter.** The brick band is
   painted by `scripts/brickwork.py`'s `paint()` with its new options
   (`y_ref`, no mortar id, `tone`, `joint_shade`) instead of `bond()` plus
