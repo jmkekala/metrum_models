@@ -1,767 +1,1332 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Albedo, ORM, normal and emission atlas for brick_clocktower_hall.
+"""Albedo, ORM, normal and emission atlas, and shared layout, for
+brick_clocktower_hall.
 
-This builds one asset and nothing else: every region constant, colour and painted
-feature below describes this building, so it lives beside build.py rather than in
-scripts/, which is for tooling a second asset could call unmodified.
+Run standalone to bake the textures into export/:
 
-    python3 facade_atlas.py export      # writes every map into ./export
+    python3 facade_atlas.py export
 
-The atlas is laid out in three horizontal bands whose pixel coordinates must stay
-in lockstep with the UV assignment in build.py beside it:
+build.py imports this module for every number the mesh and the atlas share --
+the plan, the walls and what stands on each, every height, the band rows and
+the region rectangles -- so a change here cannot leave the UVs pointing at the
+wrong artwork.
 
-    y    0 ..  730   facade   - tiles horizontally, 11.4 m of wall at 64 px/m
-    y  730 ..  986   roof     - tiles horizontally, V stretched across each slope
-    y  986 .. 2048   unique   - entrance / tower / clock attic / chimney / patches,
-                                and the rear door's bay of the facade band
+The atlas is 2048 square at 64 texels a metre (the documented hero
+exception: the building is 49 m long). Four bands run the full width and
+tile in U, every wall sampling them in true metres:
 
-Everything is authored at 64 px/m so that storey bands, string course and cornice
-line up across every wall of the building without per-wall tweaking.
+    rows    2 ..  752   WALL    z 0 .. 11.72 m: the stone plinth, its cap,
+                                stretcher-bond brick (scripts/brickwork.py,
+                                the catalog module), the string course, the
+                                dentilled frieze, the cornice and the shaded
+                                fascia under the soffit
+    rows  760 ..  908   ROOF    dark painted standing-seam steel, V up the
+                                slope at 32 rows a metre
+    rows  914 ..  930   FASCIA  the white fascia board with the dark
+                                half-round gutter across its top (PIPE_STRIP)
+    rows  936 ..  965   SOFFIT  painted soffit boards, V out from the wall
 
-Rasterising is scripts/atlas.py's: a canvas supersampled SS x SS per pixel, so
-the arched doorway, the clock dial and the belfry arch come out anti-aliased
-without hand-computed coverage. Painting produces a material id, a shade, an AO
-and a height per sample; this being a single-variant landmark, each colour is an
-id and a shade factor on it (WALL_LT is the wall at 1.08). Relief that should
-answer the sun -- brick faces, the string course, cornice and dentils, the
-window surrounds and pediments, quoins, balusters, standing seams -- is height,
-and reaches the renderer through the normal map. atlas.pad() fills every sample
-no region claims from the nearest region's own edge. Dirt, algae, rust and
-faded paint are scripts/weathering.py's fields, placed by weather() below.
+Above them, the unique regions: every opening kind as its own item (the
+windows in three or four room variants each, the arched entrance, the
+balcony group, the service door, the pilaster), the quoin strips, the tower,
+the chimney, the dome facet, the clock attic, the pediment, the balustrades,
+the roof deck in plan (16 texels a metre) and the walls' elevations at 16
+texels a metre, which the two far tiers map in place of the band and its
+items. The elevations are composed after the maps are resolved from the
+band, the items, the quoins and the downpipes at their places on each wall,
+and box-filtered down, so the far tiers show what the near ones do.
+
+The brick is the catalog's module: a 0.25 m stretcher on a 0.078125 m
+course. Every height the walls share with the coursing falls on a course
+line, and every opening's and item's side on a whole or half stretcher of
+the wall's bond (build.py's check_layout()).
+
+Rasterising is scripts/atlas.py's (numpy, scipy; Pillow to save);
+weathering is scripts/weathering.py's at the catalog's moderate level, and
+glass is scripts/glazing.py's room behind the pane.
 """
 
+import math
 import os
 import sys
 
 import numpy as np
 
-# Windows are painted the same way across the whole catalog, and every atlas is
-# rasterised the same way, so both live in scripts/ and not here; see
-# CLAUDE.md's Style Direction and Texture Requirements.
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "scripts"))
 import atlas  # noqa: E402
+import brickwork  # noqa: E402
 import glazing  # noqa: E402
 import weathering  # noqa: E402
 
 ASSET = "brick_clocktower_hall"
-VARIANT = "red_brick"
+VARIANTS = ("red_brick",)
+DEFAULT_VARIANT = "red_brick"
 ATLAS = 2048
 PPM = 64.0
+EPPM = 16.0             # the walls' elevations, for LOD2 and LOD3
+DPPM = 16.0             # the roof deck, in plan
+RPM = 32.0              # the roof band, rows per metre of slope
+PAD = 2
 
-ROOF_Y0, ROOF_H = 730, 256
-UNI = 986
-ENT = (0, 704, UNI, UNI + 730)
-TOW = (704, 896, UNI, UNI + 563)     # 3.0 m x 8.8 m
-ATT = (986, 1498, UNI, UNI + 333)
-CHM = (1498, 1588, UNI, UNI + 314)   # 1.4 m x 4.9 m
-BLANK = (1600, 1660, UNI, UNI + 60)
-# flat trim patch for returns and raking cornices, which must not sample the
-# stretched clock artwork
-TRIMPATCH = (1660, 1720, UNI, UNI + 60)
-# 0.5 m x 11.4 m toothed quoin strip, wrapped onto the corner blocks
-QUOIN = (1720, 1752, UNI, UNI + 730)
-# 4.8 m x 1.0 m balcony parapet, solid with the balusters painted on
-BALUS = (0, 308, 1750, 1814)
-# shadowed plaster for window and door reveals; bright trim there reads as a
-# pale frame rather than as depth
-REVEALP = (1752, 1812, UNI, UNI + 60)
-# soot for the chimney flues' lining and floor, above the blank patch and
-# clear of every region edge, so its padding touches nothing sampled
-SOOT = (1600, 1660, UNI + 72, UNI + 132)
-# The rear service door's bay: one bay of the facade band, full height, with
-# the door in place of its ground-floor window. The right rear wing's end wall
-# maps it in place of the band's bay REAR_BAY (build.py's REAR_*). It is a
-# copy of a second painting of the whole atlas in which that bay has the door,
-# so the noise, the brick bond and the weather match the bays beside it on
-# the wall exactly; see paint(). REAR_SRC are the band columns copied, the
-# bay's 204.8 px and a texel each side, and REAR is where they land, in the
-# free strip right of the reveal patch, clear of every other region.
-REAR_BAY = 1
-REAR_SRC = (204, 411)
-REAR = (1816, 2023, 1290, 2020)
-# The wing end is 11.0 m in three bays, so the band is stretched across it by
-# (11.0 / 3) / 3.2 in U; the door is painted that much narrower, so it fills
-# its 1.40 m cut exactly. Heights are not stretched.
-REAR_STRETCH = (11.0 / 3.0) / 3.2
-REAR_DOOR_HW = 0.70            # the cut's half-width on the wall, metres
-REAR_SILL, REAR_LEAF_TOP, REAR_HEAD = 0.15, 2.45, 2.60
-# The balcony door's transom: a 2.30 m leaf from its 5.60 m threshold, then
-# a fanlight to the 9.10 m head.
-BAL_SILL, BAL_TRANSOM, BAL_HEAD = 5.60, 7.90, 9.10
-
-# ------------------------------------------------------- materials, colours
-# Material ids, each with its base colour. The other colours the elevations
-# use are shades of these: see SHADE.
-ID_WALL, ID_TRIM, ID_PLINTH, ID_GLASS, ID_FRAME = 0, 1, 2, 3, 4
-ID_DOOR, ID_ROOF, ID_DARK, ID_CLOCK, ID_CHIM = 5, 6, 7, 8, 9
-COLOUR = {
-    ID_WALL: (158, 96, 72), ID_TRIM: (226, 222, 211), ID_PLINTH: (163, 158, 149),
-    # Glass is neutral and DARK: from outside a window is mostly the unlit room
-    # behind it, and the sky reflection is the renderer's job, not the base
-    # colour's. glazing.rooms() repaints every pane at the end.
-    ID_GLASS: glazing.BASE, ID_FRAME: (150, 146, 140), ID_DOOR: (60, 50, 42),
-    ID_ROOF: (47, 51, 59), ID_DARK: (58, 52, 47), ID_CLOCK: (232, 229, 220),
-    # Dark rendered stacks rather than exposed brick: the chimneys read as
-    # near-black against the roof, not as red brick rising out of it.
-    ID_CHIM: (70, 73, 78),
-}
-WALL_LT, WALL_DK, TRIM_SH, PLINTH_DK = 1.08, 0.905, 0.86, 0.82
-ROOF_DK, CHIM_DK, CHIM_CAP = 0.80, 0.83, 1.40
-SPANDREL, REVEAL = 0.555, 0.58          # shadowed plaster, as shades of trim
-# (roughness, metallic)
-SURFACE = {ID_WALL: (0.80, 0.0), ID_TRIM: (0.62, 0.0), ID_PLINTH: (0.71, 0.0),
-           ID_GLASS: (0.10, 0.0), ID_FRAME: (0.45, 0.15), ID_DOOR: (0.56, 0.0),
-           ID_ROOF: (0.38, 0.25), ID_DARK: (0.88, 0.0), ID_CLOCK: (0.34, 0.0),
-           ID_CHIM: (0.71, 0.0)}
-
-# ---------------------------------------------------------------- relief
-# Heights in metres, relative to the face each region maps onto: only the few
-# centimetres the mesh does not model. The walls' openings, the eave, the
-# balcony, the dial and the quoin blocks are geometry at the near tiers.
-BRICK_FACE = 0.006
-TRIM_H = 0.040       # string course, plinth cap, window surrounds, pilasters
-CORNICE_H = 0.060    # cornice and pediments, the deepest painted mouldings
-DENTIL_H = 0.030
-SEAM_H = 0.025       # the roof's standing seams
-REVEAL_D = -0.020    # the dark reveal ring round each window, set back
+# --------------------------------------------------------------- brickwork
+COURSE = brickwork.COURSE           # 0.078125 m, 5 px
+BRICK_L = brickwork.BRICK_L         # 0.25 m, 16 px
+HALF = BRICK_L / 2.0                # a half stretcher, 0.125 m
+TONE_COURSES = 160
 
 
-# ---------------------------------------------------------------- vertical
-# Vertical architecture, in metres above ground.
-Z_PLINTH_TOP = 0.95
-Z_PLINTH_CAP = 1.15
-Z_GF_SILL = 1.25
-Z_GF_HEAD = 3.70
-Z_GF_SPRING = 3.85
-Z_STRING_BOT = 5.10
-Z_STRING_TOP = 5.55
-Z_UF_SILL = 6.35
-Z_UF_HEAD = 8.95
-Z_FRIEZE_BOT = 9.95
-Z_CORNICE_BOT = 10.45
-Z_CORNICE_TOP = 11.15
-Z_TOP = 11.40
+def course(n):
+    """Course line *n* above the ground, metres."""
+    return n * COURSE
 
 
 def m(v):
-    """Metres -> pixels."""
+    """Metres -> pixels at 64 px/m."""
     return v * PPM
 
 
-# ================================================================ painting
-def arch(c, cx, r, y_sill, y_spring, mid, shade=1.0, ao=None, height=None):
-    """An opening with straight jambs up to y_spring, then a semicircular head."""
-    def test(X, Y):
-        jamb = (np.abs(X - cx) <= r) & (Y >= y_sill) & (Y <= y_spring)
-        head = ((X - cx) ** 2 + (Y - y_spring) ** 2 <= r * r) & (Y > y_spring)
-        return jamb | head
-    c.shape(cx - r - 1, cx + r + 1, y_sill, y_spring + r + 1, test, mid, shade, ao,
-            height)
+# --------------------------------------------------------- vertical layout
+Z_FLOOR = course(2)             # 0.156: the ground floor, one step up
+Z_PLINTH = course(12)           # 0.9375: top of the stone plinth
+Z_PLINTH_CAP = course(15)       # 1.171875: top of its moulded cap
+Z_GF_SILL = course(16)          # 1.25
+Z_DOOR_TRANSOM = course(32)     # 2.50: the doors' leaves end here
+Z_DOOR_HEAD = course(33)        # 2.578: the door cuts' head, the arch's springing
+Z_GF_HEAD = course(47)          # 3.672
+Z_STRING = course(65)           # 5.078: string course foot
+Z_UPPER = course(71)            # 5.547: string course top, the upper floor
+Z_BAL_SILL = course(72)         # 5.625: the balcony door's threshold
+Z_UF_SILL = course(81)          # 6.328
+Z_TALL_SILL = course(84)        # 6.5625: the entrance bay's tall windows
+Z_BAL_TRANSOM = course(101)     # 7.891: the balcony door's leaves end here
+Z_UF_HEAD = course(115)         # 8.984
+Z_TALL_HEAD = course(117)       # 9.141: balcony door and tall windows' head
+Z_FRIEZE = course(127)          # 9.922: frieze foot
+Z_CORNICE = course(134)         # 10.469: cornice foot
+Z_CORNICE_TOP = course(143)     # 11.172
+Z_EAVE = course(146)            # 11.406: the soffit meets the wall
+Z_TOP = course(148)             # 11.5625: the walls run into the roof to here
+Z_BAND = course(150)            # 11.71875: the band's painted top
+FASC_M = 0.25                   # the fascia's depth
+Z_FT = Z_EAVE + FASC_M          # 11.656: the roof's top at the fascia
+EAVE_OUT = 0.45                 # the eave's projection, wall face to fascia
+ROOF_RUN, ROOF_RISE = 3.5, 3.0  # the slope, fascia to deck
+TAN = ROOF_RISE / ROOF_RUN
+Z_DECK = Z_FT + ROOF_RISE       # 14.656: the one flat deck
+SLOPE_LEN = math.hypot(ROOF_RUN, ROOF_RISE)
+
+# ---------------------------------------------------------------- plan
+# The massing as overlapping rectangles (x0, x1, y0, y1), front toward -Y.
+# Every edge on a half stretcher.
+RECTS = [
+    (-17.25, 17.25, -8.0, 6.0),         # main front range
+    (-24.375, -16.375, -9.625, 6.0),    # left end pavilion
+    (16.375, 24.375, -9.625, 6.0),      # right end pavilion
+    (-5.5, 5.5, -10.25, 2.0),           # centre entrance bay
+    (-24.375, -13.375, 2.0, 16.5),      # left rear wing
+    (13.375, 24.375, 2.0, 16.5),        # right rear wing
+    (-6.0, 6.0, 2.0, 11.0),             # centre rear link
+]
+
+# The outline of their union, counter-clockwise seen from above, so each
+# wall's outward face is on the right of p0 -> p1. build.py checks it is the
+# union's outline.
+WALLS = [
+    dict(name="pav_front_l", p0=(-24.375, -9.625), p1=(-16.375, -9.625)),
+    dict(name="pav_ret_l", p0=(-16.375, -9.625), p1=(-16.375, -8.0)),
+    dict(name="front_l", p0=(-16.375, -8.0), p1=(-5.5, -8.0)),
+    dict(name="ent_ret_l", p0=(-5.5, -8.0), p1=(-5.5, -10.25)),
+    dict(name="entrance", p0=(-5.5, -10.25), p1=(5.5, -10.25)),
+    dict(name="ent_ret_r", p0=(5.5, -10.25), p1=(5.5, -8.0)),
+    dict(name="front_r", p0=(5.5, -8.0), p1=(16.375, -8.0)),
+    dict(name="pav_ret_r", p0=(16.375, -8.0), p1=(16.375, -9.625)),
+    dict(name="pav_front_r", p0=(16.375, -9.625), p1=(24.375, -9.625)),
+    dict(name="side_r", p0=(24.375, -9.625), p1=(24.375, 16.5)),
+    dict(name="wing_end_r", p0=(24.375, 16.5), p1=(13.375, 16.5)),
+    dict(name="wing_in_r", p0=(13.375, 16.5), p1=(13.375, 6.0)),
+    dict(name="rear_r", p0=(13.375, 6.0), p1=(6.0, 6.0)),
+    dict(name="link_side_r", p0=(6.0, 6.0), p1=(6.0, 11.0)),
+    dict(name="link_end", p0=(6.0, 11.0), p1=(-6.0, 11.0)),
+    dict(name="link_side_l", p0=(-6.0, 11.0), p1=(-6.0, 6.0)),
+    dict(name="rear_l", p0=(-6.0, 6.0), p1=(-13.375, 6.0)),
+    dict(name="wing_in_l", p0=(-13.375, 6.0), p1=(-13.375, 16.5)),
+    dict(name="wing_end_l", p0=(-13.375, 16.5), p1=(-24.375, 16.5)),
+    dict(name="side_l", p0=(-24.375, 16.5), p1=(-24.375, -9.625)),
+]
+WALL = {w["name"]: w for w in WALLS}
+# The walls a street camera can see; the U-court's seven are the rest.
+COURT = ("wing_in_r", "rear_r", "link_side_r", "link_end", "link_side_l", "rear_l",
+         "wing_in_l")
+# The street front, whose openings LOD2 may keep recessed.
+FRONT = ("pav_front_l", "front_l", "entrance", "front_r", "pav_front_r")
 
 
-def bricks(c, x0, x1, y0, y1, yb, mid=ID_WALL, tones=(1.0, WALL_LT, WALL_DK, 1.0),
-           joints=True):
-    """Running-bond brick over a rect: per-brick tone hashed so there is no
-    diagonal banding, periodic in X so the facade band still tiles; recessed
-    bed and perpend joints."""
-    bl, bh = int(round(m(0.25))), int(round(m(0.075)))
-    sy, sx, Y, X = c.field(x0, x1, y0, y1)
-    by = np.floor((Y - yb) / bh).astype(np.int64)
-    shift = (by % 2) * (bl // 2)
-    bx = np.floor((X + shift) / bl).astype(np.int64) % (ATLAS // bl)
-    h = bx * 374761393 + by * 668265263
-    h = (h ^ (h >> 13)) * 1274126177
-    shade = np.asarray(tones, np.float32)[(h >> 16) % len(tones)]
-    c.mid[sy, sx] = mid
-    if not joints:
-        c.shade[sy, sx] = shade
-        return
-    bed = (Y - yb - by * bh) < 1.0
-    perp = ((X + shift) % bl) < 1.0
-    c.shade[sy, sx] = np.where(bed, WALL_DK * 0.90, np.where(perp, WALL_DK * 0.94, shade))
-    c.ao[sy, sx] = np.where(bed | perp, 0.86, 1.0)
-    c.height[sy, sx] = np.where(bed | perp, 0.0, BRICK_FACE)
+def _dir(w):
+    (x0, y0), (x1, y1) = w["p0"], w["p1"]
+    d = math.hypot(x1 - x0, y1 - y0)
+    return (x1 - x0) / d, (y1 - y0) / d, d
 
 
-def moulding(c, x0, x1, y0, y1, h, shade=1.0, ao=None, axes="y"):
-    """A trim band standing *h* proud, with rounded arrises."""
-    c.paint(x0, x1, y0, y1, ID_TRIM, shade, ao)
-    c.bevel(x0, x1, y0, y1, h, 1.0, axes=axes)
+for _i, _w in enumerate(WALLS):
+    _tx, _ty, _w["L"] = _dir(_w)
+for _i, _w in enumerate(WALLS):
+    _a = WALLS[_i - 1]
+    ax, ay, _ = _dir(_a)
+    bx, by, _ = _dir(_w)
+    # a left turn, walking counter-clockwise, is a convex corner
+    _w["convex0"] = ax * by - ay * bx > 0.0
+for _i, _w in enumerate(WALLS):
+    _w["convex1"] = WALLS[(_i + 1) % len(WALLS)]["convex0"]
+
+# ------------------------------------------------------- openings (items)
+# Every opening kind is an item: a rectangle on its wall, its own region in
+# the atlas, fully covered by its artwork (casing, head, sill, the opening),
+# so no brick is painted inside one. w is its width; z0 .. z1 its heights;
+# openings, (s0, s1, z0, z1) from its left edge, are recessed REVEAL on the
+# near tiers. The casing is a quarter metre, so an item's sides and its
+# opening's both fall on half stretchers.
+CASING = 0.25
+REVEAL = 0.28
+QUOIN_DEPTH = 0.5               # the quoin block wraps this far along each face
+QUOIN_PROUD = course(1)         # and stands this far out of both
+QUOIN_TOP = Z_FRIEZE            # the entablature runs on round the corner above
+ITEMS = {
+    "gf": dict(w=1.875, z0=Z_PLINTH_CAP, z1=course(53),
+               openings=[(0.25, 1.625, Z_GF_SILL, Z_GF_HEAD)]),
+    "uf": dict(w=1.875, z0=course(79), z1=course(121),
+               openings=[(0.25, 1.625, Z_UF_SILL, Z_UF_HEAD)]),
+    "gf125": dict(w=1.75, z0=Z_PLINTH_CAP, z1=course(53),
+                  openings=[(0.25, 1.5, Z_GF_SILL, Z_GF_HEAD)]),
+    "uf125": dict(w=1.75, z0=course(79), z1=course(121),
+                  openings=[(0.25, 1.5, Z_UF_SILL, Z_UF_HEAD)]),
+    "door": dict(w=2.5, z0=0.0, z1=course(53),
+                 openings=[(0.25, 2.25, 0.0, Z_DOOR_HEAD)]),
+    "service": dict(w=1.875, z0=0.0, z1=course(39),
+                    openings=[(0.25, 1.625, 0.0, Z_DOOR_HEAD)]),
+    "group": dict(w=5.5, z0=Z_UPPER, z1=course(123),
+                  openings=[(0.25, 1.5, Z_TALL_SILL, Z_TALL_HEAD),
+                            (2.125, 3.375, Z_BAL_SILL, Z_TALL_HEAD),
+                            (4.0, 5.25, Z_TALL_SILL, Z_TALL_HEAD)]),
+    "pilaster": dict(w=0.25, z0=Z_UPPER, z1=Z_FRIEZE, openings=[]),
+}
+# Room variants per kind: a window's rooms are told apart by where its panes
+# lie in the atlas (scripts/glazing.py seeds each pane by its box), so a kind
+# painted three or four times gives three or four rooms, and a facade cycles
+# through them.
+NVAR = {"gf": 4, "uf": 4, "gf125": 2, "uf125": 3, "door": 1, "service": 1,
+        "group": 1, "pilaster": 1}
+WINDOW_KINDS = ("gf", "uf", "gf125", "uf125")
+# The door leaves' widths and heights, for the facts sidecar.
+DOOR_LEAF = {"door": (2.0, Z_DOOR_TRANSOM - Z_FLOOR),
+             "service": (1.375, Z_DOOR_TRANSOM - Z_FLOOR),
+             "balcony": (1.25, Z_BAL_TRANSOM - Z_BAL_SILL)}
 
 
-def draw_wall_bands(c, x0, x1, yb):
-    """Horizontal storey architecture shared by every wall."""
-    c.paint(x0, x1, yb, yb + m(Z_TOP), ID_WALL, 1.0, 1.0, height=0.0)
-    bricks(c, x0, x1, yb + m(Z_PLINTH_CAP), yb + m(Z_TOP), yb)
-
-    # plinth: dressed stone courses, the ground course darker
-    c.paint(x0, x1, yb, yb + m(Z_PLINTH_TOP), ID_PLINTH, 1.0, height=0.0)
-    for j in range(1, 4):
-        c.paint(x0, x1, yb + m(0.24 * j), yb + m(0.24 * j) + 1, ID_PLINTH, PLINTH_DK,
-                height=-0.004)
-    c.paint(x0, x1, yb, yb + m(0.18), ID_PLINTH, PLINTH_DK, 0.72)
-    moulding(c, x0, x1, yb + m(Z_PLINTH_TOP), yb + m(Z_PLINTH_CAP), TRIM_H)
-    c.paint(x0, x1, yb + m(Z_PLINTH_CAP), yb + m(Z_PLINTH_CAP) + 2, ID_TRIM, TRIM_SH, 0.78)
-
-    # string course between storeys, occluded under its drip
-    moulding(c, x0, x1, yb + m(Z_STRING_BOT), yb + m(Z_STRING_TOP), CORNICE_H)
-    c.paint(x0, x1, yb + m(Z_STRING_BOT) - 3, yb + m(Z_STRING_BOT), ID_TRIM, TRIM_SH, 0.70)
-    c.paint(x0, x1, yb + m(Z_STRING_TOP), yb + m(Z_STRING_TOP) + 2, ID_TRIM, TRIM_SH, 0.80)
-
-    # frieze, cornice with dentils, top fascia
-    c.paint(x0, x1, yb + m(Z_FRIEZE_BOT), yb + m(Z_CORNICE_BOT), ID_TRIM, TRIM_SH,
-            height=0.010)
-    sy, sx, _, X = c.field(x0, x1, yb + m(Z_FRIEZE_BOT), yb + m(Z_CORNICE_BOT))
-    pitch, width = round(m(0.32)), round(m(0.14))
-    dent = (X % pitch) < width
-    c.shade[sy, sx] = np.where(dent, 1.0, c.shade[sy, sx])
-    c.height[sy, sx] = np.where(dent, DENTIL_H, c.height[sy, sx])
-    c.paint(x0, x1, yb + m(Z_FRIEZE_BOT) - 4, yb + m(Z_FRIEZE_BOT), ID_DARK, 1.0, 0.45,
-            height=0.0)
-    moulding(c, x0, x1, yb + m(Z_CORNICE_BOT), yb + m(Z_CORNICE_TOP), CORNICE_H)
-    c.paint(x0, x1, yb + m(Z_CORNICE_TOP), yb + m(Z_TOP), ID_TRIM, TRIM_SH, 0.72,
-            height=0.020)
+def _row(kind, centres, first=0):
+    n = NVAR[kind]
+    return [(kind, s, (first + k) % n) for k, s in enumerate(centres)]
 
 
-def sill_grime(c, n01, cx, w, ys, fall=0.75, strength=0.075):
-    """Weathering below a sill, as a falloff rather than a rectangle.
-
-    This was a hard-edged box the width of the window, darkening it a flat 10%.
-    It read as a painted shadow rather than as dirt, because it had a crisp
-    bottom edge and crisp sides that nothing on the wall explains — worst on
-    the ground floor, where it lands on the flat grey plinth and the edges have
-    nothing to hide behind. It only became obvious once the windows were
-    resized smaller: the band stayed the same size and moved down onto the
-    plinth, where it had previously sat on brick and been partly lost in the
-    coursing.
-
-    Run-off is strongest right under the sill and fades downwards and sideways,
-    so that is what fades here. It is also weaker, and broken up with noise so
-    it does not read as a clean gradient ramp, which is the other way a painted
-    effect gives itself away.
-    """
-    top = ys - m(0.30)
-    depth = max(1.0, m(fall))
-    half = w + m(0.10)
-    sy, sx, Y, X = c.field(cx - half, cx + half, max(0.0, top - depth), max(0.0, top))
-    if Y.size == 0:
-        return
-    t = np.clip((top - Y) / depth, 0.0, 1.0)
-    vert = (1.0 - t) ** 1.6
-    edge = atlas.smoothstep(0.0, 1.0, (half - np.abs(X - cx)) / max(1.0, m(0.22)))
-    amt = np.clip(vert * edge * (0.70 + 0.6 * n01[sy, sx]), 0.0, 1.0) * strength
-    c.shade[sy, sx] *= 1.0 - amt
-    c.ao[sy, sx] = np.minimum(c.ao[sy, sx], 1.0 - amt * 0.55)
+def _mirror(items, length):
+    """The same placements on the mirrored wall, its s running the other way."""
+    return [(k, length - s, v) for k, s, v in items]
 
 
-def draw_rect_window(c, n01, cx, half_w, yb, sill=Z_UF_SILL, head=Z_UF_HEAD, bars=3):
-    w, ys, yh = m(half_w), yb + m(sill), yb + m(head)
-    # architrave, then a small pediment over the head
-    moulding(c, cx - w - m(0.26), cx + w + m(0.26), ys - m(0.26), yh + m(0.26), TRIM_H,
-             axes="xy")
-    moulding(c, cx - w - m(0.42), cx + w + m(0.42), yh + m(0.26), yh + m(0.52), CORNICE_H,
-             axes="xy")
-    c.paint(cx - w - m(0.42), cx + w + m(0.42), yh + m(0.52), yh + m(0.58), ID_TRIM,
-            TRIM_SH, 0.74)
-    # the dark reveal ring, set back, then the glass and its bars
-    c.paint(cx - w - m(0.10), cx + w + m(0.10), ys - m(0.08), yh + m(0.10), ID_DARK,
-            1.0, 0.42, height=REVEAL_D)
-    c.paint(cx - w, cx + w, ys, yh, ID_GLASS, 1.0, 0.55, height=REVEAL_D)
-    c.paint(cx - 2, cx + 2, ys, yh, ID_FRAME, 1.0, 0.50, height=REVEAL_D + 0.015)
-    for b in range(1, bars + 1):
-        yy = ys + (yh - ys) * b / (bars + 1)
-        c.paint(cx - w, cx + w, yy - 2, yy + 2, ID_FRAME, 1.0, 0.50,
-                height=REVEAL_D + 0.015)
-    # sill, with soft weathering below it
-    moulding(c, cx - w - m(0.34), cx + w + m(0.34), ys - m(0.30), ys - m(0.14), CORNICE_H,
-             axes="xy")
-    sill_grime(c, n01, cx, w, ys)
+_SIDE = [2.125 + 3.125 * k for k in range(8)]
+_SIDE_P = [3.6875 + 3.125 * k for k in range(7)]
+PLACE = {
+    "pav_front_l": (_row("gf", (2.0625, 5.9375), 0) + _row("uf", (2.0625, 5.9375), 2)
+                    + _row("pilaster", (4.0,))),
+    "front_l": (_row("gf", (1.8125, 5.4375, 9.0625), 1) + _row("uf", (1.8125, 5.4375, 9.0625), 3)
+                + _row("pilaster", (3.625, 7.25))),
+    "entrance": ([("door", 5.5, 0), ("group", 5.5, 0)] + _row("gf", (2.1875, 8.8125), 2)
+                 + _row("uf125", (1.625, 9.375), 0)),
+    "side_r": (_row("gf", _SIDE, 0) + _row("uf", _SIDE, 2) + _row("pilaster", _SIDE_P)),
+    "wing_end_r": ([("service", 5.5, 0)] + _row("gf", (1.875, 9.125), 3)
+                   + _row("uf", (1.875, 5.5, 9.125), 1) + _row("pilaster", (3.6875, 7.3125))),
+    "wing_in_r": (_row("gf", (1.8125, 5.4375, 9.0625), 2)
+                  + _row("uf", (1.8125, 5.4375, 9.0625), 0)
+                  + _row("pilaster", (3.625, 7.25))),
+    "rear_r": (_row("gf", (1.8125, 5.4375), 3) + _row("uf", (1.8125, 5.4375), 1)
+               + _row("pilaster", (3.625,))),
+    "link_side_r": _row("gf125", (1.125, 3.125), 0) + _row("uf125", (1.125, 3.125), 1),
+    "link_end": (_row("gf", (1.6875, 4.5625, 7.4375, 10.3125), 1)
+                 + _row("uf", (1.6875, 4.5625, 7.4375, 10.3125), 3)
+                 + _row("pilaster", (3.125, 6.0, 8.875))),
+}
+PLACE["pav_front_r"] = _row("gf", (2.0625, 5.9375), 1) + _row("uf", (2.0625, 5.9375), 3) \
+    + _row("pilaster", (4.0,))
+PLACE["front_r"] = (_row("gf", (1.8125, 5.4375, 9.0625), 2)
+                    + _row("uf", (1.8125, 5.4375, 9.0625), 0) + _row("pilaster", (3.625, 7.25)))
+PLACE["side_l"] = (_row("gf", _SIDE, 1) + _row("uf", _SIDE, 3) + _row("pilaster", _SIDE_P))
+PLACE["wing_end_l"] = (_row("gf", (1.875, 5.5, 9.125), 2) + _row("uf", (1.875, 5.5, 9.125), 0)
+                       + _row("pilaster", (3.6875, 7.3125)))
+PLACE["wing_in_l"] = _mirror(PLACE["wing_in_r"], 10.5)
+PLACE["rear_l"] = _mirror(PLACE["rear_r"], 7.375)
+PLACE["link_side_l"] = _mirror(PLACE["link_side_r"], 5.0)
+for _w in WALLS:
+    _w["items"] = PLACE.get(_w["name"], [])
 
 
-def rear_door_x(half=0.0):
-    """Band pixel column of the rear door's centre, plus *half* wall metres:
-    where build.py's mapping puts the middle of the wing end's middle bay."""
-    return (REAR_BAY + 0.5) * ATLAS / 10.0 + m(half / REAR_STRETCH)
+def item_rect(kind, s):
+    """(left, right, bottom, top) of the item centred *s* along its wall."""
+    it = ITEMS[kind]
+    return s - it["w"] / 2.0, s + it["w"] / 2.0, it["z0"], it["z1"]
 
 
-def draw_rear_door(c):
-    """The rear service door: a pair of panelled timber leaves, 1.40 x 2.30 m,
-    under a 0.15 m head rail to the cut's 2.60 m head, in a plain white
-    architrave with a moulded head like the windows', over a painted
-    threshold step. In band pixels, narrowed by REAR_STRETCH in U."""
-    cx, hw = rear_door_x(), REAR_DOOR_HW
-
-    def x(v):
-        return m(v / REAR_STRETCH)
-    ys, yl, yh = m(REAR_SILL), m(REAR_LEAF_TOP), m(REAR_HEAD)
-    # the threshold step, one 0.15 m riser up from the ground as at the front
-    c.paint(cx - x(hw + 0.30), cx + x(hw + 0.30), 0, ys, ID_PLINTH, 1.0, 0.74, height=0.0)
-    c.paint(cx - x(hw + 0.30), cx + x(hw + 0.30), 0, m(0.04), ID_PLINTH, PLINTH_DK, 0.66)
-    # architrave and its moulded head
-    moulding(c, cx - x(hw + 0.20), cx + x(hw + 0.20), ys, yh + m(0.20), TRIM_H, axes="xy")
-    moulding(c, cx - x(hw + 0.32), cx + x(hw + 0.32), yh + m(0.20), yh + m(0.42), CORNICE_H,
-             axes="xy")
-    c.paint(cx - x(hw + 0.32), cx + x(hw + 0.32), yh + m(0.42), yh + m(0.48), ID_TRIM,
-            TRIM_SH, 0.74)
-    # dark reveal ring, then the leaves, set back
-    c.paint(cx - x(hw + 0.06), cx + x(hw + 0.06), ys, yh + m(0.06), ID_DARK, 1.0, 0.42,
-            height=REVEAL_D)
-    c.paint(cx - x(hw), cx + x(hw), ys, yl, ID_DOOR, 1.0, 0.55, height=REVEAL_D)
-    # two raised fields on each leaf, stiles 0.12 m, rails 0.12 / 0.22 m
-    for a0, a1 in ((-hw + 0.12, -0.12), (0.12, hw - 0.12)):
-        for z0, z1 in ((REAR_SILL + 0.22, REAR_SILL + 0.95), (REAR_SILL + 1.10, REAR_LEAF_TOP - 0.12)):
-            c.paint(cx + x(a0), cx + x(a1), m(z0), m(z1), ID_DOOR, 1.06, 0.60)
-            c.bevel(cx + x(a0), cx + x(a1), m(z0), m(z1), REVEAL_D + 0.010, 1.5,
-                    base=REVEAL_D)
-    # the meeting stiles' joint, and the head rail that ends the leaves: the
-    # transom line, so the 2.30 m leaf reads inside the 2.45 m opening
-    c.paint(cx - 1, cx + 1, ys, yl, ID_DARK, 1.0, 0.40, height=REVEAL_D - 0.004)
-    c.paint(cx - x(hw), cx + x(hw), yl, yh, ID_FRAME, 0.92, 0.50, height=REVEAL_D + 0.015)
-    c.paint(cx - x(hw), cx + x(hw), yl - 2, yl, ID_DARK, 1.0, 0.40, height=REVEAL_D - 0.004)
-    # pull handles either side of the joint
-    for side in (-1, 1):
-        hx = cx + side * x(0.07)
-        c.paint(hx - 1, hx + 1, m(REAR_SILL + 0.95), m(REAR_SILL + 1.15), ID_FRAME, 1.0,
-                height=REVEAL_D + 0.020)
+# Downpipes, (wall, s): on the four short returns at the front, beside the
+# valleys there; two on each side; one on each rear wing's end; two in the
+# U-court beside the link.
+PIPES = [("pav_ret_l", 1.25), ("ent_ret_l", 0.375), ("ent_ret_r", 1.875),
+         ("pav_ret_r", 0.375), ("side_r", 6.5), ("side_r", 19.0),
+         ("wing_end_r", 3.125), ("rear_r", 7.0), ("rear_l", 0.375),
+         ("wing_end_l", 7.875), ("side_l", 7.125), ("side_l", 19.625)]
+PIPE_W = 0.10
+# The roof safety kit's wall ladder: in the U-court, on the left wing's inner
+# face, in front of the pilaster between its first two bays.
+LADDER = ("wing_in_l", 3.25)
 
 
-def draw_balcony_door(c, n01, cx, yb, half_w=0.62):
-    """The balcony door: a glazed pair of leaves 2.30 m tall, a transom twice
-    as heavy as a glazing bar, and a fanlight over it to the 9.10 m head.
-
-    Its 3.50 m opening is cut in one piece, and with its bars evenly spaced
-    it read as one tall door, over the catalog's 2.6 m ceremonial limit. The
-    transom is what marks the leaf height inside it, so it stands out from
-    the bars in width, in relief and by the shadow under it.
-    """
-    w = m(half_w)
-    ys, yt = yb + m(BAL_SILL), yb + m(BAL_TRANSOM)
-    # surround, reveal ring, glass, the meeting stiles and the sill
-    draw_rect_window(c, n01, cx, half_w, yb, sill=BAL_SILL, head=BAL_HEAD, bars=0)
-    # leaves: a bottom rail, and two bars at the thirds of the glass above it
-    rail = yb + m(BAL_SILL + 0.14)
-    c.paint(cx - w, cx + w, ys, rail, ID_FRAME, 1.0, 0.50, height=REVEAL_D + 0.015)
-    for b in (1, 2):
-        yy = rail + (yt - rail) * b / 3.0
-        c.paint(cx - w, cx + w, yy - 2, yy + 2, ID_FRAME, 1.0, 0.50,
-                height=REVEAL_D + 0.015)
-    # the transom: 0.12 m, against the bars' 0.06, standing further off the
-    # glass, with a shadow line under it
-    c.paint(cx - w, cx + w, yt, yt + m(0.12), ID_FRAME, 1.0, 0.50, height=REVEAL_D + 0.025)
-    c.bevel(cx - w, cx + w, yt, yt + m(0.12), REVEAL_D + 0.025, 1.5, base=REVEAL_D + 0.012,
-            axes="y")
-    c.paint(cx - w, cx + w, yt - 2, yt, ID_DARK, 1.0, 0.40, height=REVEAL_D)
-    # The fanlight above, to the head, is left undivided but for the meeting
-    # stiles' bar, so it reads as a light of its own over the leaves.
-
-
-def paint_facade(c, n01, rear_door=False):
-    """The tiling facade band. *rear_door* paints the rear service door in
-    bay REAR_BAY instead of its ground-floor window, for paint()'s copy."""
-    draw_wall_bands(c, 0, ATLAS, 0)
-    bays = 10
-    edges = [int(round(ATLAS * i / bays)) for i in range(bays + 1)]
-    for i in range(bays):
-        cx = (edges[i] + edges[i + 1]) / 2.0
-        if rear_door and i == REAR_BAY:
-            draw_rear_door(c)
+def _u_offsets():
+    """Where each wall samples the brick band in U, so that every item's
+    sides fall on a half stretcher of the wall's bond, and at every concave
+    corner the bond turns: the course ending on a whole brick on one face
+    ends on a half on the other. Convex corners are under the quoins."""
+    u, out = 0.0, {}
+    prev = None
+    for w in WALLS:
+        if prev is None:
+            u0 = 0.0
+        elif w["convex0"]:
+            u0 = math.floor(out[prev["name"]] + prev["L"]) + 3.0
         else:
-            draw_rect_window(c, n01, cx, 0.70, 0, sill=Z_GF_SILL, head=Z_GF_HEAD)
-        draw_rect_window(c, n01, cx, 0.70, 0)
-        # slender pilaster on the bay joint, upper storey only
-        moulding(c, edges[i] - m(0.10), edges[i] + m(0.10), m(Z_STRING_TOP),
-                 m(Z_FRIEZE_BOT), TRIM_H, TRIM_SH, axes="x")
-    # the pilaster on the joint at u = 0 is split across the wrap: its other half
-    moulding(c, ATLAS - m(0.10), ATLAS, m(Z_STRING_TOP), m(Z_FRIEZE_BOT), TRIM_H,
-             TRIM_SH, axes="x")
+            u0 = out[prev["name"]] + prev["L"] + HALF
+        need = 0.0
+        if w["items"]:
+            k, s, _v = w["items"][0]
+            need = (-item_rect(k, s)[0]) % HALF
+        if w["convex0"]:
+            u0 = math.floor(u0 / HALF) * HALF + need
+        out[w["name"]] = u0 % (ATLAS / PPM)
+        prev = w
+    return out
+
+
+U_OFF = _u_offsets()
+for _w in WALLS:
+    _w["u"] = U_OFF[_w["name"]]
+
+# ------------------------------------------------------------ the tower etc.
+TOWER_W, TOWER_YC = 1.5, -2.3           # half-width, centre in y
+TOWER_FOOT = 14.5                       # inside the roof, under the deck
+TOWER_TOP = 20.2
+TOWER_PLAT = (17.3, 18.0)
+DOME_Z = (20.2, 20.55, 20.9, 21.3, 21.6)
+DOME_R = (1.45, 1.36, 1.12, 0.80, 0.45)
+TOWER_BALL = (21.6, 22.1)
+TOWER_POLE = 24.6
+CHIM_TOP = course(209)                  # 16.328
+CHIM_FOOT = 14.35
+CHIMNEYS = [(-8.125, -6.875, -1.625, -0.375), (6.875, 8.125, -1.625, -0.375),
+            (-19.375, -18.125, 6.625, 7.875), (18.125, 19.375, 6.625, 7.875),
+            (-19.375, -18.125, 11.625, 12.875), (18.125, 19.375, 11.625, 12.875)]
+ATTIC = (-4.0, 4.0, -10.25, -8.375)     # plan of the clock attic
+Z_ATTIC = course(187)                   # 14.609: the attic's top
+Z_APEX = course(210)                    # 16.406: the pediment's apex
+PED_OVER = 0.125                        # the pediment oversails the attic
+DIAL_C, DIAL_R = (0.0, 13.1875), 0.9375
+BALC_X = 2.4
+BALC_Y = -11.4                          # the balcony's front
+BALC_SLAB = (course(68), Z_UPPER)       # 5.3125 .. 5.547
+# bottom rail's top, dado's top, top rail's top: a course under the tall
+# windows' sills, so the parapets run into the wall clear of their recesses
+BALC_RAIL = (course(73), course(81), course(83))
+BALC_T = 0.2
+
+# --------------------------------------------------------------- the atlas
+WALL_Y0 = 2
+ROOF_Y0 = 760
+ROOF_H = SLOPE_LEN * RPM
+FASC_Y0, FASC_H = 914, FASC_M * PPM
+GUTTER_PX = 9.0
+PIPE_STRIP = (FASC_Y0 + FASC_H - 1 - GUTTER_PX / 2.0 - 2.5,
+              FASC_Y0 + FASC_H - 1 - GUTTER_PX / 2.0 + 2.5)
+SOF_Y0, SOF_H = 936, EAVE_OUT * PPM
+BANDS_TOP = SOF_Y0 + SOF_H + PAD
+
+ELEV_Y = (972, 1163)
+ELEV_H = int(round(Z_TOP * EPPM))       # 185 rows: z 0 .. Z_TOP
+ELEV_MAX_X = 1568
+
+
+def _elev_regions():
+    out, x, row = {}, 4, 0
+    for w in WALLS:
+        wpx = int(round(w["L"] * EPPM))
+        if x + wpx > ELEV_MAX_X:
+            row, x = row + 1, 4
+        out[w["name"]] = (x, ELEV_Y[row], wpx, ELEV_H)
+        x += wpx + 4
+    return out
+
+
+ELEV = _elev_regions()
+
+
+def _item_regions():
+    out = {}
+    places = (("gf", 700, 1354), ("uf", 700, 1550))
+    for kind, x, y in places:
+        for v in range(NVAR[kind]):
+            out[(kind, v)] = (x + 124 * v, y)
+    for v in range(NVAR["gf125"]):
+        out[("gf125", v)] = (1196 + 116 * v, 1354)
+    for v in range(NVAR["uf125"]):
+        out[("uf125", v)] = (1196 + 116 * v, 1550)
+    out[("door", 0)] = (1548, 1354)
+    out[("service", 0)] = (1716, 1354)
+    out[("pilaster", 0)] = (1844, 1354)
+    out[("group", 0)] = (1548, 1640)
+    rects = {}
+    for (kind, v), (x, y) in out.items():
+        it = ITEMS[kind]
+        rects[(kind, v)] = (x, y, m(it["w"]), m(it["z1"] - it["z0"]))
+    return rects
+
+
+ITEM_REGION = _item_regions()
+QUOIN = {"a": (1964, 1354, 38, m(QUOIN_TOP)), "b": (2006, 1354, 38, m(QUOIN_TOP))}
+TOWER = (1572, 972, m(2 * TOWER_W), m(TOWER_TOP - TOWER_FOOT))
+CHIMNEY = (1772, 972, 80, m(CHIM_TOP - CHIM_FOOT))
+DOME = (1860, 972, 64, m(1.625))
+DECK = (4, 1354, 688, 336)
+DECK_O = (-21.5, -7.375)                # the plan point at the deck region's corner
+ATTIC_F = (4, 1700, m(8.0), m(Z_ATTIC - Z_TOP))
+PEDIMENT = (4, 1906, m(8.0 + 2 * PED_OVER), m(Z_APEX - Z_ATTIC))
+BALUS = (548, 1786, m(2 * BALC_X), m(BALC_RAIL[1] - BALC_RAIL[0]))
+PLAT_BALUS = (548, 1840, m(3.6), m(0.45))
+PATCH_NAMES = ("blank", "reveal", "trim", "trim_shade", "sill_top", "roof", "soot",
+               "step", "rim", "gutter", "frame", "cutter", "lid", "rail")
+PATCHES = {n: (870 + 20 * i, 1790, 16, 16) for i, n in enumerate(PATCH_NAMES)}
+
+# ----------------------------------------------------------- material ids
+ID_BLANK, ID_BRICK, ID_BRICK2, ID_MORTAR, ID_PLINTH = 0, 1, 2, 3, 4
+ID_TRIM, ID_GLASS, ID_FRAME, ID_DOOR, ID_ROOF = 5, 6, 7, 8, 9
+ID_GUTTER, ID_DARK, ID_CLOCK, ID_CHIM, ID_METAL, ID_SOOT = 10, 11, 12, 13, 14, 15
+BRICK_IDS = (ID_BRICK, ID_BRICK2, ID_MORTAR)
+
+# sRGB. A late-19th-century civic red brick, deep and a little brown rather
+# than orange, with about one brick in six darker; a lime mortar; trim painted
+# a weathered off-white; grey granite at the plinth; the roof, its gutter and
+# downpipes and the roof safety kit one dark painted steel.
+COLOUR = {
+    ID_BLANK: (52, 52, 52), ID_BRICK: (134, 74, 60), ID_BRICK2: (104, 55, 46),
+    ID_MORTAR: (158, 152, 140), ID_PLINTH: (146, 143, 136), ID_TRIM: (210, 204, 190),
+    ID_GLASS: glazing.BASE, ID_FRAME: (178, 172, 160), ID_DOOR: (64, 54, 45),
+    ID_ROOF: (54, 58, 66), ID_GUTTER: (58, 62, 68), ID_DARK: (44, 41, 38),
+    ID_CLOCK: (230, 226, 214), ID_CHIM: (80, 82, 86), ID_METAL: (150, 128, 92),
+    ID_SOOT: (22, 21, 20),
+}
+# (roughness, metallic). The roof, gutter, pipes and kit are painted steel,
+# and the windows and doors painted timber: none of them metallic.
+SURFACE = {
+    ID_BLANK: (0.95, 0.0), ID_BRICK: (0.84, 0.0), ID_BRICK2: (0.82, 0.0),
+    ID_MORTAR: (0.93, 0.0), ID_PLINTH: (0.78, 0.0), ID_TRIM: (0.64, 0.0),
+    ID_GLASS: (glazing.ROUGHNESS, 0.0), ID_FRAME: (0.50, 0.0), ID_DOOR: (0.52, 0.0),
+    ID_ROOF: (0.55, 0.0), ID_GUTTER: (0.50, 0.0), ID_DARK: (0.92, 0.0),
+    ID_CLOCK: (0.32, 0.0), ID_CHIM: (0.86, 0.0), ID_METAL: (0.36, 0.75),
+    ID_SOOT: (0.98, 0.0),
+}
+# The emission: glass in neutral white (glazing.night_rooms() then makes each
+# pane a room), and the clock's dial in its own warm light, which is how the
+# validator tells a fixture from glazing. Both share the mask's one control.
+EMIT = {ID_GLASS: (255, 255, 255), ID_CLOCK: (255, 208, 146)}
+# Linear RGB: the catalog's warm interior lamps.
+LIT_FACTOR = (1.0, 0.88, 0.72)
+
+# ---------------------------------------------------------------- relief
+BRICK_FACE = brickwork.BRICK_FACE
+TRIM_H = 0.035          # string course, casings, quoin stones, pilasters
+CORNICE_H = 0.06        # cornices and heads, the deepest painted mouldings
+DENTIL_H = 0.03
+FRAME_H = 0.025         # window frames proud of the glass
+SEAM_H = 0.025          # standing seams
+TRIM_SH = 0.88          # trim in its own shade
+
+BAND_IDS = {
+    "WALL": ((0, WALL_Y0 + m(Z_BAND) + PAD), {ID_BRICK, ID_BRICK2, ID_MORTAR, ID_PLINTH,
+                                              ID_TRIM}),
+    "ROOF": ((ROOF_Y0 - PAD, ROOF_Y0 + ROOF_H + PAD), {ID_ROOF}),
+    "FASCIA": ((FASC_Y0 - PAD, FASC_Y0 + FASC_H + PAD), {ID_TRIM, ID_GUTTER}),
+    "SOFFIT": ((SOF_Y0 - PAD, SOF_Y0 + SOF_H + PAD), {ID_TRIM}),
+}
+
+
+# ================================================================ bands
+def paint_wall_band(c):
+    """The wall: plinth, brick and the horizontal trim every wall shares, at
+    the heights build.py's walls are cut to."""
+    y0 = WALL_Y0
+    top = y0 + m(Z_BAND)
+    brickwork.paint(c, 0, ATLAS, y0, top + PAD, BRICK_IDS, TONE_COURSES, seed=17)
+    Y = lambda z: y0 + m(z)                                    # noqa: E731
+    # the plinth: three courses of dressed granite, staggered metre blocks,
+    # the ground course a little darker
+    c.paint(0, ATLAS, y0 - PAD, Y(Z_PLINTH), ID_PLINTH, 1.0, 1.0, height=0.0)
+    sy, sx, YY, XX = c.field(0, ATLAS, y0 - PAD, Y(Z_PLINTH))
+    k = np.floor((YY - y0) / m(0.3125)).astype(np.int64)
+    bed = ((YY - y0) % m(0.3125)) < 1.0
+    perp = ((XX + (k % 2) * 32.0) % 64.0) < 1.0
+    joint = (bed & (YY > y0 + 1)) | perp
+    tone = 0.94 + 0.10 * atlas.hash_unit(np.floor((XX + (k % 2) * 32.0) / 64.0)
+                                         .astype(np.int64) % 32, k, 5)
+    c.shade[sy, sx] = np.where(joint, 0.72, tone * np.where(k <= 0, 0.92, 1.0))
+    c.ao[sy, sx] = np.where(joint, 0.78, 1.0)
+    c.height[sy, sx] = np.where(joint, -0.004, 0.0)
+    # the plinth cap: a moulded trim course, its drip's shadow on the granite
+    c.paint(0, ATLAS, Y(Z_PLINTH), Y(Z_PLINTH_CAP), ID_TRIM, 1.0, 1.0)
+    c.bevel(0, ATLAS, Y(Z_PLINTH), Y(Z_PLINTH_CAP), TRIM_H, 2.0, axes="y")
+    c.mul(0, ATLAS, Y(Z_PLINTH), Y(Z_PLINTH) + 3, 0.80, ao=0.80)
+    c.mul(0, ATLAS, Y(Z_PLINTH) - 2, Y(Z_PLINTH), 0.84, ao=0.78)
+    c.mul(0, ATLAS, Y(Z_PLINTH_CAP), Y(Z_PLINTH_CAP) + 2, 0.88, ao=0.86)
+    # the string course: a flat fascia under a projecting moulding
+    zs, zm = Y(Z_STRING), Y(Z_STRING + course(2))
+    c.paint(0, ATLAS, zs, Y(Z_UPPER), ID_TRIM, 1.0, 1.0)
+    c.bevel(0, ATLAS, zs, zm, TRIM_H * 0.6, 1.5, axes="y")
+    c.bevel(0, ATLAS, zm, Y(Z_UPPER), CORNICE_H, 2.5, base=TRIM_H * 0.6, axes="y")
+    c.mul(0, ATLAS, zm - 1, zm + 1, 0.86, ao=0.80)
+    c.mul(0, ATLAS, zs - 3, zs, 0.84, ao=0.76)                  # drip on the brick
+    c.mul(0, ATLAS, Y(Z_UPPER), Y(Z_UPPER) + 2, 0.90, ao=0.86)
+    # the frieze, its dentils, the cornice and the fascia under the soffit
+    zf, zc = Y(Z_FRIEZE), Y(Z_CORNICE)
+    c.paint(0, ATLAS, zf, Y(Z_BAND) + PAD, ID_TRIM, 1.0, 1.0, height=0.008)
+    c.mul(0, ATLAS, zf - 3, zf, 0.88, ao=0.82)
+    c.mul(0, ATLAS, zf, zf + 2, 0.86, ao=0.80)
+    d0, d1 = Y(Z_FRIEZE + course(3)), zc - 3
+    sy, sx, _YY, XX = c.field(0, ATLAS, d0, d1)
+    tooth = (XX % 20.0) < 10.0
+    c.shade[sy, sx] = np.where(tooth, 1.0, 0.70)
+    c.ao[sy, sx] = np.where(tooth, 1.0, 0.62)
+    c.height[sy, sx] = np.where(tooth, DENTIL_H, 0.0)
+    c.mul(0, ATLAS, d0 - 2, d0, 0.82, ao=0.78)
+    c.mul(0, ATLAS, d1, zc, 0.78, ao=0.70)
+    zt = Y(Z_CORNICE_TOP)
+    c.bevel(0, ATLAS, zc, zc + 10, TRIM_H, 1.5, axes="y")
+    c.bevel(0, ATLAS, zc + 10, zt - 12, CORNICE_H, 2.0, base=TRIM_H, axes="y")
+    c.bevel(0, ATLAS, zt - 12, zt, CORNICE_H * 0.8, 2.0, base=CORNICE_H * 0.4, axes="y")
+    c.mul(0, ATLAS, zc + 9, zc + 11, 0.84, ao=0.80)
+    c.mul(0, ATLAS, zt - 13, zt - 11, 0.80, ao=0.76)
+    c.paint(0, ATLAS, zt, Y(Z_EAVE), ID_TRIM, 0.84, 0.74, height=0.0)
+    c.paint(0, ATLAS, Y(Z_EAVE), Y(Z_BAND) + PAD, ID_TRIM, 0.94, 0.90, height=0.0)
 
 
 def paint_roof(c):
-    """Standing-seam steel, V stretched across each slope. The seams vary in
-    U only; the transverse joints vary in V and are scaled for the stretch."""
+    """Standing-seam steel, V up the slope at RPM rows a metre: seams every
+    half metre along U, a snow guard a little up from the eave, a drip edge
+    at the foot and the deck's flashing at the top."""
     y0, h = ROOF_Y0, ROOF_H
-    c.paint(0, ATLAS, y0, y0 + h, ID_ROOF, 1.0, 1.0, height=0.0)
-    seam = round(m(0.5))
-    sy, sx, Y, X = c.field(0, ATLAS, y0, y0 + h)
-    xs = X % seam
-    rib = xs < 3.0
-    height = np.where(rib, SEAM_H * np.clip(np.sin(np.pi * xs / 3.0), 0, 1), 0.0)
-    shade = np.where((xs >= 3.0) & (xs < 5.0), ROOF_DK, 1.0)
-    ao = np.where((xs >= 3.0) & (xs < 4.0), 0.82, np.where((xs >= 4.0) & (xs < 5.0), 0.86, 1.0))
-    for k in range(1, 4):
-        yk = y0 + h * k / 4.0
-        joint = np.abs(Y - yk) < 1.0
-        shade = np.where(joint, ROOF_DK, shade)
-        height = np.where(joint, height - 0.004, height)
+    c.paint(0, ATLAS, y0 - PAD, y0 + h + PAD, ID_ROOF, 1.0, 1.0, height=0.0)
+    sy, sx, Y, X = c.field(0, ATLAS, y0 - PAD, y0 + h + PAD)
+    xm = X % 32.0
+    v = Y - y0
+    k = RPM / PPM
+    rib = xm < 2.0
+    height = np.where(rib, SEAM_H * np.clip(np.sin(np.pi * xm / 2.0), 0.0, 1.0), 0.0)
+    shade = np.where((xm >= 2.0) & (xm < 3.0), 0.90, 1.0)
+    ao = np.where((xm >= 2.0) & (xm < 3.0), 0.84, 1.0)
+    shade = np.where(v < 2, shade * 0.84, shade)
+    g = round(0.6 * RPM)
+    tube = (v >= g) & (v < g + 2.5)
+    height = np.where(tube, np.maximum(height, 0.03 * k), height)
+    shade = np.where((v >= g - 2) & (v < g), shade * 0.82, shade)
+    ao = np.where((v >= g - 2) & (v < g + 2.5), np.minimum(ao, 0.86), ao)
+    shade = np.where(v > h - 3, shade * 0.9, shade)
     c.height[sy, sx], c.shade[sy, sx], c.ao[sy, sx] = height, shade, ao
 
 
-def paint_entrance(c, n01):
-    ex0, ex1, ey0, ey1 = ENT
-    draw_wall_bands(c, ex0, ex1, ey0)
-    ec = (ex0 + ex1) / 2.0
-    # central arched doorway: surround, dark reveal, door, fanlight
-    tr = ey0 + m(2.50)
-    arch(c, ec, m(1.26), ey0 + m(0.05), ey0 + m(2.60), ID_TRIM, 1.0, height=TRIM_H)
-    arch(c, ec, m(1.10), ey0 + m(0.10), ey0 + m(2.60), ID_DARK, 1.0, 0.38, height=REVEAL_D)
-    arch(c, ec, m(1.00), ey0 + m(0.15), ey0 + m(2.60), ID_GLASS, 1.0, 0.50, height=REVEAL_D)
-    c.paint(ec - m(1.00), ec + m(1.00), ey0 + m(0.15), tr, ID_DOOR, 1.0, 0.52,
-            height=REVEAL_D)
-    c.paint(ec - m(1.00), ec + m(1.00), tr - m(0.08), tr, ID_FRAME, 1.0,
-            height=REVEAL_D + 0.015)
-    c.paint(ec - 2, ec + 2, ey0 + m(0.15), tr - m(0.08), ID_FRAME, 1.0,
-            height=REVEAL_D + 0.010)
-    # Entrance threshold, drawn up from the panel's baseline instead of down
-    # from the door sill. ey0 is z = 0 -- the ENT region is mapped from the
-    # ground up, so there is no such thing as artwork below that line. The
-    # three stacked steps that used to be here ran downwards from the sill,
-    # which put all of them up to 0.21 m underground and into the roof band
-    # underneath, where every slope's UVs read them back as a pale patch.
-    c.paint(ec - m(1.9), ec + m(1.9), ey0, ey0 + m(0.15), ID_PLINTH, 1.0, 0.74, height=0.0)
-    c.paint(ec - m(1.9), ec + m(1.9), ey0, ey0 + m(0.04), ID_PLINTH, PLINTH_DK, 0.66)
-    # flanking windows on the ground floor
-    for off in (-3.30, 3.30):
-        draw_rect_window(c, n01, ec + m(off), 0.70, ey0, sill=Z_GF_SILL, head=Z_GF_HEAD)
-    # Wall behind the balcony only. The balcony itself is modelled geometry, so
-    # painting a balustrade here would show through beside the real one.
-    c.paint(ec - m(2.4), ec + m(2.4), ey0 + m(Z_STRING_BOT) - 4,
-            ey0 + m(Z_STRING_TOP) + m(0.05), ID_TRIM, 1.0, height=0.0)
-    # upper storey: the balcony door, down to the slab, between two tall windows
-    draw_balcony_door(c, n01, ec, ey0)
-    for off in (-1.85, 1.85):
-        draw_rect_window(c, n01, ec + m(off), 0.62, ey0, sill=6.60, head=9.10, bars=3)
-    for off in (-2.85, -0.92, 0.92, 2.85):
-        moulding(c, ec + m(off) - m(0.16), ec + m(off) + m(0.16), ey0 + m(Z_STRING_TOP),
-                 ey0 + m(Z_FRIEZE_BOT), TRIM_H, TRIM_SH, axes="x")
-    for off in (-4.05, 4.05):
-        draw_rect_window(c, n01, ec + m(off), 0.68, ey0)
+def paint_fascia(c):
+    """The white fascia board, the dark half-round gutter hung across its top
+    (PIPE_STRIP is its middle rows: the downpipes and the kit sample them)."""
+    y0, top = FASC_Y0, FASC_Y0 + FASC_H
+    c.paint(0, ATLAS, y0 - PAD, top + PAD, ID_TRIM, 1.0, 1.0, height=0.0)
+    c.paint(0, ATLAS, y0 - PAD, y0 + 1, ID_TRIM, 0.80, 0.80)
+    g0 = top - 1 - GUTTER_PX
+    c.paint(0, ATLAS, g0, top - 1, ID_GUTTER, 1.0)
+    sy, sx, Y, _ = c.field(0, ATLAS, g0, top - 1)
+    u = 2.0 * (Y - g0) / GUTTER_PX - 1.0
+    c.height[sy, sx] = 0.06 * np.sqrt(np.clip(1.0 - u * u, 0.0, 1.0))
+    c.paint(0, ATLAS, g0, g0 + 1, ID_GUTTER, 0.80)
+    c.paint(0, ATLAS, top - 1, top + PAD, ID_GUTTER, 0.78, height=0.0)
+    for i, f in enumerate((0.86, 0.80, 0.76)):
+        c.mul(0, ATLAS, g0 - 3 + i, g0 - 2 + i, f, ao=0.8)
+    sy, sx, _, X = c.field(0, ATLAS, g0 + 2, top - 1)
+    hang = (X % 64.0) < 2.0
+    c.shade[sy, sx] = np.where(hang, c.shade[sy, sx] * 0.80, c.shade[sy, sx])
 
 
-def paint_attic(c):
-    """The clock attic: a framed panel with the dial, under a pediment."""
-    ax0, ax1, ay0, ay1 = ATT
-    c.paint(ax0, ax1, ay0, ay1, ID_WALL, 1.0, 1.0, height=0.0)
-    moulding(c, ax0 + m(0.4), ax1 - m(0.4), ay0 + m(0.25), ay0 + m(3.05), TRIM_H, axes="xy")
-    c.paint(ax0 + m(0.7), ax1 - m(0.7), ay0 + m(0.50), ay0 + m(2.80), ID_WALL, WALL_DK,
-            height=0.0)
-    cx, cy, r = (ax0 + ax1) / 2.0, ay0 + m(1.85), m(0.98)
-    # the dial is modelled on the near tiers; this paint is what LOD2 shows
-    c.disc(cx, cy, r, ID_TRIM, 1.0, height=0.0)
-    c.disc(cx, cy, r * 0.84, ID_CLOCK, 1.0)
-    for k in range(12):
-        a = 2 * np.pi * k / 12.0
-        tx, ty = cx + np.sin(a) * r * 0.70, cy + np.cos(a) * r * 0.70
-        c.paint(tx - 2, tx + 3, ty - 2, ty + 3, ID_DARK, 1.0)
-    c.paint(cx - 1, cx + 2, cy, cy + r * 0.60, ID_DARK, 1.0)
-    c.paint(cx - r * 0.40, cx + 2, cy - 1, cy + 2, ID_DARK, 1.0)
-    # No plaque below the dial. A painted one used to sit here, 2.2 m wide
-    # against the dial's 1.96 m and reaching from 0.25 m below the dial's foot
-    # up behind it. The dial is modelled, so the painted disc is hidden under it
-    # and the only part of the plaque left showing was the strip poking out
-    # underneath -- it read as a white tab hanging off the clock, not as a
-    # plaque. There is 0.37 m of clear wall between the dial's foot and the
-    # framed panel's bottom rail, which is not enough for anything legible.
-    # Pediment: white raking cornice over a wall tympanum.
-    ped0, ped1 = ay0 + m(3.2), ay0 + m(5.0)
-    apex = (ax0 + ax1) / 2.0
-    halfw = (ax1 - ax0) / 2.0
-
-    def inside(X, Y):
-        t = np.clip((Y - ped0) / max(1.0, ped1 - ped0), 0, 1)
-        return (np.abs(X - apex) <= halfw * (1.0 - t)) & (Y >= ped0) & (Y <= ped1)
-
-    def rake(X, Y):
-        t = np.clip((Y - ped0) / max(1.0, ped1 - ped0), 0, 1)
-        return inside(X, Y) & (np.abs(X - apex) >= halfw * (1.0 - t) - m(0.38))
-    c.paint(ax0, ax1, ped0 + m(0.34), ay1, ID_ROOF, 1.0, height=0.0)
-    c.shape(ax0, ax1, ped0, ped1, inside, ID_WALL, 1.0, height=0.0)
-    c.shape(ax0, ax1, ped0, ped1, rake, ID_TRIM, 1.0, height=CORNICE_H)
-    moulding(c, ax0, ax1, ped0, ped0 + m(0.34), CORNICE_H)
-    c.paint(ax0, ax1, ay0 + m(3.05), ped0, ID_TRIM, TRIM_SH, 0.70, height=0.0)
+def paint_soffit(c):
+    """Painted soffit boards along the eave, darker toward the wall."""
+    y0, h = SOF_Y0, SOF_H
+    c.paint(0, ATLAS, y0 - PAD, y0 + h + PAD, ID_TRIM, 1.0, 1.0, height=0.0)
+    sy, sx, Y, _ = c.field(0, ATLAS, y0 - PAD, y0 + h + PAD)
+    groove = ((Y - y0) % (h / 3.0)) < 0.7
+    t = np.clip((Y - y0) / float(h), 0.0, 1.0)
+    c.shade[sy, sx] = np.where(groove, 0.78, 1.0) * (0.74 + 0.20 * t)
+    c.ao[sy, sx] = np.minimum(np.where(groove, 0.80, 1.0), 0.76 + 0.24 * t)
+    c.height[sy, sx] = np.where(groove, -0.003, 0.0)
 
 
-def paint_tower(c):
-    """Laid out against the orthographic elevation, in metres above the eave:
-
-        0.00-3.25  base, buried below the 14.65 roof deck
-        3.25-3.55  plinth band breaking out at deck level
-        3.55-5.90  brick base, largely hidden behind the clock attic
-        5.90-6.60  balustraded platform
-        6.60-8.30  drum, arched louvred openings between corner pilasters
-        8.30-8.80  drum cornice
-    """
-    tx0, tx1, ty0, ty1 = TOW
-    tcx = (tx0 + tx1) / 2.0
-    c.paint(tx0, tx1, ty0, ty0 + m(5.90), ID_WALL, 1.0, 1.0, height=0.0)
-    bricks(c, tx0, tx1, ty0, ty0 + m(5.90), ty0)
-    moulding(c, tx0, tx1, ty0 + m(3.25), ty0 + m(3.55), CORNICE_H)
-    c.paint(tx0, tx1, ty0 + m(3.55), ty0 + m(3.63), ID_TRIM, TRIM_SH, 0.76)
-    for a0, a1 in ((tx0, tx0 + m(0.34)), (tx1 - m(0.34), tx1)):
-        moulding(c, a0, a1, ty0 + m(3.63), ty0 + m(5.90), TRIM_H, TRIM_SH, axes="x")
-
-    moulding(c, tx0, tx1, ty0 + m(5.75), ty0 + m(5.90), TRIM_H)
-    c.paint(tx0, tx1, ty0 + m(5.90), ty0 + m(6.50), ID_TRIM, 1.0, height=0.0)
-    sy, sx, _, X = c.field(tx0, tx1, ty0 + m(5.90), ty0 + m(6.50))
-    gap = (X % round(m(0.22))) < round(m(0.11))
-    c.shade[sy, sx] = np.where(gap, TRIM_SH, 1.0)
-    c.ao[sy, sx] = np.where(gap, 0.80, c.ao[sy, sx])
-    c.height[sy, sx] = np.where(gap, -0.010, 0.020)            # balusters proud
-    moulding(c, tx0, tx1, ty0 + m(6.50), ty0 + m(6.60), TRIM_H)
-
-    c.paint(tx0, tx1, ty0 + m(6.60), ty0 + m(8.30), ID_WALL, 1.0, height=0.0)
-    for a0, a1 in ((tx0, tx0 + m(0.38)), (tx1 - m(0.38), tx1)):
-        moulding(c, a0, a1, ty0 + m(6.60), ty0 + m(8.30), TRIM_H, TRIM_SH, axes="x")
-    arch(c, tcx, m(0.62), ty0 + m(6.95), ty0 + m(7.85), ID_TRIM, 1.0, height=TRIM_H)
-    arch(c, tcx, m(0.48), ty0 + m(7.05), ty0 + m(7.85), ID_DARK, 1.0, 0.36, height=REVEAL_D)
-    arch(c, tcx, m(0.41), ty0 + m(7.11), ty0 + m(7.85), ID_FRAME, 1.0, 0.42, height=REVEAL_D)
-    # louvre slats, with dark gaps between them; the belfry emits through the
-    # gaps (see emission_mask)
-    slat, gapw = round(m(0.18)), round(m(0.08))
-
-    def slot(X, Y):
-        r, ys, yp = m(0.41), ty0 + m(7.11), ty0 + m(7.85)
-        inside = (((np.abs(X - tcx) <= r) & (Y >= ys) & (Y <= yp))
-                  | (((X - tcx) ** 2 + (Y - yp) ** 2 <= r * r) & (Y > yp)))
-        return inside & (((Y - ty0) % slat) < gapw)
-    c.shape(tcx - m(0.42), tcx + m(0.42), ty0 + m(7.11), ty0 + m(8.27), slot, ID_DARK,
-            1.0, 0.36, height=REVEAL_D - 0.010)
-
-    c.paint(tx0, tx1, ty0 + m(8.26), ty0 + m(8.34), ID_DARK, 1.0, 0.48, height=0.0)
-    moulding(c, tx0, tx1, ty0 + m(8.34), ty1, CORNICE_H)
-    sy, sx, _, X = c.field(tx0, tx1, ty0 + m(8.34), ty0 + m(8.58))
-    tooth = (X % round(m(0.24))) < round(m(0.11))
-    c.shade[sy, sx] = np.where(tooth, TRIM_SH, c.shade[sy, sx])
-    c.height[sy, sx] = np.where(tooth, c.height[sy, sx] + DENTIL_H, c.height[sy, sx])
+# ================================================================ items
+def _xz(kind, v):
+    """Pixel mappers for an item's region: s (from its left edge) and z."""
+    x, y, _w, _h = ITEM_REGION[(kind, v)]
+    z0 = ITEMS[kind]["z0"]
+    return (lambda s: x + m(s)), (lambda z: y + m(z - z0))
 
 
-def paint_chimney(c):
-    cx0, cx1, cy0, cy1 = CHM
-    c.paint(cx0, cx1, cy0, cy1, ID_CHIM, 1.0, 0.92, height=0.0)
-    bricks(c, cx0, cx1, cy0, cy1, cy0, mid=ID_CHIM, tones=(1.0, 1.0, CHIM_DK, 1.0),
-           joints=False)
-    sy, sx, Y, _ = c.field(cx0, cx1, cy0, cy1)
-    course = ((Y - cy0) % round(m(0.075))) < 1.0
-    c.shade[sy, sx] = np.where(course, CHIM_DK, c.shade[sy, sx])
-    c.height[sy, sx] = np.where(course, -0.003, 0.0)
-    c.paint(cx0, cx1, cy1 - m(0.46), cy1 - m(0.34), ID_CHIM, CHIM_CAP, 0.88, height=0.030)
-    c.paint(cx0, cx1, cy1 - m(0.34), cy1, ID_ROOF, 0.73, 0.70, height=0.0)
+def bar(c, a0, a1, b0, b1, mid=ID_FRAME, shade=1.0, ao=0.86, h=FRAME_H, axes="xy",
+        base=0.0):
+    c.paint(a0, a1, b0, b1, mid, shade, ao)
+    c.bevel(a0, a1, b0, b1, h, 1.0, base=base, axes=axes)
+
+
+def casing(c, X, Z, s0, s1, z0, z1, w=CASING):
+    """An architrave round the opening (s0..s1, z0..z1): a raised band *w*
+    wide, bevelled at its outer edge, with a bead next to the opening."""
+    a0, a1, b0, b1 = X(s0 - w), X(s1 + w), Z(z0), Z(z1 + course(3))
+    c.paint(a0, a1, b0, b1, ID_TRIM, 1.0, 1.0)
+    c.bevel(a0, a1, b0, b1, TRIM_H, 2.0)
+    for e0, e1, f0, f1 in ((X(s0) - 3, X(s0), Z(z0), Z(z1) + 3), (X(s1), X(s1) + 3, Z(z0),
+                                                                   Z(z1) + 3),
+                           (X(s0) - 3, X(s1) + 3, Z(z1), Z(z1) + 3)):
+        c.mul(e0, e1, f0, f1, 0.90, ao=0.86)
+        c.lift(e0, e1, f0, f1, 0.010)
+
+
+def head_cap(c, X, Z, s0, s1, z0, z1):
+    """A cornice cap over a head, from z0 to z1 across s0..s1: a fillet, the
+    projecting corona and its drip's shadow on the casing below."""
+    a0, a1 = X(s0), X(s1)
+    c.paint(a0, a1, Z(z0), Z(z1), ID_TRIM, 1.0, 1.0)
+    c.bevel(a0, a1, Z(z0), Z(z0) + 5, TRIM_H, 1.5)
+    c.bevel(a0, a1, Z(z0) + 5, Z(z1), CORNICE_H, 2.0, base=TRIM_H)
+    c.mul(a0, a1, Z(z0), Z(z0) + 2, 0.80, ao=0.74)
+    c.mul(a0, a1, Z(z0) + 4, Z(z0) + 6, 0.86, ao=0.80)
+    c.mul(a0, a1, Z(z1) - 2, Z(z1), 1.04)
+
+
+def sill(c, X, Z, s0, s1, z0, z1):
+    """The sill under an opening, its nose catching the light."""
+    a0, a1 = X(s0), X(s1)
+    c.paint(a0, a1, Z(z0), Z(z1), ID_TRIM, 1.0, 1.0)
+    c.bevel(a0, a1, Z(z0), Z(z1), CORNICE_H * 0.8, 1.5, axes="y")
+    c.mul(a0, a1, Z(z0), Z(z0) + 1.5, 0.72, ao=0.70)
+
+
+def sash_window(c, X, Z, s0, s1, z0, z1, transom=0.70):
+    """Glass in a painted timber frame: a meeting mullion, a transom light
+    over the casements, one bar across each casement."""
+    a0, a1, b0, b1 = X(s0), X(s1), Z(z0), Z(z1)
+    c.paint(a0, a1, b0, b1, ID_GLASS, 1.0, 1.0, height=0.0)
+    f = 4.5
+    bar(c, a0, a1, b0, b0 + f, axes="y")
+    bar(c, a0, a1, b1 - f, b1, axes="y")
+    bar(c, a0, a0 + f, b0, b1, axes="x")
+    bar(c, a1 - f, a1, b0, b1, axes="x")
+    mx = (a0 + a1) / 2.0
+    bar(c, mx - 2.0, mx + 2.0, b0, b1, axes="x")
+    bt = b0 + (b1 - b0) * transom
+    bar(c, a0, a1, bt - 2.5, bt + 2.5, axes="y", h=FRAME_H * 1.2)
+    c.mul(a0, a1, bt - 4.5, bt - 2.5, 0.92, ao=0.84)
+    bm = b0 + (bt - b0) * 0.5
+    bar(c, a0, a1, bm - 1.3, bm + 1.3, axes="y", h=FRAME_H * 0.8)
+    # the dark gap where the frame meets the reveal, so a flush opening
+    # still reads as set back
+    for e in ((a0 - 1.5, a0, b0, b1), (a1, a1 + 1.5, b0, b1), (a0 - 1.5, a1 + 1.5, b1, b1 + 1.5),
+              (a0 - 1.5, a1 + 1.5, b0 - 1.5, b0)):
+        c.paint(*e, mid=ID_DARK, shade=1.0, ao=0.5, height=-0.01)
+
+
+def paint_window(c, kind, v):
+    """A window item: the sill, the architrave, the cornice cap over the
+    head, and the sash in the opening. Every variant is painted alike; the
+    rooms behind the glass differ by where each lies in the atlas."""
+    it = ITEMS[kind]
+    X, Z = _xz(kind, v)
+    s0, s1, z0, z1 = it["openings"][0]
+    x, y, w, h = ITEM_REGION[(kind, v)]
+    c.paint(x, x + w, y, y + h, ID_TRIM, 1.0, 1.0, height=0.0)
+    sill(c, X, Z, 0.0, it["w"], it["z0"], z0)
+    casing(c, X, Z, s0, s1, z0, z1)
+    head_cap(c, X, Z, 0.0, it["w"], z1 + course(3), it["z1"])
+    sash_window(c, X, Z, s0, s1, z0, z1)
+
+
+def leaf_panels(c, a0, a1, b0, b1, mid=ID_DOOR):
+    """A panelled timber leaf from a0..a1, b0..b1 (px): stiles and rails
+    round two raised fields."""
+    c.paint(a0, a1, b0, b1, mid, 1.0, 0.95, height=0.0)
+    st = m(0.11)
+    hgt = b1 - b0
+    for f0, f1 in ((b0 + m(0.20), b0 + hgt * 0.42), (b0 + hgt * 0.42 + m(0.12), b1 - st)):
+        c.paint(a0 + st, a1 - st, f0, f1, mid, 1.06, 1.0)
+        c.bevel(a0 + st, a1 - st, f0, f1, 0.012, 2.0)
+        c.mul(a0 + st, a1 - st, f0, f0 + 1.0, 0.82, ao=0.80)
+    c.mul(a0, a1, b0, b0 + 1.0, 0.80, ao=0.80)
+
+
+def paint_door(c):
+    """The main entrance: a pair of panelled leaves 2.0 x 2.34 m under a
+    transom bar at 2.50 m, cut to the 2.58 m springing; over it a flush
+    arched fanlight with radial bars, in a rusticated stone surround with
+    voussoirs and a keystone, under a cornice cap. Below the threshold, the
+    step's riser (the step is modelled up close)."""
+    it = ITEMS["door"]
+    X, Z = _xz("door", 0)
+    x, y, w, h = ITEM_REGION[("door", 0)]
+    c.paint(x, x + w, y, y + h, ID_TRIM, 1.0, 1.0, height=0.0)
+    cx = X(1.25)
+    # rusticated jambs: stone courses with sunk joints
+    for a0, a1 in ((X(0.0), X(0.25)), (X(2.25), X(2.5))):
+        c.bevel(a0, a1, y, Z(Z_DOOR_HEAD), TRIM_H, 1.5)
+        for k in range(1, 9):
+            zz = Z(k * course(4))
+            c.paint(a0, a1, zz - 0.6, zz + 0.6, ID_TRIM, 0.70, 0.70, height=0.0)
+    # the arch: voussoirs round the fanlight, a keystone at the crown
+    zs, r0, r1 = Z(Z_DOOR_HEAD), m(1.0), m(1.25)
+
+    def ring(X_, Y_):
+        d = np.hypot(X_ - cx, Y_ - zs)
+        return (d >= r0) & (d <= r1) & (Y_ >= zs)
+    c.shape(cx - r1, cx + r1, zs, zs + r1, ring, ID_TRIM, 1.0, 1.0, height=TRIM_H)
+    sy, sx, YY, XX = c.field(cx - r1, cx + r1, zs, zs + r1)
+    ang = np.degrees(np.arctan2(YY - zs, XX - cx))
+    d = np.hypot(XX - cx, YY - zs)
+    joint = ((ang % 15.0) < 0.9) & (d >= r0) & (d <= r1)
+    c.shade[sy, sx] = np.where(joint, 0.74, c.shade[sy, sx])
+    c.height[sy, sx] = np.where(joint, 0.0, c.height[sy, sx])
+    c.paint(cx - m(0.16), cx + m(0.16), zs + r0 - 2, zs + r1 + 3, ID_TRIM, 1.04, 1.0)
+    c.bevel(cx - m(0.16), cx + m(0.16), zs + r0 - 2, zs + r1 + 3, CORNICE_H, 1.5)
+    # the fanlight: glass in a radial frame, flush on the wall plane
+
+    def fan(X_, Y_):
+        return (np.hypot(X_ - cx, Y_ - zs) < r0 - 1.0) & (Y_ >= zs)
+    c.shape(cx - r0, cx + r0, zs, zs + r0, fan, ID_GLASS, 1.0, 1.0, height=-0.02)
+    for a in (30.0, 60.0, 90.0, 120.0, 150.0):
+        t = math.radians(a)
+        c.stroke((cx, zs), (cx + math.cos(t) * (r0 - 1), zs + math.sin(t) * (r0 - 1)), 2.2,
+                 ID_FRAME, 1.0, 0.9, height=-0.005)
+
+    def rim(X_, Y_):
+        dd = np.hypot(X_ - cx, Y_ - zs)
+        return (dd >= r0 - 3.5) & (dd < r0) & (Y_ >= zs)
+    c.shape(cx - r0, cx + r0, zs, zs + r0, rim, ID_FRAME, 1.0, 0.86, height=-0.005)
+    c.disc(cx, zs, m(0.18), ID_FRAME, 1.0, 0.9, height=-0.005)
+    # the opening, behind the wall plane on the near tiers
+    a0, a1 = X(0.25), X(2.25)
+    c.paint(a0, a1, y, Z(Z_FLOOR), ID_PLINTH, 0.96, 0.80, height=0.0)
+    c.mul(a0, a1, Z(Z_FLOOR) - 1, Z(Z_FLOOR), 0.8, ao=0.8)
+    leaf_panels(c, a0 + 2, cx - 0.5, Z(Z_FLOOR), Z(Z_DOOR_TRANSOM))
+    leaf_panels(c, cx + 0.5, a1 - 2, Z(Z_FLOOR), Z(Z_DOOR_TRANSOM))
+    c.paint(cx - 0.5, cx + 0.5, Z(Z_FLOOR), Z(Z_DOOR_TRANSOM), ID_DARK, 1.0, 0.5, height=-0.01)
+    bar(c, a0, a1, Z(Z_DOOR_TRANSOM), Z(Z_DOOR_HEAD), mid=ID_DOOR, shade=0.9, h=0.02)
+    c.mul(a0, a1, Z(Z_DOOR_TRANSOM) - 1.5, Z(Z_DOOR_TRANSOM), 0.7, ao=0.7)
+    for side in (-1, 1):
+        hx = cx + side * 4.0
+        c.paint(hx - 1.0, hx + 1.0, Z(Z_FLOOR + 0.95), Z(Z_FLOOR + 1.25), ID_METAL, 1.0,
+                height=0.02)
+    for e in ((a0 - 1.5, a0, y, Z(Z_DOOR_HEAD)), (a1, a1 + 1.5, y, Z(Z_DOOR_HEAD))):
+        c.paint(*e, mid=ID_DARK, shade=1.0, ao=0.5, height=-0.01)
+    # the cornice cap over the whole surround
+    head_cap(c, X, Z, 0.0, 2.5, it["z1"] - course(3), it["z1"])
+
+
+def paint_service(c):
+    """The rear service door: a pair of panelled timber leaves 1.375 x 2.34 m
+    on the ground floor's threshold, a head rail to the cut's head, a plain
+    architrave and a cornice cap; the step's riser below the threshold."""
+    it = ITEMS["service"]
+    X, Z = _xz("service", 0)
+    x, y, w, h = ITEM_REGION[("service", 0)]
+    c.paint(x, x + w, y, y + h, ID_TRIM, 1.0, 1.0, height=0.0)
+    s0, s1 = 0.25, 1.625
+    casing(c, X, Z, s0, s1, 0.0, Z_DOOR_HEAD)
+    head_cap(c, X, Z, 0.0, it["w"], it["z1"] - course(3), it["z1"])
+    a0, a1 = X(s0), X(s1)
+    cx = (a0 + a1) / 2.0
+    c.paint(a0, a1, y, Z(Z_FLOOR), ID_PLINTH, 0.96, 0.80, height=0.0)
+    leaf_panels(c, a0 + 2, cx - 0.5, Z(Z_FLOOR), Z(Z_DOOR_TRANSOM))
+    leaf_panels(c, cx + 0.5, a1 - 2, Z(Z_FLOOR), Z(Z_DOOR_TRANSOM))
+    c.paint(cx - 0.5, cx + 0.5, Z(Z_FLOOR), Z(Z_DOOR_TRANSOM), ID_DARK, 1.0, 0.5, height=-0.01)
+    bar(c, a0, a1, Z(Z_DOOR_TRANSOM), Z(Z_DOOR_HEAD), mid=ID_DOOR, shade=0.88, h=0.02)
+    c.mul(a0, a1, Z(Z_DOOR_TRANSOM) - 1.5, Z(Z_DOOR_TRANSOM), 0.7, ao=0.7)
+    for side in (-1, 1):
+        hx = cx + side * 3.5
+        c.paint(hx - 1.0, hx + 1.0, Z(Z_FLOOR + 0.95), Z(Z_FLOOR + 1.15), ID_METAL, 1.0,
+                height=0.02)
+    for e in ((a0 - 1.5, a0, y, Z(Z_DOOR_HEAD)), (a1, a1 + 1.5, y, Z(Z_DOOR_HEAD))):
+        c.paint(*e, mid=ID_DARK, shade=1.0, ao=0.5, height=-0.01)
+
+
+def paint_group(c):
+    """The entrance bay's upper storey: the balcony door (a glazed pair
+    2.27 m tall under a heavy transom, a fanlight over it) between two tall
+    windows, panelled pilasters between them, aprons under the windows behind
+    the balustrade, all under one entablature."""
+    it = ITEMS["group"]
+    X, Z = _xz("group", 0)
+    x, y, w, h = ITEM_REGION[("group", 0)]
+    c.paint(x, x + w, y, y + h, ID_TRIM, 1.0, 1.0, height=0.0)
+    c.bevel(x, x + w, y, y + h, TRIM_H, 2.0)
+    zh = Z_TALL_HEAD
+    # panelled pilasters between the openings and aprons under the windows
+    for a, b in ((1.5, 2.125), (3.375, 4.0)):
+        c.paint(X(a) + 4, X(b) - 4, Z(Z_UPPER) + 6, Z(zh) - 6, ID_TRIM, 0.92, 0.92)
+        c.bevel(X(a) + 4, X(b) - 4, Z(Z_UPPER) + 6, Z(zh) - 6, TRIM_H * 0.5, 1.5,
+                base=TRIM_H)
+    for a, b in ((0.25, 1.5), (4.0, 5.25)):
+        c.paint(X(a) + 3, X(b) - 3, Z(Z_UPPER) + 6, Z(Z_TALL_SILL) - 6, ID_TRIM, 0.90, 0.90)
+        c.bevel(X(a) + 3, X(b) - 3, Z(Z_UPPER) + 6, Z(Z_TALL_SILL) - 6, TRIM_H * 0.5,
+                1.5, base=TRIM_H)
+        sill(c, X, Z, a - 0.1, b + 0.1, Z_TALL_SILL - course(1), Z_TALL_SILL)
+        sash_window(c, X, Z, a, b, Z_TALL_SILL, zh, transom=0.68)
+    # the balcony door: two glazed leaves to the transom, a fanlight above
+    a0, a1, b0 = X(2.125), X(3.375), Z(Z_BAL_SILL)
+    bt = Z(Z_BAL_TRANSOM)
+    c.paint(a0, a1, b0, Z(zh), ID_GLASS, 1.0, 1.0, height=0.0)
+    f = 4.5
+    bar(c, a0, a1, b0, b0 + m(0.14), axes="y")
+    bar(c, a0, a0 + f, b0, Z(zh), axes="x")
+    bar(c, a1 - f, a1, b0, Z(zh), axes="x")
+    bar(c, a0, a1, Z(zh) - f, Z(zh), axes="y")
+    mx = (a0 + a1) / 2.0
+    bar(c, mx - 2.5, mx + 2.5, b0, bt, axes="x")
+    bar(c, mx - 1.5, mx + 1.5, bt, Z(zh), axes="x")
+    for k in (1, 2):
+        yy = b0 + m(0.14) + (bt - b0 - m(0.14)) * k / 3.0
+        bar(c, a0, a1, yy - 1.3, yy + 1.3, axes="y", h=FRAME_H * 0.8)
+    bar(c, a0, a1, bt, bt + m(0.12), axes="y", h=FRAME_H * 1.6)
+    c.mul(a0, a1, bt - 2.0, bt, 0.84, ao=0.76)
+    for e in ((a0 - 1.5, a0, b0, Z(zh)), (a1, a1 + 1.5, b0, Z(zh)),
+              (a0 - 1.5, a1 + 1.5, Z(zh), Z(zh) + 1.5)):
+        c.paint(*e, mid=ID_DARK, shade=1.0, ao=0.5, height=-0.01)
+    # the entablature over the group
+    c.paint(x, x + w, Z(zh), Z(zh + course(3)), ID_TRIM, 0.96, 1.0)
+    c.bevel(x, x + w, Z(zh), Z(zh + course(3)), TRIM_H, 1.5, axes="y")
+    head_cap(c, X, Z, 0.0, it["w"], zh + course(3), it["z1"])
+
+
+def paint_pilaster(c):
+    """A slender pilaster on the upper storey between two bays: a base, a
+    plain shaft standing proud, a moulded capital under the frieze."""
+    x, y, w, h = ITEM_REGION[("pilaster", 0)]
+    c.paint(x, x + w, y, y + h, ID_TRIM, TRIM_SH, 1.0, height=0.0)
+    c.bevel(x, x + w, y, y + h, TRIM_H, 2.0, axes="x")
+    c.bevel(x, x + w, y, y + 10, CORNICE_H * 0.7, 1.5)
+    c.mul(x, x + w, y + 10, y + 11, 0.84, ao=0.82)
+    c.bevel(x, x + w, y + h - 13, y + h, CORNICE_H * 0.7, 1.5)
+    c.mul(x, x + w, y + h - 14, y + h - 13, 0.80, ao=0.78)
+
+
+# ================================================================ unique
+def quoin_course(k, side):
+    """Whether stone course *k* of a quoin strip is a long one: the two faces
+    of a corner alternate, so a long stone on one is a short one on the
+    other, as dressed quoins are laid."""
+    return (k + (0 if side == "a" else 1)) % 2 == 0
 
 
 def paint_quoins(c):
-    """Toothed corner strip: alternating courses run the full width or stop
-    short, which is what reads as interlocking corner stones once wrapped on
-    the block. The stones stand proud of the brick behind them."""
-    qx0, qx1, qy0, qy1 = QUOIN
-    c.paint(qx0, qx1, qy0, qy1, ID_WALL, 1.0, height=0.0)
-    bricks(c, qx0, qx1, qy0, qy1, qy0)
-    course_h = m(0.46)
-    for k in range(int((qy1 - qy0) / course_h) + 1):
-        cy = qy0 + k * course_h
-        bx1 = qx1 if k % 2 == 0 else qx0 + (qx1 - qx0) * 0.62
-        c.paint(qx0, bx1, cy + 1, cy + course_h - 1, ID_TRIM, 1.0)
-        c.bevel(qx0, bx1, cy + 1, cy + course_h - 1, TRIM_H, 1.0,
-                axes="y" if k % 2 == 0 else "xy")
-        c.paint(qx0, bx1, cy + course_h - 3, cy + course_h - 1, ID_TRIM, TRIM_SH, 0.82)
+    """Toothed quoin strips, V up the corner from the ground to the frieze,
+    U along the face from the block's outer corner: stone courses 0.3125 m
+    high, the long ones the block's full face, the short ones 0.34 m, brick
+    in the bond between."""
+    long_px, short_px = m(QUOIN_DEPTH + QUOIN_PROUD), m(0.34375)
+    for side, (x, y, w, h) in QUOIN.items():
+        brickwork.paint(c, x - PAD, x + w + PAD, y - PAD, y + h + PAD, BRICK_IDS,
+                        TONE_COURSES, seed=23)
+        ch = m(0.3125)
+        for k in range(int(math.ceil(h / ch))):
+            b0, b1 = y + k * ch, min(y + h, y + (k + 1) * ch)
+            a1 = x + (long_px if quoin_course(k, side) else short_px)
+            c.paint(x - PAD, a1, b0, b1, ID_TRIM, 1.0, 1.0)
+            c.bevel(x - PAD, a1, b0 + 0.6, b1 - 0.6, TRIM_H, 1.5, axes="xy")
+            c.paint(x - PAD, a1, b0, b0 + 0.8, ID_TRIM, 0.72, 0.72, height=0.0)
+            c.mul(a1, a1 + 1.5, b0, b1, 0.80, ao=0.76)
 
 
-def paint_balcony(c):
-    """The balcony parapet: solid, with the balusters as relief."""
-    bx0, bx1, by0, by1 = BALUS
-    c.paint(bx0, bx1, by0, by1, ID_TRIM, 1.0, height=0.0)
-    moulding(c, bx0, bx1, by0, by0 + m(0.14), TRIM_H, TRIM_SH, 0.78)
-    sy, sx, _, X = c.field(bx0, bx1, by0 + m(0.14), by1 - m(0.16))
-    gap = (X % round(m(0.22))) < round(m(0.10))
-    c.shade[sy, sx] = np.where(gap, TRIM_SH, 1.0)
-    c.ao[sy, sx] = np.where(gap, 0.72, 1.0)
-    c.height[sy, sx] = np.where(gap, -0.015, 0.020)
-    moulding(c, bx0, bx1, by1 - m(0.16), by1, TRIM_H)
+def paint_tower(c):
+    """One face of the tower above the deck, z TOWER_FOOT .. TOWER_TOP: a
+    stone band at the deck, brick between corner pilasters, a belt under the
+    platform, the drum with its arched louvred belfry opening, the dentilled
+    cornice under the dome."""
+    x, y, w, h = TOWER
+    Z = lambda z: y + m(z - TOWER_FOOT)                         # noqa: E731
+    brickwork.paint(c, x - PAD, x + w + PAD, y - PAD, y + h + PAD, BRICK_IDS,
+                    TONE_COURSES, seed=29)
+    c.paint(x - PAD, x + w + PAD, y - PAD, Z(14.95), ID_PLINTH, 1.0, 1.0, height=0.0)
+    c.paint(x - PAD, x + w + PAD, Z(14.95), Z(15.10), ID_TRIM, 1.0, 1.0)
+    c.bevel(x - PAD, x + w + PAD, Z(14.95), Z(15.10), TRIM_H, 1.5, axes="y")
+    c.mul(x - PAD, x + w + PAD, Z(15.10), Z(15.10) + 2, 0.86, ao=0.84)
+    for a0, a1 in ((x - PAD, x + m(0.30)), (x + w - m(0.30), x + w + PAD)):
+        c.paint(a0, a1, Z(15.10), Z(19.66), ID_TRIM, TRIM_SH, 1.0)
+        c.bevel(a0, a1, Z(15.10), Z(19.66), TRIM_H, 1.5, axes="x")
+    c.paint(x - PAD, x + w + PAD, Z(17.05), Z(17.3), ID_TRIM, 1.0, 1.0)
+    c.bevel(x - PAD, x + w + PAD, Z(17.05), Z(17.3), TRIM_H, 1.5, axes="y")
+    cx = x + w / 2.0
+    zs = Z(19.25)
+
+    def arch(r, sill_z):
+        def test(X, Y):
+            return (((np.abs(X - cx) <= r) & (Y >= Z(sill_z)) & (Y <= zs))
+                    | (((X - cx) ** 2 + (Y - zs) ** 2 <= r * r) & (Y > zs)))
+        return test
+    c.shape(cx - m(0.64), cx + m(0.64), Z(18.30), zs + m(0.64), arch(m(0.62), 18.30),
+            ID_TRIM, 1.0, 1.0, height=TRIM_H)
+    c.shape(cx - m(0.5), cx + m(0.5), Z(18.42), zs + m(0.5), arch(m(0.48), 18.42),
+            ID_DARK, 1.0, 0.40, height=-0.02)
+    slat = m(0.16)
+
+    def louvre(X, Y):
+        return arch(m(0.42), 18.48)(X, Y) & (((Y - Z(18.48)) % slat) < slat * 0.62)
+    c.shape(cx - m(0.44), cx + m(0.44), Z(18.48), zs + m(0.44), louvre, ID_FRAME, 0.62,
+            0.55, height=-0.012)
+    zc = Z(19.66)
+    c.paint(x - PAD, x + w + PAD, zc, y + h + PAD, ID_TRIM, 1.0, 1.0, height=0.008)
+    c.mul(x - PAD, x + w + PAD, zc - 2, zc, 0.84, ao=0.80)
+    sy, sx, _YY, XX = c.field(x - PAD, x + w + PAD, zc + 4, zc + 14)
+    tooth = ((XX - x) % 16.0) < 8.0
+    c.shade[sy, sx] = np.where(tooth, 1.0, 0.70)
+    c.height[sy, sx] = np.where(tooth, DENTIL_H, 0.0)
+    c.bevel(x - PAD, x + w + PAD, zc + 16, y + h, CORNICE_H, 2.0, axes="y")
+    c.mul(x - PAD, x + w + PAD, zc + 15, zc + 17, 0.80, ao=0.76)
+
+
+def paint_chimney(c):
+    """A rendered stack in a dark render, from under the deck to its top:
+    the roof's flashing at its foot, render joints, a cap band."""
+    x, y, w, h = CHIMNEY
+    Z = lambda z: y + m(z - CHIM_FOOT)                          # noqa: E731
+    c.paint(x - PAD, x + w + PAD, y - PAD, y + h + PAD, ID_CHIM, 1.0, 0.94, height=0.0)
+    for k in range(1, 7):
+        zz = Z(Z_DECK + 0.25 * k)
+        c.paint(x - PAD, x + w + PAD, zz - 0.5, zz + 0.5, ID_CHIM, 0.86, 0.86, height=-0.002)
+    c.paint(x - PAD, x + w + PAD, y - PAD, Z(Z_DECK + 0.12), ID_GUTTER, 1.0, 0.9, height=0.0)
+    c.mul(x - PAD, x + w + PAD, Z(Z_DECK + 0.12), Z(Z_DECK + 0.12) + 2, 0.82, ao=0.80)
+    c.paint(x - PAD, x + w + PAD, Z(CHIM_TOP - 0.30), y + h + PAD, ID_CHIM, 1.25, 1.0)
+    c.bevel(x - PAD, x + w + PAD, Z(CHIM_TOP - 0.30), y + h, 0.03, 1.5, axes="y")
+    c.mul(x - PAD, x + w + PAD, Z(CHIM_TOP - 0.30) - 2, Z(CHIM_TOP - 0.30), 0.78, ao=0.74)
+
+
+def paint_dome(c):
+    """One facet of the dome, U across it, V up its meridian: painted steel
+    with a seam down each edge and the middle."""
+    x, y, w, h = DOME
+    c.paint(x - PAD, x + w + PAD, y - PAD, y + h + PAD, ID_ROOF, 1.0, 1.0, height=0.0)
+    for xx in (x, x + w / 2.0, x + w):
+        c.bevel(xx - 1.5, xx + 1.5, y - PAD, y + h + PAD, SEAM_H, 1.0, axes="x")
+    c.mul(x - PAD, x + w + PAD, y - PAD, y + 2, 0.84, ao=0.84)
+
+
+def paint_deck(c):
+    """The flat deck in plan, DPPM texels a metre: painted steel sheet, seams
+    every half metre along Y, cross seams every two metres."""
+    x, y, w, h = DECK
+    c.paint(x - PAD, x + w + PAD, y - PAD, y + h + PAD, ID_ROOF, 1.0, 1.0, height=0.0)
+    sy, sx, Y, X = c.field(x - PAD, x + w + PAD, y - PAD, y + h + PAD)
+    seam = ((X - x) % (0.5 * DPPM)) < 1.0
+    cross = ((Y - y) % (2.0 * DPPM)) < 0.8
+    c.height[sy, sx] = np.where(seam, SEAM_H * 0.6, np.where(cross, 0.004, 0.0))
+    c.shade[sy, sx] = np.where(seam, 1.06, np.where(cross, 0.92, 1.0))
+
+
+def paint_attic(c):
+    """The clock attic's front, x -4 .. 4, from the wall top to the attic's
+    top: brick on a trim base course, a framed panel round the dial (white
+    ring, enamel face, hour marks, hands at three), a cornice under the
+    pediment."""
+    x, y, w, h = ATTIC_F
+    Z = lambda z: y + m(z - Z_TOP)                              # noqa: E731
+    X = lambda xx: x + m(xx + 4.0)                              # noqa: E731
+    brickwork.paint(c, x - PAD, x + w + PAD, y - PAD, y + h + PAD, BRICK_IDS,
+                    TONE_COURSES, seed=31)
+    c.paint(x - PAD, x + w + PAD, y - PAD, Z(Z_TOP + course(3)), ID_TRIM, 1.0, 1.0)
+    c.bevel(x - PAD, x + w + PAD, y, Z(Z_TOP + course(3)), TRIM_H, 1.5, axes="y")
+    c.mul(x - PAD, x + w + PAD, Z(Z_TOP + course(3)), Z(Z_TOP + course(3)) + 2, 0.86, ao=0.84)
+    f0, f1, g0, g1 = X(-3.25), X(3.25), Z(11.875), Z(14.3125)
+    c.paint(f0, f1, g0, g1, ID_TRIM, 1.0, 1.0)
+    c.bevel(f0, f1, g0, g1, TRIM_H, 2.0)
+    fw = m(0.125)
+    brickwork.paint(c, f0 + fw, f1 - fw, g0 + fw, g1 - fw, BRICK_IDS, TONE_COURSES, seed=37)
+    c.mul(f0 + fw, f1 - fw, g0 + fw, g1 - fw, 0.92)
+    c.mul(f0 + fw, f1 - fw, g1 - fw - 2, g1 - fw, 0.82, ao=0.80)
+    cx, cy, r = X(DIAL_C[0]), Z(DIAL_C[1]), m(DIAL_R)
+    c.disc(cx, cy, r, ID_TRIM, 1.0, 1.0, height=0.0)
+    c.disc(cx, cy, r, ID_TRIM, 0.92, inner=r - 2.0)
+    c.disc(cx, cy, r * 0.84, ID_CLOCK, 1.0, 1.0)
+    for k in range(12):
+        a = 2 * math.pi * k / 12.0
+        tx, ty = cx + math.sin(a) * r * 0.72, cy + math.cos(a) * r * 0.72
+        ln = 3.5 if k % 3 == 0 else 2.0
+        c.stroke((tx, ty), (tx + math.sin(a) * ln, ty + math.cos(a) * ln), 1.6, ID_DARK, 1.0)
+    c.stroke((cx, cy), (cx, cy + r * 0.62), 1.6, ID_DARK, 1.0)
+    c.stroke((cx, cy), (cx + r * 0.42, cy), 2.4, ID_DARK, 1.0)
+    c.disc(cx, cy, 2.0, ID_DARK, 1.0)
+    c.paint(x - PAD, x + w + PAD, Z(14.375), y + h + PAD, ID_TRIM, 1.0, 1.0)
+    c.bevel(x - PAD, x + w + PAD, Z(14.375), y + h, CORNICE_H, 2.0, axes="y")
+    c.mul(x - PAD, x + w + PAD, Z(14.375) - 2, Z(14.375), 0.82, ao=0.78)
+
+
+def paint_pediment(c):
+    """The pediment's front: a brick tympanum inside a white raking cornice
+    and a horizontal cornice along its foot."""
+    x, y, w, h = PEDIMENT
+    cx = x + w / 2.0
+    brickwork.paint(c, x - PAD, x + w + PAD, y - PAD, y + h + PAD, BRICK_IDS,
+                    TONE_COURSES, seed=41)
+    half = w / 2.0
+    rake = m(0.28)
+    slope = h / half
+
+    def outer(X, Y):
+        return (Y >= y - PAD) & (np.abs(X - cx) <= half * (1.0 - (Y - y) / h) + PAD)
+
+    def band(X, Y):
+        d = (half * (1.0 - (Y - y) / h) - np.abs(X - cx)) / math.sqrt(1.0 + 1.0 / slope ** 2)
+        return (d < rake) | (Y < y + m(course(3)))
+    sy, sx, YY, XX = c.field(x - PAD, x + w + PAD, y - PAD, y + h + PAD)
+    inside = outer(XX, YY)
+    cornice = inside & band(XX, YY)
+    c.mid[sy, sx] = np.where(cornice, ID_TRIM, c.mid[sy, sx])
+    c.shade[sy, sx] = np.where(cornice, 1.0, c.shade[sy, sx])
+    c.ao[sy, sx] = np.where(cornice, 1.0, c.ao[sy, sx])
+    c.height[sy, sx] = np.where(cornice, CORNICE_H, c.height[sy, sx])
+    d = (half * (1.0 - (YY - y) / h) - np.abs(XX - cx)) / math.sqrt(1.0 + 1.0 / slope ** 2)
+    edge = inside & (np.abs(d - rake) < 1.2) & (YY >= y + m(course(3)))
+    c.shade[sy, sx] = np.where(edge, 0.80, c.shade[sy, sx])
+    c.ao[sy, sx] = np.where(edge, 0.78, c.ao[sy, sx])
+    c.mul(x - PAD, x + w + PAD, y + m(course(3)), y + m(course(3)) + 2, 0.86, ao=0.82)
+
+
+def paint_balusters(c, rect, pitch=0.22):
+    """A balustrade's dado, solid: turned balusters standing proud of the
+    dark recess between them, as relief."""
+    x, y, w, h = rect
+    c.paint(x - PAD, x + w + PAD, y - PAD, y + h + PAD, ID_TRIM, 0.52, 0.62, height=-0.01)
+    sy, sx, Y, X = c.field(x - PAD, x + w + PAD, y - PAD, y + h + PAD)
+    t = np.clip((Y - y) / h, 0.0, 1.0)
+    rad = m(0.045) * (1.0 + 0.55 * np.exp(-((t - 0.30) / 0.14) ** 2)
+                      - 0.25 * np.exp(-((t - 0.78) / 0.08) ** 2))
+    p = m(pitch)
+    dx = np.abs(((X - x) % p) - p / 2.0)
+    post = dx <= rad
+    c.mid[sy, sx] = ID_TRIM
+    c.shade[sy, sx] = np.where(post, 1.0 - 0.10 * (dx / np.maximum(rad, 1e-3)) ** 2, 0.52)
+    c.ao[sy, sx] = np.where(post, 1.0, 0.62)
+    c.height[sy, sx] = np.where(post, 0.03 * np.sqrt(np.clip(1.0 - (dx / np.maximum(rad, 1e-3))
+                                                             ** 2, 0.0, 1.0)), -0.01)
 
 
 def paint_patches(c):
-    c.paint(BLANK[0], BLANK[1], BLANK[2], BLANK[3], ID_WALL, WALL_DK, 0.60, height=0.0)
-    c.paint(TRIMPATCH[0], TRIMPATCH[1], TRIMPATCH[2], TRIMPATCH[3], ID_TRIM, 1.0,
-            height=0.0)
-    c.paint(REVEALP[0], REVEALP[1], REVEALP[2], REVEALP[3], ID_TRIM, REVEAL, 0.50,
-            height=0.0)
-    # Soot inside the flues: the dark id taken down to about sRGB 30, and
-    # occluded, as a narrow shaft is whatever the sun does.
-    c.paint(SOOT[0], SOOT[1], SOOT[2], SOOT[3], ID_DARK, 0.36, 0.35, height=0.0)
+    spec = {
+        "blank": (ID_BLANK, 1.0, 1.0),
+        "reveal": (ID_TRIM, 0.62, 0.55),
+        "trim": (ID_TRIM, 1.0, 1.0),
+        "trim_shade": (ID_TRIM, 0.80, 0.80),
+        "sill_top": (ID_TRIM, 0.94, 0.90),
+        "roof": (ID_ROOF, 1.0, 1.0),
+        "soot": (ID_SOOT, 1.0, 0.35),
+        "step": (ID_PLINTH, 1.0, 0.95),
+        "rim": (ID_CHIM, 1.25, 1.0),
+        "gutter": (ID_GUTTER, 1.0, 1.0),
+        "frame": (ID_FRAME, 0.9, 0.9),
+        "cutter": (ID_TRIM, 0.90, 0.88),
+        "lid": (ID_ROOF, 0.92, 0.95),
+        "rail": (ID_TRIM, 0.96, 1.0),
+    }
+    atlas.paint_patches(c, PATCHES, spec)
 
 
-def weather(c, rear_door=False):
+# ================================================================ checks
+def all_regions():
+    rects = {"%s_%d" % k: r for k, r in ITEM_REGION.items()}
+    rects.update({"elev_" + n: r for n, r in ELEV.items()})
+    rects.update({"quoin_a": QUOIN["a"], "quoin_b": QUOIN["b"], "tower": TOWER,
+                  "chimney": CHIMNEY, "dome": DOME, "deck": DECK, "attic": ATTIC_F,
+                  "pediment": PEDIMENT, "balusters": BALUS, "plat_balusters": PLAT_BALUS})
+    rects.update(PATCHES)
+    return rects
+
+
+def check_regions():
+    """Fail the bake if two regions overlap, run off the sheet or into the
+    bands, or if a band runs into the next."""
+    problems = atlas.region_problems(all_regions(), ATLAS, bands_top=BANDS_TOP, band_gap=4)
+    for a, b, what in ((WALL_Y0 + m(Z_BAND) + PAD, ROOF_Y0 - PAD, "wall into roof"),
+                       (ROOF_Y0 + ROOF_H + PAD, FASC_Y0 - PAD, "roof into fascia"),
+                       (FASC_Y0 + FASC_H + PAD, SOF_Y0 - PAD, "fascia into soffit")):
+        if a > b:
+            problems.append("band %s" % what)
+    xd, yd, wd, hd = DECK
+    for x0, x1, y0, y1 in ((-21.4, 21.4, -7.3, 13.5),):
+        if (x0 - DECK_O[0]) * DPPM < 0 or (x1 - DECK_O[0]) * DPPM > wd or \
+                (y0 - DECK_O[1]) * DPPM < 0 or (y1 - DECK_O[1]) * DPPM > hd:
+            problems.append("the deck region does not cover the deck")
+    if problems:
+        raise ValueError("atlas layout: " + "; ".join(problems))
+
+
+# ================================================================ weather
+def weather(c):
     """Where the weather goes; scripts/weathering.py says what it looks like.
-    *rear_door* weathers the rear door in bay REAR_BAY in place of its
-    ground-floor window, as paint_facade() paints it.
-    The facade band and the entrance panel both start at the ground and run
-    the full wall height with their windows in them, so the plinth's soil, the
-    salt bloom above it and the runs under every sill and the string course
-    land where they belong. The roof band's V runs across each slope in
-    whichever direction the face happens to give, so the roof's weather is
-    the same either way up: runs down the slope and silt at the seams, no
-    darker eave."""
-    w = weathering.Weather(c, clean=(ID_GLASS, ID_CLOCK), steel=(ID_ROOF,))
+    The wall band's V is height from the ground, so the plinth's soil, the
+    splash and bloom above it and the dust under the cornice land the same on
+    every wall. Glass and the clock's face stay clean."""
+    steel = (ID_ROOF, ID_GUTTER)
+    w = weathering.Weather(c, clean=(ID_GLASS, ID_CLOCK), steel=steel)
     w.grime()
-    w.fade((ID_TRIM,), amount=0.06, base=0.02)
-    w.wash((ID_WALL,))
-
-    def window(cx, half_w, yb, sill):
-        """Dirt on the sill moulding, runs down the wall under it."""
-        wd, ys = m(half_w), yb + m(sill)
-        x0, x1 = cx - wd - m(0.34), cx + wd + m(0.34)
-        w.add("D", x0, x1, ys - m(0.30), ys - m(0.14), 0.10, (ID_TRIM,))
-        w.runs(x0, x1, ys - m(1.10), ys - m(0.30), (ID_WALL, ID_PLINTH), 0.12, fall=m(0.35))
-
-    for x0, x1, yb in ((0, ATLAS, 0), (ENT[0], ENT[1], ENT[2])):
-        w.plinth(x0, x1, yb, yb + m(Z_PLINTH_TOP), (ID_PLINTH,))
-        w.bloom(x0, x1, yb + m(Z_PLINTH_CAP), yb + m(Z_PLINTH_CAP + 1.2), (ID_WALL,),
-                amount=0.12, fade=m(0.8))
-        w.runs(x0, x1, yb + m(Z_STRING_BOT - 0.8), yb + m(Z_STRING_BOT) - 3, (ID_WALL,),
-               0.12, fall=m(0.35))
-    edges = [int(round(ATLAS * i / 10)) for i in range(11)]
-    for i in range(10):
-        cx = (edges[i] + edges[i + 1]) / 2.0
-        if rear_door and i == REAR_BAY:
-            # kicked-up dirt across the leaves' foot, hand grime at the pulls
-            w.door(rear_door_x(-REAR_DOOR_HW), rear_door_x(REAR_DOOR_HW), m(REAR_SILL),
-                   m(REAR_LEAF_TOP), (ID_DOOR,), handle=(rear_door_x(), m(REAR_SILL + 1.05)))
-        else:
-            window(cx, 0.70, 0, Z_GF_SILL)
-        window(cx, 0.70, 0, Z_UF_SILL)
-    ec, ey0 = (ENT[0] + ENT[1]) / 2.0, ENT[2]
-    for off in (-3.30, 3.30):
-        window(ec + m(off), 0.70, ey0, Z_GF_SILL)
-    for off in (-1.85, 1.85):
-        window(ec + m(off), 0.62, ey0, 6.60)
-    for off in (-4.05, 4.05):
-        window(ec + m(off), 0.68, ey0, Z_UF_SILL)
-    w.door(ec - m(1.00), ec + m(1.00), ey0 + m(0.15), ey0 + m(2.50), (ID_DOOR,))
-    # the roof band, the same whichever way up a slope samples it
-    y0, y1 = ROOF_Y0, ROOF_Y0 + ROOF_H
-    roof = (ID_ROOF,)
-    w.add("D", 0, ATLAS, y0, y1, lambda Y, X, nz: 0.10 * atlas.smoothstep(
-        0.0, 1.5, nz("long")) + 0.12 * (((X % round(m(0.5))) >= 3.0)
-                                        & ((X % round(m(0.5))) < 6.0)), roof)
-    w.add("F", 0, ATLAS, y0, y1, lambda Y, X, nz: 0.05 + 0.04 * nz("big"), roof)
-    # the tower: runs under its balustrade and under the drum's cornice
-    tx0, tx1, ty0, ty1 = TOW
-    w.runs(tx0, tx1, ty0 + m(4.95), ty0 + m(5.75), (ID_WALL,), 0.12, fall=m(0.4))
-    w.runs(tx0, tx1, ty0 + m(7.00), ty0 + m(8.26), (ID_WALL,), 0.12, fall=m(0.4))
-    # the stacks: runs under the cap
-    cx0, cx1, cy0, cy1 = CHM
-    w.runs(cx0, cx1, cy0, cy1 - m(0.46), (ID_CHIM,), 0.18, fall=m(0.5))
-    # the quoin strip starts at the ground: splashed at the foot
-    qx0, qx1, qy0, qy1 = QUOIN
-    w.splash(qx0, qx1, qy0, qy0 + m(1.5), (ID_TRIM, ID_WALL))
-    # the balcony parapet: runs under its top rail
-    bx0, bx1, by0, by1 = BALUS
-    w.runs(bx0, bx1, by0 + m(0.14), by1 - m(0.16), (ID_TRIM,), 0.10, fall=m(0.3))
+    w.fade((ID_TRIM, ID_FRAME, ID_DOOR), amount=0.08, base=0.03)
+    w.wash((ID_BRICK, ID_BRICK2, ID_MORTAR))
+    y0 = WALL_Y0
+    top = y0 + m(Z_BAND) + PAD
+    masonry = (ID_BRICK, ID_BRICK2, ID_MORTAR)
+    w.plinth(0, ATLAS, y0, y0 + m(Z_PLINTH), (ID_PLINTH,))
+    w.splash(0, ATLAS, y0 + m(Z_PLINTH_CAP), y0 + m(Z_PLINTH_CAP + 1.0), masonry,
+             amount=0.10, fall=0.25)
+    w.bloom(0, ATLAS, y0 + m(Z_PLINTH_CAP), y0 + m(Z_PLINTH_CAP + 1.2), masonry,
+            amount=0.10, fade=m(0.8))
+    w.runs(0, ATLAS, y0 + m(Z_STRING - 0.8), y0 + m(Z_STRING), masonry, 0.10, fall=m(0.35))
+    w.runs(0, ATLAS, y0 + m(Z_PLINTH_CAP - 0.6), y0 + m(Z_PLINTH), (ID_PLINTH,), 0.10,
+           fall=m(0.3))
+    w.shelter(0, ATLAS, y0 + m(Z_FRIEZE), y0 + m(Z_CORNICE), (ID_TRIM,), amount=0.08,
+              top=y0 + m(Z_CORNICE))
+    w.runs(0, ATLAS, y0 + m(Z_FRIEZE - 0.6), y0 + m(Z_FRIEZE), masonry, 0.08, fall=m(0.3))
+    w.roof(0, ATLAS, ROOF_Y0, ROOF_H, SLOPE_LEN, (ID_ROOF,))
+    g0 = FASC_Y0 + FASC_H - 10.0
+    w.runs(0, ATLAS, FASC_Y0 - PAD, g0, (ID_TRIM,), 0.16, fall=6.0, lo=0.4, hi=1.6)
+    w.shelter(0, ATLAS, SOF_Y0, SOF_Y0 + 6, (ID_TRIM,), amount=0.06)
+    # windows: dirt on the sill, runs down the casing under the cap, water on
+    # the sash's bottom rail
+    for (kind, v), (x, y, rw, rh) in ITEM_REGION.items():
+        it = ITEMS[kind]
+        if kind in WINDOW_KINDS:
+            s0, s1, oz0, oz1 = it["openings"][0]
+            w.window(x, y, rw, rh, y + m(oz0 - it["z0"]), y + m(oz1 - it["z0"]), 4.5,
+                     (ID_TRIM,), (ID_FRAME,))
+        elif kind in ("door", "service"):
+            s0, s1, _z0, _z1 = it["openings"][0]
+            a0, a1 = x + m(s0), x + m(s1)
+            w.door(a0, a1, y + m(Z_FLOOR), y + m(Z_DOOR_TRANSOM), (ID_DOOR,),
+                   handle=((a0 + a1) / 2.0 + 4.0, y + m(Z_FLOOR + 1.1)))
+            w.splash(x, x + rw, y, y + m(1.0), (ID_TRIM, ID_PLINTH), amount=0.14)
+        elif kind == "group":
+            for s0, s1, oz0, oz1 in it["openings"]:
+                w.add("D", x + m(s0), x + m(s1), y + m(oz0 - it["z0"]),
+                      y + m(oz0 - it["z0"]) + 5, 0.10, (ID_FRAME,))
+            w.runs(x, x + rw, y + rh - 40, y + rh - 15, (ID_TRIM,), 0.08, fall=12.0)
+    for x, y, rw, rh in QUOIN.values():
+        w.splash(x - PAD, x + rw + PAD, y, y + m(1.0), (ID_TRIM,) + masonry)
+    x, y, rw, rh = TOWER
+    w.runs(x, x + rw, y + m(16.4 - TOWER_FOOT), y + m(17.05 - TOWER_FOOT), masonry, 0.10,
+           fall=m(0.4))
+    w.runs(x, x + rw, y + m(18.9 - TOWER_FOOT), y + m(19.66 - TOWER_FOOT), masonry, 0.10,
+           fall=m(0.4))
+    w.splash(x, x + rw, y + m(Z_DECK - TOWER_FOOT), y + m(Z_DECK - TOWER_FOOT + 0.8),
+             (ID_PLINTH, ID_TRIM) + masonry, amount=0.12)
+    x, y, rw, rh = CHIMNEY
+    w.runs(x, x + rw, y, y + rh - m(0.30), (ID_CHIM,), 0.16, fall=m(0.5))
+    w.splash(x, x + rw, y + m(Z_DECK - CHIM_FOOT), y + m(Z_DECK - CHIM_FOOT + 0.6),
+             (ID_CHIM,), amount=0.12)
+    x, y, rw, rh = ATTIC_F
+    w.runs(x, x + rw, y + m(13.6 - Z_TOP), y + m(14.375 - Z_TOP), masonry, 0.08, fall=m(0.4))
+    for x, y, rw, rh in (BALUS, PLAT_BALUS):
+        w.runs(x, x + rw, y, y + rh, (ID_TRIM,), 0.10, fall=rh * 0.6)
+    # the deck: dust in broad patches where it lies flat, light chalking
+    x, y, rw, rh = DECK
+    w.add("D", x - PAD, x + rw + PAD, y - PAD, y + rh + PAD,
+          lambda Y, X, nz: 0.05 + 0.08 * nz("big"), (ID_ROOF,))
+    w.add("F", x - PAD, x + rw + PAD, y - PAD, y + rh + PAD,
+          lambda Y, X, nz: 0.03 + 0.04 * nz("big"), (ID_ROOF,))
+    x, y, rw, rh = DOME
+    w.runs(x, x + rw, y, y + rh, (ID_ROOF,), 0.10, fall=rh * 0.5)
     return w
 
 
+# ================================================================ painting
 def paint(ss=atlas.SS):
-    """Paint the atlas: ids, shade, AO, height and weather, then padding.
-
-    The rear door's bay is painted twice over. A second canvas paints the
-    whole atlas again with the door in the facade band's bay REAR_BAY, and
-    that bay's columns, every channel and weather field, are copied into the
-    free REAR region before padding. Painted in place there instead, its
-    brick bond, grime and weather noise would be another stretch of the
-    noise from the bays beside it on the wall, and the joint would show as a
-    vertical step in tone at both its edges.
-    """
-    import gc
-    src = _paint(ss, rear_door=True)
-    sy, sx = src.sl(REAR_SRC[0], REAR_SRC[1], 0, REAR[3] - REAR[2])
-    bay = {k: getattr(src, k)[sy, sx].copy()
-           for k in ("mid", "shade", "ao", "height", "rough_var")}
-    fields = {k: a[sy, sx].copy() for k, a in src.weather.f.items()}
-    del src
-    gc.collect()
-    c = _paint(ss)
-    dy, dx = c.sl(REAR[0], REAR[1], REAR[2], REAR[3])
-    assert REAR[1] - REAR[0] == REAR_SRC[1] - REAR_SRC[0]
-    assert (c.mid[dy, dx] == atlas.UNPAINTED).all(), "the REAR region overlaps another"
-    for k, a in bay.items():
-        getattr(c, k)[dy, dx] = a
-    for k, a in fields.items():
-        c.weather.f[k][dy, dx] = a
+    """Paint once: ids, shade, AO, height and weather, then padding."""
+    check_regions()
+    c = atlas.Canvas(ATLAS, ss, PPM)
+    paint_wall_band(c)
+    paint_roof(c)
+    paint_fascia(c)
+    paint_soffit(c)
+    c.check_bands(BAND_IDS)
+    for (kind, v) in ITEM_REGION:
+        if kind in WINDOW_KINDS:
+            paint_window(c, kind, v)
+    paint_door(c)
+    paint_service(c)
+    paint_group(c)
+    paint_pilaster(c)
+    paint_quoins(c)
+    paint_tower(c)
+    paint_chimney(c)
+    paint_dome(c)
+    paint_deck(c)
+    paint_attic(c)
+    paint_pediment(c)
+    paint_balusters(c, BALUS)
+    paint_balusters(c, PLAT_BALUS, pitch=0.20)
+    paint_patches(c)
+    # the materials' own grain: pores in masonry and render, a faint sheen
+    # variation in painted steel; periodic, so the bands still wrap
+    wear = 0.02 * atlas.noise(c, 3, 40.0) + 0.01 * atlas.noise(c, 4, 8.0)
+    c.shade *= 1.0 + wear
+    masonry = np.isin(c.mid, (ID_BRICK, ID_BRICK2, ID_MORTAR, ID_PLINTH, ID_TRIM, ID_CHIM))
+    pores = atlas.noise(c, 9, 0.7)
+    c.shade[masonry] *= 1.0 + 0.035 * pores[masonry]
+    c.height[masonry] += 0.0005 * pores[masonry]
+    del pores
+    sheet = np.isin(c.mid, (ID_ROOF, ID_GUTTER))
+    grain = atlas.noise(c, 5, 60.0, 0.35)
+    c.shade[sheet] *= 1.0 + 0.016 * grain[sheet]
+    del grain, masonry, sheet
+    weather(c)
     c.pad()
     return c
 
 
-def _paint(ss, rear_door=False):
-    """Everything up to padding: ids, shade, AO, height and weather."""
-    c = atlas.Canvas(ATLAS, ss, PPM)
-    n01 = atlas.noise(c, 23, 30.0)
-    n01 = (n01 - n01.min()) / max(1e-6, float(n01.max() - n01.min()))
-    paint_facade(c, n01, rear_door)
-    paint_roof(c)
-    paint_entrance(c, n01)
-    paint_attic(c)
-    paint_tower(c)
-    paint_chimney(c)
-    paint_quoins(c)
-    paint_balcony(c)
-    paint_patches(c)
-    # The roof band is the one region tiled under every slope on the building,
-    # so a stray sample in it is not a local blemish -- it is repeated across
-    # the whole roof. That is not hypothetical: the entrance steps were once
-    # painted below their own panel's baseline, landed here, and came back as
-    # a pale cap on each slope. The check fails the bake on the next slip.
-    c.check_bands({"ROOF": ((ROOF_Y0, ROOF_Y0 + ROOF_H), {ID_ROOF})})
+# ============================================================ elevations
+def compose_elevations(maps):
+    """The far tiers' walls: each wall's elevation at EPPM, composed from the
+    resolved maps -- the band at the wall's U, its items at their places, the
+    quoins at its convex corners, its downpipes -- at 64 texels a metre, then
+    box-filtered to EPPM (colours in linear light, normals renormalised) and
+    written into its ELEV region with a two-texel gutter."""
+    f = int(round(PPM / EPPM))
+    H = int(round(Z_TOP * PPM))
+    lin = {"albedo", "emission"}
+    pipe_rgb = np.asarray(COLOUR[ID_GUTTER], np.float32) * 0.92
+    pipe_orm = np.asarray((255.0, SURFACE[ID_GUTTER][0] * 255.0, 0.0), np.float32)
+    pipes = {}
+    for name, s in PIPES:
+        pipes.setdefault(name, []).append(s)
+    for wall in WALLS:
+        L = wall["L"]
+        W = int(round(L * PPM))
+        cols = (np.round((wall["u"] * PPM)) + np.arange(W)).astype(np.int64) % ATLAS
+        rows = np.arange(H) + WALL_Y0
+        out = {}
+        for key, a in maps.items():
+            e = a[rows][:, cols].astype(np.float32)
+            for kind, s, v in wall["items"]:
+                x, y, rw, rh = ITEM_REGION[(kind, v)]
+                l, _r, z0, _z1 = item_rect(kind, s)
+                c0, r0 = int(round(m(l))), int(round(m(z0)))
+                rw, rh = int(round(rw)), int(round(rh))
+                e[r0:r0 + rh, c0:c0 + rw] = a[int(y):int(y) + rh, int(x):int(x) + rw]
+            for at_start, convex in ((True, wall["convex0"]), (False, wall["convex1"])):
+                if not convex:
+                    continue
+                side = "b" if at_start else "a"
+                qx, qy, _qw, qh = QUOIN[side]
+                n = int(round(m(QUOIN_DEPTH)))
+                off = int(round(m(QUOIN_PROUD)))
+                strip = a[int(qy):int(qy) + int(qh), int(qx) + off:int(qx) + off + n]
+                if at_start:
+                    e[:int(qh), :n] = strip
+                else:
+                    e[:int(qh), W - n:] = strip[:, ::-1]
+            for s in pipes.get(wall["name"], ()):
+                p0, p1 = int(round(m(s - PIPE_W / 2.0))), int(round(m(s + PIPE_W / 2.0)))
+                z0, z1 = int(round(m(0.2))), int(round(m(Z_EAVE)))
+                if key == "albedo":
+                    across = 0.80 + 0.30 * np.sin(np.linspace(0.3, 2.8, p1 - p0))
+                    e[z0:z1, p0:p1] = pipe_rgb[None, None, :] * across[None, :, None]
+                elif key == "orm":
+                    e[z0:z1, p0:p1] = pipe_orm
+                elif key == "normal":
+                    e[z0:z1, p0:p1] = (127.5, 127.5, 255.0)
+                else:
+                    e[z0:z1, p0:p1] = 0.0
+            if key in lin:
+                e = atlas.srgb_to_linear(e)
+            e = e.reshape(H // f, f, W // f, f, 3).mean(axis=(1, 3))
+            if key in lin:
+                e = atlas.linear_to_srgb(e)
+            if key == "normal":
+                n = e / 127.5 - 1.0
+                n /= np.maximum(np.linalg.norm(n, axis=-1, keepdims=True), 1e-6)
+                e = (n * 0.5 + 0.5) * 255.0
+            out[key] = e
+        x, y, ew, eh = ELEV[wall["name"]]
+        for key, e in out.items():
+            a = maps[key]
+            g = 2
+            padded = np.pad(e, ((g, g), (g, g), (0, 0)), mode="edge")
+            a[y - g:y + eh + g, x - g:x + ew + g] = padded
+    return maps
 
-    # Weathering: broad soiling, and a soft darkening toward the ground on the
-    # facade band only. Every field is periodic, so the bands still wrap.
-    grime = 0.045 * atlas.noise(c, 11, 120.0) + 0.025 * atlas.noise(c, 12, 30.0) \
-        + 0.015 * atlas.noise(c, 13, 8.0)
-    c.shade *= 1.0 + grime
-    c.ao *= np.clip(1.0 + grime * 0.5, 0.7, 1.05)
-    sy, sx, Y, _ = c.field(0, ATLAS, 0, m(Z_TOP))
-    depth = np.clip(1.0 - Y / m(Z_TOP), 0, 1) ** 2
-    c.shade[sy, sx] *= 1.0 - 0.10 * depth
-    c.rough_var = 0.12 * grime
-    weather(c, rear_door)
-    return c
+
+# ================================================================ export
+CURTAIN = (150, 140, 124)     # sRGB: pale drawn-back curtains, in the room's shade
+CURTAIN_MIX = 0.32
+CURTAINED = (("gf", 1), ("uf", 2), ("gf125", 1), ("uf125", 2))
 
 
-def emission_mask(c):
-    """Glazing, the clock face, and the belfry's louvre gaps, as coverage.
-
-    Final ownership ids keep clock hands, hour marks, window frames and trim
-    dark. The belfry emits through the painted gaps between its louvre slats,
-    retaining the opaque shell; ID_DARK also labels unrelated cornice shadows
-    and reveals, so only the gaps inside the louvre arch count.
-    """
-    lit = np.isin(c.mid, (ID_GLASS, ID_CLOCK)).astype(np.float32)
-    tx0, tx1, ty0, ty1 = TOW
-    tcx, r = (tx0 + tx1) / 2.0, m(0.41)
-    ys, yp = ty0 + m(7.11), ty0 + m(7.85)
-    sy, sx, Y, X = c.field(tcx - r - 1, tcx + r + 1, ys, yp + r + 1)
-    arch_in = (((np.abs(X - tcx) <= r) & (Y >= ys) & (Y <= yp))
-               | (((X - tcx) ** 2 + (Y - yp) ** 2 <= r * r) & (Y > yp)))
-    lit[sy, sx] = np.maximum(lit[sy, sx], (arch_in & (c.mid[sy, sx] == ID_DARK)))
-    return np.repeat(atlas.box(lit, c.ss)[..., None] * 255.0, 3, axis=-1)
+def curtains(rgb, glass):
+    """Curtains drawn back to either side behind some windows' lower lights:
+    part of the room, so albedo only (the night's panes are untouched).
+    Painted after glazing.rooms(), on the glass pixels of a few variants."""
+    for kind, v in CURTAINED:
+        x, y, w, h = ITEM_REGION[(kind, v)]
+        it = ITEMS[kind]
+        s0, s1, z0, z1 = it["openings"][0]
+        a0, a1 = int(math.floor(x + m(s0))), int(math.ceil(x + m(s1)))
+        b0 = int(math.floor(y + m(z0 - it["z0"])))
+        b1 = int(math.ceil(y + m(z0 - it["z0"] + (z1 - z0) * 0.70)))
+        sub, msk = rgb[b0:b1, a0:a1], glass[b0:b1, a0:a1]
+        u = (np.arange(a0, a1) + 0.5 - (a0 + a1) / 2.0) / ((a1 - a0) / 2.0)
+        cover = np.clip((np.abs(u) - 0.62) / 0.12, 0.0, 1.0)
+        fold = 0.90 + 0.10 * np.sin(np.arange(a0, a1) * 1.9)
+        mix = (cover * CURTAIN_MIX)[None, :, None]
+        lin = atlas.srgb_to_linear(sub)
+        tgt = atlas.srgb_to_linear(np.asarray(CURTAIN, np.float32))[None, None, :] \
+            * fold[None, :, None]
+        out = atlas.linear_to_srgb(lin * (1.0 - mix) + tgt * mix)
+        sub[msk] = out[msk]
+    return rgb
 
 
 def export(out_dir, ss=atlas.SS):
+    """Paint, resolve every map, compose the elevations into all four, save.
+    No occupancy or schedule is baked in."""
+    os.makedirs(out_dir, exist_ok=True)
     c = paint(ss)
-    cav = atlas.cavity(c, radius_px=1.5, depth_m=0.012)
-    c.weather.dust(cav, (ID_WALL, ID_CHIM))          # in the mortar joints
-    path = os.path.join(out_dir, ASSET)
+    cav = atlas.cavity(c, radius_px=1.5, depth_m=0.010)
+    c.weather.dust(cav, BRICK_IDS)
+    rough = 0.04 * atlas.noise(c, 13, 20.0)
     lut = np.zeros((256, 3), np.float32)
     for i, col in COLOUR.items():
         lut[i] = col
-    written = [atlas.save(atlas.orm(c, SURFACE, c.rough_var, 0.5 * cav), path + "_orm.png"),
-               atlas.save(atlas.normal_map(c, flat_ids=(ID_GLASS, ID_CLOCK)),
-                          path + "_normal.png"),
-               atlas.save(glazing.night_rooms(atlas.coverage(c, ID_GLASS) > 0, emission_mask(c)),
-                          path + "_emission.png")]
+    maps = {"orm": atlas.orm(c, SURFACE, rough, 0.5 * cav)}
+    del rough
+    maps["normal"] = atlas.normal_map(c, flat_ids=(ID_GLASS, ID_CLOCK))
+    maps["emission"] = glazing.night_rooms(atlas.coverage(c, ID_GLASS) > 0,
+                                           atlas.emission_colours(c, EMIT))
     glass = atlas.coverage(c, ID_GLASS) >= 0.5
     rgb = glazing.rooms(glass, atlas.albedo(c, lut, grime=0.25 * cav))
-    written.append(atlas.save(rgb, "%s_albedo_%s.png" % (path, VARIANT)))
-    return written
+    maps["albedo"] = curtains(rgb, glass)
+    del c, cav
+    maps = compose_elevations(maps)
+    path = os.path.join(out_dir, ASSET)
+    return [atlas.save(maps["orm"], path + "_orm.png"),
+            atlas.save(maps["normal"], path + "_normal.png"),
+            atlas.save(maps["emission"], path + "_emission.png"),
+            atlas.save(maps["albedo"], "%s_albedo_%s.png" % (path, DEFAULT_VARIANT))]
 
 
 if __name__ == "__main__":
