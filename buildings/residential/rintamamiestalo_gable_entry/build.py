@@ -35,55 +35,45 @@ occur.
 
 The walls are textured as a trim sheet (see facade_atlas.py): siding tiles,
 and each window or door is a hole in the wall with its own faces mapped to the
-region that carries its casing and glazing. Every number the two files share
-is imported from facade_atlas.py rather than written here a second time.
+region that carries its casing and glazing. What the four rintamamiestalo
+houses share (the walls and openings, roofs, chimney, canopy, steps, the tier
+policy and the common checks) is scripts/rintamamiestalo.py's; this file keeps
+the house: its massing, its walls, the terrace and the balcony with their
+railings, the places of its downpipes, roof kit and handrails, its own checks
+and its facts.
 """
 
-import functools
 import importlib
-import math
 import os
 import sys
-
-import bmesh
-
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 if HERE not in sys.path:
     sys.path.insert(0, HERE)
-import facade_atlas as L  # noqa: E402  (layout constants shared with the atlas)
-importlib.reload(L)       # an interactive session must not keep a stale layout
-
-ASSET = L.ASSET
-EXPORT_DIR = os.path.join(HERE, "export")
 sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "scripts"))
-import asset_build  # noqa: E402
+import rintamamiestalo as R  # noqa: E402
+importlib.reload(R)       # an interactive session must not keep a stale family
+import facade_atlas  # noqa: E402  (the layout shared with the atlas)
+importlib.reload(facade_atlas)
 import model_facts  # noqa: E402
-from asset_build import pivot_offset, to_object, union  # noqa: E402,F401
+from asset_build import to_object  # noqa: E402
 import downpipes as DP  # noqa: E402
 import handrails as HR  # noqa: E402
 import roof_safety as RS  # noqa: E402
 import shell_build as SB  # noqa: E402
-from shell_build import InwardFrame, fill_region, overlap, rect_poly  # noqa: E402
+from rintamamiestalo import (  # noqa: E402
+    ATTIC_SILL, CANOPY_T, CANOPY_Z, EAVE_OV, EPS, GF, PPM, RAKE_OV, ROOF_T, STEP_PROFILE,
+    TAN, Steps, Wall)
 
-asset_build.check_toolchain()
-BUILD = asset_build.Asset(ASSET, HERE, L.VARIANTS, L.DEFAULT_VARIANT)
-get_material, export_all = BUILD.material, BUILD.export_all
-render_preview, render_variants = BUILD.render_preview, BUILD.render_variants
-Builder = functools.partial(SB.Builder, L.ATLAS)
-PPM = L.PPM
-EPS = 1e-6
-LEVELS = (0, 1, 2, 3)
+L = facade_atlas.LAYOUT
+K = R.Kit(L, HERE)
+BUILD = K.asset
 
 # ------------------------------------------------------------------ massing
 # Front faces -Y, and the front is a gable end: the siblings' 10.0 x 8.0 m
 # block turned so that its ridge runs back from the street along Y. The street
 # sees the 8 m gable with the entrance in it.
 HX, HY = 4.0, 5.0
-TAN = 1.0                        # 45 degree roof, the type's defining pitch
-ROOF_T = L.FASC_H / PPM          # slab's vertical thickness = fascia height
-EAVE_OV = 0.45                   # eave overhang, the catalog default
-RAKE_OV = 0.35                   # gable (rake) overhang
 Z_APEX = L.Z_WALL_TOP + HX * TAN                 # body apex, inside the slab
 Z_RIDGE = L.Z_EAVE + ROOF_T + HX * TAN           # top of the ridge
 
@@ -112,55 +102,29 @@ DECK_Z = L.Z_BELT
 BAL_RAIL_Z = DECK_Z + 1.00
 
 CHIMNEY = (-0.42, 0.42, 0.40, 1.00, 7.60, Z_RIDGE + 0.95)
-# The chimney is open at the top: a half-brick shell round one flue, which
-# drops FLUE_DEPTH to a soot floor. The top stands 0.95 m over the ridge, so
-# the floor stays clear of the roof slab and nothing reaches into the flue.
-FLUE_WALL = 0.12
-FLUE_DEPTH = 0.80
 
-# Back steps: landing just under the threshold, then three risers of ~0.17 m.
-STEP_PROFILE = [(-0.05, 0.0), (-0.05, 0.68), (0.90, 0.68), (0.90, 0.51),
-                (1.18, 0.51), (1.18, 0.34), (1.46, 0.34), (1.46, 0.17),
-                (1.74, 0.17), (1.74, 0.0)]
 # Terrace steps: three treads down from the terrace, whose own edge is the
-# top riser, so four equal risers of 0.1625 m.
+# top riser, so four equal risers of 0.1625 m; LOD3 keeps their footprint as
+# a ramp, as it does the back steps' (rintamamiestalo.STEP_PROFILE).
 TERRACE_STEP_PROFILE = [(-0.05, 0.0), (-0.05, 0.4875), (0.28, 0.4875),
                         (0.28, 0.325), (0.56, 0.325), (0.56, 0.1625),
                         (0.84, 0.1625), (0.84, 0.0)]
-# LOD3 keeps each flight's footprint as a ramp, so every tier has the same
-# extents and therefore the same pivot.
-STEP_PROFILE_LOW = [(-0.05, 0.0), (-0.05, 0.68), (0.90, 0.68), (1.74, 0.0)]
 TERRACE_STEP_PROFILE_LOW = [(-0.05, 0.0), (-0.05, 0.4875), (0.28, 0.4875),
                             (0.84, 0.0)]
 BACK_DOOR_X = 1.80
 BACK_STEPS = (BACK_DOOR_X - 0.70, BACK_DOOR_X + 0.70)   # along x, off the rear gable
-# Lean-to canopy over the back door, the type's usual kitchen entrance: 0.8 m
-# out from the wall, a shallow fall, sitting clear above the door casing. It
-# clears the 0.25 m test as a covered entrance, and is silhouette, so it
-# survives to LOD2.
-CANOPY_X = (BACK_DOOR_X - 0.75, BACK_DOOR_X + 0.75)
-CANOPY_OUT = 0.80
-CANOPY_Z = (3.30, 3.14)                           # top at the wall, top at the edge
-CANOPY_T = 0.12
+CANOPY_X = (BACK_DOOR_X - 0.75, BACK_DOOR_X + 0.75)     # the back-door canopy
+STEPS = [Steps("tmp_steps_f", *STEPS_X, TERRACE_Y, -1.0, TERRACE_STEP_PROFILE,
+               TERRACE_STEP_PROFILE_LOW),
+         Steps("tmp_steps_r", *BACK_STEPS, HY, 1.0)]
 
 # --------------------------------------------------------------- elevations
-# Sills sit at 1.5 m: 0.8 m above the 0.7 m floor, the floor itself being
-# carried by the cellar plinth. The attic floor is 3.90 m, 5 cm over the
-# balcony deck, and the attic window sits 0.75 m above it.
-# The attic storey is lit from the gables, one window per end: the standard
-# 1.80 x 1.40 m "wide" unit, centred under the ridge at ATTIC_SILL. It is the
-# same sash the living room has, which is how the standardised type worked,
-# and it is why no separate attic region is painted in the atlas.
-# The front gable has the balcony doors at that level instead, so only the
-# rear gable carries the window.
-GF, ATTIC_SILL = 1.50, 4.65
+# The attic floor is 3.90 m, 5 cm over the balcony deck, and the attic window
+# sits 0.75 m above it. The front gable has the balcony doors at that level
+# instead of the attic window, so only the rear gable carries one. The gables
+# switch to S2, whose belt board is at its foot, at the attic floor (Z_BELT in
+# the atlas's layout).
 BAL_DOOR_SILL = DECK_Z + 0.05
-
-# Siding regions, stacked from the ground: (z where each starts, atlas band,
-# the z that band's first row stands for). The gables switch to S2, whose
-# belt board is at its foot, at the attic floor (see Z_BELT in the atlas).
-EAVE_BANDS = [(0.0, "S1", 0.0)]
-GABLE_BANDS = [(0.0, "S1", 0.0), (L.Z_BELT, "S2", L.Z_BELT)]
 GABLE_TOP = [(0.0, L.Z_WALL_TOP), (HX, Z_APEX), (2 * HX, L.Z_WALL_TOP)]
 
 # Openings as (kind, s, sill z), s being the centre measured along the wall
@@ -188,16 +152,18 @@ EAST_ITEMS = [("std", 1.90, GF), ("wide", 5.30, GF), ("std", 8.30, GF),
 WEST_ITEMS = [("std", 1.80, GF), ("std", 5.00, GF), ("wide", 8.20, GF),
               ("cellar", 1.80, 0.25)]
 
-# The house's walls, counter-clockwise seen from above so the outward face is
-# on the right: (name, p0, p1, top, openings, corners, bands). Corners are the
-# boards at the start and end. On the gables they run the full height and the
-# belt board runs between them.
+# The house's walls (rintamamiestalo.Wall). Corners are the boards at the
+# start and end. On the gables they run the full height and the belt board
+# runs between them.
+E, G = L.EAVE_BANDS, L.GABLE_BANDS
 HOUSE_WALLS = [
-    ("front", (-HX, -HY), (HX, -HY), GABLE_TOP, FRONT_ITEMS, (True, True), GABLE_BANDS),
-    ("east", (HX, -HY), (HX, HY), L.Z_WALL_TOP, EAST_ITEMS, (True, True), EAVE_BANDS),
-    ("rear", (HX, HY), (-HX, HY), GABLE_TOP, REAR_ITEMS, (True, True), GABLE_BANDS),
-    ("west", (-HX, HY), (-HX, -HY), L.Z_WALL_TOP, WEST_ITEMS, (True, True), EAVE_BANDS),
+    Wall("front", (-HX, -HY), (HX, -HY), GABLE_TOP, FRONT_ITEMS, (True, True), G),
+    Wall("east", (HX, -HY), (HX, HY), L.Z_WALL_TOP, EAST_ITEMS, (True, True), E),
+    Wall("rear", (HX, HY), (-HX, HY), GABLE_TOP, REAR_ITEMS, (True, True), G),
+    Wall("west", (-HX, HY), (-HX, -HY), L.Z_WALL_TOP, WEST_ITEMS, (True, True), E),
 ]
+WALLS = {w.name: w for w in HOUSE_WALLS}
+HOUSE_EDGE = [0.0, L.Z_BELT, L.Z_EAVE, L.Z_WALL_TOP, L.Z_FLASH]
 # Offsets into the tiling siding band, so butt joints differ wall to wall.
 U_OFF = {"front": 0.0, "east": 3.3, "rear": 6.1, "west": 9.4}
 
@@ -205,8 +171,8 @@ U_OFF = {"front": 0.0, "east": 3.3, "rear": 6.1, "west": 9.4}
 # diagonally opposite corners: the east eave's at the street end, where it
 # stands behind the terrace's railing, the west eave's at the back.
 DOWNPIPE_SPOTS = [("east", DP.CORNER), ("west", DP.CORNER)]
-DOWNPIPES = [DP.eave_pipe(*{w[0]: w for w in HOUSE_WALLS}[n][1:3], s,
-                          L.Z_EAVE, TAN, EAVE_OV) for n, s in DOWNPIPE_SPOTS]
+DOWNPIPES = [DP.eave_pipe(WALLS[n].p0, WALLS[n].p1, s, L.Z_EAVE, TAN, EAVE_OV)
+             for n, s in DOWNPIPE_SPOTS]
 
 # Roof safety kit (scripts/roof_safety.py), the sweep's way to the chimney,
 # at the back, away from the entrance, as such kits usually are. The gables
@@ -217,9 +183,9 @@ DOWNPIPES = [DP.eave_pipe(*{w[0]: w for w in HOUSE_WALLS}[n][1:3], s,
 # slope 0.5 m below the ridge, forward to stand beside the stack. The wall
 # ladder stands outside the eave, the building's widest point on this side,
 # so LOD3 keeps its bare rails and every tier keeps LOD0's extents and pivot.
-WEST = next(w for w in HOUSE_WALLS if w[0] == "west")   # s = 5 - y
+WEST = WALLS["west"]                              # s = 5 - y
 KIT_S = 3.40                                      # centred between the windows
-EAVE_WEST = RS.Eave(*WEST[1:3], L.Z_EAVE, EAVE_OV, L.Z_EAVE + ROOF_T - EAVE_OV * TAN, TAN)
+EAVE_WEST = RS.Eave(WEST.p0, WEST.p1, L.Z_EAVE, EAVE_OV, L.Z_EAVE + ROOF_T - EAVE_OV * TAN, TAN)
 WALK_OUT = -HX + 0.50 + RS.WALK_W                 # the walkway's downslope edge
 ROOF_KIT = [
     RS.WallLadder(EAVE_WEST, KIT_S),
@@ -239,194 +205,7 @@ HANDRAILS = [
 ]
 
 
-def wall_profile(top, length):
-    return [(0.0, top), (length, top)] if isinstance(top, float) else top
-
-
-def profile_z(prof, s):
-    """Height of a wall's top edge at *s*, from its (s, z) profile."""
-    for (sa, za), (sb, zb) in zip(prof, prof[1:]):
-        if s <= sb + EPS:
-            return za if sb - sa < EPS else za + (zb - za) * (s - sa) / (sb - sa)
-    return prof[-1][1]
-
-
-def item_mode(kind, level):
-    """How an opening is built at each tier.
-
-    ring  - LOD0: the casing is a ring of faces on the wall, the opening inside
-            it is recessed with reveals and closed by its glass or door plane.
-    cut   - LOD1: one recess the size of the casing; the casing is painted on
-            the recessed plane. Half the wall breakpoints for the same shadow.
-    flush - LOD2/3: the casing rect as a flat quad in the wall.
-    None  - dropped: cellar lights and the vent below LOD1, the two smallest
-            windows at LOD3.
-    """
-    if kind == "cellar":
-        return ("ring", "flush", None, None)[level]
-    if kind == "vent":
-        return ("flush", "flush", None, None)[level]
-    if kind in ("bath", "porch"):
-        # under a metre across: about 5 px at LOD3's 120 m, so it goes
-        return ("ring", "cut", "flush", None)[level]
-    return ("ring", "cut", "flush", "flush")[level]
-
-
-# ------------------------------------------------------------ UV mappings
-# Each returns (u, v) in atlas pixels for a vertex position. Walls are
-# shell_build.InwardFrame: the third coordinate is depth into the wall.
-
-def uv_band(fr, y0, z_ref, u_off):
-    return lambda co: ((fr.s_of(co) + u_off) * PPM, y0 + (co.z - z_ref) * PPM)
-
-
-def uv_item(fr, kind, s_left, z_bot):
-    """Planar, at true scale. Recessed faces sit behind the wall only along
-    its normal, so they sample the same texels as if they were flush."""
-    x0, y0 = L.ITEM_ORIGIN[kind]
-    return SB.uv_region(fr, (x0, y0, 0, 0), s_left, z_bot, PPM)
-
-
-def uv_strip(fr, rect, a, b, z0, z1):
-    x0, y0, w, h = rect
-    return lambda co: (x0 + (fr.s_of(co) - a) / (b - a) * w,
-                       y0 + min(max((co.z - z0) / (z1 - z0), 0.0), 1.0) * h)
-
-
-def uv_patch(name):
-    return SB.uv_patch(L.PATCHES[name])
-
-
-# ================================================================== walls
-def item_rects(kind, s, z):
-    return SB.item_rects(L.OPENINGS[kind], s, z)
-
-
-def build_item(B, fr, kind, s, z, level):
-    """Faces for one opening; returns the hole it needs in its wall region."""
-    mode = item_mode(kind, level)
-    (ol, orr, ob, ot), (il, ir, ib, it) = item_rects(kind, s, z)
-    fn = uv_item(fr, kind, ol, ob)
-    depth = L.REVEAL_DEPTH.get(kind, L.REVEAL_DEFAULT)
-    rev = uv_patch("tread" if kind == "cellar" else "reveal")
-    o = rect_poly((ol, orr, ob, ot))
-    if mode == "flush":
-        B.face([fr.P(*p) for p in o], fn)
-        return o
-    if mode == "cut":
-        SB.recess(B, fr, o, 0.0, depth, fn, rev)
-        return o
-    i = rect_poly((il, ir, ib, it))
-    for k in range(4):
-        B.face([fr.P(*o[k]), fr.P(*o[(k + 1) % 4]),
-                fr.P(*i[(k + 1) % 4]), fr.P(*i[k])], fn)
-    SB.recess(B, fr, i, 0.0, depth, fn, rev)
-    if abs(ob - ib) < EPS:
-        # A door has no bottom casing, so the threshold edge lies on the hole's
-        # own bottom edge; the hole has to carry those two corners too.
-        return [(ol, ob), (il, ib), (ir, ib), (orr, ob), (orr, ot), (ol, ot)]
-    return o
-
-
-def build_wall(B, fr, prof, bands, edge_z, corners, items, u_off, level):
-    """One elevation: corner-board columns, then siding regions with holes.
-
-    *prof* is the wall's top edge as (s, z) points from s = 0 to its full
-    length: level for an eave wall, peaked for a gable. *bands* stacks the
-    siding regions from the ground up (see EAVE_BANDS). *edge_z* is the set of
-    heights every panel end of this solid carries, so two walls meeting at a
-    corner meet on exactly the same vertices. Corner boards run from their
-    start to the top of the wall, a gable's belt board running between them.
-    """
-    Lw = fr.L
-    # Contrasting paint survives every tier; these are flush UV strips.
-    c0, c1 = corners
-    s0 = L.CW if c0 else 0.0
-    s1 = Lw - L.CW if c1 else Lw
-
-    def rake(s):
-        return profile_z(prof, s)
-
-    def ez(s, end):
-        # every level under this end of the wall's top, then the top at s
-        return sorted({e for e in edge_z if e < rake(end) - EPS} | {rake(s)})
-
-    regions = [(z0, uv_band(fr, L.S1_Y0 if band == "S1" else L.S2_Y0, zref, u_off))
-               for z0, band, zref in bands]
-
-    def band_at(z):
-        fn = regions[0][1]
-        for z0, f in regions:
-            if z >= z0 - EPS:
-                fn = f
-        return fn
-
-    for a, b, end, has in ((0.0, L.CW, 0.0, c0), (Lw - L.CW, Lw, Lw, c1)):
-        if not has:
-            continue
-        # True: a board from the plinth up; a height: the board starts there
-        z_from = L.Z_FLASH if has is True else has
-        strip = uv_strip(fr, L.CORNER, a, b, L.Z_FLASH, max(rake(a), rake(b)))
-        lo = [e for e in edge_z if e < rake(end) - EPS]
-        for k, za in enumerate(lo):
-            if k + 1 < len(lo):
-                zb = lo[k + 1]
-                poly = [(a, za), (b, za), (b, zb), (a, zb)]
-            else:
-                zb = rake(end)
-                poly = [(a, za), (b, za), (b, rake(b)), (a, rake(a))]
-            fn = band_at(za) if zb <= z_from + EPS else strip   # plinth below
-            B.face([fr.P(s, z) for s, z in poly], fn)
-
-    rect = {}
-    for kind, s, z in items:
-        if item_mode(kind, level):
-            rect[(kind, s, z)] = item_rects(kind, s, z)[0]
-
-    splits = [z0 for z0, _, _ in bands[1:]]
-    bounds = [0.0] + splits + [None]
-    peaks = [(s, z) for s, z in reversed(prof) if s0 + EPS < s < s1 - EPS]
-    if splits and any(z < splits[-1] for _, z in peaks):
-        raise ValueError("a %.1f m wall's top dips under its last band change" % Lw)
-    left, right = ez(s0, 0.0), ez(s1, Lw)
-    placed = 0
-    for i in range(len(bounds) - 1):
-        zlo, zhi = bounds[i], bounds[i + 1]
-        last = zhi is None
-
-        def within(z):
-            return z > zlo + EPS and (last or z < zhi - EPS)
-
-        outline = [(s0, zlo), (s1, zlo)] + [(s1, z) for z in right if within(z)]
-        outline += peaks if last else [(s1, zhi), (s0, zhi)]
-        outline += [(s0, z) for z in reversed(left) if within(z)]
-        its = [(kind, s, z) for (kind, s, z), r in rect.items()
-               if r[2] > zlo - EPS and (last or r[3] < zhi + EPS)]
-        holes = [build_item(B, fr, kind, s, z, level) for kind, s, z in its]
-        placed += len(its)
-        fill_region(B, fr, outline, holes, regions[i][1])
-    if placed != len(rect):
-        raise ValueError("an opening straddles a band change on a %.1f m wall" % Lw)
-
-
-def ring(B, walls, edge, level):
-    """Build a solid's walls from one of the *_WALLS tables."""
-    for name, p0, p1, top, items, corners, bands in walls:
-        fr = InwardFrame(p0, p1)
-        build_wall(B, fr, wall_profile(top, fr.L), bands, sorted(set(edge)),
-                   corners, items, U_OFF[name], level)
-
-
-def house(level):
-    """The house: four walls round one plan, closed by a floor and a lid split
-    along the ridge (shell_build.close_solid())."""
-    B = Builder()
-    edge = [0.0, L.Z_BELT, L.Z_EAVE, L.Z_WALL_TOP, L.Z_FLASH]
-    ring(B, HOUSE_WALLS, edge, level)
-    SB.close_solid(B, uv_patch("blank"), ridges=[[(0.0, -HY, Z_APEX), (0.0, HY, Z_APEX)]])
-    return B
-
-
+# ======================================================= terrace and balcony
 def uv_deck(co):
     """Deck boards running along X: Y walks across the strip's boards, and
     every point samples the strip at the same V."""
@@ -452,10 +231,10 @@ def box(x0, x1, y0, y1, zs, side_uv, top_uv, bottom_uv):
     band of a side can take its own mapping: side_uv(frame, k) for band k.
     Kept here rather than shell_build.box(): the banded sides are not a
     prism's one face per edge."""
-    B = Builder()
+    B = K.Builder()
     rim = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
     for i in range(4):
-        fr = InwardFrame(rim[i], rim[(i + 1) % 4])
+        fr = SB.InwardFrame(rim[i], rim[(i + 1) % 4])
         for k in range(len(zs) - 1):
             B.face([fr.P(0.0, zs[k]), fr.P(fr.L, zs[k]), fr.P(fr.L, zs[k + 1]),
                     fr.P(0.0, zs[k + 1])], side_uv(fr, k))
@@ -469,11 +248,11 @@ def railing(x0, x1, y0, y1, zb, zt):
     handrail band. The handrail, the cap and the board's 0.1 m ends are
     plain trim, and the ends read as posts."""
     zs = (zb, zt - HANDRAIL_H, zt)
-    trim = uv_patch("trim")
+    trim = K.uv_patch("trim")
 
     def side(fr, k):
         return uv_rail(fr, zb, zs[1]) if k == 0 and fr.L > RAIL_T + EPS else trim
-    return box(x0, x1, y0, y1, zs, side, trim, uv_patch("blank"))
+    return box(x0, x1, y0, y1, zs, side, trim, K.uv_patch("blank"))
 
 
 def terrace():
@@ -485,7 +264,7 @@ def terrace():
     t, z0, z1 = RAIL_T, TERRACE_Z, TERRACE_RAIL_Z
     yf, yb = TERRACE_Y, -HY
     base = box(-HX, HX, yf, yb, (0.0, z0),
-               lambda fr, k: uv_band(fr, L.S1_Y0, 0.0, 0.0), uv_deck, uv_patch("blank"))
+               lambda fr, k: K.uv_band(fr, L.S1_Y0, 0.0, 0.0), uv_deck, K.uv_patch("blank"))
     return [("terrace", base),
             ("rail_fw", railing(-HX, STEPS_X[0], yf, yf + t, z0, z1)),
             ("rail_fe", railing(STEPS_X[1], HX, yf, yf + t, z0, z1)),
@@ -499,280 +278,44 @@ def balcony():
     x0, x1 = BAL_X
     t, yf, yb = RAIL_T, BAL_Y, -HY
     deck = box(x0, x1, yf, yb, (DECK_Z - BAL_T, DECK_Z),
-               lambda fr, k: uv_patch("trim"), uv_deck, uv_patch("soffit"))
+               lambda fr, k: K.uv_patch("trim"), uv_deck, K.uv_patch("soffit"))
     return [("balcony", deck),
             ("rail_bf", railing(x0, x1, yf, yf + t, DECK_Z, BAL_RAIL_Z)),
             ("rail_bw", railing(x0, x0 + t, yf + t, yb, DECK_Z, BAL_RAIL_Z)),
             ("rail_be", railing(x1 - t, x1, yf + t, yb, DECK_Z, BAL_RAIL_Z))]
 
 
-# ================================================================== roofs
-SLOPE_F = math.sqrt(1.0 + TAN * TAN)            # slope length per horizontal metre
-ROOF_RPM = L.ROOF_H / L.ROOF_SLOPE_LEN           # atlas px per metre up a slope
-
-
-def slab(axis, c, section, kinds, a0, a1, fns):
-    """A closed slab: *section*, (across, z) points, extruded along *axis*
-    from a0 to a1. Each section edge takes the UV function its kind names;
-    the two end caps are the barge boards."""
-    B = Builder()
-
-    def W(a, p, z):
-        return (a, c + p, z) if axis == "x" else (c + p, a, z)
-
-    n = len(section)
-    for k in range(n):
-        (p0, z0_), (p1, z1_) = section[k], section[(k + 1) % n]
-        B.face([W(a0, p0, z0_), W(a0, p1, z1_), W(a1, p1, z1_), W(a1, p0, z0_)],
-               fns[kinds[k]])
-    barge = uv_patch("barge")
-    B.face([W(a0, p, z) for p, z in section], barge)
-    B.face([W(a1, p, z) for p, z in reversed(section)], barge)
-    return B
-
-
-def gable_slab(axis, c, half_w, z_eave, over, a0, a1):
-    """A gable roof as one closed slab: a chevron section extruded along the
-    ridge.
-
-    The section's underside meets the wall face at *z_eave*, so once the slab
-    is unioned with the walls the part outside them is the soffit and the part
-    inside disappears. The vertical ends of the section are the fascias; the
-    two chevron end caps are the barge boards over the gables.
-    """
-    pe = half_w + over
-    z0 = z_eave + ROOF_T + half_w * TAN
-    zt = z0 - pe * TAN
-    sec = [(-pe, zt - ROOF_T), (-pe, zt), (0.0, z0), (pe, zt),
-           (pe, zt - ROOF_T), (0.0, z0 - ROOF_T)]
-    kinds = ("fascia", "slope", "slope", "fascia", "soffit", "soffit")
-
-    def along(co):
-        return co.x if axis == "x" else co.y
-
-    def across(co):
-        return (co.y if axis == "x" else co.x) - c
-
-    def slope_uv(co):
-        d = (pe - abs(across(co))) * SLOPE_F
-        return ((along(co) + 16.0) * PPM, L.ROOF_Y0 + d * ROOF_RPM)
-
-    def fascia_uv(co):
-        return ((along(co) + 16.0) * PPM, L.FASC_Y0 + (co.z - (zt - ROOF_T)) * PPM)
-
-    fns = {"fascia": fascia_uv, "slope": slope_uv, "soffit": uv_patch("soffit")}
-    return slab(axis, c, sec, kinds, a0, a1, fns)
-
-
-def chimney():
-    """The stack: brick sides from inside the roof slab up to a capped rim
-    round one open flue, sunk FLUE_DEPTH and lined and floored in soot. Every
-    tier keeps the recess: painted flush, the soot lies in the sun and reads
-    as dark grey, barely apart from the cap, where the shaded shaft reads
-    black."""
-    x0, x1, y0, y1, zb, zt = CHIMNEY
-    B = Builder()
-    cx0, cy0, cw, ch = L.CHIMNEY
-
-    def side(a, b, z0, z1, fn=None):
-        # a -> b along the face, left to right seen from the side it faces
-        ax, ay = a
-        bx, by = b
-        length = math.hypot(bx - ax, by - ay)
-
-        def brick(co):
-            s = math.hypot(co.x - ax, co.y - ay)
-            return (cx0 + (cw - length * PPM) / 2.0 + s * PPM, cy0 + ch - (zt - co.z) * PPM)
-        B.face([(ax, ay, z0), (bx, by, z0), (bx, by, z1), (ax, ay, z1)], fn or brick)
-
-    w = FLUE_WALL
-    ring = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
-    flue = [(x0 + w, y0 + w), (x1 - w, y0 + w), (x1 - w, y1 - w), (x0 + w, y1 - w)]
-    cap, soot = uv_patch("cap"), uv_patch("flue")
-    for k in range(4):
-        side(ring[k], ring[(k + 1) % 4], zb, zt)
-        B.face([ring[k] + (zt,), ring[(k + 1) % 4] + (zt,),
-                flue[(k + 1) % 4] + (zt,), flue[k] + (zt,)], cap)
-    zf = zt - FLUE_DEPTH
-    # walked the other way round, so the lining faces into the flue
-    for k in range(4):
-        side(flue[(k + 1) % 4], flue[k], zf, zt, soot)
-    B.face([(x, y, zf) for x, y in flue], soot)
-    B.face([(x, y, zb) for x, y in reversed(ring)], uv_patch("blank"))
-    return B
-
-
-def canopy():
-    """The back-door canopy: a thin sloped slab with its back buried in the
-    rear wall. Top samples the roof band, underside the soffit patch, edges
-    the barge patch."""
-    B = Builder()
-    x0, x1 = CANOPY_X
-    zw, ze = CANOPY_Z
-    fall = (zw - ze) / CANOPY_OUT
-    back = -0.10                                   # into the wall
-
-    def top(d):
-        return zw - fall * d
-
-    sec = [(back, top(back)), (CANOPY_OUT, ze), (CANOPY_OUT, ze - CANOPY_T),
-           (back, top(back) - CANOPY_T)]
-    slope_len = math.hypot(CANOPY_OUT, zw - ze)
-
-    def W(x, d, z):
-        return (x, HY + d, z)
-
-    def top_uv(co):
-        d = (CANOPY_OUT - (co.y - HY)) * slope_len / CANOPY_OUT
-        return ((co.x + 16.0) * PPM, L.ROOF_Y0 + d * ROOF_RPM)
-
-    fns = (top_uv, uv_patch("barge"), uv_patch("soffit"), uv_patch("blank"))
-    for k in range(4):
-        (d0, z0), (d1, z1) = sec[k], sec[(k + 1) % 4]
-        B.face([W(x0, d0, z0), W(x0, d1, z1), W(x1, d1, z1), W(x1, d0, z0)], fns[k])
-    B.face([W(x0, d, z) for d, z in sec], uv_patch("barge"))
-    B.face([W(x1, d, z) for d, z in reversed(sec)], uv_patch("barge"))
-    return B
-
-
-def steps(a0, a1, wall, outward, profile, axis="y"):
-    """A flight of steps: *profile* is (distance out from the wall, z),
-    extruded across a0..a1. *axis* is the way the flight runs: "y" off a
-    front or rear wall at y = *wall*, "x" off a side wall at x = *wall*. Its
-    back is buried in the wall it serves."""
-    B = Builder()
-
-    def W(a, d, z):
-        return (a, wall + outward * d, z) if axis == "y" else (wall + outward * d, a, z)
-
-    def across(co):
-        return co.x if axis == "y" else co.y
-
-    def out(co):
-        return ((co.y if axis == "y" else co.x) - wall) * outward
-
-    # risers and cheeks read the plinth's concrete in S1: risers along the
-    # flight's width, cheeks along its run
-    def riser_uv(co):
-        return ((across(co) + 11.0) * PPM, L.S1_Y0 + co.z * PPM)
-
-    def cheek_uv(co):
-        return ((out(co) + 11.0) * PPM, L.S1_Y0 + co.z * PPM)
-
-    n = len(profile)
-    for k in range(n):
-        (d0, z0), (d1, z1) = profile[k], profile[(k + 1) % n]
-        flat = abs(z1 - z0) < EPS
-        fn = uv_patch("tread") if flat and z0 > EPS else (
-            uv_patch("blank") if flat else riser_uv)
-        B.face([W(a0, d0, z0), W(a1, d0, z0), W(a1, d1, z1), W(a0, d1, z1)], fn)
-    B.face([W(a0, d, z) for d, z in profile], cheek_uv)
-    B.face([W(a1, d, z) for d, z in reversed(profile)], cheek_uv)
-    return B
-
-
 # ================================================================ assembly
-
-
 def build_lod(level):
-    base = to_object(house(level), "tmp_house")
-    low = level == 3
+    base = to_object(K.body(level, HOUSE_WALLS, HOUSE_EDGE, U_OFF,
+                            ridges=[[(0.0, -HY, Z_APEX), (0.0, HY, Z_APEX)]]), "tmp_house")
     parts = [
-        to_object(gable_slab("y", 0.0, HX, L.Z_EAVE, EAVE_OV,
-                             -HY - RAKE_OV, HY + RAKE_OV), "tmp_roof"),
-        to_object(chimney(), "tmp_chimney"),
+        to_object(K.gable_slab("y", 0.0, HX, L.Z_EAVE, EAVE_OV,
+                               -HY - RAKE_OV, HY + RAKE_OV), "tmp_roof"),
+        to_object(K.chimney(CHIMNEY), "tmp_chimney"),
     ]
     parts += [to_object(B, "tmp_" + name) for name, B in terrace() + balcony()]
-    if level < 3:
-        parts.append(to_object(canopy(), "tmp_canopy"))
-    parts.append(to_object(steps(*STEPS_X, TERRACE_Y, -1.0, TERRACE_STEP_PROFILE_LOW
-                                 if low else TERRACE_STEP_PROFILE), "tmp_steps_f"))
-    parts.append(to_object(steps(*BACK_STEPS, HY, 1.0, STEP_PROFILE_LOW
-                                 if low else STEP_PROFILE), "tmp_steps_r"))
-    parts += [to_object(B, name) for B, name in
-              DP.solids(DOWNPIPES, *DP.MODES[level], L.PIPE_STRIP, L.ATLAS)]
-    kit = RS.solids(ROOF_KIT, level, RS.Paint(L.ATLAS, strip=L.PIPE_STRIP),
-                    extents=True)
-    bare = RS.MODES[level][0] is None                # the rails alone, clear of all
-    parts += [] if bare else [to_object(B, name) for B, name in kit]
-    parts += [to_object(B, name) for B, name in
-              HR.solids(HANDRAILS, level, RS.Paint(L.ATLAS, strip=L.PIPE_STRIP))]
-    obj = union(base, parts)
-    obj.name = "{}_LOD{}".format(ASSET, level)
-    obj.data.name = obj.name + "_mesh"
-
-    bm = bmesh.new()
-    bm.from_mesh(obj.data)
-    bmesh.ops.remove_doubles(bm, verts=bm.verts[:], dist=1e-5)
-    bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
-    if level >= 2:
-        # Recover the cost of persistent corner paint from coplanar boolean
-        # subdivisions. Keep UV/material seams and every architectural edge.
-        # 0.001 radians tolerates float noise on nominally planar faces.
-        bmesh.ops.dissolve_limit(
-            bm, angle_limit=0.001, verts=bm.verts[:], edges=bm.edges[:],
-            delimit={'UV', 'MATERIAL'})
-    bm.to_mesh(obj.data)
-    bm.free()
-    if bare:
-        # after the weld and the dissolve, whose greedy passes the extra faces
-        # would otherwise reorder
-        RS.append(obj, kit)
-    return obj
-
-
-def all_walls():
-    """Every wall of the house, as (name, frame, profile, openings, corners,
-    bands)."""
-    for name, p0, p1, top, items, corners, bands in HOUSE_WALLS:
-        fr = InwardFrame(p0, p1)
-        yield name, fr, wall_profile(top, fr.L), items, corners, bands
+    return K.tier(level, base, parts, STEPS, (CANOPY_X, HY), DOWNPIPES, ROOF_KIT, HANDRAILS,
+                  kit_extents=True)
 
 
 def check_layout():
     """Assert the constraints that are invisible in the numbers and obvious
-    once rendered:
-    - openings colliding, clipping a roof or a corner board, or straddling a
-      band change;
-    - the gable outgrowing its atlas band, or its belt missing the fascia line;
+    once rendered: the family's (openings colliding, clipping a roof or a
+    corner board, or straddling a band change; the gable outgrowing its
+    atlas band; the canopy, the flue) and this house's:
+    - the gables' belt missing the fascia line;
     - something standing against the front gable across an opening;
     - the balcony missing the doors it serves;
     - the terrace's steps off the door's centre line or crowding a corner;
-    - the back canopy missing its door."""
-    problems = []
-    if Z_APEX - L.Z_BELT > L.S2_SPAN:
-        problems.append("gable apex %.2f is above the S2 band's %.2f"
-                        % (Z_APEX, L.Z_BELT + L.S2_SPAN))
-    slope = (HX + EAVE_OV) * SLOPE_F
-    if abs(slope - L.ROOF_SLOPE_LEN) > 1e-3:
-        problems.append("main slope is %.3f m, atlas assumes %.3f" % (slope, L.ROOF_SLOPE_LEN))
+    - the back canopy running into the belt;
+    - the downpipes, the wall ladder and the walkway out of place."""
+    problems = K.apex_problems(Z_APEX) + K.slope_problems(HX)
     fascia_foot = L.Z_EAVE - EAVE_OV * TAN
     if abs(L.Z_BELT - fascia_foot) > EPS:
         problems.append("the gables' belt at %.2f is off the fascia's lower edge at %.2f"
                         % (L.Z_BELT, fascia_foot))
-
-    gap = 0.05
-    for name, fr, prof, items, (c0, c1), bands in all_walls():
-        splits = [z0 for z0, _, _ in bands[1:]]
-        rects = [(k, item_rects(k, s, z)[0]) for k, s, z in items]
-        for k, (l, r, b, t) in rects:
-            lo = (L.CW if c0 else 0.0) + gap
-            hi = fr.L - (L.CW if c1 else 0.0) - gap
-            if l < lo or r > hi:
-                problems.append("%s: %s at s %.2f..%.2f runs into a corner" % (name, k, l, r))
-            for s in (l, r):
-                vis = profile_z(prof, s) - (L.Z_WALL_TOP - L.Z_EAVE)
-                if t > vis - gap:
-                    problems.append("%s: %s top %.2f is under the roof (%.2f)" % (name, k, t, vis))
-            for sp in splits:
-                if b < sp < t:
-                    problems.append("%s: %s straddles the band change at %.2f" % (name, k, sp))
-            if b < L.Z_FLASH < t and not k.startswith("door"):
-                problems.append("%s: %s straddles the plinth top" % (name, k))
-        for i in range(len(rects)):
-            for j in range(i + 1, len(rects)):
-                if overlap(rects[i][1], rects[j][1], gap):
-                    problems.append("%s: %s and %s overlap" % (name, rects[i][0], rects[j][0]))
+    problems += K.opening_problems(HOUSE_WALLS)
 
     # What stands against the front gable, as (x0, x1, z0, z1). It may not
     # cover any part of an opening's casing.
@@ -785,14 +328,14 @@ def check_layout():
         "balcony's east railing": (BAL_X[1] - RAIL_T, BAL_X[1], DECK_Z, BAL_RAIL_Z),
     }
     for k, s, z in FRONT_ITEMS:
-        l, r, b, t = item_rects(k, s, z)[0]
+        l, r, b, t = K.item_rects(k, s, z)[0]
         for what, (x0, x1, z0, z1) in contacts.items():
             if l - HX < x1 and x0 < r - HX and b < z1 and z0 < t:
                 problems.append("front: the %s stands across the %s" % (what, k))
 
     # The balcony roofs the front door, and holds the balcony doors between
     # its railings with room to step out.
-    l, r, b, t = item_rects("door_front", HX, L.Z_FLOOR)[0]
+    l, r, b, t = K.item_rects("door_front", HX, L.Z_FLOOR)[0]
     if not (BAL_X[0] < l - HX and r - HX < BAL_X[1]):
         problems.append("the balcony does not cover the front door")
     if DECK_Z - BAL_T < t + 0.30:
@@ -803,7 +346,7 @@ def check_layout():
         problems.append("the terrace steps are narrower than the front door's casing")
     if DECK_Z - BAL_T - TERRACE_Z < 2.2:
         problems.append("the balcony is below head height over the terrace")
-    l, r, b, t = item_rects("door_balcony", HX, BAL_DOOR_SILL)[0]
+    l, r, b, t = K.item_rects("door_balcony", HX, BAL_DOOR_SILL)[0]
     if not (BAL_X[0] + RAIL_T + 0.30 < l - HX and r - HX < BAL_X[1] - RAIL_T - 0.30):
         problems.append("the balcony doors are not well inside its railings")
     if TERRACE_Z > L.Z_FLOOR - 0.02:
@@ -816,22 +359,14 @@ def check_layout():
     if max(risers) - min(risers) > 1e-6:
         problems.append("the terrace steps' risers differ: %s" % risers)
 
-    l, r, b, t = next(item_rects(k, s, z)[0] for k, s, z in REAR_ITEMS if k == "door_back")
-    cx = sorted(HX - v for v in (l, r))              # rear gable: s = 4 - x
-    if not (CANOPY_X[0] < cx[0] and cx[1] < CANOPY_X[1]):
-        problems.append("back canopy does not cover the door casing")
-    if CANOPY_Z[0] - CANOPY_T < t + 0.10:
-        problems.append("back canopy meets the wall on top of the door casing")
-    if CANOPY_Z[1] - CANOPY_T - STEP_PROFILE[2][1] < 2.2:
-        problems.append("back canopy's edge is below head height over the landing")
+    door = next(K.item_rects(k, s, z)[0] for k, s, z in REAR_ITEMS if k == "door_back")
+    problems += K.canopy_problems(WALLS["rear"], door, CANOPY_X)
     if CANOPY_Z[0] > L.Z_BELT - 0.20:
         problems.append("back canopy runs into the gable's belt")
-    if CHIMNEY[5] - FLUE_DEPTH < Z_RIDGE + 0.05:
-        problems.append("the flue's floor is down in the roof slab")
+    problems += K.flue_problems(CHIMNEY, Z_RIDGE)
     # downpipes clear of the corners and the openings, and behind the terrace
-    walls = {w[0]: w for w in HOUSE_WALLS}
     for (w, _s), pipe in zip(DOWNPIPE_SPOTS, DOWNPIPES):
-        avoid = [(k,) + item_rects(k, c, z)[0][:2] for k, c, z in walls[w][4]]
+        avoid = [(k,) + K.item_rects(k, c, z)[0][:2] for k, c, z in WALLS[w].items]
         problems += DP.problems(pipe, "the %s downpipe" % w, avoid)
         if pipe.point(0.0, 0.0, 0.0).y - DP.A < -HY + EPS:
             problems.append("the %s downpipe stands in the terrace" % w)
@@ -839,14 +374,12 @@ def check_layout():
     # openings and downpipe; the walkway beside the stack, clear of it and of
     # the ridge
     wall = ROOF_KIT[0]
-    avoid = [(k,) + item_rects(k, c, z)[0][:2] for k, c, z in WEST[4]]
+    avoid = [(k,) + K.item_rects(k, c, z)[0][:2] for k, c, z in WEST.items]
     avoid += [("downpipe", p.s - DP.A, p.s + DP.A)
               for (w, _s), p in zip(DOWNPIPE_SPOTS, DOWNPIPES) if w == "west"]
     problems += RS.problems(wall, "the wall ladder", avoid)
-    problems += HR.problems(HANDRAILS[0], "the terrace handrail",
-                            L.OPENINGS["door_front"][0])
-    problems += HR.problems(HANDRAILS[1], "the back handrail",
-                            L.OPENINGS["door_back"][0])
+    problems += HR.problems(HANDRAILS[0], "the terrace handrail", L.OPENINGS["door_front"][0])
+    problems += HR.problems(HANDRAILS[1], "the back handrail", L.OPENINGS["door_back"][0])
     if abs(TERRACE_RAIL_Z - (TERRACE_Z + HR.HEIGHT)) > 1e-6:
         problems.append("the terrace handrail does not meet the railing's top")
     walk = ROOF_KIT[2]
@@ -875,35 +408,19 @@ def facts():
     is an open deck in front of them and the balcony a slab off the gable, so
     neither is wall outline or storey area. The attic counts where the roof's
     underside is 1.6 m or more over its floor."""
-    walls = {w[0]: w for w in HOUSE_WALLS}
-
-    def door(door_id, kind, wall, item, main=False):
-        p0, p1, items = walls[wall][1], walls[wall][2], walls[wall][4]
-        s, z = next((s, z) for k, s, z in items if k == item)
-        w, h = L.OPENINGS[item][:2]
-        return model_facts.wall_door(door_id, kind, p0, p1, s, z, w, h, main)
-
     attic_w = model_facts.roof_clear_width(2 * HX, Z_ATTIC, L.Z_EAVE, TAN)
     return {
         "hero": False,
         "dwellings": 1,
         "footprint": [(-HX, HY), (-HX, -HY), (HX, -HY), (HX, HY)],
         "storeys": [(L.Z_FLOOR, 2 * HX * 2 * HY), (Z_ATTIC, attic_w * 2 * HY)],
-        "doors": [door("front", "entrance", "front", "door_front", main=True),
-                  door("back", "service", "rear", "door_back"),
-                  door("balcony", "balcony", "front", "door_balcony")],
+        "doors": [K.door(WALLS, "front", "entrance", "front", "door_front", main=True),
+                  K.door(WALLS, "back", "service", "rear", "door_back"),
+                  K.door(WALLS, "balcony", "balcony", "front", "door_balcony")],
     }
 
-# ================================================================ previews
 
-
-def render_views(out_dir, level=0, res=(1400, 1000)):
-    """The six working views CLAUDE.md asks for before export
-    (shell_build.render_views()): four orthographic elevations, a plan from
-    above, and a raised three-quarter aerial off the front corner. Working
-    views only — not committed."""
-    return SB.render_views(BUILD, out_dir, level, res, distance=60.0)
-
+render_views = K.render_views
 
 if __name__ == "__main__":
     BUILD.main(build_all, facts)
