@@ -3,7 +3,7 @@
   "version": 1,
   "name": "rintamamiestalo_gable_entry",
   "path": "buildings/residential/rintamamiestalo_gable_entry",
-  "source": {"commit": "4552f759bcf8beb73335020471cbf928e55f7026", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "0c16105c2723611ffd58b53741494837e7ce9067", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-4.54, 0.0, -7.49], "max": [4.54, 9.5625, 7.49]},
   "footprint": [
