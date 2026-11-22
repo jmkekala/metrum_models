@@ -3,7 +3,7 @@
   "version": 1,
   "name": "rintamamiestalo_balcony",
   "path": "buildings/residential/rintamamiestalo_balcony",
-  "source": {"commit": "03ed1dbfc5db7ef3285ad85fc20d2f8f5dcf979d", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "fc7e5922e3556284b560fc3c6ea940650510c546", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-5.35, 0.0, -7.04], "max": [5.35, 9.5625, 7.04]},
   "footprint": [
