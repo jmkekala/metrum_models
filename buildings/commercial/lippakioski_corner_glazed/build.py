@@ -24,8 +24,8 @@ soffit along the right half of the front, round the corner in facets and
 along the front of the serving side, with folding shutter leaves stacked open
 at each end. The customer door is at the left end of the front, a glazed
 leaf with a transom light over it; the staff door is at the rear under a wall
-lamp. A lit KIOSKI board stands on the canopy's front edge and a small lit
-panel sits on the side fascia; the soffit carries three downlights. A
+lamp. A lit KIOSKI board stands on two short posts over the canopy's front
+edge; three drum downlights hang under the soffit. A
 newspaper rack, two poster cases, a wall bench and a litter bin on a post
 dress it, all under the canopy.
 
@@ -84,7 +84,11 @@ BIN_AT, BIN_R, BIN_Z = (-0.35, -2.55), 0.17, (0.50, 1.00)
 POST_R = 0.035
 LAMP = (STAFF_X - 0.08, STAFF_X + 0.08, 2.38, 2.52, 0.14)   # x0, x1, z0, z1, out
 SIGN_X = 0.5 * ((L.CX0 + L.R_CANOPY["fl"]) + (L.CX1 - L.R_CANOPY["fr"]))
-SIGN_SET, SIGN_T, SIGN_BURY = 0.06, 0.10, 0.08
+SIGN_SET, SIGN_T = 0.01, 0.07           # the board's face behind the canopy's edge; depth
+SIGN_POST = 0.04                         # the stand-offs' square section
+SIGN_POST_IN = 0.40                      # each post's centre in from the board's end
+SIGN_POST_Y = 0.04                       # the posts' centre behind the edge, on the rim
+SIGN_BURY = 0.04                         # the posts' foot into the canopy's rim
 SHELF_OUT, SHELF_IN, SHELF_T, SHELF_EAR = 0.30, 0.05, 0.04, 0.05
 SHELF_TOP = L.Z_COUNTER - 0.01
 DOOR_CLEAR = (2.0, 2.0)   # depth, width kept clear in front of the customer door
@@ -109,9 +113,9 @@ def kept(level, what):
     """Which attached pieces each tier keeps (notes.md, Per-tier triangle
     counts): the counter through LOD1, the shutters through LOD2, the
     small furniture fading out from LOD1."""
-    return level <= {"counter": 1, "shutters": 2, "rack": 1, "bench": 1,
-                     "bench_legs": 0, "bin": 1, "lamp": 1, "well": 2,
-                     "sign": 3}[what]
+    return level <= {"counter": 1, "shutters": 2, "shutter_leaves": 1, "rack": 1,
+                     "bench": 1, "bench_legs": 0, "bin": 1, "lamp": 1, "well": 2,
+                     "sign": 3, "downlights": 1}[what]
 
 
 # ============================================================== mesh builder
@@ -460,8 +464,8 @@ def canopy(level):
     directly as a closed solid: the fascia round it, the soffit under it,
     and on top the galvanised rim round the felt deck sunk to Z_DECK behind
     it (LOD3: one flat top). The fascia's straight run on the serving side
-    samples the side sign region; every other edge the fascia band, U
-    running round the outline."""
+    samples the fascia band like every other edge, U running round the
+    outline."""
     outer, kinds = rounded_outline(L.CX0, L.CY0, L.CX1, L.CY1, L.R_CANOPY, level)
     B = Builder()
     n = len(outer)
@@ -474,16 +478,10 @@ def canopy(level):
         a, b = outer[i], outer[(i + 1) % n]
         ln = math.hypot(b[0] - a[0], b[1] - a[1])
         cos = [(a[0], a[1], z0), (b[0], b[1], z0), (b[0], b[1], z1), (a[0], a[1], z1)]
-        if kinds[i] == "right":
-            x, y, _w, _h = L.SIDE_SIGN
-            ys = L.CY0 + L.R_CANOPY["fr"]
-            uvs = [(x + (co[1] - ys) * L.SIGN_PPM, y + (co[2] - z0) * L.SIGN_PPM)
-                   for co in cos]
-        else:
-            uvs = [(u * PPM, L.FASCIA_Y0),
-                   ((u + ln) * PPM, L.FASCIA_Y0),
-                   ((u + ln) * PPM, L.FASCIA_Y0 + L.FASCIA_H),
-                   (u * PPM, L.FASCIA_Y0 + L.FASCIA_H)]
+        uvs = [(u * PPM, L.FASCIA_Y0),
+               ((u + ln) * PPM, L.FASCIA_Y0),
+               ((u + ln) * PPM, L.FASCIA_Y0 + L.FASCIA_H),
+               (u * PPM, L.FASCIA_Y0 + L.FASCIA_H)]
         B.face(cos, uvs)
         u += ln
     B.face([(x, y, z0) for x, y in reversed(outer)], uv_plan(L.SOFFIT, PPM))
@@ -542,15 +540,52 @@ def prism(B, ring, z0, z1, side, top, bottom):
     return B
 
 
+def sign_z():
+    """The board's foot and top."""
+    z0 = L.Z_TOP + L.SIGN_GAP
+    return z0, z0 + L.SIGN_H
+
+
 def sign():
-    """The lit board on the canopy's front edge: SIGN_W x SIGN_H showing
-    above the fascia, its face SIGN_SET behind the canopy's edge, its foot
-    sunk into the slab below the deck so the union seats it."""
+    """The lit board over the canopy's front edge: a slim box SIGN_W x
+    SIGN_H, galvanised round its edges, its face SIGN_SET behind the
+    canopy's edge, standing SIGN_GAP clear of the flashing on two short
+    square posts whose feet are sunk into the canopy's rim."""
     hw = L.SIGN_W / 2.0
     y0 = L.CY0 + SIGN_SET
-    face = face_uv(L.SIGN, "x", SIGN_X - hw, L.Z_TOP, L.SIGN_PPM)
-    return box(SIGN_X - hw, SIGN_X + hw, y0, y0 + SIGN_T, L.Z_TOP - SIGN_BURY,
-               L.Z_TOP + L.SIGN_H, {"*": patch("sign_edge"), "-y": face})
+    z0, z1 = sign_z()
+    face = face_uv(L.SIGN, "x", SIGN_X - hw, z0, L.SIGN_PPM)
+    parts = [box(SIGN_X - hw, SIGN_X + hw, y0, y0 + SIGN_T, z0, z1,
+                 {"*": patch("flash"), "+y": patch("sign_edge"), "-y": face})]
+    p = SIGN_POST / 2.0
+    yc = L.CY0 + SIGN_POST_Y
+    for xc in (SIGN_X - hw + SIGN_POST_IN, SIGN_X + hw - SIGN_POST_IN):
+        parts.append(box(xc - p, xc + p, yc - p, yc + p, L.Z_TOP - SIGN_BURY, z0 + 0.02,
+                         {"*": patch("flash")}))
+    return parts
+
+
+def downlights(level):
+    """The soffit's three surface-mounted drum lamps: a white housing over
+    an opal band and an opal base, the housing's top sunk 0.02 m into the
+    slab so the union seats it."""
+    n = 12 if level == 0 else 8
+    zb, zl = L.DOWNLIGHT_Z
+    zt = L.Z_SOFFIT + 0.02
+    r = L.DOWNLIGHT_R
+    out = []
+    for x, y in L.DOWNLIGHTS:
+        B = Builder()
+        ring = [(x + r * math.cos(2 * math.pi * (k + 0.5) / n),
+                 y + r * math.sin(2 * math.pi * (k + 0.5) / n)) for k in range(n)]
+        for k in range(n):
+            (ax, ay), (bx, by) = ring[k], ring[(k + 1) % n]
+            B.face([(ax, ay, zb), (bx, by, zb), (bx, by, zl), (ax, ay, zl)], patch("light"))
+            B.face([(ax, ay, zl), (bx, by, zl), (bx, by, zt), (ax, ay, zt)], patch("fitting"))
+        B.face([(px, py, zt) for px, py in ring], patch("fitting"))
+        B.face([(px, py, zb) for px, py in reversed(ring)], patch("light"))
+        out.append(B)
+    return out
 
 
 def counter(level):
@@ -591,24 +626,71 @@ def counter(level):
     return B
 
 
-def shutters():
-    """The folding shutter leaves, stacked open flat against the wall at
-    each end of the band: two closed boxes, 0.02 m into the wall."""
-    w, t, z0, z1 = L.SHUTTER
-    edge = L.SHUTTER_EDGE
-    face = L.SHUTTER_FACE
-    x1 = SHUTTER_FRONT_X1
-    front = box(x1 - w, x1, L.WY0 - t, L.WY0 + 0.02, z0, z1,
-                {"*": patch("shutter_top"),
-                 "-y": face_uv(face, "x", x1 - w, z0),
-                 "+x": face_uv(edge, "y", L.WY0 + 0.02, z0, flip=True),
-                 "-x": face_uv(edge, "y", L.WY0 - t, z0)})
-    y0 = SHUTTER_SIDE_Y0
-    side = box(L.WX1 - 0.02, L.WX1 + t, y0, y0 + w, z0, z1,
-               {"*": patch("shutter_top"),
-                "+x": face_uv(face, "y", y0 + w, z0, flip=True),
-                "-y": face_uv(edge, "x", L.WX1 - 0.02, z0),
-                "+y": face_uv(edge, "x", L.WX1 + t, z0, flip=True)})
+def shutter_stack(p0, along, out, level):
+    """One stack of folded shutter leaves on a wall: *p0* the stack's end on
+    the wall plane, *along* the wall, *out* its outward normal (plan unit
+    vectors). At LOD0/LOD1 the stack is stepped (L.SHUTTER_LAYERS): a hinge
+    rail set back from both edges, so a shadow gap shows between the leaves
+    and the wall, then three leaves, each a little narrower; from LOD2 it is
+    one block. One closed prism over the stepped plan outline. Faces facing
+    out sample the stack's front elevation, faces facing along the wall its
+    side, faces facing the wall and the ends a dark patch."""
+    w, _t, z0, z1 = L.SHUTTER
+    layers = L.SHUTTER_LAYERS if kept(level, "shutter_leaves") else ((0.0, -0.02, 0.10),)
+    # the stepped outline in (a along, t out), going round one way
+    right = []
+    for inset, t0, t1 in layers:
+        right += [(w - inset, t0), (w - inset, t1)]
+    left = [(w - a, t) for a, t in reversed(right)]
+    loop = right + left
+    P = lambda a, t: (p0[0] + along[0] * a + out[0] * t,  # noqa: E731
+                      p0[1] + along[1] * a + out[1] * t)
+    ring = [P(a, t) for a, t in loop]
+    # the loop runs counter-clockwise in (a, t): a stretch of constant t
+    # faces out where a falls along it. Reversed to run counter-clockwise
+    # in plan, that becomes where a rises.
+    area = sum(ax * by - bx * ay for (ax, ay), (bx, by) in zip(ring, ring[1:] + ring[:1]))
+    out_sign = -1.0
+    if area < 0.0:
+        ring.reverse()
+        loop.reverse()
+        out_sign = 1.0
+
+    face, edge = L.SHUTTER_FACE, L.SHUTTER_EDGE
+
+    def local(co):
+        dx, dy = co.x - p0[0], co.y - p0[1]
+        return dx * along[0] + dy * along[1], dx * out[0] + dy * out[1]
+
+    def uv_face(co):
+        a, _ = local(co)
+        return face[0] + a * PPM, face[1] + (co.z - z0) * PPM
+
+    def uv_edge(co):
+        _, t = local(co)
+        return edge[0] + (t + 0.02) * PPM, edge[1] + (co.z - z0) * PPM
+
+    B = Builder()
+    n = len(ring)
+    for k in range(n):
+        (a0, t0), (a1, t1) = loop[k], loop[(k + 1) % n]
+        (ax, ay), (bx, by) = ring[k], ring[(k + 1) % n]
+        if abs(t1 - t0) < EPS:                   # faces out, or toward the wall
+            uv = uv_face if (a1 - a0) * out_sign > 0 else patch("shutter_top")
+        else:
+            uv = uv_edge
+        B.face([(ax, ay, z0), (bx, by, z0), (bx, by, z1), (ax, ay, z1)], uv)
+    B.face([(x, y, z1) for x, y in ring], patch("shutter_top"))
+    B.face([(x, y, z0) for x, y in reversed(ring)], patch("shutter_top"))
+    return B
+
+
+def shutters(level):
+    """The folding shutter leaves, stacked open against the wall at each end
+    of the band, their hinge rails 0.02 m into the wall."""
+    w = L.SHUTTER[0]
+    front = shutter_stack((SHUTTER_FRONT_X1 - w, L.WY0), (1.0, 0.0), (0.0, -1.0), level)
+    side = shutter_stack((L.WX1, SHUTTER_SIDE_Y0 + w), (0.0, -1.0), (1.0, 0.0), level)
     return [front, side]
 
 
@@ -654,10 +736,11 @@ def litter_bin(level):
 
 def lamp():
     """The wall lamp over the staff door: a small graphite bulkhead, its
-    lens on its face and its underside."""
+    opal lens in the lower part of its face and on its underside."""
     x0, x1, z0, z1, out = LAMP
     return box(x0, x1, L.WY1 - 0.02, L.WY1 + out, z0, z1,
-               {"*": patch("lamp"), "bottom": patch("lens"), "+y": patch("lens")})
+               {"*": patch("lamp"), "bottom": patch("lens"),
+                "+y": face_uv(L.LAMP_FACE, "x", x1, z0, flip=True)})
 
 
 # ================================================================ assembly
@@ -665,11 +748,13 @@ def build_lod(level):
     body = to_object(main_body(level), "tmp_body")
     parts = [to_object(canopy(level), "tmp_canopy")]
     if kept(level, "sign"):
-        parts.append(to_object(sign(), "tmp_sign"))
+        parts += [to_object(b, "tmp_sign") for b in sign()]
+    if kept(level, "downlights"):
+        parts += [to_object(b, "tmp_downlight") for b in downlights(level)]
     if kept(level, "counter"):
         parts.append(to_object(counter(level), "tmp_counter"))
     if kept(level, "shutters"):
-        parts += [to_object(b, "tmp_shutter") for b in shutters()]
+        parts += [to_object(b, "tmp_shutter") for b in shutters(level)]
     if kept(level, "rack"):
         parts.append(to_object(rack(), "tmp_rack"))
     if kept(level, "bench"):
@@ -751,8 +836,27 @@ def check_layout():
     hw = L.SIGN_W / 2.0
     if SIGN_X - hw < L.CX0 + L.R_CANOPY["fl"] or SIGN_X + hw > L.CX1 - L.R_CANOPY["fr"]:
         bad.append("the sign board runs onto the canopy's rounded corners")
-    if L.Z_TOP - SIGN_BURY > L.Z_DECK:
-        bad.append("the sign board's foot does not reach below the deck")
+    p = SIGN_POST / 2.0
+    if SIGN_POST_Y - p < 0.005 or SIGN_POST_Y + p > L.RIM - 0.005:
+        bad.append("the sign's posts do not stand on the canopy's rim")
+    if SIGN_POST_Y - p < SIGN_SET or SIGN_POST_Y + p > SIGN_SET + SIGN_T:
+        bad.append("the sign's posts are not under the board")
+    if L.SIGN_GAP < 0.06:
+        bad.append("the gap under the sign board is too thin to show")
+    if L.SIGN_CAP + 0.04 > L.SIGN_H - 2 * L.SIGN_FRAME:
+        bad.append("the sign's capitals crowd its frame")
+    if (max(t1 for _i, _t0, t1 in L.SHUTTER_LAYERS) != L.SHUTTER[1]
+            or min(t0 for _i, t0, _t1 in L.SHUTTER_LAYERS) != -0.02
+            or max(i for i, _t0, _t1 in L.SHUTTER_LAYERS) * 2 >= L.SHUTTER[0]):
+        bad.append("the shutter leaves' layers leave the stack's box")
+    zb, zl = L.DOWNLIGHT_Z
+    if not zb < zl < L.Z_SOFFIT or zb < L.Z_HEAD - 0.10:
+        bad.append("the downlights' heights are out of order")
+    for x, y in L.DOWNLIGHTS:
+        dx = max(L.WX0 - x, x - L.WX1, 0.0)
+        dy = max(L.WY0 - y, y - L.WY1, 0.0)
+        if math.hypot(dx, dy) < L.DOWNLIGHT_R + 0.10:
+            bad.append("a downlight is too near the wall")
     if SHELF_TOP >= L.Z_COUNTER:
         bad.append("the counter does not sit under the band's sill")
     w, d = L.CX1 - L.CX0, L.CY1 - L.CY0
@@ -764,7 +868,10 @@ def check_layout():
             (L.BAND, (L.BAND_LEN, L.Z_HEAD - L.Z_COUNTER), PPM, "band"),
             (L.DOOR, L.DOOR_SIZE, PPM, "door"), (L.STAFF, L.STAFF_SIZE, PPM, "staff"),
             (L.SIGN, (L.SIGN_W, L.SIGN_H), L.SIGN_PPM, "sign"),
-            (L.SIDE_SIGN, (L.SIDE_SIGN_LEN, L.Z_TOP - L.Z_SOFFIT), L.SIGN_PPM, "side sign")):
+            (L.SHUTTER_FACE, (L.SHUTTER[0], L.SHUTTER[3] - L.SHUTTER[2]), PPM, "shutter face"),
+            (L.SHUTTER_EDGE, (L.SHUTTER[1] + 0.02, L.SHUTTER[3] - L.SHUTTER[2]), PPM,
+             "shutter edge"),
+            (L.LAMP_FACE, (LAMP[1] - LAMP[0], LAMP[3] - LAMP[2]), PPM, "lamp face")):
         if abs(rect[2] - wm * ppm) > 0.5 or abs(rect[3] - hm * ppm) > 0.5:
             bad.append("the %s region is %.1f x %.1f px for %.2f x %.2f m"
                        % (what, rect[2], rect[3], wm, hm))

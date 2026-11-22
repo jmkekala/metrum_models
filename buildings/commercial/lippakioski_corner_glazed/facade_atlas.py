@@ -22,8 +22,9 @@ bands and a set of unique regions:
     fascia band   rows 198-217, the canopy's 0.30 m edge: ribs in the wall
                   colour, a galvanised edge flashing along the top.
     regions       the soffit and the roof deck (plan-mapped), the glazing
-                  band, the doors, the posters, the shutters, the rack, the
-                  bench, the sign board and the side fascia's sign panel.
+                  band, the doors, the posters, the shutter stack's front
+                  and side, the rack, the bench, the wall lamp's face and
+                  the sign board's face.
 
 Rasterising is scripts/atlas.py's (supersampled canvas, height channel for
 the normal map); weathering is scripts/weathering.py's; the panes are
@@ -31,8 +32,9 @@ scripts/glazing.py's rooms() by day and night_rooms() by night, with the
 kiosk's goods on their shelves painted into the room afterwards (albedo
 only).
 
-Density is 64 texels/metre everywhere a person looks, except the two sign
-faces at 128 (their lettering) and the roof deck at 32, seen only from above.
+Density is 64 texels/metre everywhere a person looks, except the sign
+board's face at 128 (its lettering) and the roof deck at 32, seen only from
+above.
 """
 
 import os
@@ -116,11 +118,20 @@ DOOR_DEPTH, STAFF_DEPTH = 0.10, 0.06
 
 # attached furniture
 SHUTTER = (0.52, 0.10, 1.08, 2.88)       # width, thickness, z0, z1 (into the soffit)
+# The folded stack, wall outward: a hinge rail set back from both edges
+# (the shadow gap), then three leaves, each a little narrower than the one
+# behind it, so their edges step. (half-width inset from the stack's edge,
+# out0, out1), metres from the wall plane.
+SHUTTER_LAYERS = ((0.05, -0.02, 0.025), (0.0, 0.025, 0.05),
+                  (0.012, 0.05, 0.075), (0.024, 0.075, 0.10))
 RACK = (0.60, 0.20, 0.40, 1.35)          # width, depth, z0, z1
 BENCH = (2.0, 0.32, 0.42, 0.47)          # length, depth, z0, z1
-SIGN_W, SIGN_H = 2.2, 0.46               # the lit board on the canopy's front edge
-SIDE_SIGN_LEN = (CY1 - R_CANOPY["rr"]) - (CY0 + R_CANOPY["fr"])   # 3.75
-SIDE_PANEL = (1.60, 0.22)                # the lit panel on the side fascia
+# The lit board: a slim galvanised-framed box standing on two short posts
+# over the canopy's front edge, a gap between it and the flashing.
+SIGN_W, SIGN_H = 2.8, 0.42
+SIGN_GAP = 0.10                          # clear between the fascia top and the board
+SIGN_CAP = 0.32                          # KIOSKI's cap height as seen, strokes included
+SIGN_STYLE = "dark"                      # "dark": lit letters; "cream": a lit face (notes.md)
 
 
 def m(v):
@@ -142,27 +153,28 @@ STAFF = (444.0, 406.0, m(STAFF_SIZE[0]), m(STAFF_SIZE[1]))             # 66.6 x 
 POSTER_A = (518.0, 406.0, m(POSTER_SIZE[0]), m(POSTER_SIZE[1]))        # 44.8 x 71.7
 POSTER_B = (570.0, 406.0, m(POSTER_SIZE[0]), m(POSTER_SIZE[1]))
 SHUTTER_FACE = (622.0, 406.0, m(SHUTTER[0]), m(SHUTTER[3] - SHUTTER[2]))   # 33.3 x 110.1
-SHUTTER_EDGE = (662.0, 406.0, m(SHUTTER[1]), m(SHUTTER[3] - SHUTTER[2]))   # 6.4 x 110.1
+# the stack's side faces, U = metres out from 0.02 m inside the wall
+SHUTTER_EDGE = (662.0, 406.0, m(SHUTTER[1] + 0.02), m(SHUTTER[3] - SHUTTER[2]))  # 7.7 x 115
 RACK_FACE = (676.0, 406.0, m(RACK[0]), m(RACK[3] - RACK[2]))               # 38.4 x 60.8
 BENCH_TOP = (722.0, 406.0, m(BENCH[0]), m(BENCH[1]))                       # 128 x 20.5
-SIGN = (4.0, 576.0, SIGN_W * SIGN_PPM, SIGN_H * SIGN_PPM)                  # 281.6 x 58.9
-SIDE_SIGN = (4.0, 642.0, SIDE_SIGN_LEN * SIGN_PPM, FASCIA_H * 2.0)         # 480 x 38.4
+LAMP_FACE = (722.0, 432.0, m(0.16), m(0.14))                              # 10.2 x 9.0
+SIGN = (4.0, 576.0, SIGN_W * SIGN_PPM, SIGN_H * SIGN_PPM)                  # 358.4 x 53.8
 
 PATCH_NAMES = ("blank", "reveal", "flash", "steel", "bin", "post", "lamp",
-               "lens", "timber", "shutter_top", "sign_edge")
+               "lens", "timber", "shutter_top", "sign_edge", "light", "fitting")
 PATCHES = {n: (4.0 + 20.0 * i, 690.0, 16.0, 16.0) for i, n in enumerate(PATCH_NAMES)}
 
 REGIONS = {"soffit": SOFFIT, "deck": DECK, "band": BAND, "door": DOOR,
            "staff": STAFF, "poster_a": POSTER_A, "poster_b": POSTER_B,
            "shutter_face": SHUTTER_FACE, "shutter_edge": SHUTTER_EDGE,
-           "rack": RACK_FACE, "bench": BENCH_TOP, "sign": SIGN,
-           "side_sign": SIDE_SIGN}
+           "rack": RACK_FACE, "bench": BENCH_TOP, "lamp_face": LAMP_FACE, "sign": SIGN}
 
 # ------------------------------------------------------------ material ids
 (ID_BLANK, ID_PLINTH, ID_BOARD, ID_FLASH, ID_SOFFIT, ID_FELT, ID_FRAME,
  ID_GLASS, ID_DOOR, ID_STEEL, ID_SIGN, ID_SIGN_T, ID_LIGHT, ID_POSTER,
  ID_POSTER_A, ID_POSTER_B, ID_POSTER_C, ID_SHUTTER, ID_TIMBER, ID_BIN,
- ID_MAG_A, ID_MAG_B, ID_MAG_C, ID_LAMP, ID_SEAL) = range(25)
+ ID_MAG_A, ID_MAG_B, ID_MAG_C, ID_LAMP, ID_SEAL, ID_FITTING, ID_SIGN_LIT,
+ ID_HINGE) = range(28)
 
 # (roughness, metallic). Powder-coated frames, painted boards and steel are
 # dielectric; galvanised flashing and the stainless counter are metal.
@@ -173,15 +185,17 @@ SURFACE = {
     ID_DOOR: (0.52, 0.0), ID_STEEL: (0.28, 0.90), ID_SIGN: (0.30, 0.0),
     ID_SIGN_T: (0.20, 0.0), ID_LIGHT: (0.20, 0.0), ID_POSTER: (0.55, 0.0),
     ID_POSTER_A: (0.55, 0.0), ID_POSTER_B: (0.55, 0.0), ID_POSTER_C: (0.55, 0.0),
-    ID_SHUTTER: (0.70, 0.0), ID_TIMBER: (0.78, 0.0), ID_BIN: (0.50, 0.0),
+    # the shutter leaves are enamelled, a sheen apart from the boards' paint
+    ID_SHUTTER: (0.46, 0.0), ID_TIMBER: (0.78, 0.0), ID_BIN: (0.50, 0.0),
     ID_MAG_A: (0.45, 0.0), ID_MAG_B: (0.45, 0.0), ID_MAG_C: (0.45, 0.0),
-    ID_LAMP: (0.20, 0.0), ID_SEAL: (0.80, 0.0),
+    ID_LAMP: (0.20, 0.0), ID_SEAL: (0.80, 0.0), ID_FITTING: (0.40, 0.0),
+    ID_SIGN_LIT: (0.25, 0.0), ID_HINGE: (0.42, 0.75),
 }
 
 # ---------------------------------------------------------------- palettes
 # Only the boarding (walls, fascia ribs, the shutter leaves) changes colour.
 VARIANTS = {
-    "ochre_boards": {"board": (176, 142, 84)},
+    "ochre_boards": {"board": (178, 152, 102)},
     "cream_boards": {"board": (210, 198, 166)},
     "green_boards": {"board": (126, 138, 114)},
     "red_boards": {"board": (146, 84, 64)},
@@ -192,13 +206,14 @@ DEFAULT_VARIANT = "ochre_boards"
 # brighter than its casing.
 FIXED = {
     ID_BLANK: (52, 52, 52), ID_PLINTH: (132, 130, 124), ID_FLASH: (150, 152, 152),
-    ID_SOFFIT: (222, 222, 216), ID_FELT: (54, 54, 54), ID_FRAME: (72, 74, 76),
+    ID_SOFFIT: (222, 222, 216), ID_FELT: (66, 66, 64), ID_FRAME: (72, 74, 76),
     ID_GLASS: glazing.BASE, ID_DOOR: (86, 92, 90), ID_STEEL: (172, 174, 174),
     ID_SIGN: (40, 42, 44), ID_SIGN_T: (236, 226, 200), ID_LIGHT: (226, 222, 210),
     ID_POSTER: (214, 210, 198), ID_POSTER_A: (170, 96, 66), ID_POSTER_B: (78, 108, 132),
     ID_POSTER_C: (102, 102, 100), ID_TIMBER: (128, 96, 64), ID_BIN: (66, 76, 68),
     ID_MAG_A: (168, 72, 58), ID_MAG_B: (70, 104, 140), ID_MAG_C: (196, 186, 160),
-    ID_LAMP: (214, 210, 196), ID_SEAL: (28, 28, 28),
+    ID_LAMP: (214, 210, 196), ID_SEAL: (28, 28, 28), ID_FITTING: (208, 208, 202),
+    ID_SIGN_LIT: (230, 224, 204), ID_HINGE: (118, 120, 120),
 }
 
 BAND_IDS = {
@@ -211,7 +226,8 @@ BAND_IDS = {
 # spread far over 24) and is reported as a luminous fixture: the sign
 # letters, the soffit downlights and the staff door's lamp.
 EMIT = {ID_GLASS: (255, 255, 255), ID_SIGN_T: (255, 226, 160),
-        ID_LIGHT: (255, 212, 146), ID_LAMP: (255, 194, 118)}
+        ID_SIGN_LIT: (255, 232, 184), ID_LIGHT: (255, 212, 146),
+        ID_LAMP: (255, 194, 118)}
 # Linear RGB: a kiosk's fluorescent interior, as the catalog's other shops.
 LIT_FACTOR = (1.0, 0.88, 0.72)
 
@@ -221,9 +237,15 @@ FRAME_H = 0.020          # window frames, proud of the glass
 FLASH_H = 0.010          # flashing folds
 SLAT_H = 0.008           # bench slats over their gaps
 
-# the downlights in the soffit, world (x, y)
+# the downlights under the soffit, world (x, y): surface-mounted drums at
+# LOD0/LOD1 (an opal band and an opal base under a white housing), painted
+# discs of the same size from LOD2
 DOWNLIGHTS = ((-1.65, -2.55), (1.0, -2.55), (3.25, -0.45))
-DOWNLIGHT_R = 0.09
+DOWNLIGHT_R = 0.13
+DOWNLIGHT_Z = (Z_SOFFIT - 0.10, Z_SOFFIT - 0.045)   # the drum's foot, its opal band's top
+SOFFIT_JOINT = 1.2       # the soffit's sheet joints, along X
+FELT_ROLL = 1.0          # felt rolls laid along X, lapped every metre in Y
+DRAIN = (-1.5, 1.15)     # the deck's outlet, over the sales room's rear corner
 
 
 # ================================================================ helpers
@@ -309,11 +331,12 @@ def ribs(c, x0, x1, y0, y1):
     d = np.abs(ph - 0.5) * 2.0                        # 0 at the crown, 1 in the groove
     prof = np.clip((0.86 - d) / 0.30, 0.0, 1.0)
     c.height[sy, sx] = RIB_H * prof
+    # every eighth groove a board joint, only a little deeper: at a distance
+    # the ribs must read as one fine texture, not as 0.4 m planks
     joint = (np.floor(X / RIB_PX).astype(np.int64) % 8 == 0) & (d > 0.70)
-    c.shade[sy, sx] = (0.90 + 0.10 * prof) * np.where(joint, 0.86, 1.0)
-    c.ao[sy, sx] = (0.78 + 0.22 * prof) * np.where(joint, 0.85, 1.0)
-    # each board a shade apart: 0.4 m boards, eight ribs each
-    tone = 0.985 + 0.03 * atlas.hash_unit(np.floor(X / (8 * RIB_PX)).astype(np.int64), 5)
+    c.shade[sy, sx] = (0.90 + 0.10 * prof) * np.where(joint, 0.94, 1.0)
+    c.ao[sy, sx] = (0.78 + 0.22 * prof) * np.where(joint, 0.92, 1.0)
+    tone = 0.994 + 0.012 * atlas.hash_unit(np.floor(X / (8 * RIB_PX)).astype(np.int64), 5)
     c.shade[sy, sx] *= tone
 
 
@@ -367,10 +390,16 @@ def paint_soffit(c):
     d = np.hypot(dx, dy)
     c.ao[sy, sx] = 0.72 + 0.28 * np.clip(d / 0.9, 0.0, 1.0)
     c.shade[sy, sx] = 0.94 + 0.06 * np.clip(d / 0.9, 0.0, 1.0)
+    # the soffit's sheet joints, 1.2 m apart across the slab
+    for k in range(1, int((CX1 - CX0) / SOFFIT_JOINT) + 1):
+        u = x + m(k * SOFFIT_JOINT)
+        c.mul(u - 0.4, u + 0.4, y, y + h, 0.93, ao=0.90)
+        c.lift(u - 0.4, u + 0.4, y, y + h, -0.002)
+    # under the drums at LOD0/LOD1, the lamps themselves from LOD2
     for wxl, wyl in DOWNLIGHTS:
         px, py = plan_px(SOFFIT, wxl, wyl, PPM)
-        c.disc(px, py, m(DOWNLIGHT_R + 0.025), ID_FLASH, 0.95, 0.9, height=0.006)
-        c.disc(px, py, m(DOWNLIGHT_R), ID_LIGHT, 1.0, 1.0, height=0.0)
+        c.disc(px, py, m(DOWNLIGHT_R + 0.02), ID_FITTING, 1.0, 0.9, height=0.006)
+        c.disc(px, py, m(DOWNLIGHT_R - 0.02), ID_LIGHT, 1.0, 1.0, height=0.0)
 
 
 def paint_deck(c):
@@ -385,13 +414,31 @@ def paint_deck(c):
     r_in = {k: v - RIM for k, v in R_CANOPY.items()}
     felt = in_rounded(wx, wy, CX0 + RIM, CY0 + RIM, CX1 - RIM, CY1 - RIM, r_in)
     c.mid[sy, sx] = np.where(felt, ID_FELT, ID_FLASH).astype(np.uint8)
-    for i in range(1, 6):
-        yy = y + h * i / 6.0
-        c.mul(x, x + w, yy - 0.5, yy + 0.5, 0.90, ao=0.92)
+    # the felt's rolls, each a shade apart, lapped every metre: the lap's
+    # bead a little raised and lighter, its shadow below it
     rs = np.random.RandomState(7)
+    roll = np.floor((Y - y) / (FELT_ROLL * DECK_PPM)).astype(np.int64)
+    lap = (Y - y) / (FELT_ROLL * DECK_PPM) - roll          # 0 at the lap, up to 1
+    tone = 0.92 + 0.16 * atlas.hash_unit(roll, 11)
+    bead = (lap * FELT_ROLL * DECK_PPM < 1.3) & (roll > 0)
+    under = (lap * FELT_ROLL * DECK_PPM > FELT_ROLL * DECK_PPM - 1.0)
+    k = np.where(bead, 1.32, np.where(under, 0.84, 1.0)) * tone
+    c.shade[sy, sx] = np.where(felt, c.shade[sy, sx] * k, c.shade[sy, sx])
+    c.height[sy, sx] = np.where(felt & bead, 0.003, c.height[sy, sx])
+    c.ao[sy, sx] = np.where(felt & under, np.minimum(c.ao[sy, sx], 0.88), c.ao[sy, sx])
     for _ in range(8):
         cx, cy = rs.uniform(x + 20, x + w - 20), rs.uniform(y + 20, y + h - 20)
         c.disc(cx, cy, rs.uniform(5, 12), None, rs.uniform(0.92, 0.98), 0.97)
+    # the outlet: ponding stain round it, a galvanised ring, a dark domed grate
+    dx, dy = (DRAIN[0] - CX0) * DECK_PPM + x, (DRAIN[1] - CY0) * DECK_PPM + y
+    sy, sx, Y, X = c.field(dx - 24, dx + 24, dy - 24, dy + 24)
+    r = np.hypot(X - dx, Y - dy) / DECK_PPM
+    c.shade[sy, sx] *= 1.0 - 0.12 * np.clip(1.0 - r / 0.7, 0.0, 1.0)
+    c.disc(dx, dy, 0.17 * DECK_PPM, ID_FLASH, 0.9, 0.85, height=0.004)
+    c.disc(dx, dy, 0.11 * DECK_PPM, ID_FRAME, 0.55, 0.6, height=0.0)
+    for k in range(-2, 3):
+        c.paint(dx - 0.10 * DECK_PPM, dx + 0.10 * DECK_PPM, dy + k * 0.7 - 0.2,
+                dy + k * 0.7 + 0.2, None, 0.9)
     # the upstand's shadow along the felt's edge
     sy, sx, Y, X = c.field(x, x + w, y, y + h)
     wx = CX0 + (X - x) / DECK_PPM
@@ -516,24 +563,51 @@ def paint_poster(c, rect, seed):
     c.mul(x0, x1, y1 - 1.5, y1, 0.85, ao=0.85)                       # the frame's shadow
 
 
+SHUTTER_HINGES = (0.10, 0.50, 0.90)      # hinge heights, fractions of the leaf
+
+
 def paint_shutters(c):
-    """The folding timber shutter leaves held open: the outer leaf's face,
-    painted in the wall colour with a raised frame and two hinges at its
-    band-side edge, and the stack's edge showing four leaves."""
+    """The folding shutter leaves held open, enamelled in the wall colour.
+
+    SHUTTER_FACE is the stack seen from the front, U along the wall: the
+    outer leaf's face with a bevelled edge and hinge knuckles at both edges
+    (the leaves fold accordion-wise), and at each side the stepped edges of
+    the two leaves behind it with dark gaps between. SHUTTER_EDGE is the
+    stack's side, U outward from inside the wall: the hinge rail in the
+    shadow gap, then the three leaves' edges with the knuckles across
+    their joints."""
     x, y, w, h = SHUTTER_FACE
     c.paint(x, x + w, y, y + h, ID_SHUTTER, 1.0, 1.0, height=0.0)
-    t = m(0.06)
-    _frame(c, x, y, x + w, y + h, t, ID_SHUTTER, 0.92, 0.012)
-    c.mul(x + t, x + w - t, y + t, y + h - t, 0.95, ao=0.92)
-    for k in (0.18, 0.82):
+    insets = [lay[0] for lay in SHUTTER_LAYERS[1:]]           # back, middle, front leaf
+    for i, inset in enumerate(insets):
+        a0, a1 = x + m(inset), x + w - m(inset)
+        c.paint(a0, a1, y, y + h, ID_SHUTTER, 1.0 - 0.04 * (2 - i), 1.0 - 0.08 * (2 - i))
+        for u in (a0, a1):                                     # the gap at each leaf edge
+            c.mul(u - 0.45, u + 0.45, y, y + h, 0.45, ao=0.5)
+    a0, a1 = x + m(insets[-1]), x + w - m(insets[-1])
+    c.bevel(a0, a1, y, y + h, 0.004, 1.4)                      # the leaf's rounded arrises
+    # a slim pressed panel line round the leaf, and its foot's kick wear
+    t = m(0.05)
+    c.mul(a0 + t, a1 - t, y + t, y + t + 0.6, 0.88, ao=0.88)
+    c.mul(a0 + t, a1 - t, y + h - t - 0.6, y + h - t, 0.88, ao=0.88)
+    c.mul(a0 + t, a0 + t + 0.6, y + t, y + h - t, 0.88, ao=0.88)
+    c.mul(a1 - t - 0.6, a1 - t, y + t, y + h - t, 0.88, ao=0.88)
+    for k in SHUTTER_HINGES:
         hy = y + h * k
-        c.paint(x + w - 2.0, x + w, hy - 2.5, hy + 2.5, ID_STEEL, 1.0, 0.85, height=0.01)
+        for u0, u1 in ((x, a0 + 1.2), (a1 - 1.2, x + w)):
+            c.paint(u0, u1, hy - 3.0, hy + 3.0, ID_HINGE, 1.0, 0.85, height=0.01)
+            c.mul(u0, u1, hy - 3.8, hy - 3.0, 0.7, ao=0.75)
     x, y, w, h = SHUTTER_EDGE
-    c.paint(x, x + w, y, y + h, ID_SHUTTER, 0.92, 0.9, height=0.0)
-    for k in range(1, 4):
-        u = x + w * k / 4.0
-        c.mul(u - 0.3, u + 0.3, y, y + h, 0.55, ao=0.55)
+    c.paint(x, x + w, y, y + h, ID_SHUTTER, 0.9, 0.85, height=0.0)
+    rail = m(SHUTTER_LAYERS[0][2] + 0.02)
+    c.paint(x, x + rail, y, y + h, ID_HINGE, 0.45, 0.45)       # the rail in the gap
+    for lay in SHUTTER_LAYERS[1:]:
+        u = x + m(lay[1] + 0.02)
+        c.mul(u - 0.3, u + 0.3, y, y + h, 0.5, ao=0.5)
         c.lift(u - 0.3, u + 0.3, y, y + h, -0.004)
+        for k in SHUTTER_HINGES:
+            hy = y + h * k
+            c.paint(u - 0.8, u + 0.8, hy - 3.0, hy + 3.0, ID_HINGE, 1.0, 0.85, height=0.006)
 
 
 def paint_rack(c):
@@ -575,45 +649,44 @@ def paint_bench(c):
     c.shade[sy, sx] *= 1.0 + 0.05 * grain[sy, sx]
 
 
+SIGN_TRACKING = 0.55     # wide-set capitals, as mid-century boards were lettered
+SIGN_WEIGHT = 0.055      # stroke, metres
+SIGN_FRAME = 0.02        # the galvanised frame round the face, metres
+
+
 def paint_sign(c):
-    """The lit sign board: a graphite face in a galvanised edge, KIOSKI in
-    the sheet's own stroked capitals in warm white. Generic: the building
-    type in Finnish, in no chain's colours or letterforms."""
+    """The sign board's face: a slim galvanised frame round it and KIOSKI in
+    the sheet's own stroked capitals, wide-set, a short rule either side.
+    SIGN_STYLE "dark": warm-white lit letters on a graphite face; "cream": a
+    lit cream opal face with graphite letters. Generic: the building type in
+    Finnish, in no chain's colours or letterforms."""
     x, y, w, h = SIGN
-    c.paint(x, x + w, y, y + h, ID_SIGN, 1.0, 1.0, height=0.0)
-    e = 3.0
+    face, ink = (ID_SIGN, ID_SIGN_T) if SIGN_STYLE == "dark" else (ID_SIGN_LIT, ID_SIGN)
+    c.paint(x, x + w, y, y + h, face, 1.0, 1.0, height=0.0)
+    e = SIGN_FRAME * SIGN_PPM
     for a0, a1, b0, b1, axes in ((x, x + w, y, y + e, "y"), (x, x + w, y + h - e, y + h, "y"),
                                  (x, x + e, y, y + h, "x"), (x + w - e, x + w, y, y + h, "x")):
-        c.paint(a0, a1, b0, b1, ID_FLASH, 1.0, 0.88)
-        c.bevel(a0, a1, b0, b1, 0.012, 1.2, axes=axes)
-    cap = 0.34 * SIGN_PPM
-    centred_text(c, "KIOSKI", SIGN, cap, 0.058 * SIGN_PPM, ID_SIGN_T, 0.30, height=0.004)
+        c.paint(a0, a1, b0, b1, ID_FLASH, 1.0, 0.9)
+        c.bevel(a0, a1, b0, b1, 0.010, 1.2, axes=axes)
+    c.mul(x + e, x + w - e, y + h - e - 1.2, y + h - e, 0.9, ao=0.85)   # the frame's lip
+    # the glyphs are centrelines: the stroke adds half its weight above and below
+    cap, weight = (SIGN_CAP - SIGN_WEIGHT) * SIGN_PPM, SIGN_WEIGHT * SIGN_PPM
+    centred_text(c, "KIOSKI", SIGN, cap, weight, ink, SIGN_TRACKING, height=0.004)
+    wide = text_width("KIOSKI", cap, SIGN_TRACKING, weight)
+    ym = y + h / 2.0
+    for side in (-1, 1):
+        a = x + w / 2.0 + side * (wide / 2.0 + 0.16 * SIGN_PPM)
+        b = a + side * 0.20 * SIGN_PPM
+        c.stroke((a, ym), (b, ym), weight, ink, 1.0, 1.0, height=0.004)
 
 
-def paint_side_sign(c):
-    """The side fascia's straight run: ribs and flashing as the fascia band,
-    with a small lit KIOSKI panel in its middle."""
-    x, y, w, h = SIDE_SIGN
-    k = SIGN_PPM / PPM
-    c.paint(x, x + w, y, y + h, ID_BOARD, 1.0, 1.0, height=0.0)
-    sy, sx, Y, X = c.field(x, x + w, y, y + h)
-    ph = ((X - x) / k % RIB_PX) / RIB_PX
-    d = np.abs(ph - 0.5) * 2.0
-    prof = np.clip((0.86 - d) / 0.30, 0.0, 1.0)
-    c.height[sy, sx] = RIB_H * prof
-    c.shade[sy, sx] = 0.90 + 0.10 * prof
-    c.ao[sy, sx] = 0.78 + 0.22 * prof
-    c.paint(x, x + w, y + h - 1.6 * k, y + h, ID_FLASH, 1.0, 0.95, height=0.0)
-    c.bevel(x, x + w, y + h - 1.6 * k, y + h, FLASH_H, 0.6 * k, axes="y")
-    c.mul(x, x + w, y + h - 3.0 * k, y + h - 1.6 * k, 0.86, ao=0.82)
-    c.paint(x, x + w, y, y + 0.8 * k, ID_FLASH, 0.80, 0.85, height=0.0)
-    pw, ph_ = SIDE_PANEL[0] * SIGN_PPM, SIDE_PANEL[1] * SIGN_PPM
-    px0 = x + (w - pw) / 2.0
-    py0 = y + (h - ph_) / 2.0 - 0.6 * k
-    c.paint(px0, px0 + pw, py0, py0 + ph_, ID_SIGN, 1.0, 0.95, height=0.01)
-    c.bevel(px0, px0 + pw, py0, py0 + ph_, 0.01, 1.5)
-    centred_text(c, "KIOSKI", (px0, py0, pw, ph_), 0.15 * SIGN_PPM, 0.028 * SIGN_PPM,
-                 ID_SIGN_T, 0.30, height=0.012)
+def paint_lamp_face(c):
+    """The staff door lamp's front: a graphite bulkhead with its opal lens
+    in the lower part, under a shallow hood."""
+    x, y, w, h = LAMP_FACE
+    c.paint(x, x + w, y, y + h, ID_FRAME, 1.0, 0.92, height=0.0)
+    c.paint(x + 1.0, x + w - 1.0, y + 0.8, y + h * 0.62, ID_LAMP, 1.0, 1.0)
+    c.mul(x + 1.0, x + w - 1.0, y + h * 0.62 - 0.7, y + h * 0.62, 0.85, ao=0.8)
 
 
 def paint_patches(c):
@@ -627,8 +700,10 @@ def paint_patches(c):
         "lamp": (ID_FRAME, 1.0, 0.92),
         "lens": (ID_LAMP, 1.0, 1.0),
         "timber": (ID_TIMBER, 0.85, 0.85),
-        "shutter_top": (ID_SHUTTER, 0.9, 0.85),
+        "shutter_top": (ID_SHUTTER, 0.75, 0.6),
         "sign_edge": (ID_SIGN, 1.0, 0.92),
+        "light": (ID_LIGHT, 1.0, 1.0),
+        "fitting": (ID_FITTING, 1.0, 0.95),
     }
     for name, (mid, sh, ao) in spec.items():
         x, y, w, h = PATCHES[name]
@@ -666,10 +741,10 @@ def weather(c):
     every wall alike, and the canopy shelters the top of the boards. Glass,
     signs, posters, lenses and downlights stay clean."""
     steel = (ID_FELT, ID_FLASH, ID_FRAME, ID_STEEL, ID_DOOR, ID_BIN)
-    w = weathering.Weather(c, clean=(ID_GLASS, ID_SIGN, ID_SIGN_T, ID_LIGHT, ID_LAMP,
-                                     ID_POSTER, ID_POSTER_A, ID_POSTER_B, ID_POSTER_C,
-                                     ID_MAG_A, ID_MAG_B, ID_MAG_C),
-                           steel=steel)
+    w = weathering.Weather(c, clean=(ID_GLASS, ID_SIGN, ID_SIGN_T, ID_SIGN_LIT, ID_LIGHT,
+                                     ID_LAMP, ID_POSTER, ID_POSTER_A, ID_POSTER_B,
+                                     ID_POSTER_C, ID_MAG_A, ID_MAG_B, ID_MAG_C),
+                           steel=steel + (ID_HINGE,))
     w.grime()
     w.fade((ID_BOARD, ID_SHUTTER, ID_DOOR, ID_TIMBER))
     w.wash((ID_BOARD,))
@@ -678,8 +753,6 @@ def weather(c):
     w.shelter(0, ATLAS, m(2.2), m(Z_SOFFIT), (ID_BOARD,), amount=0.06, top=WALL_H)
     # the fascia: runs from under the top flashing, dust on its drip
     w.runs(0, ATLAS, FASCIA_Y0, FASCIA_Y0 + FASCIA_H - 1.6, (ID_BOARD,), 0.08, fall=9.0)
-    x, y, rw, rh = SIDE_SIGN
-    w.runs(x, x + rw, y, y + rh - 3.2, (ID_BOARD,), 0.08, fall=18.0)
     # the soffit: a little dust, more toward its outer edge
     x, y, rw, rh = SOFFIT
     w.add("D", x, x + rw, y, y + rh, lambda Y, X, nz: 0.025 * nz("big"), (ID_SOFFIT,))
@@ -723,7 +796,7 @@ def paint(ss=atlas.SS):
     paint_rack(c)
     paint_bench(c)
     paint_sign(c)
-    paint_side_sign(c)
+    paint_lamp_face(c)
     paint_patches(c)
 
     wear = 0.02 * atlas.noise(c, 3, 40.0) + 0.012 * atlas.noise(c, 4, 8.0)

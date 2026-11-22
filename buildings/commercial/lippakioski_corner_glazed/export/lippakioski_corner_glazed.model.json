@@ -3,9 +3,9 @@
   "version": 1,
   "name": "lippakioski_corner_glazed",
   "path": "buildings/commercial/lippakioski_corner_glazed",
-  "source": {"commit": "7b2394ba10c2f276c128ed1e352daca4c4e45332", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "f79723c4a7afd80d72f4099bd0ca447bcb1c02e4", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
-  "bounds": {"min": [-3.375, 0.0, -2.675], "max": [3.375, 3.61, 2.675]},
+  "bounds": {"min": [-3.375, 0.0, -2.675], "max": [3.375, 3.67, 2.675]},
   "footprint": [
     [-3.025, -2.325],
     [1.775, -2.325],
@@ -25,23 +25,23 @@
     {"id": "staff", "kind": "service", "position": [0.275, 0.0, -2.325], "facing": [0.0, 0.0, -1.0], "width_m": 0.9, "height_m": 2.1, "main": false}
   ],
   "lods": [
-    {"file": "lippakioski_corner_glazed_lod0.glb", "triangles": 732, "sha256": "f11f8cb3e7ca424e58bcfc5bdbea37e8380cd22352c45d94f7cc7252a471caa8"},
-    {"file": "lippakioski_corner_glazed_lod1.glb", "triangles": 616, "sha256": "2695d68c3fa4289f0fbf5b3a4ba4c18c702ef9e3761eb0dc1c8319f025bf5264"},
-    {"file": "lippakioski_corner_glazed_lod2.glb", "triangles": 220, "sha256": "63351fe5c385b8b3ab32d48100709581d1827a06eba68fc220fedb36eec5739f"},
-    {"file": "lippakioski_corner_glazed_lod3.glb", "triangles": 130, "sha256": "498d6fbf9baedf605856bcfa021ba64bd911d2055c4e5066159aa4f2aefd6731"}
+    {"file": "lippakioski_corner_glazed_lod0.glb", "triangles": 1080, "sha256": "ced2e1ea1161b9efc3c040c1e0c2a88f16498e8d03de18e0411744702f017971"},
+    {"file": "lippakioski_corner_glazed_lod1.glb", "triangles": 890, "sha256": "b8e4e5d4fe6d26f7fd583ecaf4c7d689baa8cb00fe950d843a7c69e90d1b624a"},
+    {"file": "lippakioski_corner_glazed_lod2.glb", "triangles": 248, "sha256": "45e1fa7ef2e7159f5430ec038d082bf86b349345d922a88ed983f5197a77cabb"},
+    {"file": "lippakioski_corner_glazed_lod3.glb", "triangles": 166, "sha256": "359974f990db0301cfc359881bdbf4457073ca2c5030ac2fe8755fad51f45705"}
   ],
   "textures": {
-    "orm": {"file": "lippakioski_corner_glazed_orm.png", "sha256": "6fc2a416e32aef4355b2230fa34cc62180169b0223b3a5687d67845fb602f79c"},
-    "normal": {"file": "lippakioski_corner_glazed_normal.png", "sha256": "5c90194b76882fb11c33f12ab1a7f9c7433bc16c6ad2708a37c65feecff8cf32"},
-    "emission": {"file": "lippakioski_corner_glazed_emission.png", "sha256": "50d701781b85411151793d07708f9f5f6195520137654f04fef079bf106b992a"}
+    "orm": {"file": "lippakioski_corner_glazed_orm.png", "sha256": "56f3551b3ff9ca6df0b6c5c43dda6e2dbffe1647e731fae40ad753d817098e3b"},
+    "normal": {"file": "lippakioski_corner_glazed_normal.png", "sha256": "98b2d4e0a244bc1eb8281ed7b27b790133a80587e295590791a57205540b5221"},
+    "emission": {"file": "lippakioski_corner_glazed_emission.png", "sha256": "daa0c9205d94bc49c0430ed91b5e456ff69fb712a12e2c04dc15726685f192f0"}
   },
   "variants": [
-    {"id": "ochre_boards", "albedo": "lippakioski_corner_glazed_albedo_ochre_boards.png", "sha256": "345767643a763a9ff83cb3487d60a241aec014ea480e9626e13b8d3cd81e0bef"},
-    {"id": "cream_boards", "albedo": "lippakioski_corner_glazed_albedo_cream_boards.png", "sha256": "c7f23e22bb075d45d74ffa1420b2df0d03fd829eb3049839884fed53a6e42f1a"},
-    {"id": "green_boards", "albedo": "lippakioski_corner_glazed_albedo_green_boards.png", "sha256": "e957f519fb3b6dadd136a6a075e0454c2967fc7d85bc31f2071682a911896ae7"},
-    {"id": "red_boards", "albedo": "lippakioski_corner_glazed_albedo_red_boards.png", "sha256": "171d884508952338ddaf1c7278b16d3b98ad8c28c9d2d56b7e4ab658ad8e6217"}
+    {"id": "ochre_boards", "albedo": "lippakioski_corner_glazed_albedo_ochre_boards.png", "sha256": "7234a02e3b5e8e2f7834a690f105a18fd884df15afd87999f0ed8ed294268935"},
+    {"id": "cream_boards", "albedo": "lippakioski_corner_glazed_albedo_cream_boards.png", "sha256": "d8f92e57d16d0cb9139444f08aebf008f7a1b004225cfa635f252b81c2a6db7e"},
+    {"id": "green_boards", "albedo": "lippakioski_corner_glazed_albedo_green_boards.png", "sha256": "c16bb5871653b36a9d243496a4797fc2d9052c86ece9208582bbca50a9bc4579"},
+    {"id": "red_boards", "albedo": "lippakioski_corner_glazed_albedo_red_boards.png", "sha256": "91d33d6e710100bbcef2413a95ed6daf70b996d494a76b6c56305f78233433fc"}
   ],
   "default_variant": "ochre_boards",
-  "preview": {"file": "../preview.png", "sha256": "41aaabe2646beb64f71f2736c72488d917762b80a940fc75e695054d80808a1b"},
+  "preview": {"file": "../preview.png", "sha256": "2e7ffeb8f90c27f8ca26affa3e0df369f28ca77dc5bfc1e4c398c9cd12f8a646"},
   "hero": false
 }
