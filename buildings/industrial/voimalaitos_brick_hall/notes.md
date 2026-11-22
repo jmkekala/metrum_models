@@ -12,14 +12,14 @@ coping. It is a generic composite of the type, not any one plant.
 - **Boiler house**, the west volume (Blender -X): 14 × 17 m and 19.5 m to its
   coping.
   - Its front carries the type's tell: one central band of five narrow steel
-    lights on brick piers, 6.9 m wide and 3.5–16.9 m up, in three tiers on
+    lights on brick piers, 7.1 m wide and 3.5–17.0 m up, in three tiers on
     light concrete spandrels. The outer bays are blank brick with a column of
     small square gallery windows.
   - The main entrance, under a concrete canopy, stands at the foot of the
     band.
-  - A **raised coal bunker bay** runs along the rear half of its roof, 13.8 ×
-    6.5 m and up to 24.0 m. It is brick with a row of small square windows
-    and a coping.
+  - A **raised coal bunker bay** runs along the rear half of its roof, 13.75
+    × 6.5 m and up to 23.97 m. It is brick with a row of small square
+    windows and a coping.
   - Two **steel stub stacks** stand on the deck in front of the bay: welded
     plate in weathered aluminium paint, sooted toward the mouth, with a
     rolled cap ring, two stiffening rings, a guy collar and a caged ladder
@@ -71,10 +71,14 @@ Heights:
 | | Boiler house | Turbine hall |
 | --- | --- | --- |
 | Plinth top | 0.625 m | 0.625 m |
-| Coping foot | 19.125 m | 11.25 m |
-| Deck | 18.625 m | 10.75 m |
-| Coping top | 19.50 m | 11.625 m |
-| On the roof | bunker bay to 24.00 m, stub stacks to 24.75 m | ventilators to 11.95 m |
+| Coping foot | 19.140625 m | 11.25 m |
+| Deck | 18.671875 m | 10.78125 m |
+| Coping top | 19.515625 m | 11.625 m |
+| On the roof | bunker bay to 23.96875 m, stub stacks to 24.75 m | ventilators to 11.98 m |
+
+Every height where brick meets something else is a whole number of the
+catalog's 0.078125 m courses (Texture set, *The brick band and the slab
+lines*).
 
 The stacks' tops set the height of the bounds on every tier.
 
@@ -91,16 +95,16 @@ change.
 - **Bounds:** [-16.05, 0, -9.625] to [16.05, 24.75, 9.625].
 - **The west (coal) wall's face** is the plane x = -16.0. The furthest
   west anything reaches is x = -16.05, the bounds' face: the coping's outer
-  face at 19.125–19.5 m and the conveyor inlet's frame face at
+  face at 19.14–19.52 m and the conveyor inlet's frame face at
   15.8176–18.9176 m (y, glTF), the plane the coal reception's gallery
   butts against.
 
 Standing outside the footprint polygon but inside the bounds:
 
-- the copings (0.05 m all round, from 11.25 or 19.125 m up);
+- the copings (0.05 m all round, from 11.25 or 19.14 m up);
 - the conveyor inlet's steel frame (0.05 m, at 15.8176–18.9176 m);
-- the entrance canopy (1.25 m, at 3.25–3.5 m);
-- the flue stub (1.0 m, at 12.75–14.75 m);
+- the entrance canopy (1.25 m, at 3.28–3.52 m);
+- the flue stub (1.0 m, at 12.73–14.77 m);
 - the lower wall ladder and its cage, up to 0.9 m off the turbine hall's
   rear wall, from the ground.
 
@@ -113,14 +117,14 @@ conveyor inlet*).
 
 **One working storey at the ground in each volume.**
 
-- The boiler house rises 18.6 m from its floor to its deck, the turbine hall
-  10.75 m. Both are authored departures from the 3.0–3.3 m standard, and
+- The boiler house rises 18.67 m from its floor to its deck, the turbine
+  hall 10.78 m. Both are authored departures from the 3.0–3.3 m standard, and
   both are the type's. A boiler house is one tall volume round the boiler,
   its galleries open steelwork inside; a turbine hall is one volume under its
   overhead crane. The boiler house's small windows mark gallery levels every
   3.75 m, but none is a built floor.
-- The bunker bay stands on the boiler house's roof, 18.625 m, under a roof
-  5.4 m above it. It holds coal, not people, so it is no storey.
+- The bunker bay stands on the boiler house's roof, 18.67 m, under a roof
+  5.3 m above it. It holds coal, not people, so it is no storey.
 
 The facts sidecar lists one storey: the ground, 526 m² inside the outer
 wall faces (238 m² + 288 m²).
@@ -130,16 +134,18 @@ wall faces (238 m² + 288 m²).
 - **Main entrance (boiler house front, at the band's foot): a pair of framed
   steel leaves, 1.81 × 2.30 m clear.** Each leaf has a tall light. A 0.09 m
   steel transom at 2.30–2.39 m separates them from a four-light fanlight that
-  runs to the 3.0 m head. The opening is 2.0 × 3.0 m, under a concrete canopy
-  at 3.25 m.
+  runs to the 3.05 m head. The opening is 2.0 × 3.046875 m (16 half
+  stretchers × 39 courses), under a concrete canopy at 3.28 m. Its axis
+  stands 0.0625 m west of the band's middle light's (Window sills).
 - **Machinery door (turbine hall front, east bay): four folding steel
-  leaves, 3.31 × 3.91 m clear** in a 3.5 × 4.0 m opening. It is a vehicle
-  door, sized for plant, not a leaf at human scale. A wicket door, 0.8 ×
-  2.05 m, is painted into the second leaf. A row of small lights near the
-  head is glazing, lit at night.
-- **Service door (turbine hall rear, west bay): one steel leaf, 1.00 × 2.10
-  m clear**, under a louvred vent panel to 2.28 m, in a 1.19 × 2.375 m
-  opening.
+  leaves, 3.19 × 3.89 m clear** in a 3.375 × 3.984375 m opening (27 half
+  stretchers × 51 courses), on one axis with the window over it. It is a
+  vehicle door, sized for plant, not a leaf at human scale. A wicket door,
+  0.8 × 2.05 m, is painted into the second leaf. A row of small lights near
+  the head is glazing, lit at night.
+- **Service door (turbine hall rear, west bay): one steel leaf, 1.06 × 2.10
+  m clear**, under a louvred vent panel to 2.33 m, in a 1.25 × 2.421875 m
+  opening (10 half stretchers × 31 courses).
 
 All thresholds are at ground level, onto the hall floors, so there are no
 steps and no handrails.
@@ -149,30 +155,46 @@ steps and no handrails.
 There are two steel window designs:
 
 - **The hall window**: a 0.0625 m frame and panes 0.5 × 0.75 m on 0.047 m
-  bars, every third pane row a hopper.
-- **The small square window**: 0.8125 m, four panes on a cross.
+  bars, every third pane row a hopper. Its opening is rounded to whole
+  courses, and its pane rows stretch to fill it (`win_k()`): by +0.8 % in
+  the band's lights, -0.3 % over the machinery door, not at all in the
+  hall windows.
+- **The small square window**: 0.75 × 0.78125 m (six half stretchers by
+  ten courses, as near square as the brick allows), four panes on a cross.
+
+Every window's sides fall on whole or half stretchers. The hall windows
+are an odd number of half stretchers wide (nine or thirteen), so their axes
+stand a sixteenth of a metre off the half-stretcher grid.
 
 Fifty-six windows are cut into the walls:
 
 | Where | Count | Size (w × h) | Sill | Head |
 | --- | --- | --- | --- | --- |
-| Boiler house front, the band's lights (3 tiers × 5) | 15 | 1.125 × 3.875 m | 3.75 / 8.25 / 12.75 m | 7.625 / 12.125 / 16.625 m |
-| Boiler house front, outer bays | 8 | 0.8125 m square | 4.0 / 7.75 / 11.5 / 15.25 m | +0.8125 m |
+| Boiler house front, the band's lights (3 tiers × 5) | 15 | 1.125 × 3.90625 m | 3.75 / 8.28125 / 12.8125 m | 7.65625 / 12.1875 / 16.71875 m |
+| Boiler house front, outer bays | 8 | 0.75 × 0.78125 m | 3.984 / 7.734 / 11.484 / 15.234 m | +0.78125 m |
 | Turbine hall front, hall windows | 4 | 1.625 × 6.875 m | 2.50 m | 9.375 m |
-| Turbine hall front, over the machinery door | 1 | 1.625 × 4.625 m | 4.75 m | 9.375 m |
-| Turbine hall rear | 7 | 0.8125 m square | 2.0 (3) / 7.75 (4) m | +0.8125 m |
-| Turbine hall east | 2 | 0.8125 m square | 7.75 m | 8.5625 m |
-| Boiler house rear | 10 | 0.8125 m square | 4.0 to 15.25 m, every 3.75 m | +0.8125 m |
-| Boiler house west | 7 | 0.8125 m square | 4.0 to 15.25 m (three under the conveyor inlet) | +0.8125 m |
-| Boiler house east, over the hall roof | 2 | 0.8125 m square | 15.25 m | 16.0625 m |
+| Turbine hall front, over the machinery door | 1 | 1.625 × 4.609375 m | 4.765625 m | 9.375 m |
+| Turbine hall rear | 7 | 0.75 × 0.78125 m | 2.03125 (3) / 7.734 (4) m | +0.78125 m |
+| Turbine hall east | 2 | 0.75 × 0.78125 m | 7.734 m | 8.516 m |
+| Boiler house rear | 10 | 0.75 × 0.78125 m | 3.984 to 15.234 m, every 3.75 m | +0.78125 m |
+| Boiler house west | 7 | 0.75 × 0.78125 m | 3.984 to 15.234 m (three under the conveyor inlet) | +0.78125 m |
+| Boiler house east, over the hall roof | 2 | 0.75 × 0.78125 m | 15.234 m | 16.016 m |
+
+The band's five lights stand on 0.375 m brick piers (three half
+stretchers), 1.5 m apart. Its axis is x -8.9375 (build), a sixteenth east
+of the entrance's: the lights' odd width puts it off the grid the
+entrance's even width keeps to. The 0.06 m does not read under the canopy.
+The turbine hall's windows and the machinery door stand on axes at x
+0.5625, 3.8125, 7.0625, 10.3125 and 13.5625.
 
 The bunker bay carries 20 more square windows (seven on each long face,
-three on each end), sills at 21.22 m and heads at 22.03 m. They are cut
+three on each end), sills at 21.25 m and heads at 22.03 m. They are cut
 with 0.20 m reveals on `LOD0`/`LOD1` and painted flush from `LOD2`
 (Construction, *The bunker bay*).
 
-The band sits on a 0.25 m concrete sill at 3.5–3.75 m, directly over the
-entrance canopy. Its spandrels are 0.625 m, and its head is 0.25 m. The only
+The band sits on a 0.234 m (three-course) concrete sill at 3.52–3.75 m,
+directly over the entrance canopy. Its spandrels are 0.625 m (eight
+courses), and its head is 0.234 m, to 16.95 m. The only
 ground-level sills are the turbine hall's 2.5 m and the rear's 2.0 m. Both
 sit above the 1.4 m chest line, and the 2.3 m entrance leaf sets the scale
 below them. Every higher window lights a single tall volume, not an occupied
@@ -182,8 +204,8 @@ floor, which is the type.
 
 **None: flat roofs behind a parapet.**
 
-- The brick walls run up 0.875 m past each deck to a precast concrete
-  coping 0.375 m tall. It oversails the brick by 0.05 m outside and the
+- The brick walls run up 0.46875 m (six courses) past each deck to a
+  precast concrete coping 0.375 m tall. It oversails the brick by 0.05 m outside and the
   parapet's inner face by 0.05 m inside. That is a parapet roof's flush
   edge, not an eave.
 - The turbine hall's parapet is open on its west side, where its deck runs
@@ -268,24 +290,27 @@ consecutive in the region are one quad.
 
 ### The bunker bay
 
-The bay is one closed box on every tier, because it is silhouette. Its faces
-stand 0.1 m behind the walls under it on the west, rear and east, so the
-boiler house's coping reads as a string course under it. Its front stands on
-the deck at y 1.9.
+The bay is one closed box on every tier, because it is silhouette, 13.75 ×
+6.5 m in plan. Its faces stand 0.125 m behind the walls under it on the
+west, rear and east, so the boiler house's coping reads as a string course
+under it. Its front stands on the deck at y 1.875. Its corners and windows
+fall on whole and half stretchers, and the bond turns at its corners.
 
 Each face is four horizontal bands:
 
 | Band | Height | Texture |
 | --- | --- | --- |
-| Brick | to 21.0 m | brick band |
-| Window row | 21.0–22.25 m | the atlas's BUNKER band |
-| Brick | 22.25–23.625 m | brick band |
-| Coping | 23.625–24.0 m | coping band |
+| Brick | to 21.015625 m (cut at the 20.0 m slab line) | brick band |
+| Window row | 21.015625–22.265625 m | the atlas's BUNKER band |
+| Brick | 22.265625–23.59375 m | brick band |
+| Coping | 23.59375–23.96875 m | coping band |
 
 The window row is brick with a square window every 2.0 m, one centred on
 each face: seven on each long face, three on each end
-(`bunker_windows()`). The band paints each window with a concrete sill
-under it and the recess's occlusion round it.
+(`bunker_windows()`). The band paints each window with a one-course
+concrete sill under it and the recess's occlusion round it. Each face
+samples the brick band at the U the row's band has there (`bunker_u()`),
+so the bond runs on across the row's edges.
 
 - On `LOD0`/`LOD1` each window is cut into the row's face (a polygon with
   20 holes in all), with 0.20 m concrete reveals and the small square
@@ -296,13 +321,13 @@ under it and the recess's occlusion round it.
 Its top is a felt roof with a drain and a hatch, its edge the coping's
 top.
 
-Its west face stands 0.10 m behind the wall, inside the parapet, but the
+Its west face stands 0.125 m behind the wall, inside the parapet, but the
 conveyor inlet's recess is 0.12 m deep and its head (18.77 m) is above the
-deck (18.625 m), where the bay's buried foot starts (18.425 m). So below
+deck (18.67 m), where the bay's buried foot starts (18.47 m). So below
 19.0 m (`BUNKER_STEP_Z`), hidden in the parapet, the bay's west face steps
-back a further 0.05 m (`BUNKER_STEP`) to 0.15 m behind the wall, behind
-the inlet's blanking panel; without it the bay's brick filled the top
-0.34 m of the recess. Nothing of the step shows, and the bay's visible
+back a further 0.05 m (`BUNKER_STEP`) to 0.175 m behind the wall, behind
+the inlet's blanking panel, 0.055 m clear of it rather than the 5 mm the
+bay's plain face would leave. Nothing of the step shows, and the bay's visible
 faces are unchanged.
 
 ### The conveyor inlet
@@ -332,7 +357,7 @@ has a **closed inlet** that reads as complete on its own (`inlet_polys()`,
   proud all round, 2.70 × 2.90 m outside) butts against the frame there
   with 0.10 m of frame showing round it, so the two pieces' plan bounds
   meet without overlapping and without a slot between gallery and wall.
-  The frame's head is 0.21 m under the coping's foot (19.125 m), and
+  The frame's head is 0.22 m under the coping's foot (19.14 m), and
   nothing passes x = -16.05.
 
 The frame is part of the shell, not a separate solid: its face (a ring
@@ -351,8 +376,10 @@ the galvanised `lining` patch; face and panel the inlet's region.
   half a pixel at 120 m, and the coping already sets x = -16.05 on every
   tier, so the bounds do not depend on it.
 
-The small square window under it (11.5–12.3 m) and the other west windows
-keep their places.
+The inlet is the one opening off the course and stretcher grid: its size
+and height are the coal reception's gallery's, and its proud frame covers
+the brick's cut. The small square window under it (11.48–12.27 m) and the
+other west windows keep their places.
 
 ### The stub stacks
 
@@ -370,7 +397,7 @@ rings cost no boolean:
 | Ring | Height | Proud | Modelled on |
 | --- | --- | --- | --- |
 | Rolled cap ring | 24.60–24.75 m | 0.035 m | `LOD0`, `LOD1` |
-| Stiffening rings | 20.875–20.955 and 22.875–22.955 m | 0.03 m | `LOD0` |
+| Stiffening rings | 20.92–21.00 and 22.92–23.00 m | 0.03 m | `LOD0` |
 
 Every ring is also painted, with its shadow line, on every tier, so a tier
 that drops its geometry keeps it in the texture (`stack_rings()`). The cap
@@ -378,7 +405,7 @@ ring shapes the mouth's outline, so it stays to 70 m; at 35 m the
 stiffening rings are about a pixel proud.
 
 The rest is texture: welded seams every 1.5 m, the foot flange, a guy
-collar at 23.625 m with a lug on seven faces, and on face 6 (facing the
+collar at 23.67 m with a lug on seven faces, and on face 6 (facing the
 front and the turbine hall) a caged ladder: rails, a rung every 0.3 m, and
 hoops every 0.75 m from 2.6 m over the deck with three straps. That face
 samples a region of its own (`STACK_L`), turned a quarter.
@@ -398,9 +425,9 @@ In the build frame (Blender), with the front toward -Y:
 
 | Side | Blender | glTF | What faces it | What is on the wall |
 | --- | --- | --- | --- | --- |
-| Rear of the boiler house | +Y | -Z | the chimney stack | the **flue stub**: a 2 × 2 m concrete casing projecting 1.0 m at 12.75–14.75 m in the middle, its end closed by a bolted steel blanking plate, sooted. In glTF its end face is centred at (-9.0, 13.75, -9.625). Nothing reaches beyond it. |
+| Rear of the boiler house | +Y | -Z | the chimney stack | the **flue stub**: a 2.0 m wide × 2.03 m tall concrete casing projecting 1.0 m at 12.73–14.77 m in the middle, its end closed by a bolted steel blanking plate, sooted. In glTF its end face is centred at (-9.0, 13.75, -9.625). Nothing reaches beyond it. |
 | West end of the boiler house | -X | -X | the coal reception | the **closed conveyor inlet** (above), the coal reception's gallery ending against it. In glTF the wall face is x = -16.0 and the inlet's centre is (-16.0, 17.3676, -4.625): a 2.6 m (along Z) × 2.8 m opening recessed 0.12 m to a steel panel, in a 2.9 × 3.1 m steel frame standing 0.05 m proud. The frame's flat face is the contact plane, x = -16.05, the coping's outer plane and the hall's bounds face: the gallery's end butts against it there. Nothing projects beyond it. Coal dust stains the brick round and under it. |
-| East end of the turbine hall | +X | +X | the transformer yard | the **cable bushing panel**: flush and painted, 2.5 × 1.25 m at 6.25–7.5 m in the middle. It is a concrete panel in a steel frame with three porcelain bushings and cable glands. Otherwise blank brick between two small windows. |
+| East end of the turbine hall | +X | +X | the transformer yard | the **cable bushing panel**: flush and painted, 2.5 × 1.25 m at 6.25–7.5 m in the middle (both on the course and stretcher grid). It is a concrete panel in a steel frame with three porcelain bushings and cable glands. Otherwise blank brick between two small windows. |
 
 The office and control building faces no designed side: the front (-Y,
 glTF +Z) carries the entrance and the machinery door.
@@ -425,7 +452,7 @@ the bunker bay's roof, so it has no ladder.
   x 11.25, 0.17 m out, past the coping to 1.0 m above it (12.625 m long).
 - **Upper wall ladder**: from the hall's deck up the boiler house's east
   face at y 0, its foot hanging 0.3 m above the deck, to 1.0 m above the
-  coping (9.45 m long).
+  coping (9.43 m long).
   - It is in the face's middle, not its rear half. The bunker bay fills the
     rear half of that roof edge, so a ladder there would land against the
     bay's face.
@@ -451,7 +478,7 @@ part.
 - The walls and the plinth are flush, and the copings oversail 0.05 m, 0.12 m
   inside the rails, so no bracket needs `behind`.
 - The upper ladder's foot hangs 0.3 m over the hall's deck, clear of it.
-- From `LOD2` the hall's roof is its coping box, whose top is 0.875 m above
+- From `LOD2` the hall's roof is its coping box, whose top is 0.84 m above
   that deck. There the upper ladder's bare rails start 0.01 m over the box
   (`WALL2_FLAT`), and its back strap keeps the cage's hoop heights
   (`CAGE2_FLAT`). The parapet hides that stretch from the ground on every
@@ -474,12 +501,18 @@ The ladders never set the bounds, so `LOD3` can drop them.
 Every tier derives from `facade_atlas.py`:
 
 - the plan, `BH` and `TH`;
-- the heights: `Z_PLINTH` 0.625, `COPING` 0.375, `CO`/`CO_IN` 0.05, `PIN`
-  0.25, `WALL_IN` 0.125, `DECK_DOWN` 0.875, `Z_BC` 19.5 and `Z_TC` 11.625;
-- `CUTS` and `SLAB` for the brick;
-- the window designs (`FR`, `CW`, `RH`, `MUL`, `SQ`);
-- the window band (`LIGHT_X`, `TIERS`, `BAND_STRIPS`, `SQ_Z`) and the
-  turbine hall's windows (`TH_WIN_X`, `TH_SILL`);
+- the brick module, `COURSE` 0.078125 and `BRICK_L` 0.25 from
+  `scripts/brickwork.py`, and `courses()` and `HALF` (0.125), the grids
+  every brick-bound height and plan position keeps to;
+- the heights: `Z_PLINTH` 0.625 (8 courses), `COPING` 0.375, `CO`/`CO_IN`
+  0.05, `PIN` 0.25, `WALL_IN` 0.125, `DECK_DOWN` 0.84375 (the coping and
+  six courses), `Z_BS` 19.140625 (245 courses) and `Z_TS` 11.25 (144);
+- `CUTS` and `SLAB` (48 courses) for the brick;
+- the window designs (`FR`, `CW`, `RH`, `MUL`, `SQ_W`, `SQ_H`), and
+  `win_size()`/`win_k()`, the openings rounded to whole courses;
+- the window band (`BAND_X`, `LIGHT_PIER`, `LIGHT_X`, `TIERS`,
+  `BAND_STRIPS`, `SQ_Z`) and the turbine hall's windows (`TH_WIN_X`,
+  `TH_SILL`, `BIGDOOR_X`);
 - `SIZES` and `REVEAL` for the other openings;
 - `WALLS` and `ITEMS`;
 - `CANOPY`, `FLUE`, `BUNKER` and `BUNKER_SILL`, `STACKS` and the stacks'
@@ -490,7 +523,18 @@ Every tier derives from `facade_atlas.py`:
 `check_layout()` asserts:
 
 - the openings' and panels' clearance from corners, each other, the coping
-  and the slab lines, and the leaf heights;
+  and the slab lines, the leaf heights and a transom or vent panel over
+  each leaf;
+- the brickwork (`brick_problems()`): every brick-bound height (plinth,
+  coping feet, decks, the band's top and slab lines, every opening's and
+  panel's sill and head, the canopy, the flue stub, the bunker bay's rows,
+  coping and windows) on a course line; every opening's sides, and so
+  every pier, and the canopy's and flue stub's on a whole or half
+  stretcher in the U its wall samples; the bond turning a half stretcher
+  at every corner, the bunker bay's included; the step face on the
+  returns' bond. The conveyor inlet is exempt (the gallery sets it), and
+  the lettering and dusted panels are held to the band's rows and U by
+  `check_regions()`;
 - the ladders' and cages' places, and the upper ladder's landing clear of
   the bay;
 - the conveyor inlet at the gallery's section and height (2.6 × 2.8 m at
@@ -506,10 +550,10 @@ Every tier derives from `facade_atlas.py`:
 
 | Tier | Triangles | Ceiling |
 | --- | --- | --- |
-| `LOD0` | 4138 | 12,000 |
-| `LOD1` | 3300 | 4,000 |
+| `LOD0` | 4144 | 12,000 |
+| `LOD1` | 3306 | 4,000 |
 | `LOD2` | 1452 | 1,500 |
-| `LOD3` | 296 | 500 |
+| `LOD3` | 304 | 500 |
 
 Where they go, counted on the solids before the union (the kit is appended
 whole, so its count is exact):
@@ -518,7 +562,7 @@ whole, so its count is exact):
 | --- | --- | --- | --- | --- |
 | Shell (walls, openings, the conveyor inlet, parapets, decks) | 1638 | 1638 | 1134 | 32 |
 | Copings | 68 | 68 | 32 | 32 |
-| Bunker bay (its windows cut to `LOD1`) | 364 | 364 | 44 | 44 |
+| Bunker bay (its windows cut to `LOD1`; its lower brick cut at the 20.0 m slab line) | 372 | 372 | 52 | 52 |
 | Stub stacks (their rings, `stack_rings()`) | 440 | 184 | 120 | 120 |
 | Ventilators | 56 | 56 | 0 | 0 |
 | Flue stub and canopy | 24 | 24 | 24 | 24 |
@@ -528,10 +572,10 @@ The **roof safety kit's share of the finished tier**:
 
 | | `LOD0` | `LOD1` | `LOD2` | `LOD3` |
 | --- | --- | --- | --- | --- |
-| Kit | 1412 (34.1 %) | 830 (25.2 %) | 48 (3.3 %) | 0 |
-| The rest | 2726 | 2470 | 1404 | 296 |
+| Kit | 1412 (34.1 %) | 830 (25.1 %) | 48 (3.3 %) | 0 |
+| The rest | 2732 | 2476 | 1404 | 304 |
 
-Two ladders of 12.6 m and 9.45 m make 22 m of rail and 76 rungs, and both
+Two ladders of 12.6 m and 9.43 m make 22 m of rail and 76 rungs, and both
 cages are required by length. As the lean kit it cuts nothing: a rung is a
 three-sided prism of 8 triangles, the hoops and straps are three-sided, and
 no rail or strap is split where another part meets it. Unioned, the same
@@ -540,12 +584,12 @@ hoop), 63.5 % and 40.1 % of those tiers. `LOD1` keeps every other rung and every
 brackets as tetrahedra.
 
 The kit is still over the quarter of a tier CLAUDE.md suggests for trim at
-`LOD0`, by 9 points, because the rungs are kept whole. `LOD0` has 7,870
+`LOD0`, by 9 points, because the rungs are kept whole. `LOD0` has 7,856
 triangles to spare, and thinning rungs that read at 20–35 m would show.
 
 The 20 cut bunker windows (320 triangles to `LOD1`) and the stacks' rings
 (320 at `LOD0`, 64 at `LOD1`) are what the lean kit's saving paid for.
-`LOD1` keeps 700 (17.5 %) of its ceiling, `LOD2` 48.
+`LOD1` keeps 694 (17.4 %) of its ceiling, `LOD2` 48.
 
 The conveyor inlet replaced the 12-triangle gallery head. Cut on
 `LOD0`/`LOD1` (frame face with a hole, four reveals, the panel) and with
@@ -606,6 +650,15 @@ No distance overrides.
 
 The working renders are local and git-ignored:
 
+- `review/brick_recourse_2026_11_22/voimalaitos_brick_hall/`: the
+  re-course pass. `before/` (the asset folder copied first),
+  `before_renders/` and `after/` (front, oblique and rear at 20, 35, 70
+  and 120 m at noon, and at 35 m at night with emission on, `LOD0`–`LOD3`,
+  identical settings), sheets in `compare/` and `compare_brick/`,
+  `views_pass1/` (`LOD0`, `LOD2`) and `views_pass2/` (`LOD1`, `LOD3`), the
+  atlas brick band at mip 3 (`mip3_brick_band.png`), and the brick beside
+  `kaivoskonttori_brick` at 20 and 35 m (`brick_vs_kaivoskonttori.png`);
+
 - `review/followups_2026_11_21/hall_inlet/`: `before/` (rendered from the
   copy in `../before_snapshot/voimalaitos_brick_hall/`) and `after/` of
   the inlet frame pass: the inlet from 10 m (`west`, `west_front`,
@@ -633,7 +686,7 @@ The validator's hidden-surface test reports:
 
 | Tier | Hidden triangles |
 | --- | --- |
-| `LOD0` | 207 (5.0 %) |
+| `LOD0` | 205 (4.9 %) |
 | `LOD1` | 99 (3.0 %) |
 | `LOD2` | 35 (2.4 %) |
 | `LOD3` | 0 |
@@ -702,17 +755,17 @@ That is six unique 1024² PNGs.
 
 | Rows | Band | Content |
 | --- | --- | --- |
-| 0–336 | BRICK | z 0–5.25 m: the plinth (0–0.625 m) and stretcher-bond brick |
-| 336–348 | | the bond carried on into the gutter |
-| 352–432 | BUNKER | 1.25 m of brick with a square window every 2 m: the bunker bay's window row |
+| 0–320 | BRICK | z 0–5.0 m: the plinth (0–0.625 m) and the catalog's stretcher-bond brick |
+| 320–340 | | the bond carried on into the gutter, meeting the bunker band's brick |
+| 345–425 | BUNKER | 1.25 m of brick with a square window every 2 m: the bunker bay's window row |
 | 440–480 | CONC | 0.625 m of light precast concrete: the band's sill, spandrels and head (V up the panel), and the reveals (V the depth) |
 | 488–512 | COPE | the 0.375 m concrete coping, its units a metre long, a drip groove at its foot |
 | 518–530 | PIPE | galvanised steel; `PIPE_STRIP` is rows 520–528 |
 | 536–1020 | unique | see below |
 
-Every 4 m slab's top samples the brick band's last row. So the bond runs on
-into the gutter above it, and the band above that is the bunker bay's, also
-brick. A coarse mip there still averages brick. With the concrete band next
+Every 3.75 m slab's top samples the brick band's last row. So the bond runs
+on into the gutter above it, and the band above that is the bunker bay's,
+also brick, on the same course rows. A coarse mip there still averages brick. With the concrete band next
 door, as first laid out, the slab lines showed as light hairlines at mip 3.
 
 The unique regions:
@@ -739,9 +792,10 @@ The unique regions:
 
 - that the regions neither overlap nor run off the sheet, and that each
   matches its face's size;
-- the bands' periods, and that the brick regions keep the band's bond (a
-  panel may cross a slab line, since a slab is 256 rows, eight bond
-  repeats);
+- the bands' periods, that the brick band tiles on whole courses and
+  bricks, and that the brick regions keep the band's bond (a panel may
+  cross a slab line, since a slab is 240 rows, 24 bond repeats);
+- that the bunker band's windows and their one-course sills fit its rows;
 - that the lettering fits its panel, and the elevations and decks their
   walls and roofs.
 
@@ -749,13 +803,29 @@ The unique regions:
 
 ### The brick band and the slab lines
 
-The walls are far taller than the brick band, so above 5.25 m they are cut
-at 5.25, 9.25, 13.25, 17.25 and 21.25 m into 4 m slabs (`CUTS`). Slab *i*
-samples the band 4*i* m lower, its rows 1.25–5.25 m. The bond and tones
-repeat every 48 courses (256 rows), and so does every noise field
-(`TILE_Y` = 4), so the slab lines vanish. Rows above 1.25 m are clean brick:
-the splash-back and salt bloom stay below. `check_layout()` keeps every
+The brick is the catalog's, painted by `scripts/brickwork.py`'s `paint()`:
+0.25 m stretchers (16 px) on 0.078125 m courses (5 px), 1 px recessed
+joints, a hashed tone per brick and about one in six the darker id
+(`TONE_COURSES` 48, seed 17). Courses run from the plinth's top, row 40.
+
+The walls are far taller than the brick band, so above 5.0 m they are cut
+at 5.0, 8.75, 12.5, 16.25 and 20.0 m into 3.75 m slabs (`CUTS`). Slab *i*
+samples the band 3.75*i* m lower, its rows 1.25–5.0 m. The bond and tones
+repeat every 48 courses (240 rows), and so does every noise field, so the
+slab lines vanish. No power-of-two division of the sheet is a whole number
+of 5 px courses, so `atlas.noise()`'s `tile_y` cannot give that period:
+`slab_noise()` makes it locally (the same FFT-blurred field on a 240-row
+period, tiled up the sheet), and `SlabWeather` gives `weathering.Weather`'s
+named fields the same period. Rows above 1.25 m are clean brick: the
+splash-back and salt bloom stay below. `check_layout()` keeps every
 opening's edge 0.1 m off a slab line.
+
+The bunker bay's brick is cut at the slab lines too (its lower brick at
+20.0 m), each piece sampling its own slab.
+
+`brickwork.py` has no low-density painter, so `paint_brick_lo()` (the
+`LOD3` elevations' brick at 6 px/m, brick, darker brick and mortar per
+sample in their proportions) stays local, as does `slab_noise()`.
 
 ### Brick that continues the band
 
@@ -763,22 +833,26 @@ Three places carry brick that cannot come from the tiling band:
 
 - **the lettering panel** under the turbine hall's coping, 10.5 × 1.25 m;
 - **the dusted panel round and under the conveyor inlet**, 3.875 ×
-  3.875 m at 12.625–16.5 m, centred under the inlet and cut round the
+  3.906 m at 12.656–16.563 m, centred under the inlet and cut round the
   foot of its frame (a notch 2.9 m wide from 15.82 m up), where coal dust
-  falls from the inlet's sill. It crosses the 13.25 m slab line, which the
-  bond does not see, and stops 0.31 m over the head of the small window
-  under the inlet. It is the largest 64 px/m square the sheet holds
-  (`MOUTH`, 248 × 248 px);
+  falls from the inlet's sill. It crosses the 16.25 m slab line, which the
+  bond does not see, and stops 0.39 m over the head of the small window
+  under the inlet. It is about the largest 64 px/m square the sheet holds
+  (`MOUTH`, 248 × 250 px);
 - **the bunker bay's window row**.
 
-Each is painted by the band's own brick painter, so its bond runs on into
-the band's across its edges:
+Each is painted by `brickwork.paint()` as the band is, so its bond runs on
+into the band's across its edges:
 
-- The two panels sit in the atlas at the U their wall samples the band at.
-  `U_OFF` places the turbine hall front's and the west wall's brick for
-  that, which breaks the bond only at two corners.
-- All three sit on rows a whole number of bond repeats (32 rows, six
-  courses) from the band rows their heights sample.
+- The two panels sit in the atlas at the U their wall samples the band at:
+  `U_OFF` takes the turbine hall front's and the west wall's U from them,
+  and their columns (16 and 764) are chosen so that U still turns the bond
+  a half stretcher at those walls' corners.
+- All three sit on rows a whole number of bond repeats (10 rows, two
+  courses) from the band rows their heights sample. `brickwork.paint()`
+  counts courses from its rect's foot, so `paint_brick_area()` paints each
+  from the last even-course row under it and hands the rows it overpaints
+  below the region back to `pad()`.
 
 The brick tones and noise across those edges are random either way, so the
 joins do not show. The coal dust fades to nothing at the panel's edges, and
@@ -902,7 +976,7 @@ The small square bunker windows' white frames average toward pale grey at
 ### Weathering
 
 Weathering is `scripts/weathering.py` at its moderate level, its noise on
-the 256-row period:
+the 240-row slab period (`SlabWeather`):
 
 - grime, and paint fade on the window steel, the doors, the letters and
   the stacks;
@@ -920,7 +994,7 @@ The plant burns coal, so `Weather.coal()` lays coal dust and soot:
 - **an even film on every brick surface**: coal 0.10 ± 0.04 with faint long
   runs on the slab period, and dirt 0.04. It takes the newness off the
   brick without changing the plant's shared palette (Variant list). It is
-  even, not heavier toward the coping, because every 4 m slab samples the
+  even, not heavier toward the coping, because every 3.75 m slab samples the
   same band rows; for the same reason darker runs under the copings and
   sills cannot live in the band and are not painted (the coping's own face
   carries its runs);
@@ -932,11 +1006,11 @@ The plant burns coal, so `Weather.coal()` lays coal dust and soot:
   broken by vertical runs. Down the middle it goes from about 0.9 at the
   sill to 0.5 at 1.5 m below and 0.3 at 3 m, then out over the panel's
   last metre, 3.3 m below the sill; it rises a little up the frame's
-  sides and fades out by the panel's top at 16.5 m. It cannot run the
+  sides and fades out by the panel's top at 16.56 m. It cannot run the
   5–6 m a free wall would show: the panel is already the largest 64 px/m
   square the sheet holds (the space the gallery's regions freed is a
   separate 128 × 136 px corner, which the inlet's own region now fills),
-  and below it the small window at 11.5–12.3 m is shared with every
+  and below it the small window at 11.48–12.27 m is shared with every
   other. The `LOD3` west elevation carries the same function;
 - the conveyor inlet's frame and panel dusted, heaviest along the sill and
   in runs down the panel, and its reveals;
@@ -958,8 +1032,8 @@ of the band, is its own room, with its own falloff toward the foot.
 
 The validator measures:
 
-- the glass at sRGB 57–59 (linear 0.037–0.040) across the variants;
-- 0.29× the brightest trim;
+- the glass at sRGB 56–58 (linear 0.036–0.038) across the variants;
+- 0.29–0.32× the brightest trim;
 - roughness `glazing.ROUGHNESS` (0.08), metallic 0.
 
 All of this is inside the Style Direction band, and the glass is darker than
@@ -1001,10 +1075,15 @@ the plant's pieces, so any two of them match side by side:
 - `brown_brick` is a dark clinker, well below the red in value and in
   redness, so the three variants read apart at a glance.
 - The mean plain-wall albedo (the albedo PNG's rows 720–900, the brick
-  band clear of windows and plinth) measures sRGB (102.7, 76.7, 68.2) on
-  `red_brick`, R − G 26.0, and (78.6, 65.2, 61.9) on `brown_brick`, R − G
-  13.4. The soot film took the red from (110.5, 81.0, 71.9), R − G 29.5,
-  with the palette constants unchanged.
+  band clear of windows and plinth) measures sRGB (102.9, 76.8, 68.2) on
+  `red_brick`, R − G 26.1, and (78.8, 65.2, 62.0) on `brown_brick`, R − G
+  13.6, within 0.3 of the previous brick painter's. The soot film took the
+  red from (110.5, 81.0, 71.9), R − G 29.5, with the palette constants
+  unchanged.
+- The palette constants are the plant's whatever paints the bond: the
+  shared tone hash (`brickwork.paint()`, seed 17, the darker id at seed
+  29) only decides which bricks take which tone, as on the plant's pieces
+  already on it.
 - `yellow_brick` keeps its brick; only its lettering is dark (Texture set).
 
 ## Night lighting
@@ -1088,8 +1167,8 @@ The facts sidecar `export/voimalaitos_brick_hall.model.json` records:
   | Door | Kind | Main |
   | --- | --- | --- |
   | Entrance (`entrance`), boiler house front, 1.81 × 2.30 m | entrance | yes |
-  | Machinery door (`machinery`), turbine hall front, 3.31 × 3.91 m | vehicle | no |
-  | Service door (`service`), turbine hall rear, 1.00 × 2.10 m | service | no |
+  | Machinery door (`machinery`), turbine hall front, 3.19 × 3.89 m | vehicle | no |
+  | Service door (`service`), turbine hall rear, 1.06 × 2.10 m | service | no |
 
 - no passages (the sidecar has no `passages` key): nothing stands over
   the ground outside the walls but the copings' oversail, the conveyor
@@ -1101,7 +1180,7 @@ and checked against the exported `LOD0`'s vertices:
 - bounds [-16.05, 0, -9.625] to [16.05, 24.75, 9.625];
 - footprint from x -16.0 to 16.0, z -8.625 to 8.375 (boiler house) and
   -8.125 to 7.875 (turbine hall);
-- the entrance at [-9.0, 0, 8.375], the machinery door at [13.5, 0, 7.875],
+- the entrance at [-9.0, 0, 8.375], the machinery door at [13.5625, 0, 7.875],
   both facing +Z, and the service door at [0.0, 0, -8.125], facing -Z;
 - the conveyor inlet (not a sidecar fact): the frame's face on the plane
   x = -16.05 (the bounds' face), from y 15.8176 to 18.9176 and z -6.075 to
@@ -1122,7 +1201,7 @@ Checked here, in Blender:
   - All four tiers have uri-only external images, one opaque material slot,
     and welded manifold topology.
   - Their hidden-surface candidates are only the exterior faces listed under
-    Interior geometry (207, 99, 35 and 0 triangles).
+    Interior geometry (205, 99, 35 and 0 triangles).
   - The pivot is at ground level and centred.
   - Every tier binds emission on UV0, default off, and the normal map at
     scale 1.
@@ -1196,6 +1275,22 @@ Checked here, in Blender:
   distance-matched per-texel mips. No gutter leak at any tier's real
   distance; two latent edges (`STACK_L`, `INLET`) in the stress renders.
 
+- The re-course pass (catalog brick module): the asset folder copied to
+  `review/brick_recourse_2026_11_22/voimalaitos_brick_hall/before/` first;
+  before/after sets with identical settings and their sheets (no view
+  reads worse: the brick keeps its colour, the band, spandrels, lettering,
+  inlet and dust read as before, and no slab line shows at any distance or
+  tier); the build's views at every tier; the brick band at mip 3 (no slab
+  or band seam); the brick beside `kaivoskonttori_brick` at 20 and 35 m
+  (the same module, bond and tone pattern, in the plant's palette); the
+  LOD pairs at 35, 70 and 120 m; the sidecar diffed against the previous
+  one (only the machinery door's position and size, the service door's
+  width, triangle counts, hashes and source changed); `check_layout()`
+  with its new brick checks and `check_regions()`.
+- Not re-measured in that pass: the `LOD3` elevations' window averages
+  against their `LOD2` regions (Texture set), and the mip 4 and day-cycle
+  renders.
+
 Pending, outside this repository:
 
 - **In the consumer:**
@@ -1220,6 +1315,26 @@ These are recorded as known-good markers, not requirements.
 
 ## Revision log
 
+- **2026-11-22**: Re-coursed to the catalog brick (`scripts/brickwork.py`:
+  0.25 m stretchers on 0.078125 m courses, the shared tone hash) from the
+  asset's own 0.0833 m courses; bounds, pivot, footprint, storeys, palette
+  and every opening's kind unchanged.
+  - Every brick-bound height on a course line: coping feet 19.140625 and
+    11.25, decks 18.671875 and 10.78125, the band's tiers 3.75 / 8.28125 /
+    12.8125 (lights 3.90625 tall), square windows 0.75 × 0.78125 at 3.984
+    + 3.75 k, the door window's sill 4.765625, the lettering 9.609375, the
+    dusted panel 12.65625, canopy 3.28–3.52, flue stub 12.73–14.77, the
+    bunker bay's row 21.016–22.266 and coping 23.59–23.97.
+  - Every opening side, pier and corner on a whole or half stretcher, the
+    bond turning at every corner: the band's piers 0.375 m (lights 1.5 m
+    apart, its axis x -8.9375), the hall windows and machinery door a
+    sixteenth east, the machinery door 3.375 × 3.984 m on its window's
+    axis, the service door 1.25 × 2.42 m, the bunker bay 13.75 × 6.5 m.
+  - Slabs 3.75 m (48 courses), the noise on their 240-row period
+    (`slab_noise()`, `SlabWeather`); the bunker bay's brick cut at 20.0 m.
+  - `check_layout()` checks the coursing and the stretcher grid
+    (`brick_problems()`).
+  - Triangles 4138/3300/1452/296 → 4144/3306/1452/304.
 - **2026-11-21**: Mip review of the current atlas recorded (Texture set,
   Review status); no asset change.
 - **2026-11-21**: Inlet frame pass, so the coal reception's gallery meets

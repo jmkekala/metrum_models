@@ -30,7 +30,7 @@ panel.
 
 Construction. The walls of both volumes are one closed shell, meshed
 directly: each wall is a rectangle less its openings and panels, cut into
-4 m slabs of brick (facade_atlas.CUTS) whose outlines are traced from a grid
+3.75 m slabs of brick (facade_atlas.CUTS) whose outlines are traced from a grid
 of cells; every face is then given every vertex that lies on its edges
 (tjunctions()), so neighbours meet on shared vertices. Recessed openings
 add their concrete reveals and the closing plane, the conveyor inlet its
@@ -581,14 +581,17 @@ def opening_polys(fr, item, rect, mode):
     cols, rows = item[3]
     wx, wy = L.WINDOW[:2]
     sec_s, sec_z = L.window_sections(cols, rows)
+    # the opening is whole courses tall; the pane rows stretch to it
+    k = L.win_k(rows)
     for a0, a1, ru in sec_s:
         for b0, b1, rv in sec_z:
             def fn(co, a0=a0, b0=b0, ru=ru, rv=rv):
                 return (wx + (ru + fr.s_of(co) - s0 - a0) * PPM,
-                        wy + (rv + co.z - z0 - b0) * PPM)
-            polys.append(Poly([[fr.P(s0 + a0, z0 + b0, out), fr.P(s0 + a1, z0 + b0, out),
-                                fr.P(s0 + a1, z0 + b1, out), fr.P(s0 + a0, z0 + b1, out)]],
-                              fn))
+                        wy + (rv + (co.z - z0) / k - b0) * PPM)
+            polys.append(Poly([[fr.P(s0 + a0, z0 + k * b0, out),
+                                fr.P(s0 + a1, z0 + k * b0, out),
+                                fr.P(s0 + a1, z0 + k * b1, out),
+                                fr.P(s0 + a0, z0 + k * b1, out)]], fn))
     return polys
 
 
@@ -607,11 +610,13 @@ def roof_polys(level):
     inner = [(x0 + p, y0 + p), (x1 - p, y0 + p), (x1 - p, y1 - p), (x0 + p, y1 - p)]
     zt, zd = L.Z_BWT, L.Z_BD
     polys.append(Poly([[q + (zt,) for q in outer], [q + (zt,) for q in inner]], blank))
+    # the inner faces turn the bond at their corners too: every other face
+    # a half stretcher along
     for k in range(4):
         a, b = inner[k], inner[(k + 1) % 4]
         fr = Frame(b, a)                        # out faces into the deck
         polys.append(Poly([[a + (zd,), b + (zd,), b + (zt,), a + (zt,)]],
-                          uv_brick(fr, 0.0, L.SLAB * L.slab_of(zd))))
+                          uv_brick(fr, (k % 2) * L.HALF, L.SLAB * L.slab_of(zd))))
     polys.append(Poly([[q + (zd,) for q in inner]], uv_deck(L.DECK_B, L.DECK_B_O)))
 
     x0, x1, y0, y1 = L.TH
@@ -619,10 +624,10 @@ def roof_polys(level):
     ring = [(x0, y0), (x1, y0), (x1, y1), (x0, y1), (x0, y1 - p), (x1 - p, y1 - p),
             (x1 - p, y0 + p), (x0, y0 + p)]
     polys.append(Poly([[q + (zt,) for q in ring]], blank))
-    for a, b in ((ring[7], ring[6]), (ring[6], ring[5]), (ring[5], ring[4])):
+    for k, (a, b) in enumerate(((ring[7], ring[6]), (ring[6], ring[5]), (ring[5], ring[4]))):
         fr = Frame(b, a)
         polys.append(Poly([[a + (zd,), b + (zd,), b + (zt,), a + (zt,)]],
-                          uv_brick(fr, 0.0, L.SLAB * L.slab_of(zd))))
+                          uv_brick(fr, (k % 2) * L.HALF, L.SLAB * L.slab_of(zd))))
     deck = [ring[7], ring[6], ring[5], ring[4]]
     polys.append(Poly([[q + (zd,) for q in deck]], uv_deck(L.DECK_T, L.DECK_T_O)))
     return polys
@@ -773,8 +778,22 @@ def box(x0, x1, y0, y1, z0, z1, sides, top, bottom):
 def bunker_windows(length):
     """Where along a bunker bay face of *length* its windows are centred: one
     in the middle, the rest every BUNKER_PITCH, as the band paints them."""
-    n = int((length / 2.0 - L.SQ / 2.0 - 0.3) // L.BUNKER_PITCH)
+    n = int((length / 2.0 - L.SQ_W / 2.0 - 0.3) // L.BUNKER_PITCH)
     return [length / 2.0 + L.BUNKER_PITCH * k for k in range(-n, n + 1)]
+
+
+def bunker_u(length):
+    """Where a bunker bay face of *length* samples the brick band in U: as
+    the window row's band does (a window on the face's middle, at
+    BUNKER_PITCH / 2 in the band), so the bond runs on across the row's
+    edges, and its corners turn the bond (check_layout())."""
+    return (L.BUNKER_PITCH / 2.0 - length / 2.0) % (L.ATLAS / PPM)
+
+
+def split_at_cuts(z0, z1):
+    """z0 .. z1 cut at the brick's slab lines, as (z0, z1) pieces."""
+    zs = [z0] + [c for c in L.CUTS if z0 + EPS < c < z1 - EPS] + [z1]
+    return list(zip(zs, zs[1:]))
 
 
 # Where the bay's buried west foot steps back behind the conveyor inlet.
@@ -790,7 +809,7 @@ def bunker(level):
     row with its reveals, the closing plane the small square window's
     region; from LOD2 the band's painted windows stand flush.
 
-    The west face stands 0.1 m behind the wall under it, inside the
+    The west face stands 0.125 m behind the wall under it, inside the
     parapet, but the conveyor inlet below is recessed further (INLET_DEPTH)
     and its head is above the deck: so below BUNKER_STEP_Z, where the
     parapet hides it, the bay's west face steps back BUNKER_STEP, behind
@@ -802,8 +821,10 @@ def bunker(level):
     d, zs = BUNKER_STEP, BUNKER_STEP_Z
     blank = uv_patch("blank")
     cut = opening_mode(level) == "cut"
-    bands = ((zb, w0, "brick"), (w0, w1, "band"), (w1, L.BUNKER_COPE, "brick"),
-             (L.BUNKER_COPE, L.BUNKER_TOP, "cope"))
+    # the brick bands cut at the slab lines, each piece sampling its slab
+    bands = ([(a, b, "brick") for a, b in split_at_cuts(zb, w0)] + [(w0, w1, "band")]
+             + [(a, b, "brick") for a, b in split_at_cuts(w1, L.BUNKER_COPE)]
+             + [(L.BUNKER_COPE, L.BUNKER_TOP, "cope")])
     ring = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
     polys = []
     for k in range(4):
@@ -813,15 +834,15 @@ def bunker(level):
         for z0, z1, what in bands:
             holes = []
             if what == "brick":
-                fn = uv_brick(fr, 0.37 * k, L.SLAB * L.slab_of(z0))
+                fn = uv_brick(fr, bunker_u(fr.L), L.SLAB * L.slab_of(z0))
             elif what == "band":
-                fn = (lambda co, fr=fr, half=half: (
-                    L.ATLAS + (fr.s_of(co) - half + L.BUNKER_PITCH / 2.0) * PPM,
+                fn = (lambda co, fr=fr: (
+                    (fr.s_of(co) + bunker_u(fr.L)) * PPM,
                     L.BUNK_Y0 + (co.z - w0) * PPM))
                 if cut:
                     for sc in bunker_windows(fr.L):
-                        rect = (sc - L.SQ / 2.0, sc + L.SQ / 2.0, L.BUNKER_SILL,
-                                L.BUNKER_SILL + L.SQ)
+                        rect = (sc - L.SQ_W / 2.0, sc + L.SQ_W / 2.0, L.BUNKER_SILL,
+                                L.BUNKER_SILL + L.SQ_H)
                         holes.append([fr.P(rect[0], rect[2]), fr.P(rect[0], rect[3]),
                                       fr.P(rect[1], rect[3]), fr.P(rect[1], rect[2])])
                         polys += opening_polys(fr, ("sq", sc, rect[2], None), rect, "cut")
@@ -1048,6 +1069,79 @@ def _avoid(wall):
             if it[0] not in ("conc",)]
 
 
+def _on(v, step):
+    return abs(v / step - round(v / step)) < 1e-6
+
+
+def brick_problems():
+    """The brickwork, on the catalog module (scripts/brickwork.py): every
+    height brick meets something at on a course line; every opening's
+    side, and so every pier, on a whole or half stretcher in the U its wall
+    samples; the bond turning a half stretcher at every corner. The
+    conveyor inlet is the exception, sized and placed by the coal
+    reception's gallery (its proud frame covers the cut); the lettering and
+    the dusted panel are brick continuing brick, held to the band's rows
+    and U by facade_atlas.check_regions()."""
+    bad = []
+    c, h = L.COURSE, L.HALF
+    heights = [("plinth", L.Z_PLINTH), ("boiler house coping's foot", L.Z_BS),
+               ("hall coping's foot", L.Z_TS), ("boiler house deck", L.Z_BD),
+               ("hall deck", L.Z_TD), ("brick band's top", L.BAND_TOP),
+               ("bunker window row", L.BUNKER_WIN[0]), ("bunker window row's top", L.BUNKER_WIN[1]),
+               ("bunker coping's foot", L.BUNKER_COPE), ("bunker windows' sill", L.BUNKER_SILL),
+               ("bunker windows' head", L.BUNKER_SILL + L.SQ_H),
+               ("canopy", L.CANOPY[3]), ("canopy's top", L.CANOPY[3] + L.CANOPY[4]),
+               ("flue stub", L.FLUE[3]), ("flue stub's top", L.FLUE[3] + L.FLUE[4])]
+    heights += [("slab line", z) for z in L.CUTS + (L.SLAB,)]
+    for what, z in heights:
+        if not _on(z, c):
+            bad.append("the %s at %.6f m is off the coursing" % (what, z))
+    for name in L.WALL_ORDER:
+        u = L.U_OFF[name]
+        for it in L.ITEMS[name]:
+            if it[0] == "inlet":
+                continue
+            s0, s1, z0, z1 = L.item_rect(name, it)
+            tag = "%s: %s at %.4f, %.4f" % (name, it[0], it[1], it[2])
+            if not (_on(z0, c) and _on(z1, c)):
+                bad.append(tag + " is off the coursing")
+            if it[0] in ("letters", "mouth"):
+                continue
+            if not (_on(u + s0, h) and _on(u + s1, h)):
+                bad.append(tag + " cuts the bond off a half stretcher")
+    for wall, xa, xb in (("bh_front", L.CANOPY[0], L.CANOPY[1]),
+                         ("bh_rear", L.FLUE[0], L.FLUE[1])):
+        u = L.U_OFF[wall]
+        if not (_on(u + L.wall_s(wall, xa), h) and _on(u + L.wall_s(wall, xb), h)):
+            bad.append("the %s's sides on %s are off a half stretcher" % (
+                "canopy" if wall == "bh_front" else "flue stub", wall))
+    ring = L.WALL_ORDER[:-1]
+    for a, b in zip(ring, ring[1:] + ring[:1]):
+        end = L.U_OFF[a] + L.wall_len(a)
+        if not (_on(L.U_OFF[b], h) and _on(end - L.U_OFF[b] - h, L.BRICK_L)):
+            bad.append("the %s/%s corner does not turn the bond" % (a, b))
+    # the boiler house's east face above the hall: the front return, the
+    # step face and the rear return in one plane, on one bond
+    if not (_on(L.U_OFF["step"] - L.U_OFF["bh_ret_front"] - L.wall_len("bh_ret_front"),
+                L.BRICK_L) and
+            _on(L.U_OFF["step"] + L.wall_len("step") - L.U_OFF["bh_ret_rear"], L.BRICK_L)):
+        bad.append("the step face does not run on the returns' bond")
+    # the bunker bay: its plan, corners and windows on the grid
+    x0, x1, y0, y1 = L.BUNKER
+    lens = [x1 - x0, y1 - y0, x1 - x0, y1 - y0]
+    if not all(_on(v, h) for v in (x0, x1, y0, y1)):
+        bad.append("the bunker bay's faces are off the half-stretcher grid")
+    for k in range(4):
+        la, lb = lens[k], lens[(k + 1) % 4]
+        if not _on(bunker_u(la) + la - bunker_u(lb) - h, L.BRICK_L):
+            bad.append("a bunker bay corner does not turn the bond")
+        for sc in bunker_windows(la):
+            if not (_on(bunker_u(la) + sc - L.SQ_W / 2.0, h)
+                    and _on(bunker_u(la) + sc + L.SQ_W / 2.0, h)):
+                bad.append("a bunker bay window cuts the bond off a half stretcher")
+    return bad
+
+
 def check_layout():
     """Numbers that have to agree before any geometry is worth looking at."""
     bad = []
@@ -1089,6 +1183,9 @@ def check_layout():
     for kind, top in L.LEAF_TOP.items():
         if not 2.0 <= top <= 2.4:
             bad.append("the %s leaf is %.3f m" % (kind, top))
+        if top > L.SIZES[kind][1] - 2 * L.DOOR_FRAME - 0.05:
+            bad.append("no transom or vent panel over the %s leaf" % kind)
+    bad += brick_problems()
     # the ladders and their cages clear of the corners and the openings
     for wall, ladder, cage in (("th_rear", WALL1, CAGE1), ("step", WALL2, CAGE2)):
         avoid = _avoid(wall)

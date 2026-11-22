@@ -14,14 +14,16 @@ artwork.
 
 The atlas is a trim sheet. Five bands run the full width and tile in U:
 
-    y    0 ..  336   BRICK   z 0 .. 5.25 m: the cast concrete plinth and
-                             stretcher-bond facing brick. Walls above 5.25 m
-                             sample its rows 1.25 .. 5.25 m in 4 m slabs
-                             (SLAB): the bond, the tones and every noise
-                             repeat every 256 rows, so the slab lines vanish.
-    y  336 ..  348           the brick's bond carried on into the gutter, so
+    y    0 ..  320   BRICK   z 0 .. 5.0 m: the cast concrete plinth and the
+                             catalog's stretcher-bond facing brick
+                             (scripts/brickwork.py: 0.25 m stretchers on
+                             0.078125 m courses). Walls above 5.0 m sample
+                             its rows 1.25 .. 5.0 m in 3.75 m slabs (SLAB):
+                             the bond, the tones and every noise repeat every
+                             240 rows, 48 courses, so the slab lines vanish.
+    y  320 ..  340           the brick's bond carried on into the gutter, so
                              a coarse mip at a slab's top still averages brick
-    y  352 ..  432   BUNKER  1.25 m of brick with a small square window every
+    y  345 ..  425   BUNKER  1.25 m of brick with a small square window every
                              2 m: the bunker bay's window row, on brick at
                              both edges for the same reason.
     y  440 ..  480   CONC    0.625 m of light precast concrete, U along the
@@ -48,8 +50,15 @@ outer columns and the middle ones (window_sections()).
 Two unique regions continue the brick band: the lettering under the turbine
 hall's coping and the wall round and under the conveyor inlet. Each sits in the atlas
 at the U its wall samples the band at (U_OFF is chosen for that) and on rows
-a whole number of bond repeats (32 rows, six courses) from the band rows its
+a whole number of bond repeats (10 rows, two courses) from the band rows its
 heights sample, so its bond runs on into the band's across its edges.
+
+Every height brick meets something else at lies on a course line, and every
+opening's side, every pier and every corner on a whole or half stretcher in
+the U its wall samples; at each corner the bond turns, the course that ends
+on a whole brick on one face starting on a half on the next (U_OFF,
+build.py's check_layout()). Windows of an odd number of half stretchers
+stand a sixteenth of a metre off the half-stretcher grid, centred.
 
 Rasterising is scripts/atlas.py's; dirt, algae, rust, faded paint and coal
 dust are scripts/weathering.py's fields, placed by weather() below.
@@ -64,6 +73,7 @@ import numpy as np
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "scripts"))
 import atlas  # noqa: E402
+import brickwork  # noqa: E402
 import glazing  # noqa: E402
 import weathering  # noqa: E402
 
@@ -86,31 +96,46 @@ BH = (-16.0, -2.0, -8.5, 8.5)          # x0, x1, y0, y1: 14 x 17 m
 TH = (-2.0, 16.0, -8.0, 8.0)           # 18 x 16 m
 
 # ------------------------------------------------------------ vertical layout
-# Metres above ground; every height is a whole or half texel at 64 px/m.
-Z_PLINTH = 0.625        # 40 px; cast concrete base under every wall
+# Metres above ground. Every height brick meets something at is a whole
+# number of courses, the catalog's 0.078125 m (scripts/brickwork.py), and
+# so a whole number of texels at 64 px/m; plan positions brick meets
+# something at are whole or half stretchers, 0.125 m.
+COURSE = brickwork.COURSE      # brick course pitch, metres: 5 px
+BRICK_L = brickwork.BRICK_L    # stretcher, metres: 16 px, 64 bricks per atlas width
+HALF = BRICK_L / 2.0           # the plan grid openings, piers and corners keep to
+
+
+def courses(n):
+    """n courses, in metres."""
+    return n * COURSE
+
+
+Z_PLINTH = courses(8)   # 0.625, 40 px; cast concrete base under every wall
 COPING = 0.375          # the concrete coping on the parapet, foot to top
 CO = 0.05               # it oversails the brick outside by this much
 CO_IN = 0.05            # and the parapet's inner face by this much
 PIN = 0.25              # the parapet's inner face, inside the wall line
 WALL_IN = 0.125         # the walls run this far up into the coping
-DECK_DOWN = 0.875       # the deck, below the coping's top
+DECK_DOWN = COPING + courses(6)     # 0.84375: the deck, below the coping's
+                                    # top, six courses under its foot
 
-Z_BC = 19.5             # boiler house coping top
-Z_BS = Z_BC - COPING    # 19.125, the coping's foot
-Z_BWT = Z_BS + WALL_IN  # 19.25, its wall tops, inside the coping
-Z_BD = Z_BC - DECK_DOWN  # 18.625, its deck
-Z_TC = 11.625           # turbine hall coping top
-Z_TS = Z_TC - COPING    # 11.25
+Z_BS = courses(245)     # 19.140625, the boiler house coping's foot
+Z_BC = Z_BS + COPING    # 19.515625, its top
+Z_BWT = Z_BS + WALL_IN  # 19.265625, its wall tops, inside the coping
+Z_BD = Z_BC - DECK_DOWN  # 18.671875, its deck
+Z_TS = courses(144)     # 11.25, the turbine hall coping's foot
+Z_TC = Z_TS + COPING    # 11.625
 Z_TWT = Z_TS + WALL_IN  # 11.375
-Z_TD = Z_TC - DECK_DOWN  # 10.75
+Z_TD = Z_TC - DECK_DOWN  # 10.78125
 BURY = 0.5              # the turbine hall's coping runs this far into the
                         # boiler house, which hides its open ends
 
 # The brick band holds z 0 .. BAND_TOP. Above that the walls are cut at
-# CUTS into 4 m slabs, slab i sampling the band SLAB * i lower.
-BAND_TOP = 5.25
-SLAB = 4.0
-CUTS = (5.25, 9.25, 13.25, 17.25, 21.25)
+# CUTS into slabs of 48 courses, the bond's tone period, slab i sampling the
+# band SLAB * i lower.
+BAND_TOP = courses(64)  # 5.0
+SLAB = courses(48)      # 3.75
+CUTS = tuple(BAND_TOP + SLAB * i for i in range(5))    # 5.0 .. 20.0
 
 # ----------------------------------------------------------------- windows
 # One steel window design: frame FR, columns CW wide on mullions, pane rows
@@ -122,23 +147,41 @@ RH = 0.75               # 48 px
 MUL = 0.046875          # 3 px
 REGION_COLS = 4
 REGION_ROWS = 4
-SQ = 0.8125             # the small square window, 52 px
+# The small square window: six half stretchers wide and ten courses tall,
+# as near square as the brick allows (48 x 50 px).
+SQ_W = 6 * HALF                 # 0.75
+SQ_H = courses(10)              # 0.78125
+
+
+def win_design_h(rows):
+    """A window's height as painted: its frame and *rows* pane rows."""
+    return 2 * FR + rows * RH
 
 
 def win_size(cols, rows):
-    return (2 * FR + cols * CW, 2 * FR + rows * RH)
+    """The opening a window of *cols* x *rows* panes fills: its width, an
+    odd number of half stretchers, and its height rounded to the nearest
+    whole course; the pane rows stretch to it by win_k()."""
+    return (2 * FR + cols * CW, round(win_design_h(rows) / COURSE) * COURSE)
+
+
+def win_k(rows):
+    """How much the window's pane rows stretch to fill its opening."""
+    return win_size(1, rows)[1] / win_design_h(rows)
 
 
 # Other openings and flush panels: (width, height), metres.
 SIZES = {
-    "entrance": (2.0, 3.0),
-    "bigdoor": (3.5, 4.0),
-    "service": (1.1875, 2.375),
-    "sq": (SQ, SQ),
-    "bushing": (2.5, 1.25),     # flush: painted on the wall at every tier
-    "letters": (10.5, 1.25),    # flush: brick with the lettering on it
-    "mouth": (3.875, 3.875),    # flush: brick round and under the inlet, dusted
-}                               # (and "inlet", the inlet's frame, set below)
+    "entrance": (16 * HALF, courses(39)),      # 2.0 x 3.046875
+    "bigdoor": (27 * HALF, courses(51)),       # 3.375 x 3.984375
+    "service": (10 * HALF, courses(31)),       # 1.25 x 2.421875
+    "sq": (SQ_W, SQ_H),
+    "bushing": (20 * HALF, courses(16)),       # 2.5 x 1.25, flush: painted on
+                                               # the wall at every tier
+    "letters": (10.5, courses(16)),     # flush: brick with the lettering on it
+    "mouth": (3.875, courses(50)),      # flush: brick round and under the
+}                                       # inlet, dusted (and "inlet", the
+                                        # inlet's frame, set below)
 REVEAL = {"win": 0.25, "sq": 0.2, "entrance": 0.25, "bigdoor": 0.3,
           "service": 0.25}
 FLUSH = ("bushing", "letters", "mouth", "conc")
@@ -168,24 +211,38 @@ WALL_ORDER = ("bh_front", "bh_ret_front", "th_front", "th_east", "th_rear",
 SOFFIT = {"bh_front": Z_BS, "bh_rear": Z_BS, "bh_west": Z_BS, "step": Z_BS,
           "th_front": Z_TS, "th_east": Z_TS, "th_rear": Z_TS}
 
-# The boiler house front's window band: five lights 1.125 m wide on
-# 0.3125 m brick piers, in three tiers of 3.875 m on light concrete
-# spandrels, a concrete sill under it and a head over it.
-LIGHT_X = (-11.875, -10.4375, -9.0, -7.5625, -6.125)
+# The boiler house front's window band: five lights 1.125 m wide (nine half
+# stretchers) on 0.375 m brick piers (three), in three tiers of 3.90625 m
+# (50 courses) on light concrete spandrels of eight courses, a three-course
+# concrete sill under it and a head over it. Its axis stands a sixteenth
+# east of the entrance's, so the lights' sides fall on half stretchers.
 LIGHT = (2, 5)
-TIERS = (3.75, 8.25, 12.75)
-BAND_W = 6.875
-BAND_STRIPS = ((3.5, 0.25), (7.625, 0.625), (12.125, 0.625), (16.625, 0.25))
-# Small square windows on the gallery levels, every 3.75 m.
-SQ_Z = (4.0, 7.75, 11.5, 15.25)
+LIGHT_PIER = 3 * HALF                   # 0.375
+BAND_X = -8.9375                        # the band's axis
+LIGHT_PITCH = win_size(*LIGHT)[0] + LIGHT_PIER      # 1.5
+LIGHT_X = tuple(BAND_X + LIGHT_PITCH * k for k in (-2, -1, 0, 1, 2))
+LIGHT_H = win_size(*LIGHT)[1]           # 3.90625
+SPANDREL = courses(8)                   # 0.625
+BAND_SILL = courses(3)                  # 0.234375, the sill and the head
+TIERS = tuple(courses(48) + (LIGHT_H + SPANDREL) * k for k in range(3))
+# 3.75, 8.28125, 12.8125
+BAND_W = 5 * win_size(*LIGHT)[0] + 4 * LIGHT_PIER   # 7.125
+BAND_STRIPS = ((TIERS[0] - BAND_SILL, BAND_SILL),
+               (TIERS[0] + LIGHT_H, SPANDREL), (TIERS[1] + LIGHT_H, SPANDREL),
+               (TIERS[2] + LIGHT_H, BAND_SILL))
+# Small square windows on the gallery levels, every 3.75 m (48 courses).
+SQ_Z = tuple(courses(51 + 48 * k) for k in range(4))   # 3.984375 .. 15.234375
 # The turbine hall's front: four hall windows 1.625 x 6.875 m on equal
-# piers, and one over the machinery door, every head at 9.375 m.
-TH_WIN_X = (0.5, 3.75, 7.0, 10.25)
+# piers, and one over the machinery door, every head at 9.375 m. Each is
+# thirteen half stretchers wide, so its axis is a sixteenth off the grid.
+TH_WIN_X = (0.5625, 3.8125, 7.0625, 10.3125)
 TH_WIN = (3, 9)
-TH_SILL = 2.5
+TH_SILL = courses(32)                   # 2.5
 DOOR_WIN = (3, 6)
-DOOR_WIN_SILL = 4.75
-LETTERS_Z = 9.625       # the lettering band's foot, under the hall's coping
+TH_HEAD = TH_SILL + win_size(*TH_WIN)[1]            # 9.375
+DOOR_WIN_SILL = TH_HEAD - win_size(*DOOR_WIN)[1]    # 4.765625
+BIGDOOR_X = 13.5625     # the machinery door and its window, on one axis
+LETTERS_Z = courses(123)    # 9.609375, the lettering band's foot, under the coping
 
 # The coal conveyor's inlet in the west wall, closed: the hall carries no
 # gallery of its own; the coal reception's gallery, rising at 20 degrees,
@@ -196,7 +253,9 @@ LETTERS_Z = 9.625       # the lettering band's foot, under the hall's coping
 # panel; round it a galvanised steel frame INLET_FRAME wide standing
 # INLET_PROUD off the brick, its flat face on the copings' outer plane (the
 # hall's bounds): the gallery's end butts against it there, its 0.05 m
-# collar landing on the frame.
+# collar landing on the frame. Its size and height are the gallery's, so
+# it is the one opening off the course and stretcher grid: its proud frame
+# covers the brick's cut edge.
 INLET_Y = 4.5
 INLET_W, INLET_H = 2.6, 2.8
 INLET_ZC = 13.0 + 12.0 * math.tan(math.radians(20.0))     # 17.3676
@@ -206,7 +265,8 @@ INLET_PROUD = CO                # the frame's face on the copings' outer plane
 INLET_Z0 = INLET_ZC - INLET_H / 2.0 - INLET_FRAME         # the frame's foot
 SIZES["inlet"] = (INLET_W + 2 * INLET_FRAME, INLET_H + 2 * INLET_FRAME)
 INLET_COPE_CLEAR = 0.15         # the frame's head, at least this under the coping
-MOUTH_Z = 12.625                # the dusted brick round and under it, from here
+MOUTH_Z = courses(162)          # 12.65625: the dusted brick round and under it,
+                                # from here
 # The west coping over the inlet carries the dust too: its outer face
 # from INLET_Y + COPE_DUST_HALF to INLET_Y - COPE_DUST_HALF has a region of
 # its own.
@@ -216,40 +276,43 @@ COPE_DUST_HALF = 2.0
 # is (cols, rows) for a window, (width, height) for a concrete strip.
 ITEMS = {
     "bh_front": ([("win", x, z, LIGHT) for z in TIERS for x in LIGHT_X]
-                 + [("conc", -9.0, z, (BAND_W, h)) for z, h in BAND_STRIPS]
+                 + [("conc", BAND_X, z, (BAND_W, h)) for z, h in BAND_STRIPS]
                  + [("sq", x, z, None) for x in (-14.25, -3.75) for z in SQ_Z]
                  + [("entrance", -9.0, 0.0, None)]),
     "bh_ret_front": [],
     "th_front": ([("win", x, TH_SILL, TH_WIN) for x in TH_WIN_X]
-                 + [("bigdoor", 13.5, 0.0, None),
-                    ("win", 13.5, DOOR_WIN_SILL, DOOR_WIN),
+                 + [("bigdoor", BIGDOOR_X, 0.0, None),
+                    ("win", BIGDOOR_X, DOOR_WIN_SILL, DOOR_WIN),
                     ("letters", 7.0, LETTERS_Z, None)]),
-    "th_east": [("sq", -5.0, 7.75, None), ("sq", 5.0, 7.75, None),
-                ("bushing", 0.0, 6.25, None)],
-    "th_rear": ([("sq", x, 7.75, None) for x in (14.0, 8.5, 5.0, 1.5)]
-                + [("sq", x, 2.0, None) for x in (14.0, 8.5, 5.0)]
+    "th_east": [("sq", -5.0, SQ_Z[1], None), ("sq", 5.0, SQ_Z[1], None),
+                ("bushing", 0.0, courses(80), None)],
+    "th_rear": ([("sq", x, SQ_Z[1], None) for x in (14.0, 8.5, 5.0, 1.5)]
+                + [("sq", x, courses(26), None) for x in (14.0, 8.5, 5.0)]
                 + [("service", 0.0, 0.0, None)]),
     "bh_ret_rear": [],
     "bh_rear": ([("sq", x, z, None) for x in (-4.5, -13.5) for z in SQ_Z]
-                + [("sq", -9.0, 4.0, None), ("sq", -9.0, 7.75, None)]),
+                + [("sq", -9.0, SQ_Z[0], None), ("sq", -9.0, SQ_Z[1], None)]),
     "bh_west": ([("sq", INLET_Y, z, None) for z in SQ_Z[:3]]
                 + [("sq", -INLET_Y, z, None) for z in SQ_Z]
                 + [("inlet", INLET_Y, INLET_Z0, None),
                    ("mouth", INLET_Y, MOUTH_Z, None)]),
-    "step": [("sq", -5.0, 15.25, None), ("sq", 5.0, 15.25, None)],
+    "step": [("sq", -5.0, SQ_Z[3], None), ("sq", 5.0, SQ_Z[3], None)],
 }
 
-# Things outside the walls that build.py makes as solids of their own.
-CANOPY = (-10.6, -7.4, 1.25, 3.25, 0.25)        # x0, x1, projection, z, thickness
-FLUE = (-10.0, -8.0, 1.0, 12.75, 2.0)           # x0, x1, projection, z, height
-# The raised coal bunker bay on the boiler house's roof, its faces 0.1 m
+# Things outside the walls that build.py makes as solids of their own; where
+# they meet the brick, on the course and stretcher grid.
+CANOPY = (-10.625, -7.375, 1.25, courses(42), courses(3))   # x0, x1, projection,
+                                                            # z, thickness
+FLUE = (-10.0, -8.0, 1.0, courses(163), courses(26))        # x0, x1, projection,
+                                                            # z, height
+# The raised coal bunker bay on the boiler house's roof, its faces 0.125 m
 # behind the walls under it: brick, a row of square windows, a coping.
-BUNKER = (-15.9, -2.1, 1.9, 8.4)                # plan
-BUNKER_TOP = 24.0
-BUNKER_WIN = (21.0, 22.25)                      # the window row's band
-BUNKER_COPE = BUNKER_TOP - COPING
+BUNKER = (-15.875, -2.125, 1.875, 8.375)        # plan: 13.75 x 6.5 m
+BUNKER_WIN = (courses(269), courses(285))       # the window row's band, 1.25 m
+BUNKER_COPE = courses(302)                      # 23.59375, the coping's foot
+BUNKER_TOP = BUNKER_COPE + COPING               # 23.96875
 BUNKER_PITCH = 2.0       # a window centred on every face, 2 m apart
-BUNKER_SILL = BUNKER_WIN[0] + 0.21875           # its windows' sills (14 px up the band)
+BUNKER_SILL = BUNKER_WIN[0] + courses(3)        # its windows' sills (15 px up the band)
 # Two steel stub stacks on the boiler house's deck in front of the bay.
 STACKS = [(-12.5, 0.0), (-10.0, 0.0)]
 STACK_R = 0.78          # octagon, to its corners: 1.44 m across the flats
@@ -335,39 +398,39 @@ def window_sections(cols, rows):
 
 
 # ------------------------------------------------------------------- bands
-BRICK_Y0, BRICK_H = 0, 336            # z 0 .. BAND_TOP
+BRICK_Y0, BRICK_H = 0, 320            # z 0 .. BAND_TOP
 BRICK_PHASE = BRICK_Y0 + 40           # the first course's foot, at the plinth's top
-BRICK_RUN = 348                       # the bond runs on into the gutter to here
+BRICK_RUN = 340                       # the bond runs on into the gutter to here
 CONC_Y0, CONC_H = 440, 40             # 0.625 m
 COPE_Y0, COPE_H = 488, 24             # 0.375 m
 PIPE_Y0, PIPE_H = 518, 12
 # The ladders' sides span the band's middle eight rows
 PIPE_STRIP = (PIPE_Y0 + 2, PIPE_Y0 + PIPE_H - 2)
-BUNK_Y0, BUNK_H = 352, 80             # z BUNKER_WIN
+BUNK_Y0, BUNK_H = 345, 80             # z BUNKER_WIN
 
-COURSE = 16.0 / 3.0     # brick course pitch in px: 0.0833 m
-BRICK_L = 16.0          # stretcher: 0.25 m, 64 bricks per atlas width
-TONE_COURSES = 48       # tones repeat every 256 rows, SLAB metres
-TILE_Y = 4              # every noise repeats every 256 rows likewise
-BOND_ROWS = 32          # six courses: the bond's own repeat
+COURSE_PX = COURSE * 64.0       # 5 px
+BRICK_PX = BRICK_L * 64.0       # 16 px
+TONE_COURSES = 48       # tones repeat every 240 rows, SLAB metres
+NOISE_ROWS = 240        # every noise repeats every SLAB likewise (slab_noise())
+BOND_ROWS = 10          # two courses: the bond's own repeat
 
 # ------------------------------------------------------------ unique regions
 # (x, y, w, h) in pixels. check_regions() asserts they neither overlap nor
 # run off the sheet, and that each matches its opening's size.
-BIGDOOR = (4, 536, 224, 256)                    # 3.5 x 4.0 m
+BIGDOOR = (4, 536, 216, 255)                    # 3.375 x 3.984375 m
 WINDOW = (236, 536, 136, 200)                   # 2.125 x 3.125 m: 4 x 4 panes
-ENTRANCE = (380, 536, 128, 192)                 # 2.0 x 3.0 m
-SERVICE = (516, 536, 76, 152)                   # 1.1875 x 2.375 m
+ENTRANCE = (380, 536, 128, 195)                 # 2.0 x 3.046875 m
+SERVICE = (516, 536, 80, 155)                   # 1.25 x 2.421875 m
 STACK = (600, 536, 20, 204)                     # one octagon face, 6.375 m, at SPPM
 # the face with the ladder, turned a quarter: U up the stack, V across it
 STACK_L = (236, 740, 204, 20)
-FLUE_END = (628, 536, 128, 128)                 # 2.0 x 2.0 m
-FLUE_SIDE = (608, 884, 64, 32)                  # 2.0 m (U, up) x 1.0 m (V, out), FPPM
+FLUE_END = (628, 536, 128, 130)                 # 2.0 x 2.03125 m
+FLUE_SIDE = (608, 884, 65, 32)                  # 2.03125 m (U, up) x 1.0 m (V, out), FPPM
 BUSHING = (628, 672, 120, 60)                   # 2.5 x 1.25 m at BPPM
-SQWIN = (520, 700, 52, 52)                      # 0.8125 m square
-MOUTH = (768, 552, 248, 248)                    # 3.875 x 3.875 m, brick
+SQWIN = (520, 700, 48, 50)                      # 0.75 x 0.78125 m
+MOUTH = (764, 550, 248, 250)                    # 3.875 x 3.90625 m, brick
 COPE_DUST = (236, 764, 256, 24)                 # 4.0 x 0.375 m of the west coping
-LETTERS = (4, 936, 672, 80)                     # 10.5 x 1.25 m, brick
+LETTERS = (16, 935, 672, 80)                    # 10.5 x 1.25 m, brick
 DECK_T = (604, 744, 148, 132)                   # 18.5 x 16.5 m at DPPM
 DECK_B = (756, 806, 116, 140)                   # 14.5 x 17.5 m at DPPM
 INLET = (880, 810, 116, 124)                    # 2.9 x 3.1 m at IPPM
@@ -404,17 +467,24 @@ PATCHES = {n: (756 + 20 * (i % 12), 952 + 22 * (i // 12), 16, 16)
 
 def _u_offsets():
     """Where each wall samples the brick band in U: end to end round the
-    building, except that the two walls with a brick region of their own
-    sample the band at the U their region sits at in the atlas."""
-    u, out = 0.0, {}
-    for n in WALL_ORDER[:-1]:
-        out[n] = u
-        u += wall_len(n)
-    out["step"] = 0.0
+    building, turning the bond a half stretcher at every corner (the course
+    that ends on a whole brick on one face starts on a half on the next),
+    except that the two walls with a brick region of their own sample the
+    band at the U their region sits at in the atlas (placed so the turn
+    holds there too: build.py's check_layout()). The boiler house's east
+    face above the hall's roof ("step") runs on from the front return in
+    its plane, so the two meet on one bond."""
+    fixed = {}
     for name, kind in (("th_front", "letters"), ("bh_west", "mouth")):
         it, = [i for i in ITEMS[name] if i[0] == kind]
         s0 = item_rect(name, it)[0]
-        out[name] = (REGION[kind][0] / PPM - s0) % (ATLAS / PPM)
+        fixed[name] = (REGION[kind][0] / PPM - s0) % (ATLAS / PPM)
+    u, out = 0.0, {}
+    for n in WALL_ORDER[:-1]:
+        u = fixed.get(n, u)
+        out[n] = u
+        u = (u + wall_len(n) + HALF) % (ATLAS / PPM)
+    out["step"] = (out["bh_ret_front"] + wall_len("bh_ret_front")) % (ATLAS / PPM)
     return out
 
 
@@ -497,7 +567,7 @@ LIT_FACTOR = (1.0, 0.88, 0.72)
 # ---------------------------------------------------------------- relief
 # Heights in metres, relative to the face each region maps onto: only the few
 # centimetres the mesh does not model.
-BRICK_FACE = 0.006      # brick face proud of the recessed mortar
+BRICK_FACE = brickwork.BRICK_FACE   # brick face proud of the recessed mortar
 ARRIS_H = 0.008         # the concrete's arrises
 FRAME_H = 0.035         # window frames, proud of the glass
 TRAN_H = 0.030          # mullions and bars
@@ -525,27 +595,60 @@ def m(v):
     return v * PPM
 
 
+# ================================================================== noise
+def slab_noise(c, seed, sx_px, sy_px=None):
+    """atlas.noise() on the slab's period: a smooth periodic field that
+    repeats every NOISE_ROWS rows up the canvas (and wraps in U), so the
+    brick band's slabs stay seamless. atlas.noise() repeats only on a
+    power-of-two division of the sheet (tile_y), and no whole number of
+    5 px courses is one, so the period is made here: white noise over one
+    period, blurred through the FFT as atlas.noise() does, tiled up the
+    canvas."""
+    sy_px = sx_px if sy_px is None else sy_px
+    n = c.size * c.ss
+    rows = NOISE_ROWS * c.ss
+    rs = np.random.RandomState(seed)
+    white = rs.standard_normal((rows, n)).astype(np.float32)
+    fy = np.fft.fftfreq(rows)[:, None]
+    fx = np.fft.rfftfreq(n)[None, :]
+    sx_s, sy_s = sx_px * c.ss, sy_px * c.ss
+    g = np.exp(-2.0 * np.pi ** 2 * ((fx * sx_s) ** 2 + (fy * sy_s) ** 2))
+    out = np.fft.irfft2(np.fft.rfft2(white) * g, s=(rows, n)).astype(np.float32)
+    out -= out.mean()
+    out /= max(float(out.std()), 1e-12)
+    return np.tile(out, (-(-n // rows), 1))[:n]
+
+
+class SlabWeather(weathering.Weather):
+    """weathering.Weather whose named noise fields repeat every NOISE_ROWS
+    (slab_noise()) instead of on a power-of-two tile_y."""
+
+    def noise(self, name):
+        if name not in self._noise:
+            seed, sx, sy, kind = weathering.NOISE[name]
+            n = slab_noise(self.c, seed, sx, sy)
+            if kind == "unit":
+                n = atlas.smoothstep(-1.5, 1.5, n)
+            elif kind == "speck":
+                n = atlas.smoothstep(1.3, 2.2, n)
+            self._noise[name] = n.astype(np.float32)
+        return self._noise[name]
+
+
 # ================================================================== bands
-def paint_brick_area(c, x0, x1, y0, y1):
-    """Stretcher-bond facing brick over a rect, in the band's own bond: 64
-    bricks per width, courses 1/12 m from BRICK_PHASE, two tones, mortar
-    recessed. Any rect whose rows are a whole number of BOND_ROWS from the
+def paint_brick_area(c, x0, x1, y0, y1, clear=True):
+    """The catalog's stretcher-bond facing brick over a rect
+    (scripts/brickwork.paint()), in the band's bond: courses on the rows the
+    band's own lie on, BRICK_PHASE plus whole BOND_ROWS. brickwork counts
+    courses from its rect's foot, so it is painted from the last such row at
+    or under y0; the rows under y0 it overpaints are handed back to pad()
+    (*clear*). Any rect whose rows are a whole number of BOND_ROWS from the
     band rows it continues, and whose X is the U it continues, matches it."""
-    c.paint(x0, x1, y0, y1, ID_BRICK, 1.0, 1.0)
-    sy, sx, Y, X = c.field(x0, x1, y0, y1)
-    r = np.floor((Y - BRICK_PHASE) / COURSE).astype(np.int64)
-    off = (r % 2) * BRICK_L * 0.5
-    b = np.floor((X - off) / BRICK_L).astype(np.int64) % int(ATLAS / BRICK_L)
-    rr = r % TONE_COURSES
-    bed = (Y - BRICK_PHASE - r * COURSE) < 1.0
-    perp = ((X - off) % BRICK_L) < 1.0
-    joint = bed | perp
-    tone = 0.90 + 0.20 * atlas.hash_unit(b, rr, 17)
-    dark = atlas.hash_unit(atlas.hash_int(b, rr, 29), 7) < 0.17
-    c.mid[sy, sx] = np.where(joint, ID_MORTAR, np.where(dark, ID_BRICK2, ID_BRICK))
-    c.shade[sy, sx] = np.where(joint, 0.94, tone)
-    c.ao[sy, sx] = np.where(joint, 0.80, 1.0)
-    c.height[sy, sx] = np.where(joint, 0.0, BRICK_FACE)
+    ys = BRICK_PHASE + math.floor((y0 - BRICK_PHASE) / BOND_ROWS) * BOND_ROWS
+    brickwork.paint(c, x0, x1, ys, y1, (ID_BRICK, ID_BRICK2, ID_MORTAR),
+                    TONE_COURSES, seed=17)
+    if clear and ys < y0:
+        c.paint(x0, x1, ys, y0, mid=atlas.UNPAINTED)
 
 
 def paint_plinth(c):
@@ -629,17 +732,19 @@ def paint_pipe_band(c):
 
 def paint_bunker_band(c):
     """The bunker bay's window row: the band's brick, and a small square
-    window every BUNKER_PITCH, flush on the face, a concrete sill under
-    each and the recess's occlusion round it."""
+    window every BUNKER_PITCH, flush on the face, a one-course concrete
+    sill under each and the recess's occlusion round it. The brick runs on
+    down into the gutter, where the brick band's own run meets it."""
     y0, y1 = BUNK_Y0, BUNK_Y0 + BUNK_H
-    paint_brick_area(c, 0, ATLAS, y0 - PAD, y1 + 2 * PAD)
+    paint_brick_area(c, 0, ATLAS, y0 - PAD, y1 + 2 * PAD, clear=False)
     p = m(BUNKER_PITCH)
     wy = y0 + m(BUNKER_SILL - BUNKER_WIN[0])
+    w, h = m(SQ_W), m(SQ_H)
     for k in range(int(round(ATLAS / p))):
         cx = p / 2.0 + k * p
-        x0 = cx - m(SQ) / 2.0
-        c.mul(x0 - 3, x0 + m(SQ) + 3, wy - 3, wy + m(SQ) + 3, 0.72, ao=0.70)
-        c.paint(x0 - 4, x0 + m(SQ) + 4, wy - 5, wy - 1, ID_CONC, 0.96, 0.9, height=0.0)
+        x0 = cx - w / 2.0
+        c.mul(x0 - 3, x0 + w + 3, wy - 3, wy + h + 3, 0.72, ao=0.70)
+        c.paint(x0 - 4, x0 + w + 4, wy - COURSE_PX, wy - 1, ID_CONC, 0.96, 0.9, height=0.0)
         paint_sq(c, x0, wy, PPM, pad=0)
 
 
@@ -650,29 +755,33 @@ def _bar(c, a0, a1, b0, b1, mid=ID_FRAME, h=FRAME_H, ao=0.88, shade=1.0,
     c.bevel(a0, a1, b0, b1, h, w, axes=axes)
 
 
-def paint_window(c, x0, y0, ppm, cols, seq, pad=PAD):
+def paint_window(c, x0, y0, ppm, cols, seq, pad=PAD, ky=1.0):
     """A steel multi-pane window at *ppm*, corner at pixel (x0, y0): a
     frame, *cols* columns on mullions, one pane row per entry of *seq* (0
     bottom, 1 with the hopper, 2 plain, 3 top) on bars. The region paints
     seq (0, 1, 2, 3) and four columns; the LOD3 elevations paint each
-    window whole."""
+    window whole, its positions up it stretched by *ky* to the opening
+    (win_k()), as the mesh stretches the region's sections."""
     def P(v):
         return v * ppm
+
+    def Q(v):
+        return v * ppm * ky
 
     def B(v):
         # a bar never thinner than one sample: at the elevations' 6 px/m it
         # would vanish, leaving the window darker than the region
         return max(v * ppm, 1.0 / c.ss)
     n = len(seq)
-    W, H = win_size(cols, n)
+    W, H = win_size(cols, n)[0], win_design_h(n)
     k = ppm / PPM
     bw = max(0.25, k)
-    _bar(c, x0 - pad, x0 + P(W) + pad, y0 - pad, y0 + P(H) + pad, h=FRAME_H, w=bw)
+    _bar(c, x0 - pad, x0 + P(W) + pad, y0 - pad, y0 + Q(H) + pad, h=FRAME_H, w=bw)
     ix0, ix1 = x0 + P(FR), x0 + P(W - FR)
-    c.paint(ix0, ix1, y0 + P(FR), y0 + P(H - FR), ID_FRAME, 1.0, 0.9, height=TRAN_H)
+    c.paint(ix0, ix1, y0 + Q(FR), y0 + Q(H - FR), ID_FRAME, 1.0, 0.9, height=TRAN_H)
     for j, kind in enumerate(seq):
-        b0 = y0 + P(FR + j * RH) + (B(MUL) / 2.0 if j > 0 else 0.0)
-        b1 = y0 + P(FR + (j + 1) * RH) - (B(MUL) / 2.0 if j < n - 1 else 0.0)
+        b0 = y0 + Q(FR + j * RH) + (B(MUL) / 2.0 if j > 0 else 0.0)
+        b1 = y0 + Q(FR + (j + 1) * RH) - (B(MUL) / 2.0 if j < n - 1 else 0.0)
         for i in range(cols):
             a0 = x0 + P(FR + i * CW) + (B(MUL) / 2.0 if i > 0 else 0.0)
             a1 = x0 + P(FR + (i + 1) * CW) - (B(MUL) / 2.0 if i < cols - 1 else 0.0)
@@ -686,25 +795,26 @@ def paint_window(c, x0, y0, ppm, cols, seq, pad=PAD):
             c.paint(a0, a1, g0, g1, ID_GLASS, 1.0, 0.92, height=0.0)
             c.mul(a0, a1, g1 - 2.0 * k, g1, 0.92, ao=0.86)
         if j > 0:                                   # the bar under it
-            t = y0 + P(FR + j * RH)
+            t = y0 + Q(FR + j * RH)
             c.mul(ix0, ix1, t - B(MUL) / 2.0 - 1.5 * k, t - B(MUL) / 2.0, 0.90, ao=0.86)
-    c.mul(x0, x0 + P(W), y0, y0 + P(FR), 0.92, ao=0.86)  # bottom rail holds water
+    c.mul(x0, x0 + P(W), y0, y0 + Q(FR), 0.92, ao=0.86)  # bottom rail holds water
 
 
 def paint_sq(c, x0, y0, ppm, pad=PAD):
-    """The small square steel window: a frame round four panes on a cross."""
+    """The small square steel window, SQ_W x SQ_H: a frame round four panes
+    on a cross."""
     k = ppm / PPM
     bw = max(0.25, k)
-    s = SQ * ppm
+    sw, sh = SQ_W * ppm, SQ_H * ppm
     f = max(FR * ppm, 1.0 / c.ss)
     b = max(MUL * ppm, 1.0 / c.ss)
-    _bar(c, x0 - pad, x0 + s + pad, y0 - pad, y0 + s + pad, h=FRAME_H, w=bw)
-    mx, my = x0 + s / 2.0, y0 + s / 2.0
-    for a0, a1 in ((x0 + f, mx - b / 2.0), (mx + b / 2.0, x0 + s - f)):
-        for g0, g1 in ((y0 + f, my - b / 2.0), (my + b / 2.0, y0 + s - f)):
+    _bar(c, x0 - pad, x0 + sw + pad, y0 - pad, y0 + sh + pad, h=FRAME_H, w=bw)
+    mx, my = x0 + sw / 2.0, y0 + sh / 2.0
+    for a0, a1 in ((x0 + f, mx - b / 2.0), (mx + b / 2.0, x0 + sw - f)):
+        for g0, g1 in ((y0 + f, my - b / 2.0), (my + b / 2.0, y0 + sh - f)):
             c.paint(a0, a1, g0, g1, ID_GLASS, 1.0, 0.92, height=0.0)
             c.mul(a0, a1, g1 - 2.0 * k, g1, 0.92, ao=0.86)
-    c.mul(x0, x0 + s, y0, y0 + f, 0.92, ao=0.86)
+    c.mul(x0, x0 + sw, y0, y0 + f, 0.92, ao=0.86)
 
 
 def _door_frame(c, x0, y0, ppm, w, h, pad):
@@ -827,7 +937,7 @@ def paint_service(c, x0, y0, ppm, pad=PAD):
 def paint_flue_end(c, x0, y0, ppm, pad=PAD):
     """The flue stub's end: a concrete casing round a bolted steel flange
     whose blanking plate closes the duct, sooted where the flue gas left."""
-    w, h = 2.0, 2.0
+    w, h = FLUE[1] - FLUE[0], FLUE[4]
     k = ppm / PPM
     c.paint(x0 - pad, x0 + w * ppm + pad, y0 - pad, y0 + h * ppm + pad, ID_CONC,
             1.0, 1.0, height=0.0)
@@ -1152,8 +1262,8 @@ def paint_deck(c, rect, origin, inner, drains, hatches, kerbs, paths, soot=(),
     c.paint(x - PAD, x + w + PAD, y - PAD, y + h + PAD, ID_FELT, 1.0, 1.0, height=0.0)
     sy, sx, Y, X = c.field(x - PAD, x + w + PAD, y - PAD, y + h + PAD)
     lap = ((Y - y) % DPPM) < 0.7
-    grain = atlas.noise(c, 31, 0.7, tile_y=TILE_Y)[sy, sx]
-    tone = atlas.noise(c, 32, 14.0, tile_y=TILE_Y)[sy, sx]
+    grain = slab_noise(c, 31, 0.7)[sy, sx]
+    tone = slab_noise(c, 32, 14.0)[sy, sx]
     # mineral-surfaced felt: a fine stone grain, a few grains of the
     # lighter ballast, broad tone where rolls were laid at different times
     c.mid[sy, sx] = np.where(grain > 2.3, ID_BALLAST, ID_FELT)
@@ -1268,7 +1378,7 @@ def paint_elevation(c, ename):
             kind = item[0]
             if kind == "win":
                 paint_window(c, X(s0), Y(z0), LPPM, item[3][0], row_seq(item[3][1]),
-                             pad=0)
+                             pad=0, ky=win_k(item[3][1]))
             elif kind == "conc":
                 c.paint(X(s0), X(s1), Y(z0), Y(z1), ID_CONC, 0.98, 0.95, height=0.0)
             elif kind == "letters":
@@ -1322,17 +1432,20 @@ def check_regions():
         if abs(rw - w * k) > 1.0 or abs(rh - h * k) > 1.0:
             problems.append("%s region is %d x %d px for a %.3f x %.3f m opening"
                             % (kind, rw, rh, w, h))
-    if (FLUE_END[2], FLUE_END[3]) != (m(2.0), m(2.0)) or FLUE[1] - FLUE[0] != 2.0 \
-            or FLUE[4] != 2.0 or (FLUE_SIDE[2], FLUE_SIDE[3]) != (FLUE[4] * FPPM,
-                                                                     FLUE[2] * FPPM):
+    if (FLUE_END[2], FLUE_END[3]) != (m(FLUE[1] - FLUE[0]), m(FLUE[4])) \
+            or (FLUE_SIDE[2], FLUE_SIDE[3]) != (FLUE[4] * FPPM, FLUE[2] * FPPM):
         problems.append("the flue's regions are not its faces")
     if abs(m(BAND_TOP) - BRICK_H) > 1e-6:
         problems.append("the brick band does not hold z 0 .. BAND_TOP")
-    if abs(TONE_COURSES * COURSE - m(SLAB)) > 1e-6 or (ATLAS / TILE_Y) != m(SLAB):
+    if abs(TONE_COURSES * COURSE_PX - m(SLAB)) > 1e-6 or NOISE_ROWS != m(SLAB):
         problems.append("the bond and the noise do not repeat every SLAB")
-    if abs(BOND_ROWS / COURSE - round(BOND_ROWS / COURSE)) > 1e-9 or \
-            round(BOND_ROWS / COURSE) % 2:
+    if abs(BOND_ROWS / COURSE_PX - round(BOND_ROWS / COURSE_PX)) > 1e-9 or \
+            round(BOND_ROWS / COURSE_PX) % 2:
         problems.append("BOND_ROWS is not an even number of courses")
+    if (BRICK_PHASE - BRICK_Y0) % COURSE_PX or BRICK_H % COURSE_PX or ATLAS % BRICK_PX:
+        problems.append("the brick band does not tile on whole courses and bricks")
+    if (BUNK_Y0 - PAD - BRICK_RUN) < 0 or (BUNK_Y0 - PAD - BRICK_RUN) >= BOND_ROWS:
+        problems.append("the brick band's run does not meet the bunker band's brick")
     if BAND_TOP - SLAB < Z_PLINTH + 0.6:
         problems.append("the upper slabs would sample the plinth's splash")
     if CONC_H != m(0.625) or COPE_H != m(COPING) or BUNK_H != m(BUNKER_WIN[1] - BUNKER_WIN[0]):
@@ -1352,6 +1465,9 @@ def check_regions():
         problems.append("the bunker band's top is off the bond above it")
     if m(BUNKER_PITCH) * round(ATLAS / m(BUNKER_PITCH)) != ATLAS:
         problems.append("the bunker's window pitch does not divide the band")
+    if BUNKER_SILL - COURSE < BUNKER_WIN[0] - 1e-9 or \
+            BUNKER_SILL + SQ_H + COURSE > BUNKER_WIN[1] + 1e-9:
+        problems.append("the bunker's windows and their sills do not fit its band")
     if STACK[2] < stack_face_w() * SPPM or STACK[3] < (STACK_TOP - Z_BD) * SPPM \
             or STACK_L[3] < stack_face_w() * SPPM or STACK_L[2] < (STACK_TOP - Z_BD) * SPPM:
         problems.append("a stack region cannot hold a face")
@@ -1405,8 +1521,8 @@ def mouth_dust(s, z):
 def stack_runs(c, rot):
     """f(Y, X): rain runs down a stack face, the "runs" noise turned with
     the region (weathering's own runs down V suit the upright one)."""
-    n = atlas.noise(c, 104 if not rot else 204, 30.0 if rot else 0.8,
-                    0.8 if rot else 30.0, tile_y=TILE_Y)
+    n = slab_noise(c, 104 if not rot else 204, 30.0 if rot else 0.8,
+                   0.8 if rot else 30.0)
     ss = c.ss
 
     def f(Y, X):
@@ -1418,8 +1534,9 @@ def weather(c):
     """Where the weather goes; scripts/weathering.py says what it looks like.
 
     Only the brick band's first 1.25 m is height from the ground for every
-    wall; above it each 4 m slab samples the same rows again, so nothing
-    that follows height goes there, only noise on the slab period (TILE_Y).
+    wall; above it each 3.75 m slab samples the same rows again, so nothing
+    that follows height goes there, only noise on the slab period
+    (NOISE_ROWS, SlabWeather).
     The plant burns coal: a light film of soot and coal dust lies evenly on
     all the brick and the coping, heavier on the conveyor inlet and in a
     broad stain on the wall and the coping round it, and soot on the
@@ -1427,8 +1544,8 @@ def weather(c):
     """
     brick = (ID_BRICK, ID_BRICK2, ID_MORTAR)
     steel = (ID_GALV, ID_DUCT, ID_DOOR, ID_HANDLE, ID_STACK, ID_PANEL)
-    w = weathering.Weather(c, clean=(ID_GLASS, ID_PORC), steel=steel, tile_y=TILE_Y,
-                           coal_dust=weathering.COAL_DUST)
+    w = SlabWeather(c, clean=(ID_GLASS, ID_PORC), steel=steel,
+                    coal_dust=weathering.COAL_DUST)
     w.grime()
     w.fade((ID_FRAME, ID_DOOR, ID_LETTER, ID_STACK))
     w.wash(brick)
@@ -1594,10 +1711,10 @@ def paint(ss=atlas.SS):
         paint_elevation(c, ename)
     paint_patches(c)
 
-    # Tone wear, grain and pores. Every field repeats every 256 rows, so the
+    # Tone wear, grain and pores. Every field repeats every 240 rows, so the
     # brick band's slabs and the U wrap stay seamless.
     def nz(seed, sx, sy=None):
-        return atlas.noise(c, seed, sx, sy, tile_y=TILE_Y)
+        return slab_noise(c, seed, sx, sy)
     wear = 0.025 * nz(3, 40.0) + 0.015 * nz(4, 8.0)
     c.shade *= 1.0 + wear
     walls = np.isin(c.mid, (ID_BRICK, ID_BRICK2, ID_MORTAR, ID_PLINTH))
@@ -1645,7 +1762,7 @@ def export(out_dir, ss=atlas.SS):
     c = paint(ss)
     cav = atlas.cavity(c, radius_px=1.5, depth_m=0.010)
     c.weather.dust(cav, (ID_BRICK, ID_BRICK2, ID_MORTAR))
-    rough = 0.04 * atlas.noise(c, 13, 20.0, tile_y=TILE_Y)
+    rough = 0.04 * slab_noise(c, 13, 20.0)
     path = os.path.join(out_dir, ASSET)
     glass = atlas.coverage(c, ID_GLASS)
     written = [atlas.save(atlas.orm(c, SURFACE, rough, 0.5 * cav), path + "_orm.png"),
