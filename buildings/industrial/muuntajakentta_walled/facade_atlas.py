@@ -42,6 +42,7 @@ import numpy as np
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "scripts"))
 import atlas  # noqa: E402
+import brickwork  # noqa: E402
 import weathering  # noqa: E402
 
 ASSET = "muuntajakentta_walled"
@@ -205,8 +206,8 @@ H_TOP = 3.80                    # the band reaches the fire wall's top
 F_Y0 = 254.0                    # v of z = 0 on the fence band
 BAND_IDS_ROWS = {"HOUSE": (0, 248), "FENCE": (252, 384)}
 
-COURSE = 0.078125               # brick course pitch: 5 px
-BRICK_L = 0.25                  # stretcher: 16 px, 64 bricks per atlas width
+COURSE = brickwork.COURSE       # brick course pitch: 5 px
+BRICK_L = brickwork.BRICK_L     # stretcher: 16 px, 64 bricks per atlas width
 TONE_COURSES = 48
 
 # ------------------------------------------------------------ unique regions
@@ -325,7 +326,7 @@ BAND_IDS = {
 # ---------------------------------------------------------------- relief
 # Heights in metres, relative to the face each region maps onto: only the
 # few centimetres the mesh does not model.
-BRICK_FACE = 0.006
+BRICK_FACE = brickwork.BRICK_FACE
 COPING_H = 0.020
 FRAME_H = 0.025         # door and gate frames
 RIB_H = 0.008           # pressed ribs in the gate's sheet
@@ -352,23 +353,8 @@ def paint_brick(c, x0, x1, y_z0, z_from, z_to, seed=17):
     """Stretcher-bond facing brick, 0.25 x 0.078 m, two tones, the mortar
     recessed and its own id, courses counted from z_from up. Tone and bond
     repeat at the atlas wrap in U."""
-    y0, top = y_z0 + m(z_from), y_z0 + m(z_to)
-    course, blen = m(COURSE), m(BRICK_L)
-    c.paint(x0, x1, y0, top, ID_BRICK, 1.0, 1.0)
-    sy, sx, Y, X = c.field(x0, x1, y0, top)
-    r = np.floor((Y - y0) / course).astype(np.int64)
-    off = (r % 2) * blen * 0.5
-    b = np.floor((X - off) / blen).astype(np.int64) % int(ATLAS / blen)
-    rr = r % TONE_COURSES
-    bed = (Y - y0 - r * course) < 1.0
-    perp = ((X - off) % blen) < 1.0
-    joint = bed | perp
-    tone = 0.90 + 0.20 * atlas.hash_unit(b, rr, seed)
-    dark = atlas.hash_unit(b, rr, seed + 12) < 0.17
-    c.mid[sy, sx] = np.where(joint, ID_MORTAR, np.where(dark, ID_BRICK2, ID_BRICK))
-    c.shade[sy, sx] = np.where(joint, 0.94, tone)
-    c.ao[sy, sx] = np.where(joint, 0.80, 1.0)
-    c.height[sy, sx] = np.where(joint, 0.0, BRICK_FACE)
+    brickwork.paint(c, x0, x1, y_z0 + m(z_from), y_z0 + m(z_to),
+                    (ID_BRICK, ID_BRICK2, ID_MORTAR), TONE_COURSES, seed=seed)
 
 
 def paint_footing(c, x0, x1, y_z0, ztop, mid=ID_PLINTH):

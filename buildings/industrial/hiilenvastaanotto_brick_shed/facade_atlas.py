@@ -53,6 +53,7 @@ import numpy as np
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "scripts"))
 import atlas  # noqa: E402
+import brickwork  # noqa: E402
 import glazing  # noqa: E402
 import weathering  # noqa: E402
 
@@ -290,8 +291,8 @@ PIPE_STRIP = (EAVE_Y0 + EAVE_H - GUTTER_PX + 2, EAVE_Y0 + EAVE_H - 2)
 SNOW_GUARD = 0.55                # the snow guard's lower tube, up the slope
 RIB_P = 16.0                     # profiled sheet: a rib every 0.25 m
 
-COURSE = 0.078125                # brick course pitch: 5 px
-BRICK_L = 0.25                   # stretcher: 16 px
+COURSE = brickwork.COURSE        # brick course pitch: 5 px
+BRICK_L = brickwork.BRICK_L      # stretcher: 16 px
 TONE_COURSES = 48                # brick tone repeats every 3.75 m
 
 # ------------------------------------------------------------ unique regions
@@ -421,7 +422,7 @@ LIT_FACTOR = (1.0, 0.88, 0.72)
 # Metres, relative to the face each region maps onto: only what the mesh
 # does not model. Regions painted at LPM or ROOF_RPM scale relief that varies
 # along their stretched axis, so the normal map's slopes stay physical.
-BRICK_FACE = 0.006
+BRICK_FACE = brickwork.BRICK_FACE
 BAND_H = 0.010
 FRAME_H = 0.035
 BAR_H = 0.022
@@ -494,24 +495,8 @@ def paint_brick(c):
     """Stretcher-bond facing brick, 0.25 x 0.078125 m, in two tones, mortar
     recessed and its own id; tone and bond repeat every TONE_COURSES."""
     x0, x1 = -PAD, BRICK_W + PAD
-    y0 = BRICK_Y0 + m(Z_PLINTH)
-    top = BRICK_Y0 + m(Z_BAND0)
-    c.paint(x0, x1, y0, top, ID_BRICK, 1.0, 1.0)
-    course, blen = m(COURSE), m(BRICK_L)
-    sy, sx, Y, X = c.field(x0, x1, y0, top)
-    r = np.floor((Y - y0) / course).astype(np.int64)
-    off = (r % 2) * blen * 0.5
-    b = np.floor((X - off) / blen).astype(np.int64) % 64
-    rr = r % TONE_COURSES
-    bed = (Y - y0 - r * course) < 1.0
-    perp = ((X - off) % blen) < 1.0
-    joint = bed | perp
-    tone = 0.90 + 0.20 * atlas.hash_unit(b, rr, 17)
-    dark = atlas.hash_unit(b, rr, 29) < 0.17
-    c.mid[sy, sx] = np.where(joint, ID_MORTAR, np.where(dark, ID_BRICK2, ID_BRICK))
-    c.shade[sy, sx] = np.where(joint, 0.94, tone)
-    c.ao[sy, sx] = np.where(joint, 0.80, 1.0)
-    c.height[sy, sx] = np.where(joint, 0.0, BRICK_FACE)
+    brickwork.paint(c, x0, x1, BRICK_Y0 + m(Z_PLINTH), BRICK_Y0 + m(Z_BAND0),
+                    (ID_BRICK, ID_BRICK2, ID_MORTAR), TONE_COURSES, seed=17)
     paint_plinth(c, x0, x1)
     paint_band(c, x0, x1)
 
@@ -696,11 +681,8 @@ def paint_lane_side(c):
     z = (Y - y0) / LPM
     xp = u - HX                             # plan x
     # brick everywhere first
-    course, blen = COURSE * LPM, BRICK_L * LPM
-    r = np.floor((Y - y0) / course).astype(np.int64)
-    off = (r % 2) * blen * 0.5
-    bi = np.floor((X - off) / blen).astype(np.int64) % 97
-    joint = ((Y - y0 - r * course) < 0.5) | (((X - off) % blen) < 0.5)
+    r, bi, bed, perp = brickwork.bond(Y, X, y0, COURSE * LPM, BRICK_L * LPM, 97, joint=0.5)
+    joint = bed | perp
     tone = 0.90 + 0.20 * atlas.hash_unit(bi, r % TONE_COURSES, 17)
     dark = atlas.hash_unit(bi, r % TONE_COURSES, 29) < 0.17
     mid = np.where(joint, ID_MORTAR, np.where(dark, ID_BRICK2, ID_BRICK)).astype(np.uint8)

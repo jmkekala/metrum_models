@@ -55,6 +55,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 if HERE not in sys.path:
     sys.path.insert(0, HERE)
 import atlas  # noqa: E402
+import brickwork  # noqa: E402
 import weathering  # noqa: E402
 
 ATLAS = 512
@@ -119,8 +120,8 @@ CAPTOP_R = (220, UNI_Y, 36, 36)     # a cap's top, centred
 PATCH_NAMES = ("blank", "soffit", "paint", "conc")
 PATCHES = {n: (264 + 18 * i, UNI_Y, 12, 12) for i, n in enumerate(PATCH_NAMES)}
 
-COURSE = 0.078125                   # brick course: 5 px
-BRICK_L = 0.25                      # stretcher: 16 px, 32 to the atlas width
+COURSE = brickwork.COURSE           # brick course: 5 px
+BRICK_L = brickwork.BRICK_L         # stretcher: 16 px, 32 to the atlas width
 TONE_COURSES = 48
 COPING_JOINT = 1.0                  # precast coping units
 
@@ -154,7 +155,7 @@ BRICKISH = (ID_PLINTH, ID_BRICK, ID_BRICK2, ID_MORTAR, ID_CONC)
 BAND_IDS = {name: (rows, set(BRICKISH)) for name, rows in BAND_ROWS.items()}
 
 # relief, metres, relative to the face each region maps onto
-BRICK_FACE = 0.006
+BRICK_FACE = brickwork.BRICK_FACE
 COPING_H = 0.020
 FRAME_H = 0.025
 RIB_H = 0.008
@@ -261,21 +262,8 @@ def check_layout(piece):
 def paint_brick(c, y_z0, z_from, z_to, seed):
     """Stretcher bond, two tones, the mortar recessed, courses counted from
     z_from; bond and tone repeat at the atlas wrap in U."""
-    y0, top = y_z0 + m(z_from), y_z0 + m(z_to)
-    course, blen = m(COURSE), m(BRICK_L)
-    c.paint(0, ATLAS, y0, top, ID_BRICK, 1.0, 1.0)
-    sy, sx, Y, X = c.field(0, ATLAS, y0, top)
-    r = np.floor((Y - y0) / course).astype(np.int64)
-    off = (r % 2) * blen * 0.5
-    b = np.floor((X - off) / blen).astype(np.int64) % int(ATLAS / blen)
-    rr = r % TONE_COURSES
-    joint = ((Y - y0 - r * course) < 1.0) | (((X - off) % blen) < 1.0)
-    tone = 0.90 + 0.20 * atlas.hash_unit(b, rr, seed)
-    dark = atlas.hash_unit(b, rr, seed + 12) < 0.17
-    c.mid[sy, sx] = np.where(joint, ID_MORTAR, np.where(dark, ID_BRICK2, ID_BRICK))
-    c.shade[sy, sx] = np.where(joint, 0.94, tone)
-    c.ao[sy, sx] = np.where(joint, 0.80, 1.0)
-    c.height[sy, sx] = np.where(joint, 0.0, BRICK_FACE)
+    brickwork.paint(c, 0, ATLAS, y_z0 + m(z_from), y_z0 + m(z_to),
+                    (ID_BRICK, ID_BRICK2, ID_MORTAR), TONE_COURSES, seed=seed)
 
 
 def paint_plinth(c, y_z0):

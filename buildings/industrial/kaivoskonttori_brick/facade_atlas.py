@@ -45,6 +45,7 @@ import numpy as np
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "scripts"))
 import atlas  # noqa: E402
+import brickwork  # noqa: E402
 import glazing  # noqa: E402
 import weathering  # noqa: E402
 
@@ -113,8 +114,8 @@ PIPE_STRIP = (EAVE_Y0 + EAVE_H - GUTTER_PX + 2, EAVE_Y0 + EAVE_H - 2)
 CANE_Y0, CANE_H = 576, 12         # the canopy's edge, 0.1875 m
 ROOF_RPM = ROOF_H / SLOPE_LEN     # roof rows per metre up the slope (63.8)
 
-COURSE = 0.078125       # brick course pitch: 5 px
-BRICK_L = 0.25          # stretcher: 16 px, 64 bricks per atlas width
+COURSE = brickwork.COURSE      # brick course pitch: 5 px
+BRICK_L = brickwork.BRICK_L    # stretcher: 16 px, 64 bricks per atlas width
 TONE_COURSES = 24       # brick tone repeats every GABLE_SHIFT
 SEAM = 32               # standing seams every 0.5 m, in px
 SNOW_GUARD = (0.50, 0.74)   # slope metres from the eave edge: brackets
@@ -202,7 +203,7 @@ EMIT = {ID_GLASS: (255, 255, 255)}
 LIT_FACTOR = (1.0, 0.88, 0.72)
 
 # ---------------------------------------------------------------- relief
-BRICK_FACE = 0.006      # brick face proud of the recessed mortar
+BRICK_FACE = brickwork.BRICK_FACE   # brick face proud of the recessed mortar
 FRAME_H = 0.030         # window and door frames, proud of the glass
 SASH_H = 0.045          # an opening sash, proud of the frame
 DOOR_FRAME_H = 0.020    # steel door frames
@@ -235,24 +236,8 @@ def paint_brick(c):
     mortar recessed and its own id. Tone and bond repeat at the atlas wrap in
     U and every TONE_COURSES in V, which lets the gables sample these rows
     again higher up."""
-    y0 = BRICK_Y0 + m(Z_PLINTH)
-    top = BRICK_Y0 + BRICK_H + PAD
-    c.paint(0, ATLAS, y0, top, ID_BRICK, 1.0, 1.0)
-    course, blen = m(COURSE), m(BRICK_L)
-    sy, sx, Y, X = c.field(0, ATLAS, y0, top)
-    r = np.floor((Y - y0) / course).astype(np.int64)
-    off = (r % 2) * blen * 0.5
-    b = np.floor((X - off) / blen).astype(np.int64) % int(ATLAS / blen)
-    rr = r % TONE_COURSES
-    bed = (Y - y0 - r * course) < 1.0
-    perp = ((X - off) % blen) < 1.0
-    joint = bed | perp
-    tone = 0.90 + 0.20 * atlas.hash_unit(b, rr, 17)
-    dark = atlas.hash_unit(b, rr, 29) < 0.17
-    c.mid[sy, sx] = np.where(joint, ID_MORTAR, np.where(dark, ID_BRICK2, ID_BRICK))
-    c.shade[sy, sx] = np.where(joint, 0.94, tone)
-    c.ao[sy, sx] = np.where(joint, 0.80, 1.0)
-    c.height[sy, sx] = np.where(joint, 0.0, BRICK_FACE)
+    brickwork.paint(c, 0, ATLAS, BRICK_Y0 + m(Z_PLINTH), BRICK_Y0 + BRICK_H + PAD,
+                    (ID_BRICK, ID_BRICK2, ID_MORTAR), TONE_COURSES, seed=17)
     paint_plinth(c, BRICK_Y0)
 
 

@@ -53,6 +53,7 @@ import numpy as np
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "scripts"))
 import atlas  # noqa: E402
+import brickwork  # noqa: E402
 import glazing  # noqa: E402
 import weathering  # noqa: E402
 
@@ -133,8 +134,8 @@ CANE_Y0, CANE_H = 560, 24         # the canopy's fascia, 0.375 m
 # middle rows of its top, where no joint lies along them.
 PIPE_STRIP = (COP_Y0 + COP_FACE + 6, COP_Y0 + COP_FACE + COP_TOP - 6)
 
-COURSE = 0.078125       # brick course pitch: 5 px
-BRICK_L = 0.25          # stretcher: 16 px, 64 bricks per atlas width
+COURSE = brickwork.COURSE      # brick course pitch: 5 px
+BRICK_L = brickwork.BRICK_L    # stretcher: 16 px, 64 bricks per atlas width
 TONE_COURSES = 24       # brick tone repeats every 1.875 m
 COP_JOINT = 128         # coping sheet joints every 2 m, in px
 
@@ -251,7 +252,7 @@ EMIT = {ID_GLASS: (255, 255, 255)}
 LIT_FACTOR = (1.0, 0.88, 0.72)
 
 # ---------------------------------------------------------------- relief
-BRICK_FACE = 0.006      # brick face proud of the recessed mortar
+BRICK_FACE = brickwork.BRICK_FACE   # brick face proud of the recessed mortar
 FRAME_H = 0.030         # steel window frames and mullions, proud of the glass
 SASH_H = 0.045          # a vent sash, proud of the frame
 DOOR_FRAME_H = 0.020    # steel door frames
@@ -289,24 +290,8 @@ def paint_brick(c):
     mortar recessed and its own id. Tone and bond repeat at the atlas wrap in
     U, so the bond runs on round every corner. The top course runs on up
     into the coping, which hides it."""
-    y0 = BRICK_Y0 + m(Z_PLINTH)
-    top = BRICK_Y0 + BRICK_H + PAD
-    c.paint(0, ATLAS, y0, top, ID_BRICK, 1.0, 1.0)
-    course, blen = m(COURSE), m(BRICK_L)
-    sy, sx, Y, X = c.field(0, ATLAS, y0, top)
-    r = np.floor((Y - y0) / course).astype(np.int64)
-    off = (r % 2) * blen * 0.5
-    b = np.floor((X - off) / blen).astype(np.int64) % int(ATLAS / blen)
-    rr = r % TONE_COURSES
-    bed = (Y - y0 - r * course) < 1.0
-    perp = ((X - off) % blen) < 1.0
-    joint = bed | perp
-    tone = 0.90 + 0.20 * atlas.hash_unit(b, rr, 17)
-    dark = atlas.hash_unit(b, rr, 29) < 0.17
-    c.mid[sy, sx] = np.where(joint, ID_MORTAR, np.where(dark, ID_BRICK2, ID_BRICK))
-    c.shade[sy, sx] = np.where(joint, 0.94, tone)
-    c.ao[sy, sx] = np.where(joint, 0.80, 1.0)
-    c.height[sy, sx] = np.where(joint, 0.0, BRICK_FACE)
+    brickwork.paint(c, 0, ATLAS, BRICK_Y0 + m(Z_PLINTH), BRICK_Y0 + BRICK_H + PAD,
+                    (ID_BRICK, ID_BRICK2, ID_MORTAR), TONE_COURSES, seed=17)
     paint_plinth(c, BRICK_Y0)
     paint_slab(c)
     # the coping's shadow line on the brick under its drip

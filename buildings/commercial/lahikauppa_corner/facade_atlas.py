@@ -48,6 +48,7 @@ import numpy as np
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "scripts"))
 import atlas  # noqa: E402
+import brickwork  # noqa: E402
 import glazing  # noqa: E402
 import weathering  # noqa: E402
 
@@ -101,8 +102,8 @@ SHOP_Y0, SHOP_H = 508, 184        # z Z_SILL .. Z_HEAD
 SOF_Y0, SOF_H = 696, 56           # the eave's slope, compressed across it
 PAD = 2                 # rows each band paints beyond its own edge
 
-COURSE = 0.078125       # brick course pitch: 5 px, 40 courses over the brickwork
-BRICK_L = 0.25          # stretcher length: 16 px, 64 bricks per atlas width
+COURSE = brickwork.COURSE      # brick course pitch: 5 px, 40 courses over the brickwork
+BRICK_L = brickwork.BRICK_L    # stretcher length: 16 px, 64 bricks per atlas width
 SHOP_BAY = 2.0          # 128 px; the shopfront's structural mullion pitch
 
 # ------------------------------------------------------------ unique regions
@@ -218,7 +219,7 @@ LIT_FACTOR = (1.0, 0.88, 0.72)
 # painted coarser than 64 px/m scale their relief by their own px/m over PPM,
 # so the slope the normal map derives stays physical; the roof deck (~10 px/m)
 # and the bay ceiling stay flat.
-BRICK_FACE = 0.006   # brick face proud of the recessed mortar
+BRICK_FACE = brickwork.BRICK_FACE   # brick face proud of the recessed mortar
 FRAME_H = 0.030      # aluminium shopfront and door frames, proud of the glass
 SEAM_H = 0.015       # the white eave's standing seams
 DOOR_FRAME_H = 0.015  # steel door frames
@@ -370,11 +371,7 @@ def paint_brick(c):
     c.paint(0, ATLAS, y0, y0 + h + PAD, ID_BRICK, 1.0, 1.0)
     course, blen = m(COURSE), m(BRICK_L)
     sy, sx, Y, X = c.field(0, ATLAS, y0, y0 + h + PAD)
-    r = np.floor((Y - y0) / course).astype(np.int64)
-    off = (r % 2) * blen * 0.5
-    b = np.floor((X - off) / blen).astype(np.int64) % int(ATLAS / blen)
-    bed = (Y - y0 - r * course) < 1.0
-    perp = ((X - off) % blen) < 1.0
+    r, b, bed, perp = brickwork.bond(Y, X, y0, course, blen, int(ATLAS / blen))
     tone = 0.90 + 0.20 * atlas.hash_unit(b, r, 17)
     c.shade[sy, sx] = np.where(bed, 0.78, np.where(perp, 0.80, tone))
     c.ao[sy, sx] = np.where(bed, 0.72, np.where(perp, 0.76, 1.0))
