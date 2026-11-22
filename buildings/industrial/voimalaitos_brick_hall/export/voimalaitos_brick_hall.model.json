@@ -3,7 +3,7 @@
   "version": 1,
   "name": "voimalaitos_brick_hall",
   "path": "buildings/industrial/voimalaitos_brick_hall",
-  "source": {"commit": "cc56dce95f080b05b9c3d18e20aa81b337088d27", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "bb97304344fc4052c263b7ba03e6159c3be4262a", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-16.05, 0.0, -9.625], "max": [16.05, 24.75, 9.625]},
   "footprint": [
