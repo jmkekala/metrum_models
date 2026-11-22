@@ -27,6 +27,15 @@ under it, and the way the gable is opened up: above the sign band the wall
 becomes two raking curtain-wall panels, one each side of a wide stone pier that
 runs from the pavement to the apex, opened at its foot for the door.
 
+The rainwater goods and the roof safety kit are one matched system in the
+white of the boarding: a half-round gutter along each eave fascia, a downpipe
+at each end of each gutter, and, at the back of the left (-X) side, the
+fixed route the roof's two ventilation housings and the ridge sign are
+serviced by -- a wall ladder up past the eave, a roof ladder up the slope, a
+walkway along the ridge to the sign and one across to the left housing, and
+a short roof ladder down the other slope beside the right housing. The rakes
+carry no gutter, so the gables carry no pipes.
+
 ## Category and secondary use
 
 `buildings/commercial/`. Single use: one shop, a pharmacy. No secondary use,
@@ -39,9 +48,12 @@ met; no budget exception is claimed.
 
 ## Footprint
 
-24.0 x 16.0 m of wall. Including the roof, which overhangs on every side, the
-exported bounding box is 25.8 x 18.5 m in plan and 11.9 m tall to the top of
-the ridge sign; the ridge crest's end caps stand 0.04 m past each rake board.
+24.0 x 16.0 m of wall. Including the roof, which overhangs on every side, and
+the wall ladder, which stands 1.08 m off the left wall, 0.18 m outside the
+eave's 0.9 m, the exported bounding box is 25.98 x 18.48 m in plan and
+11.925 m tall to the top of the ridge sign; the ridge crest's end caps stand
+0.04 m past each rake board. The pivot is the centre of that box, so it sits
+0.09 m left (-X) of the wall ring's centre.
 The middle pier projects 0.25 m in front of the wall line (`LOD0` - `LOD2`)
 and the lit plaque over the door 0.10 m in front of the pier; the side
 buttresses 0.30 m and the wall-hung air handler 0.55 m from the side walls.
@@ -57,7 +69,10 @@ bounding box.
   canopy, bollards or planters.
 - **Sides:** two stone buttresses per side, 0.70 m wide and 0.30 m proud, on
   the ground (`LOD0`/`LOD1` only); the air handler on the right side at
-  1.5 - 2.7 m, 0.55 m proud; the 0.9 m eaves overhead.
+  1.5 - 2.7 m, 0.55 m proud; two downpipes per side, 0.1 m across, 0.03 m
+  off the wall, their shoes kicking out to 0.23 m; on the left side the wall
+  ladder, 0.5 m wide, its rails 1.02 - 1.08 m off the wall, on every tier;
+  the 0.9 m eaves overhead.
 - **Rear:** nothing on the ground; the maintenance door and the louvres are
   in the wall plane. The 1.2 m rake overhead.
 
@@ -97,10 +112,11 @@ overhang, `lahikauppa_corner` at 1.5 m.
 
 ## Construction
 
-The exported shell is the union of nine kinds of closed solid: the wall ring,
-the roof, the ridge crest, the middle pier, the plaque over the door, the
-ridge sign and its stand, the wall-hung air handler and the roof stacks, plus
-four buttresses. Each is
+The exported shell is the union of the closed solids of the wall ring, the
+roof, the ridge crest, the middle pier, the plaque over the door, the ridge
+sign and its stand, the wall-hung air handler, the roof stacks, four
+buttresses, four downpipes (`scripts/downpipes.py`) and the roof safety kit
+(`scripts/roof_safety.py`). Each is
 simple on its own; the union is what trims the wall tops into the roof slab
 and leaves the boundary of one empty volume.
 
@@ -149,83 +165,177 @@ Five details are worth knowing before changing anything:
   along the front) as vertices on their top edge, since those no longer land
   on a pier.
 
+### Rainwater goods
+
+A half-round gutter is painted across the top of each eave fascia (Texture
+set), and four downpipes hang from it, built by `scripts/downpipes.py` with
+its own tier modes: one at each end of each eave, 0.5 m in from the corner
+(right wall at 0.5 m and 15.5 m from the front corner, left wall at 0.5 m
+and 15.5 m from the rear corner), where both ends of either side wall are
+clear of the windows, the buttresses and the air handler. Each leaves the
+soffit 0.81 m out from the wall, just inside the fascia, on a swan-neck, runs
+down 0.03 m off the wall on its clips and ends in a shoe; it is joined to
+nothing but the soffit it rises into. `check_layout()` runs
+`downpipes.problems()` on each against the windows, buttresses, air handler
+and the wall ladder. The rakes carry no gutter.
+
+### Roof safety kit
+
+The two ventilation housings and the lit sign on the ridge are serviced from
+the roof, whose 1:2.2 slope is far over 1:8, so the roof carries the fixed
+route `scripts/roof_safety.py` builds, in the gutter's white (it samples
+`PIPE_STRIP`). The entrance is in the front gable and the catalog view looks
+at the right side, so the kit is on the left (-X) eave wall's rear half.
+
+- **Wall ladder** at 1.8 m from the rear corner (y = 6.2 m), between the rear
+  downpipe and the first window, from the ground to 1.0 m above the eave
+  edge (4.97 m), its rails 1.02 m off the wall, 0.12 m outside the fascia, on
+  three brackets. The eave is under 8 m, so no cage. The eave's soffit falls
+  0.45 m per metre outward, so the top bracket is set from the soffit at the
+  fascia (3.595 m), not at the wall (4.0 m): it stops at 3.37 m.
+- **Roof ladder** straight above it, from 0.25 m up the slope from the eave
+  edge to 0.75 m short of the ridge line, 13.1 m of ladder, on brackets
+  running into the slab.
+- **Ridge walkway**, a level plank on posts along the left slope just under
+  the crest (0.15 m clear of its side), from the roof ladder's top forward to
+  0.2 m behind the sign (y = -6.3 m), 12.75 m.
+- **Housing walkway** leaving the roof ladder's side at the left housing's
+  level (centred on the housing's middle up the slope) and stopping 0.2 m
+  beside it, 2.7 m.
+- **Housing ladder.** The right housing stands on the other slope, which no
+  walkway on the left can reach: a short roof ladder (3.3 m) runs from 0.15 m
+  below the housing's downslope side up beside it, 0.2 m clear, to 0.15 m
+  short of the crest's side, where the climber steps over the crest to the
+  ridge walkway. The module's roof ladder starts at an eave; this one is
+  given an eave line on the slope at its foot.
+- The plain vent pipes are not serviced items.
+
+`check_layout()` runs `roof_safety.problems()` on the wall ladder (corners,
+windows, buttresses, downpipes, soffit) and checks every piece on the roof
+against the stacks, the crest and the sign, 0.1 m clear of each, and each
+walkway or ladder against what it serves, within 0.4 m of it. The kit thins
+by its own modes (Per-tier triangle counts); `LOD3`, which drops its rungs
+and fittings, keeps bare rails on the three ladders and the ridge plank. The
+wall ladder's rails set the building's -X extent, so the bounds and the
+pivot hold on every tier.
+
 ## Per-tier triangle counts
 
 | Tier | Triangles | Ceiling | Note |
 | --- | --- | --- | --- |
-| `LOD0` | 1,024 | 12,000 | far under the ceiling |
-| `LOD1` | 898 | 4,000 | far under the ceiling |
-| `LOD2` | 428 | 1,500 | under the ceiling |
-| `LOD3` | 328 | 500 | under the ceiling |
+| `LOD0` | 4,002 | 12,000 | shell 1,024, downpipes 320, roof kit 2,658 |
+| `LOD1` | 1,972 | 4,000 | shell 976, downpipes 160, roof kit 836 |
+| `LOD2` | 796 | 1,500 | shell 428, downpipes 72, roof kit 296 |
+| `LOD3` | 484 | 500 | shell 368, downpipes 56, roof kit 60 (bare rails, ridge plank) |
 
-Every tier is under its ceiling, the first three far under, and nothing has
-been padded. The
+Every tier is under its ceiling and nothing has been padded. The
 building is a rectangular box with a single unbroken gable over it: there are
 no dormers, no roof steps, no bays and no returns in the plan. What makes it
-read is texture and one large piece of massing, and the only geometry that
-earns its place is the opening reveals, the middle pier and its portal, the
-plaque over the door, the four side buttresses, the wall-hung air handler, the five roof stacks, the ridge crest
-and the sign's stand. The crest and the stand cost 110 triangles on every
-tier, most of them where the union cuts the four legs into the crest's top
-and the cube's underside. Adding triangles would buy nothing visible at any
-of the review distances below.
+read is texture and one large piece of massing, and the only shell geometry
+that earns its place is the opening reveals, the middle pier and its portal,
+the plaque over the door, the four side buttresses, the wall-hung air
+handler, the five roof stacks, the ridge crest and the sign's stand. The
+crest and the stand cost 110 triangles on every tier, most of them where the
+union cuts the four legs into the crest's top and the cube's underside.
 
-Against the three-unit front this replaced (1,018 / 894 / 428 / 348), the two
-party piers, two single doors and two of the four sign boards went, and the
-portal through the pier and the plaque came in: +6, +4, 0 and -20.
+Most of the rest is the roof safety kit: 13.1 m of roof ladder, 12.75 m and
+2.7 m of walkway on posts, a 5 m wall ladder and a 3.3 m housing ladder,
+every rung's hole in its rails and every bracket's and post's cut in the roof
+counted. That is about 22 % of each tier's ceiling at `LOD0`, `LOD1` and
+`LOD2`, within Trim allocation's quarter, which is why the kit thins faster
+than `roof_safety.MODES`: with the module's own modes `LOD1` came out at
+3,076, three quarters of its ceiling. The downpipes cost 80 triangles each
+at `LOD0` (eight sides, both bends), 40 at `LOD1`, 18 straight at `LOD2` and
+14 three-sided at `LOD3`.
 
 The tiers are genuinely distinct rather than four copies:
 
-- `LOD0` cuts every opening on every elevation, and the roof pipes are drums of
-  eight sides.
-- `LOD1` keeps the front cut -- the display windows, the door and the gable
-  panels -- and
-  takes the side windows, the back door and the gable louvres flat. It also
-  drops the pipes to four sides. This departs from the catalog default of
-  cutting through `LOD1`: see the LOD review below for why.
+- `LOD0` cuts every opening on every elevation; the roof pipes are drums of
+  eight sides; the downpipes are eight-sided with both bends; the kit has
+  every rung, its brackets and the walkways' posts.
+- `LOD1` cuts every opening too (the side windows' 0.14 m reveals,
+  78 triangles, were flat here until the audit found their loss at the 46 m
+  switch). The roof pipes and the downpipes go to four sides; the kit keeps
+  every other rung and drops its brackets and posts, 4 cm bars under a pixel
+  at 46 m (`KIT_MODES`).
 - `LOD2` takes every opening flat, the door included (the pier and its
-  portal stay, as massing), and drops the three pipes.
-- `LOD3` also drops the two roof stacks and the middle pier's 0.25 m
-  projection, portal included: the door stays, painted flat in the wall, and
+  portal stay, as massing), and drops the three roof pipes. The downpipes are
+  straight, without swan-neck or shoe; the kit keeps every eighth rung, the
+  rails being what reads at 103 m.
+- `LOD3` keeps the two ventilation housings, four-sided boxes as on every
+  tier (40 triangles; their going showed on the roofline at the 206 m
+  switch), and drops the middle pier's 0.25 m projection, portal included: the door stays, painted flat in the wall, and
   the plaque stays over it. The pier is the same stone as the wall behind it,
-  so what is lost is a shadow line, not a colour.
+  so what is lost is a shadow line, not a colour. The downpipes are
+  three-sided. The kit loses its rungs, fittings and the housing walkway and
+  keeps bare three-sided rails on the wall ladder (which sets the -X extent),
+  the roof ladder and the housing ladder, 16 triangles each, and the ridge
+  walkway's plank, 12: with only the wall ladder's rails kept, the white
+  lines of the roof ladder and the ridge plank vanishing were the largest
+  change at the 206 m switch. They touch nothing and are appended after the
+  weld. That leaves `LOD3` 16 triangles under its ceiling.
 - The ridge crest and the sign's stand stay on every tier. The crest is the
   white line along the roofline, which Appearance Across LODs keeps, and
   without its legs the sign would float over the ridge.
 
 ## LOD review
 
-Intended switches at the catalog's suggested distances: `LOD0` under 35 m,
-`LOD1` 35 - 70 m, `LOD2` 70 - 120 m, `LOD3` beyond 120 m. No overrides.
+**The consumer's switches** are by screen size: at about 1.8, 4 and 8 times
+`LOD0`'s largest bounds dimension (25.98 m), seen with a 75 degree vertical
+FOV at 1920 x 1080, i.e. `LOD0`/`LOD1` at about 47 m, `LOD1`/`LOD2` at
+104 m and `LOD2`/`LOD3` at 208 m (46 / 103 / 206 m before the wall ladder
+widened the bounds by 0.18 m). Those are the distances the tiers are judged
+at now; the review below them, at the catalog's suggested 35 / 70 / 120 m
+with a 50 degree camera, is the older authoring record.
 
-Reviewed with `scripts/review_asset.py`: perspective, 1920 x 1080, 50 degree
-vertical FOV, distance measured along the view direction to the centre of the
-assessed wall, front and oblique views, noon sun, emission off. Adjacent tiers
-and each tier against `LOD0` were compared at 35, 70 and 120 m with identical
-camera, framing, lighting and variant.
+Reviewed at the consumer's switches with the game camera (75 degree vertical
+FOV, 1920 x 1080, distance from the camera to the centre of `LOD0`'s bounds;
+front at 10 degrees up, corner at 45 degrees round and 25 up, eye level at
+1.7 m and 30 degrees round, noon, and the corner at night lit), before and
+after the gutter-and-kit revision, as pair sheets of adjacent tiers with
+their difference:
 
-- **35 m, `LOD0` vs `LOD1`:** no difference found. The side reveals going flat
-  is invisible because those elevations are oblique at every angle from which
-  the front is legible, and the four-sided pipes are indistinguishable from
-  the eight-sided ones at that size.
-- **70 m, `LOD1` vs `LOD2`:** the three pipes go. Each is about a pixel of
-  dark against the roof; the silhouette, the roofline, the white overhang, the
-  window rhythm and the sign boards are unchanged.
-- **120 m, `LOD2` vs `LOD3`:** the two roof stacks go and the middle pier
-  flattens. Neither is separable from `LOD0` at that size.
+- **47 m, `LOD0`/`LOD1`:** the side windows' reveals going flat, the change
+  the audit found (171 pixels over 24 levels in the eye view, 594 at night),
+  is gone: the reveals are cut on `LOD1` now. What changes is the kit's
+  brackets and the walkway's posts going, a dotted line of single pixels
+  along the ridge walkway seen over the left rake from the front, and the
+  downpipes' bends going from eight to four sides: 16, 36 and 4 pixels over
+  24 levels by day, none at night.
+- **104 m, `LOD1`/`LOD2`:** the three roof pipes go, the front reveals and
+  now the side windows' reveals flatten, and the kit's rungs thin from every
+  other to every eighth, which at a fifth of a pixel per rung does not show;
+  the downpipes lose their bends. 48 - 167 pixels over 24 levels by day, as
+  before the revision (51 - 157); at night the lit side windows' reveals
+  flattening adds a little (764 against 650).
+- **208 m, `LOD2`/`LOD3`:** the middle pier and its portal flatten (left,
+  as the audit called it minor: the pier is the wall's own stone and costs a
+  shadow line), the air handler goes, and the kit loses its rungs and the
+  housing walkway. The ventilation housings, which went here before and
+  showed as two bumps on the roofline, stay; so do the white rails of the
+  three ladders and the ridge plank, whose going was otherwise the largest
+  change at this switch (88 - 124 pixels over 24 levels with only the wall
+  ladder's rails kept). 30, 86 and 80 pixels over 24 levels by day, 31 at
+  night (before the revision 30, 105, 87 and 31): what is left is the pier
+  and the air handler, and the roof ladder's rungs.
 
-The single-shop front was reviewed the same way, before against after:
-`LOD0`/`LOD1` at 30 and 40 m, `LOD1`/`LOD2` at 65 and 75 m, `LOD2`/`LOD3` at
-115 and 125 m, front and oblique, noon. The portal reads as a dark recess at
-the pier's foot through `LOD2`; at `LOD3` the flat door, the plaque and the
-two green boards keep the entrance and the window rhythm legible.
+The roof kit is seen from the street front too: from a low front view the
+left roof ladder shows as a white line just above the left rake and the wall
+ladder's top over the left eave, as a roof ladder does on a real gable. The
+kit stands where the rules put it, at the back; nothing was moved for that.
 
-One change was found and fixed rather than accepted: the pipes originally
-stopped at `LOD0`, and at the 35 m switch three dark posts disappearing off the
-ridge was the one thing the comparison caught. They now carry to `LOD1`.
-Making them carry that far also made `LOD1` identical to `LOD0`, which is why
-the side openings go flat a tier early -- the alternative was a switch that
-cost a draw call and saved nothing.
+The older authoring record, with `scripts/review_asset.py` (perspective,
+1920 x 1080, 50 degree vertical FOV, distance along the view direction to the
+centre of the assessed wall, front and oblique, noon), at the catalog's
+suggested 35 / 70 / 120 m, before the gutter and the kit: at 35 m the
+four-sided roof pipes were indistinguishable from the eight-sided ones; at
+70 m the three pipes went, each about a pixel of dark against the roof; at
+120 m the middle pier flattened. The single-shop front was reviewed the same
+way at 30/40, 65/75 and 115/125 m: the portal reads as a dark recess at the
+pier's foot through `LOD2`; at `LOD3` the flat door, the plaque and the two
+green boards keep the entrance and the window rhythm legible. The roof pipes
+once stopped at `LOD0`, and three dark posts disappearing off the ridge was
+the one change caught at the first switch, so they carry to `LOD1`.
 
 These are authoring comparisons in Blender. They are not evidence about
 runtime switching, mipmap selection or frame time. **Pending:** representative
@@ -235,14 +345,22 @@ taken here.
 
 ## Interior geometry
 
-`scripts/validate_asset.py`'s sampled test reports 1 of 1,024 triangles hidden
-at `LOD0` (0.1 %), 1 of 898 at `LOD1`, none at `LOD2` and 1 of 328 at `LOD3`,
-0.0 m2 of it vertical. They are slivers the exact boolean leaves where a gable
-panel's raking head meets the rake (front) and in the rear gable's coursing
-(`LOD3`), each smaller than a centimetre across. They are inspection candidates, not proof
-either way; nothing of area, and no buried partition, was found. The wall ring
-is a single closed solid capped with a floor and a two-plane lid, so there is
-no interior to bury anything in.
+`scripts/validate_asset.py`'s sampled test reports 307 of 4,002 triangles
+hidden at `LOD0` (7.7 %, 0.1 m2 of it vertical), 66 of 1,972 at `LOD1`
+(3.3 %), 26 of 796 at `LOD2` (3.3 %) and 41 of 484 at `LOD3` (8.5 %, 4.3 m2
+vertical). Before the roof kit the shell alone gave 1, 1, 0 and 1, slivers the
+exact boolean leaves where a gable panel's raking head meets the rake and in
+the rear gable's coursing, each under a centimetre across. The rest are the
+kit's own exterior faces, located by the coordinates the validator prints:
+the roof ladders' and walkways' undersides and rung-hole cheeks 5 - 8 cm over
+the shingles, which the fixed ray fan mostly sends into the sheet or the
+ladder itself, and at `LOD3` the ridge plank's side facing the crest 0.15 m
+away (the validator's largest candidates there) and the bare rails' backs,
+the wall ladder's facing the wall 1 m away under the eave. All are surface of the outside, seen from the
+low oblique views of the kit; none is buried. They are inspection candidates,
+not proof either way; no buried partition was found. The wall ring is a
+single closed solid capped with a floor and a two-plane lid, so there is no
+interior to bury anything in.
 
 ## Known simplifications
 
@@ -250,11 +368,20 @@ What the shell does not model, and what carries the feature instead:
 
 - **No interior.** The wall ring is one closed solid with a floor and a lid,
   and every opening is closed by an opaque pane or door leaf.
-- **Coursing and shingles are colour and roughness, not relief.** There is no
-  normal map. The only modelled depth is the opening reveals, the middle pier,
-  the four buttresses, the wall-hung air handler and the roof stacks.
-- **Side and rear openings go flat at `LOD1`**, a tier earlier than the
-  catalog default, for the reason recorded under LOD review.
+- **Coursing, shingles, board joints and the gutter's roll are texture, not
+  geometry.** The normal map (`_normal.png`, bound on every tier) carries
+  their relief from the painted height channel; the modelled depth is the
+  opening reveals, the middle pier, the four buttresses, the wall-hung air
+  handler, the roof stacks, the downpipes and the roof kit.
+- **The gutter is painted on the eave fascia**, a half-round roll in the
+  height channel with a hanger every metre; no stop ends or outlets are
+  modelled, and the downpipes rise into the soffit just inside the fascia
+  where the outlet would be.
+- **The roof kit has no guard rails or toe boards on the walkways and no
+  snow guards**; the walkways are one plank on posts, the ladders rails and
+  rungs on brackets, as `scripts/roof_safety.py` builds them. The ridge
+  walkway and the right housing's ladder meet over the crest with no crossing
+  step.
 - **The roof is textured at 13 texels/metre**, a fifth of the density used at
   eye level, so a shingle reads as a tab and a course rather than as an edge.
 - **One emissive factor for the whole shop**: the two display windows share
@@ -264,12 +391,6 @@ What the shell does not model, and what carries the feature instead:
 - **The sign's stand is four plain legs.** No rails, braces or fixing plates:
   at 80 mm they span under three pixels at the 35 m switch, and anything
   finer is open framework that no texture could carry.
-- **No gutters, so no downpipes.** The eave fascia is plain painted board.
-  It samples the same atlas rows as the rake boards and the ridge crest, so a
-  gutter painted there would run up the rakes too. A gutter needs a band of
-  its own, and the atlas has no free full-width rows for one. Until it has
-  one, the side walls carry no downpipes (`scripts/downpipes.py` hangs every
-  pipe from a painted gutter).
 
 ## Texture set
 
@@ -325,13 +446,39 @@ flat swatches remain: for the caps the union buries, for the sign box's lid
 (and the plaque's edges) and its steel underside and legs, and for the
 painted returns of the roof plant.
 
-The ridge crest is white board like the fascia, so it samples the soffit
-band's 24 fascia rows. Its sides and end caps map the solid's whole height,
-foot included, onto those rows, so the drip edge along the bottom shows only
-under the end caps, where they stand clear of the rake boards; the shingles
-cut the long sides off above it. That stretches the rows about 1.8 times in
-v, on a plain white face. The top takes the middle of the rows, clear of the
-lines along both edges. The sign's four faces share one 1.6 x 1.6 m region
+**The gutter and the eave band's rows.** The soffit band's 24 fascia rows are
+the eave fascia's, 0.375 m at 64 texels/metre: the drip edge (rows 0-1),
+board with joints every 0.2 m, a line along the board's top (rows 10-11), the
+gutter's shadow on the board (12-13), the half-round gutter (`GUTTER_PX` 9
+rows, 0.14 m, 14-22) with its roll in the height channel (0.06 m) and a
+hanger every metre, and the roof's edge (row 23). The gutter is the boards'
+white (`ID_GUTTER`, the variant's eave colour, roughness 0.48, dielectric).
+Its middle five rows are `PIPE_STRIP`, which the downpipes and the whole roof
+kit sample along their length, so the rainwater goods and the kit are one
+colour in every variant and the hangers read as their clips and joints. The
+band is full width, so the kit's and the pipes' long runs wrap in u like the
+fascia's own. The atlas had no free full-width rows for a gutter band of its
+own, which is why the rakes and the crest, which carry no gutter, now take
+only the fascia rows under it:
+
+- the rake boards map their 0.375 m onto rows 0-11 (`RAKE_ROWS`), a 2.0 times
+  stretch in v of a face whose only detail along v is the drip edge and the
+  top line, both now about 6 cm deep where they were 3 cm;
+- the ridge crest's sides and end caps map the solid's whole height, foot
+  included, onto the same 12 rows, so the drip edge along the bottom shows
+  only under the end caps, where they stand clear of the rake boards; the
+  shingles cut the long sides off above it. That stretches the rows about
+  3.5 times in v (1.8 before the gutter), on a plain white face;
+- the crest's top samples the far soffit rows (`CREST_TOP_ROWS`, 84-100 of
+  the band, past the eave's shadow ramp), its 0.6 m across 16 rows: a 2.40
+  times stretch across the crest, as before, now on soffit board whose
+  joints are a shade darker than the fascia's.
+
+The roof stacks' sides each take their whole casing region across them: the
+0.70 m box's sides fit `VENT_BOX`'s 45 px at 64 texels/metre, and the 0.85 m
+box's are squeezed to 0.83 of that density, on plain painted steel.
+
+The sign's four faces share one 1.6 x 1.6 m region
 (`LOGO`, 102 x 102 px); the whole face is clear of the roof, so the mark is
 centred on it between a white edge top and bottom. The plaque over the door
 takes the same region on its 1.2 m face, so it is drawn at 85 texels/metre
@@ -356,8 +503,12 @@ any tier's real distance: the shopfront, the sign boards with their
 lettering and cross, and the plaque blur as expected with no foreign
 colour. Latent, one level beyond only: a little white frame bleeds onto the
 logo plaque's sides across its 6 px gaps to `SIDE_WINDOW` and
-`GABLE_GLAZE`. **Pending in the consumer:** night/emission mips,
-anisotropic sampling and the consumer's own mip generator.
+`GABLE_GLAZE`. That review predates the gutter; the rows it changed
+(fascia rows 10-23) are inside the eave band, whose neighbours above are
+its own soffit rows and below its own padding, so a mip can only blend the
+gutter with white board. Not re-reviewed on mips. **Pending in the
+consumer:** night/emission mips, anisotropic sampling and the consumer's
+own mip generator.
 
 ### Signage and artwork
 
@@ -387,7 +538,8 @@ K sit at the same 0.16 em ink gap as every other pair.
   - split-face stone blocks 12 mm proud of recessed bed joints, with a rough
     face;
   - the shopfront's sections 30 mm proud of the glass, and the kick panel;
-  - the soffit and fascia board joints;
+  - the soffit and fascia board joints, and the gutter's 0.06 m roll and its
+    hangers;
   - the shingles' courses and tab slots, the curtain wall's frame, the door
     leaves and handles, the air handler's and louvre's blades, and the vents.
   The sign boards' printed faces are flat.
@@ -436,7 +588,9 @@ K sit at the same 0.16 em ink gap as every other pair.
   chalking toward the ridge; kicked-up dirt at the shop door's foot and hand
   grime round its pulls; the maintenance door's foot and handle; the staff
   window's bottom rail with runs down the stone below it; the curtain wall's
-  sill member; runs down the air handler, louvre and vent box.
+  sill member; runs down the air handler, louvre and vent box. The gutter
+  fades with the boards and takes the neutral dust of painted steel, and the
+  downpipes and the kit, which sample it, carry the same.
 - **Kept clean:** the two sign boards, the plaque and the ridge sign, which
   the shop keeps, and every pane.
 - The level was chosen on `rintamamiestalo_porch` (see its notes); this
@@ -618,11 +772,13 @@ strips the placeholder `bufferView` keep-originals leaves.
 
 `export/liikekeskus_pharmacy.model.json`, schema version 1, glTF frame
 (metres, +Y up, +Z street front, origin at the pivot): bounds
-`[-12.9, 0, -9.24]` - `[12.9, 11.925, 9.24]`; footprint the 24 x 16 m wall
-ring; one storey, floor at 0, 384 m2; 0 dwellings; hero false. Two doors:
-`pharmacy`, kind `entrance`, main, at `[0, 0, 8]` facing `+Z`, 2.0 x 2.25 m,
-on the front's centre line; `maintenance`, kind `service`, at `[1, 0, -8]`
-facing `-Z`, 1.0 x 2.25 m. No other door.
+`[-12.99, 0, -9.24]` - `[12.99, 11.925, 9.24]`, the -X side set by the wall
+ladder; footprint the 24 x 16 m wall ring, `[-11.91, -8]` - `[12.09, 8]`,
+since the pivot is 0.09 m left of the ring's centre; one storey, floor at 0,
+384 m2; 0 dwellings; hero false. Two doors: `pharmacy`, kind `entrance`,
+main, at `[0.09, 0, 8]` facing `+Z`, 2.0 x 2.25 m, on the front's centre
+line; `maintenance`, kind `service`, at `[1.09, 0, -8]` facing `-Z`,
+1.0 x 2.25 m. No other door.
 
 ## Review status
 
@@ -690,6 +846,20 @@ Checked here, in Blender:
   leak. The word's ink, measured on the emission mask in the shared
   lettering: 210 px, 183 px clear each side.
 
+- The gutters, downpipes and roof safety kit (2026-11-22), before against
+  after with identical settings: the tier pairs at the consumer's switches
+  (47 / 104 / 208 m, 75 degree FOV; before at 46 / 103 / 206 m, the bounds
+  having grown) as before-above-after pair sheets; `LOD0` front, oblique and
+  rear at 20 and 35 m through `scripts/review_compare.py`; `review_asset.py
+  --six-views` of all four tiers; the asset's working views
+  (`render_views`, with close views of the wall ladder, the ridge and a
+  downpipe) after each of three build passes, which moved the housing
+  ladder's top to the crest, thinned the kit's `LOD1` and `LOD2`, and kept
+  the housings and the kit's rails on `LOD3`. The rebaked PNGs differ from
+  the old ones in the eave band's rows only. `scripts/validate_asset.py`:
+  0 FAIL; its one warning is the sidecar's dirty source, pending a rewrite
+  from the committed tree. The gutter's rows were not reviewed on mips.
+
 Pending, and outside this repository:
 
 - Anisotropic appearance, the emission mask's mips at night, the
@@ -718,6 +888,26 @@ files, not newer ones. The `.glb` and PNG exports are unaffected.
   texture export.
 
 ## Revision log
+
+- **2026-11-22 — gutters, downpipes and the roof safety kit (audit fix).**
+  A half-round gutter is painted across the top of each eave fascia; the
+  rake boards and the ridge crest's sides now take the fascia rows under it
+  and the crest's top the far soffit rows (Texture set). Four downpipes
+  (`scripts/downpipes.py`) and the roof safety kit (`scripts/roof_safety.py`:
+  wall ladder, roof ladder, ridge walkway, housing walkway, housing ladder)
+  went in (Construction). The side windows, back door and louvres are cut
+  through `LOD1` again, and the ventilation housings stay on `LOD3`.
+  Triangles 4,002 / 1,972 / 796 / 484 (were 1,024 / 898 / 428 / 328). The
+  wall ladder stands 0.18 m outside the left eave, so the bounds grew from
+  25.8 to 25.98 m across and the pivot moved 0.09 m toward -X: in the
+  sidecar the bounds are `[-12.99, 0, -9.24]` - `[12.99, 11.925, 9.24]`
+  (were +-12.9 in x), the footprint's x runs -11.91 .. 12.09 (was +-12.0),
+  the entrance is at `[0.09, 0, 8]` (was `[0, 0, 8]`) and the maintenance
+  door at `[1.09, 0, -8]` (was `[1, 0, -8]`). The albedos, ORM and normal
+  map changed in the eave band's rows only; the emission mask is unchanged.
+  Every GLB, `source.blend`, `preview.png`, `variants.png` and the sidecar
+  changed. Notes: the stale "no normal map" statement corrected, the
+  consumer's switch distances added to the LOD review.
 
 - **2026-11-22 — shared lettering.** The sign is set in
   `scripts/lettering.py`, the catalog's one alphabet, instead of this

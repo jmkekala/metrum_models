@@ -31,9 +31,9 @@ steel legs.
 
 Construction is a set of closed solids unioned with Blender's exact boolean:
 the wall ring, the roof, the ridge crest, the middle pier, the plaque over the
-door, the sign and its stand, the wall-hung air handler and the roof stacks. Each is simple on its
-own; the union is what
-trims the wall tops into the roof and leaves the boundary of one empty volume,
+door, the sign and its stand, the wall-hung air handler, the roof stacks, the
+four downpipes (scripts/downpipes.py) and the roof safety kit
+(scripts/roof_safety.py). Each is simple on its own; the union is what trims the wall tops into the roof and leaves the boundary of one empty volume,
 so interior geometry cannot occur. The wall ring is capped at the top by two
 planar faces rather than one, split at the ridge -- the rim follows the gable
 and a single n-gon across it would not be flat.
@@ -61,7 +61,9 @@ ASSET = L.ASSET
 EXPORT_DIR = os.path.join(HERE, "export")
 sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "scripts"))
 import asset_build  # noqa: E402
+import downpipes as DP  # noqa: E402
 import model_facts  # noqa: E402
+import roof_safety as RS  # noqa: E402
 import shell_build as SB  # noqa: E402
 from asset_build import pivot_offset, to_object, union  # noqa: E402,F401
 from shell_build import Frame, fill_region, rect_poly  # noqa: E402
@@ -127,17 +129,14 @@ PORTAL_RECT = (L.ENTRANCE_S - L.PORTAL_W / 2.0, L.ENTRANCE_S + L.PORTAL_W / 2.0,
 def opening_mode(level, where):
     """Whether an opening is cut into the wall or painted flat on it.
 
-    The front is what this building is read by: the shopfront's 0.18 m reveal
-    and the gable panels' are its depth, so both are cut until 70 m. The side
-    windows and the back door are 0.14 m deep on elevations that are oblique
-    or behind the building from any street camera, and they go flat one tier
-    earlier. That is a deliberate departure from the catalog default of
-    cutting through LOD1, and it is what makes LOD1 an intermediate tier at
-    all: with the openings on every elevation cut, LOD1 came out the same
-    triangle for triangle as LOD0, and a switch that saves nothing is worse
-    than a reveal that goes flat at 35 m.
+    Every opening is cut through LOD1 and painted flat from LOD2, the catalog
+    default. The side windows, the back door and the louvres once went flat
+    a tier early, to keep LOD1 from coming out the same as LOD0; the roof
+    safety kit's thinned rungs now make that reduction, and the side
+    windows' reveals going flat was the one change seen at the LOD0/LOD1
+    switch. *where* is kept for the front, which could differ again.
     """
-    return "cut" if level < (2 if where == "front" else 1) else "flush"
+    return "cut" if level < 2 else "flush"
 
 
 def pier_kept(level):
@@ -166,9 +165,114 @@ def vent_kept(level, kind):
     The pipes are only 0.3 m across, but LOD1 starts at 35 m and there they
     are still two or three pixels of dark against a pale sky: dropping them at
     that switch was the one change visible in the comparison, so they carry to
-    LOD1 and go at 70 m. The boxes are three times the size and hold to LOD2.
+    LOD1 and go at LOD2. The boxes are three times the size and stay on every
+    tier: at the 206 m switch they were still two dark bumps on the roofline
+    and a dark square on the right slope, and their going showed. A box is
+    four-sided on every tier anyway, about 20 triangles after the union.
     """
-    return level < (3 if kind == "box" else 2)
+    return kind == "box" or level < 2
+
+
+# ============================================ rainwater goods and roof kit
+# The two side walls are the eaves, walked anticlockwise seen from above, as
+# scripts/downpipes.py and scripts/roof_safety.py take them: s runs from the
+# front along the right (+X) wall and from the back along the left (-X) one.
+RIGHT = ((HX, -HY), (HX, HY))
+LEFT = ((-HX, HY), (-HX, -HY))
+Z_FASCIA_FOOT = L.roof_under(XE)              # 3.595, the soffit at the fascia
+Z_EDGE = Z_FASCIA_FOOT + L.ROOF_T             # 3.97, the sheet at the eave edge
+
+# Downpipes: one at each end of each eave's gutter, 0.5 m in from the corner,
+# where both ends are clear of the windows, the buttresses and the air
+# handler. The rakes carry no gutter, so the gables carry no pipes.
+DOWNPIPE_SPOTS = (("right front", RIGHT, 0.5), ("right rear", RIGHT, 15.5),
+                  ("left rear", LEFT, 0.5), ("left front", LEFT, 15.5))
+DOWNPIPES = [DP.eave_pipe(p0, p1, s, L.Z_EAVE, L.SLOPE, L.EAVE_OUT)
+             for _n, (p0, p1), s in DOWNPIPE_SPOTS]
+
+# Roof safety kit, the way to the two ventilation housings and the sign on
+# the ridge. The entrance is in the front gable and the catalog view looks at
+# the right side, so the wall ladder stands on the left eave wall's rear
+# half, between the rear downpipe and the first window, and passes outside
+# the eave. The roof ladder runs up the left slope above it to 0.75 m short
+# of the ridge, where a walkway along the slope just under the crest takes it
+# forward to behind the sign. A second walkway leaves the roof ladder at the
+# left housing's level and stops beside it. The right housing is on the
+# other slope: a short roof ladder runs down beside it from the crest,
+# reached over the crest from the ridge walkway. The eave's z_wall is the
+# soffit at the fascia, not at the wall: the soffit falls 0.45 m per metre
+# outward, and the wall ladder's brackets run out under all of it.
+PAINT = RS.Paint(L.ATLAS, strip=L.PIPE_STRIP)
+EAVE_LEFT = RS.Eave(*LEFT, Z_FASCIA_FOOT, L.EAVE_OUT, Z_EDGE, L.SLOPE)
+KIT_S = 1.8                                   # left wall, s = HY - y: y = 6.2
+RIDGE_OUT = -(HX - 0.75)                      # 0.75 m from the ridge line
+WALL_LADDER = RS.WallLadder(EAVE_LEFT, KIT_S)
+ROOF_LADDER = RS.RoofLadder(EAVE_LEFT, KIT_S, EAVE_LEFT.roof_z(RIDGE_OUT))
+SIGN_BACK = L.SIGN["y"] + L.SIGN["d"] / 2.0 + 0.2         # y, behind the sign
+RIDGE_WALK = RS.Walkway(EAVE_LEFT, KIT_S - RS.HALF, HY - SIGN_BACK,
+                        ROOF_LADDER.top_out())
+_kind, (BOX_LX, BOX_LY), BOX_LW, _h = L.VENTS[0]
+BOX_WALK = RS.Walkway(EAVE_LEFT, KIT_S + RS.HALF + 0.03,
+                      HY - (BOX_LY + BOX_LW / 2.0 + 0.2),
+                      -HX - BOX_LX + RS.WALK_W / 2.0)      # centred on the box
+_kind, (BOX_RX, BOX_RY), BOX_RW, _h = L.VENTS[1]
+BOX_LADDER_S = HY + BOX_RY + BOX_RW / 2.0 + 0.2 + RS.HALF  # right wall, s = y + HY
+# the ladder's own eave: an edge on the slope 0.15 m below the housing's
+# downslope side, which the module takes the ladder's foot from
+_foot = BOX_RX + BOX_RW / 2.0 + 0.15 - HX
+EAVE_BOX = RS.Eave(*RIGHT, Z_FASCIA_FOOT, _foot + RS.ROOF_START * COS,
+                   L.roof_under(HX + _foot + RS.ROOF_START * COS) + L.ROOF_T,
+                   L.SLOPE)
+# it climbs to 0.45 m from the ridge line, 0.15 m short of the crest's side,
+# where the climber steps over the crest to the ridge walkway
+BOX_LADDER = RS.RoofLadder(EAVE_BOX, BOX_LADDER_S, EAVE_BOX.roof_z(-(HX - 0.45)))
+KIT = [WALL_LADDER, ROOF_LADDER, RIDGE_WALK, BOX_WALK, BOX_LADDER]
+
+# The kit's tiers, LOD0 to LOD3, (rungs, fittings): roof_safety.MODES but
+# thinner past LOD0, since 13 m of roof ladder and 15 m of walkway are a lot
+# of kit for a one-storey shop. Brackets and walkway posts are 4 cm, under a
+# pixel at the 46 m switch, so LOD1 keeps every other rung without them;
+# LOD2 keeps every eighth rung, the rails' outline being what reads at 103 m,
+# where a rung is a fifth of a pixel. LOD3 drops the rungs and the fittings
+# and keeps bare rails and the ridge plank (kit()).
+KIT_MODES = ((1, True), (2, False), (8, False), (None, False))
+
+
+def kit(level, extents=False):
+    """The roof safety kit's solids for this tier, thinned by KIT_MODES.
+
+    With *extents*, for the tier that drops the kit: the wall ladder's bare
+    rails, which set the building's -X extent, and, because at the 206 m
+    switch the white rails of the two roof ladders and the ridge walkway's
+    plank still read against the dark roof and their going showed, those
+    too, as bare three-sided rails and the plank alone. None of them touches
+    anything, so they are appended after the weld rather than unioned. The
+    short housing walkway, behind the ridge from every street view, goes."""
+    if extents:
+        return (RS.solids([WALL_LADDER], level, PAINT, extents=True,
+                          modes=KIT_MODES)
+                + [(ROOF_LADDER.solid(PAINT, None, False), "tmp_far_ladder"),
+                   (BOX_LADDER.solid(PAINT, None, False), "tmp_far_box_ladder"),
+                   (RIDGE_WALK.solid(PAINT, None, False)[0], "tmp_far_walk")])
+    return RS.solids(KIT, level, PAINT, modes=KIT_MODES)
+
+
+def kit_plan():
+    """(name, x0, x1, y0, y1) plan rectangle of each piece on the roof."""
+    def ladder(eave, lad, sign):
+        top = lad.top_out()
+        foot = eave.eave_out - RS.ROOF_START * COS
+        y = (HY - lad.s) if sign < 0 else (lad.s - HY)
+        xs = sorted((sign * (HX + foot), sign * (HX + top)))
+        return xs + [y - RS.HALF, y + RS.HALF]
+
+    def walk(w):
+        xs = sorted((-HX - w.out_lo, -HX - w.out_hi))
+        return xs + sorted((HY - w.s0, HY - w.s1))
+    return [("roof ladder", *ladder(EAVE_LEFT, ROOF_LADDER, -1)),
+            ("ridge walkway", *walk(RIDGE_WALK)),
+            ("housing walkway", *walk(BOX_WALK)),
+            ("housing ladder", *ladder(EAVE_BOX, BOX_LADDER, 1))]
 
 
 # ------------------------------------------------------------ UV mappings
@@ -261,7 +365,10 @@ def uv_eave_fascia(x):
 
 
 def uv_rake_board(co):
-    return (co.x / COS * PPM, L.SOF_Y0 + (co.z - L.roof_under(co.x)) * PPM)
+    """The rake board: the fascia rows under the gutter, which the rakes do
+    not carry, stretched over the board's depth."""
+    return (co.x / COS * PPM, L.SOF_Y0 + (co.z - L.roof_under(co.x))
+            / L.ROOF_T * L.RAKE_ROWS)
 
 
 def uv_plaque(x0, z0):
@@ -282,11 +389,11 @@ def uv_logo(axis, origin):
     return f
 
 
-# The crest is white board like the fascia, so it takes the soffit band's
-# fascia rows. Its sides and ends run the whole height of the solid, foot
-# included, onto those 24 rows: the drip edge along the bottom rows then shows
-# only where the end cap stands clear of the rake board, and the shingles cut
-# the long sides off above it.
+# The crest is white board like the rake boards, so it takes the same fascia
+# rows under the gutter (RAKE_ROWS). Its sides and ends run the whole height
+# of the solid, foot included, onto those rows: the drip edge along the bottom
+# rows then shows only where the end cap stands clear of the rake board, and
+# the shingles cut the long sides off above it.
 def crest_foot(x):
     """Where the crest's solid stops, inside the roof slab."""
     return L.roof_under(x) + 0.15
@@ -299,15 +406,15 @@ def uv_crest_face(axis):
     def f(co):
         along = co.y if axis == "y" else co.x
         return (along * PPM, L.SOF_Y0 + (co.z - CREST_LO)
-                / (L.Z_CREST - CREST_LO) * L.SOF_FASCIA)
+                / (L.Z_CREST - CREST_LO) * L.RAKE_ROWS)
     return f
 
 
 def uv_crest_top(co):
-    """The top and the foot, across the middle of the fascia rows, clear of
-    the lines along both edges."""
-    return (co.y * PPM, L.SOF_Y0 + 4.0 + (co.x / L.CREST["w"] + 0.5)
-            * (L.SOF_FASCIA - 8.0))
+    """The top and the foot, across the plain far rows of the soffit
+    (CREST_TOP_ROWS), clear of the eave's shadow ramp and of every line."""
+    v0, v1 = L.CREST_TOP_ROWS
+    return (co.y * PPM, v0 + (co.x / L.CREST["w"] + 0.5) * (v1 - v0))
 
 
 # ============================================================ wall regions
@@ -855,6 +962,11 @@ def build_lod(level):
             parts.append(to_object(
                 vent(kind, px, py, size, height, 8 if level == 0 else 4),
                 "tmp_vent%d" % i))
+    parts += [to_object(B, n) for B, n in
+              DP.solids(DOWNPIPES, *DP.MODES[level], L.PIPE_STRIP, L.ATLAS)]
+    drop_kit = KIT_MODES[level][0] is None
+    if not drop_kit:
+        parts += [to_object(B, n) for B, n in kit(level)]
     obj = union(base, parts)
     obj.name = "{}_LOD{}".format(ASSET, level)
     obj.data.name = obj.name + "_mesh"
@@ -877,6 +989,9 @@ def build_lod(level):
             delimit={'UV', 'MATERIAL'})
     bm.to_mesh(obj.data)
     bm.free()
+    if drop_kit:
+        # the wall ladder's bare rails, clear of everything, after the weld
+        RS.append(obj, kit(level, extents=True), check=True)
     return obj
 
 
@@ -959,6 +1074,54 @@ def check_layout():
                    % L.RAKE_OUT)
     if L.ROOF_T * PPM > L.SOF_FASCIA + 1.0:
         bad.append("the fascia rows cannot cover a %.3f m board" % L.ROOF_T)
+    if not L.SOF_Y0 + L.RAKE_ROWS < L.GUT_Y0 - 1 < L.PIPE_STRIP[0]:
+        bad.append("the rake boards' rows reach the gutter, or PIPE_STRIP is off it")
+    bad += rainwater_and_kit_problems()
+    return bad
+
+
+def rainwater_and_kit_problems():
+    """The downpipes and the wall ladder against everything on the side walls
+    and each other; the kit's pieces on the roof against the stacks, the
+    crest and the sign, and reaching what they serve."""
+    bad = []
+    wall = [("window", *item_rects("side_window", s, L.Z_WIN)[0][:2])
+            for s in L.SIDE_WINDOWS]
+    wall += [("buttress", s - L.BUTTRESS_W / 2.0, s + L.BUTTRESS_W / 2.0)
+             for s in L.BUTTRESSES]
+    avoid = {"right": wall + [("air handler", L.AHU["s"] - L.AHU["w"] / 2.0,
+                               L.AHU["s"] + L.AHU["w"] / 2.0)],
+             "left": wall + [("wall ladder", *WALL_LADDER.span())]}
+    pipes = {"right": [], "left": []}
+    for (name, _ends, s), pipe in zip(DOWNPIPE_SPOTS, DOWNPIPES):
+        side = name.split()[0]
+        bad += DP.problems(pipe, "the %s downpipe" % name, avoid[side])
+        pipes[side].append(("downpipe", s - DP.A, s + DP.A))
+    bad += RS.problems(WALL_LADDER, "the wall ladder", wall + pipes["left"])
+    # on the roof: nothing within 0.1 m of a stack, the crest or the sign,
+    # except the housing each piece serves, which it must come within 0.4 m of
+    hw = L.CREST["w"] / 2.0
+    things = [("%s %d" % (kind, i), px - sz / 2.0, px + sz / 2.0,
+               py - sz / 2.0, py + sz / 2.0)
+              for i, (kind, (px, py), sz, _h) in enumerate(L.VENTS)]
+    things.append(("crest", -hw, hw, -YE, YE))
+    things.append(("sign", -L.SIGN["w"] / 2.0, L.SIGN["w"] / 2.0,
+                   L.SIGN["y"] - L.SIGN["d"] / 2.0, L.SIGN["y"] + L.SIGN["d"] / 2.0))
+    serves = {"housing walkway": "box 0", "housing ladder": "box 1",
+              "ridge walkway": "sign"}
+
+    def gap(a, b):
+        return math.hypot(max(a[0] - b[1], b[0] - a[1], 0.0),
+                          max(a[2] - b[3], b[2] - a[3], 0.0))
+    for name, *r in kit_plan():
+        for what, *t in things:
+            g = gap(r, t)
+            if serves.get(name) == what:
+                if g > 0.4:
+                    bad.append("the %s stops %.2f m short of the %s it serves"
+                               % (name, g, what))
+            elif g < 0.1:
+                bad.append("the %s runs into the %s" % (name, what))
     return bad
 
 

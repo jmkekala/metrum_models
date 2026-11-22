@@ -12,7 +12,9 @@ storey heights, band rows, bay positions, opening sizes, region rectangles --
 so a change here cannot leave the UVs pointing at the wrong artwork.
 
 The atlas is a trim sheet. Three bands run the full width and tile
-horizontally: the coursed stone, the shopfront glazing and the white eave. The
+horizontally: the coursed stone, the shopfront glazing and the white eave,
+whose fascia rows carry the gutter that the downpipes and the roof safety kit
+sample (PIPE_STRIP). The
 stone band also tiles *vertically*, with a period of 4 m, because the gable
 walls run to 9.5 m and a band tall enough to cover them at 64 texels/metre
 would eat two thirds of the sheet. build.py cuts the gable into horizontal
@@ -192,6 +194,20 @@ STONE_Y0, STONE_H = 6, 256          # 4.0 m at 64 px/m, periodic in both axes
 SHOP_Y0, SHOP_H = 274, 208          # z 0 .. 3.25 of shopfront
 SOF_Y0, SOF_H = 494, 104            # 0.375 m of fascia, then 1.25 m of soffit
 SOF_FASCIA = 24                     # rows of the band that are the fascia face
+# The eave fascia carries the half-round gutter across the top of those rows,
+# where the water leaves the roof. The rake boards and the ridge crest are the
+# same white board without a gutter, so they sample only the rows under it,
+# RAKE_ROWS of them: the drip edge, the board and the line along its top.
+GUTTER_PX = 9.0                     # the gutter's height on the fascia, 0.14 m
+GUT_Y0 = SOF_Y0 + SOF_FASCIA - 1 - GUTTER_PX     # its lowest row
+RAKE_ROWS = 12
+# The middle rows of the gutter: the downpipes and the roof safety kit sample
+# them along their length (scripts/downpipes.py, scripts/roof_safety.py), so
+# they take the gutter's colour and its hangers, a metre apart, as clips.
+PIPE_STRIP = (GUT_Y0 + GUTTER_PX / 2.0 - 2.5, GUT_Y0 + GUTTER_PX / 2.0 + 2.5)
+# The crest's top samples the far soffit rows, clear of the eave's shadow
+# ramp and of the rake soffit's outer edge, which are plain board as well.
+CREST_TOP_ROWS = (SOF_Y0 + 84, SOF_Y0 + 100)
 
 COURSE = 0.125                      # stone course pitch: 8 px, 32 per period
 BLOCK = (24, 40)                    # stone block length in pixels
@@ -240,7 +256,7 @@ def item_size_m(kind):
 # ============================================================= material ids
 ID_BLANK, ID_STONE, ID_ROOF, ID_EAVE, ID_GLASS = 0, 1, 2, 3, 4
 ID_FRAME, ID_DOOR, ID_KICK, ID_STEEL, ID_METAL = 5, 6, 7, 8, 9
-ID_SIGN, ID_SIGN_G, ID_SIGN_T = 10, 11, 12
+ID_SIGN, ID_SIGN_G, ID_SIGN_T, ID_GUTTER = 10, 11, 12, 13
 
 # (roughness, metallic). Painted steel stays dielectric: the paint is what the
 # light sees. The shopfront sections are anodised aluminium and the roof stacks
@@ -251,6 +267,7 @@ SURFACE = {
     ID_FRAME: (0.32, 0.74), ID_DOOR: (0.36, 0.70), ID_KICK: (0.62, 0.0),
     ID_STEEL: (0.52, 0.0), ID_METAL: (0.44, 0.72),
     ID_SIGN: (0.18, 0.0), ID_SIGN_G: (0.20, 0.0), ID_SIGN_T: (0.22, 0.0),
+    ID_GUTTER: (0.48, 0.0),
 }
 
 # ---------------------------------------------------------------- palettes
@@ -284,7 +301,7 @@ FIXED = {
 BAND_IDS = {
     "STONE": ((STONE_Y0, STONE_Y0 + STONE_H), {ID_STONE}),
     "SHOP": ((SHOP_Y0, SHOP_Y0 + SHOP_H), {ID_GLASS, ID_FRAME, ID_KICK}),
-    "SOFFIT": ((SOF_Y0, SOF_Y0 + SOF_H), {ID_EAVE}),
+    "SOFFIT": ((SOF_Y0, SOF_Y0 + SOF_H), {ID_EAVE, ID_GUTTER}),
 }
 
 # The candidate-glazing mask doubles as the emission map. Glass is neutral
@@ -313,6 +330,7 @@ STONE_FACE = 0.012   # split-face block, proud of its recessed bed joint
 FRAME_H = 0.030      # aluminium shopfront, door and curtain-wall sections
 BOARD_JOINT = 0.003  # soffit and fascia board joints
 SIGN_FRAME = 0.015   # the sign boxes' edges; the printed faces are flat
+GUTTER_R = 0.06      # the half-round gutter's roll, proud of the fascia
 
 
 # ================================================================== painting
@@ -403,18 +421,39 @@ def paint_shop(c):
 
 def paint_soffit(c):
     """White painted wood: the fascia face in the band's bottom 0.375 m, the
-    boarded soffit above it, running out from the wall."""
+    boarded soffit above it, running out from the wall.
+
+    The fascia rows are the eave's: board from the drip edge up to RAKE_ROWS,
+    then the half-round gutter hung across the top, in the white of the
+    boards like the rest of the rainwater goods. The rake boards and the crest
+    take only the RAKE_ROWS under the gutter's shadow (build.py)."""
     y0 = SOF_Y0
+    r = y0 + RAKE_ROWS
     c.paint(0, ATLAS, y0, y0 + SOF_H, mid=ID_EAVE, shade=1.0, ao=1.0, height=0.0)
     c.mul(0, ATLAS, y0, y0 + 2, 0.82, ao=0.80)                  # drip edge
-    c.mul(0, ATLAS, y0 + SOF_FASCIA - 2, y0 + SOF_FASCIA, 0.90, ao=0.86)
+    c.mul(0, ATLAS, r - 2, r, 0.90, ao=0.86)                    # the board's top
     pitch = m(0.20)                                             # board width
     for i in range(int(ATLAS / pitch) + 1):
         u = i * pitch
         c.mul(u - 1, u + 1, y0 + SOF_FASCIA, y0 + SOF_H, 0.92, ao=0.88)
         c.lift(u - 1, u + 1, y0 + SOF_FASCIA, y0 + SOF_H, -BOARD_JOINT)
-        c.mul(u - 1, u + 1, y0, y0 + SOF_FASCIA - 2, 0.96)
-        c.lift(u - 1, u + 1, y0, y0 + SOF_FASCIA - 2, -BOARD_JOINT)
+        c.mul(u - 1, u + 1, y0, r - 2, 0.96)
+        c.lift(u - 1, u + 1, y0, r - 2, -BOARD_JOINT)
+    # the gutter: a half-round roll, shading its lower lip and the board under
+    # it, the roof's edge as a dark line above it and a hanger every metre
+    g0, top = GUT_Y0, y0 + SOF_FASCIA
+    for i, f in enumerate((0.88, 0.80)):
+        c.mul(0, ATLAS, r + i, r + i + 1, f, ao=0.84)
+    c.paint(0, ATLAS, g0, top - 1, mid=ID_GUTTER, shade=1.0, ao=0.92)
+    sy, sx, Y, _ = c.field(0, ATLAS, g0, top - 1)
+    u = 2.0 * (Y - g0) / GUTTER_PX - 1.0
+    c.height[sy, sx] = GUTTER_R * np.sqrt(np.clip(1.0 - u * u, 0.0, 1.0))
+    c.mul(0, ATLAS, g0, g0 + 1, 0.80)
+    c.paint(0, ATLAS, top - 1, top, mid=ID_GUTTER, shade=0.78, ao=0.86, height=0.0)
+    sy, sx, _, X = c.field(0, ATLAS, g0 + 2, top - 1)
+    hang = (X % PPM) < 2.0
+    c.shade[sy, sx] = np.where(hang, c.shade[sy, sx] * 0.80, c.shade[sy, sx])
+    c.height[sy, sx] = np.where(hang, c.height[sy, sx] + 0.004, c.height[sy, sx])
     # a soffit is a ceiling: darkest where it meets the wall, which is v = 0
     sy, sx, Y, _ = c.field(0, ATLAS, y0 + SOF_FASCIA, y0 + SOF_H)
     f = 0.70 + 0.30 * np.minimum(1.0, (Y - (y0 + SOF_FASCIA)) / m(0.9))
@@ -690,11 +729,11 @@ def weather(c):
     noise repeats on the band's period (tile_y=4). Splash goes on the
     shopfront's kick panels instead, whose band starts at the pavement. The
     shop's signs are its own to keep clean."""
-    steel = (ID_ROOF, ID_METAL, ID_STEEL, ID_FRAME, ID_DOOR)
+    steel = (ID_ROOF, ID_METAL, ID_STEEL, ID_FRAME, ID_DOOR, ID_GUTTER)
     w = weathering.Weather(c, clean=(ID_GLASS, ID_SIGN, ID_SIGN_G, ID_SIGN_T),
                            steel=steel, tile_y=4)
     w.grime()
-    w.fade((ID_EAVE, ID_KICK))
+    w.fade((ID_EAVE, ID_KICK, ID_GUTTER))
     w.wash((ID_STONE,))
     w.splash(0, ATLAS, SHOP_Y0, SHOP_Y0 + m(Z_KICK) + 6, (ID_KICK, ID_FRAME))
     x, y, rw, rh = ROOF
@@ -759,7 +798,8 @@ def paint(ss=atlas.SS):
     paint_logo(c)
     paint_patches(c)
 
-    sheeted = np.isin(c.mid, (ID_EAVE, ID_ROOF, ID_STEEL, ID_METAL, ID_DOOR))
+    sheeted = np.isin(c.mid, (ID_EAVE, ID_ROOF, ID_STEEL, ID_METAL, ID_DOOR,
+                              ID_GUTTER))
     grain = atlas.noise(c, 5, 60.0, 0.35)
     soft = atlas.noise(c, 11, 20.0)
     c.shade[sheeted] *= 1.0 + 0.014 * grain[sheeted] + 0.02 * soft[sheeted]
@@ -778,6 +818,7 @@ def lut(variant):
     t[ID_STONE] = pal["stone"]
     t[ID_ROOF] = pal["roof"]
     t[ID_EAVE] = pal["eave"]
+    t[ID_GUTTER] = pal["eave"]          # the rainwater goods match the boards
     t[ID_DOOR] = pal["door"]
     t[ID_KICK] = pal["kick"]
     return t
