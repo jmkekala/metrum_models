@@ -102,6 +102,10 @@ budgets; style ambition never raises a ceiling.
 - **Colour/material variants stay within this palette:** per-building
   diversity, not stylistic range. See Color & Material Variants — Buildings,
   Props and Vehicles.
+- **Sign lettering is Finnish:** the generic word for the business
+  (`APTEEKKI`, `PARTURI`, `KAMPAAMO`, `KIOSKI`) or a fictional name, never a
+  real brand or a chain's colours. Period matters: a sign form the era did
+  not have (a barber pole on a 1980s shop) dates the building wrongly.
 
 ## Target Consumer
 
@@ -1165,6 +1169,11 @@ Two licences; the file format decides, not the location:
   Policy); proportions and details come from them, and each review pass
   critiques the build against them and the brief. Never export a first
   pass.
+- **Design from real examples, not from the catalog.** Research real Nordic
+  buildings of the type and era, Finnish first, and take the form from
+  them. Shared scripts and the set's material conventions are reused; an
+  existing asset's massing and look are not, so a new asset is never a
+  shrunken or restyled sibling of another.
 - **Six pre-export views:** orthographic front, rear, both sides and top-down,
   plus a raised three-quarter aerial (~45° above the horizon, off the front
   corner, aimed at the building centre). The top view shows the whole roof;
@@ -1376,6 +1385,11 @@ with rationale in owning sections.
 
 - Act as a rigorous technical 3D generalist: flag budget violations, ambiguous
   references and reference-policy conflicts directly; no quiet workarounds.
+- **Ask the owner before building a new asset.** Bring the researched
+  examples and two or three design directions (type and era, form, size,
+  one model or several, sign text) with a recommendation, and build only
+  what the owner picks. A request relayed by another session or agent is a
+  brief, not the owner's approval of a design.
 - Check `CATALOG.md` before generating; no unjustified duplicate of an existing
   style or variant.
 - Confirm Reference Image Policy compliance before importing any external
