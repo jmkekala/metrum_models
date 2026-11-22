@@ -14,8 +14,8 @@ artwork.
 
 The atlas is a trim sheet. Three bands run the full width and tile in U:
 
-  * the wall: glazed ceramic tile on a true 125 mm grid with its joints in
-    the height channel, from the ground up -- a dark tile plinth, the accent
+  * the wall: glazed ceramic tile, 250 x 125 mm in half bond, with its
+    joints in the height channel, from the ground up -- a dark tile plinth, the accent
     tile of the shopfront storey, the white tile sign band with a single
     accent course near its top, and above the coping's drip the coping's
     own face (seen only on LOD3, where the coping is painted rather than
@@ -38,7 +38,12 @@ light box's scissors are stroked here from centreline glyphs; no font file is
 read.
 
 Density is 64 texels/metre on every wall, opening and fitting, 96 on the
-light box face, 16 on the roof deck (notes.md records both).
+light box face, 32 on the roof deck (notes.md records both).
+
+Each display window and the curved shopfront has a region of its own, so
+the three rooms behind the glass differ: their blinds, pot plants and
+goods are room content, painted in the albedo under glass roughness and
+lit only as the pane in the emission.
 
 Dirt, algae and faded paint are scripts/weathering.py's fields: weather()
 below says where they go on this layout. Glazed tile sheds dirt, so the
@@ -60,8 +65,11 @@ import weathering  # noqa: E402
 ASSET = "kampaamo_tile_corner"
 ATLAS = 1024
 PPM = 64.0
-TILE = 0.125                # tile module, metres: 8 px, 128 tiles per atlas width
+TILE = 0.125                # tile course, metres: 8 px
+TILE_L = 0.25               # tile length, metres: 16 px, 64 tiles per atlas width,
+                            # laid in half bond, so the courses read as lines
 TILE_PX = TILE * PPM
+TILE_LPX = TILE_L * PPM
 
 # ================================================================ plan, metres
 # Build frame: Z up, the street front toward -Y. The wall plan is a 10 x 9 m
@@ -79,8 +87,10 @@ FRONT_L = 2.0 * HX - R_OUT              # 7.5, the straight front
 ARC_OUT_LEN = R_OUT * math.pi / 2.0     # 3.927 m of curved band
 ARC_IN_LEN = R_IN * math.pi / 2.0       # 2.985 m of curved shopfront
 
-# Arc segments per tier, body, band, coping and parapet alike.
-ARC_SEGMENTS = (8, 6, 4, 2)
+# Arc segments per tier, body, band, coping and parapet alike. LOD3 keeps
+# three, so the corner still reads round at the last switch; it has no
+# column or light box to need a vertex at the curve's middle.
+ARC_SEGMENTS = (8, 6, 4, 3)
 
 # =========================================================== heights, metres
 # Every height that bounds a tile course is a whole number of courses.
@@ -133,9 +143,11 @@ REAR_CANOPY = (-2.0, 1.2, 0.5, 2.40, 2.48)
 # The light box over the column, standing radially out of the curved band.
 LIGHTBOX = (0.625, 0.8125, 0.12, 2.95)  # projection, height, thickness, z0
 LIGHTBOX_PPM = 96.0
-# The free-standing column under the band, at the curve's middle.
+# The free-standing column under the band, at the curve's middle, on a
+# short steel shoe at the pavement.
 COLUMN_R = 0.11
 COLUMN_AT = R_OUT - 0.25                # its axis's radius from ARC_C
+SHOE = (0.15, 0.15)                     # the shoe's radius and height
 
 # ------------------------------------------------------- the other elevations
 # (width, height) of each opening, and its sill.
@@ -160,10 +172,12 @@ PIPE_STRIP = (COP_Y0 + COP_FACE + 6, COP_Y0 + COP_H - 6)
 
 # ----------------------------------------------------------- unique regions
 # (x, y, w, h) in atlas pixels; check_regions() proves they do not collide.
-ROW_A, ROW_B = 380, 576
+ROW_A, ROW_B, ROW_C = 380, 576, 722
 CURVE_R = (8, ROW_A, 191, 176)          # ARC_IN_LEN x Z_HEAD, kick included
 DOOR_R = (211, ROW_A, 64, 176)          # 1.0 x 2.75 m
-DISPLAY_R = (287, ROW_A, 152, 152)      # 2.375 x 2.375 m, z Z_SILL .. Z_HEAD
+DISPLAY_R = (287, ROW_A, 152, 152)      # the left display window, 2.375 x
+                                        # 2.375 m, z Z_SILL .. Z_HEAD
+DISPLAY2_R = (320, ROW_C, 152, 152)     # the right one: its own room
 SERVICE_R = (451, ROW_A, 64, 138)       # 1.0 x 2.15 m
 SIDE_R = (527, ROW_A, 80, 88)           # 1.25 x 1.375 m
 METER_R = (619, ROW_A, 48, 80)          # 0.75 x 1.25 m
@@ -175,15 +189,15 @@ PIPE_R = (879, ROW_A, 24, 64)           # a vent pipe
 SIGN_R = (8, ROW_B, 336, 48)            # SIGN_SPAN x SIGN_Z at 64 px/m
 AWN_TOP_R = (356, ROW_B, 160, 68)       # 2.475 m across x the slope
 AWN_VAL_R = (356, ROW_B + 80, 160, 13)  # 2.475 x 0.2 m
-DECK_R = (528, ROW_B, 150, 134)         # the deck at 16 px/m
-DECK_PPM = 16.0
+DECK_R = (8, ROW_C, 300, 268)           # the deck, 9.375 x 8.375 m at 32 px/m
+DECK_PPM = 32.0
 
 PATCH_NAMES = ("blank", "metal", "metal_edge", "drip", "soffit", "column",
                "fabric_under", "awn_cheek", "box_side", "felt", "galv")
 PATCHES = {n: (690 + 26 * i, ROW_B, 14, 14) for i, n in enumerate(PATCH_NAMES)}
 
 REGIONS = {"curve": CURVE_R, "door": DOOR_R, "display": DISPLAY_R,
-           "service": SERVICE_R, "side": SIDE_R, "meter": METER_R,
+           "display2": DISPLAY2_R, "service": SERVICE_R, "side": SIDE_R, "meter": METER_R,
            "rear": REAR_R, "louvre": LOUVRE_R, "lightbox": LIGHTBOX_R,
            "cowl": COWL_R, "pipe": PIPE_R, "sign": SIGN_R,
            "awn_top": AWN_TOP_R, "awn_val": AWN_VAL_R, "deck": DECK_R}
@@ -194,11 +208,12 @@ ID_BLANK, ID_TILE_HI, ID_TILE_LO, ID_TILE_DK, ID_GROUT = 0, 1, 2, 3, 4
 ID_METAL, ID_FELT, ID_GLASS, ID_FRAME, ID_DOOR = 5, 6, 7, 8, 9
 ID_LETTER, ID_BOX_F, ID_BOX_G, ID_AWN_W, ID_AWN_S = 10, 11, 12, 13, 14
 ID_PAINT_W, ID_GALV, ID_BLIND, ID_PLANT, ID_POT = 15, 16, 17, 18, 19
-ID_RUBBER, ID_METER = 20, 21
+ID_RUBBER, ID_METER, ID_GROUT_HI, ID_FLOWER, ID_GOODS = 20, 21, 22, 23, 24
 TILE_IDS = (ID_TILE_HI, ID_TILE_LO, ID_TILE_DK)
+GROUT_IDS = (ID_GROUT, ID_GROUT_HI)
 # what stands behind the glass is seen through it: glass's surface, the
 # room's colour, the same pane in the emission mask
-BEHIND_GLASS = (ID_BLIND, ID_PLANT, ID_POT)
+BEHIND_GLASS = (ID_BLIND, ID_PLANT, ID_POT, ID_FLOWER, ID_GOODS)
 PANE_IDS = (ID_GLASS,) + BEHIND_GLASS
 
 # (roughness, metallic). Glazed tile is glossy; its grout is not. The coping,
@@ -213,7 +228,8 @@ SURFACE = {
     ID_AWN_S: (0.88, 0.0), ID_PAINT_W: (0.55, 0.0), ID_GALV: (0.44, 0.72),
     ID_BLIND: (glazing.ROUGHNESS, 0.0), ID_PLANT: (glazing.ROUGHNESS, 0.0),
     ID_POT: (glazing.ROUGHNESS, 0.0), ID_RUBBER: (0.80, 0.0),
-    ID_METER: (0.50, 0.0),
+    ID_METER: (0.50, 0.0), ID_GROUT_HI: (0.90, 0.0),
+    ID_FLOWER: (glazing.ROUGHNESS, 0.0), ID_GOODS: (glazing.ROUGHNESS, 0.0),
 }
 
 # ---------------------------------------------------------------- palettes
@@ -233,23 +249,27 @@ VARIANTS = {
                   "door": (92, 98, 106), "plinth": (58, 60, 64)},
     "brown_tile": {"hi": (222, 212, 188), "lo": (122, 92, 72),
                    "stripe": (126, 90, 68), "metal": (90, 78, 68),
-                   "door": (92, 80, 70), "plinth": (62, 55, 50)},
+                   "door": (92, 80, 70), "plinth": (62, 55, 50),
+                   # a light joint on brown half bond reads as brick
+                   "grout": (112, 102, 92)},
 }
 DEFAULT_VARIANT = "teal_tile"
 
 FIXED = {
-    ID_BLANK: (52, 52, 52), ID_GROUT: (150, 150, 146), ID_FELT: (50, 50, 52),
+    ID_BLANK: (52, 52, 52), ID_GROUT: (156, 156, 150), ID_GROUT_HI: (194, 194, 188),
+    ID_FELT: (50, 50, 52),
     ID_GLASS: glazing.BASE, ID_FRAME: (214, 214, 208), ID_LETTER: (124, 38, 36),
     ID_BOX_F: (228, 226, 220), ID_BOX_G: (128, 36, 34), ID_AWN_W: (222, 219, 210),
     ID_PAINT_W: (220, 220, 214), ID_GALV: (150, 152, 154),
-    ID_BLIND: (98, 96, 91), ID_PLANT: (50, 66, 42), ID_POT: (108, 70, 56),
+    ID_BLIND: (98, 96, 91), ID_PLANT: (50, 60, 43), ID_POT: (104, 72, 60),
+    ID_FLOWER: (146, 98, 100), ID_GOODS: (124, 118, 112),
     ID_RUBBER: (40, 40, 40), ID_METER: (156, 158, 154),
 }
 
 # A stray sample in a tiling band repeats under every surface sampling it.
 BAND_IDS = {
     "WALL": ((WALL_Y0, WALL_Y0 + WALL_H), {ID_TILE_HI, ID_TILE_LO, ID_TILE_DK,
-                                           ID_GROUT, ID_METAL}),
+                                           ID_GROUT, ID_GROUT_HI, ID_METAL}),
     "COPING": ((COP_Y0, COP_Y0 + COP_H), {ID_METAL}),
     "UPSTAND": ((UPST_Y0, UPST_Y0 + UPST_H), {ID_FELT, ID_METAL}),
 }
@@ -264,6 +284,7 @@ BAND_IDS = {
 # it does by day.
 EMIT = {ID_GLASS: (255, 255, 255), ID_BLIND: (255, 255, 255),
         ID_PLANT: (255, 255, 255), ID_POT: (255, 255, 255),
+        ID_FLOWER: (255, 255, 255), ID_GOODS: (255, 255, 255),
         ID_LETTER: (226, 60, 44), ID_BOX_F: (255, 230, 200),
         ID_BOX_G: (150, 26, 20)}
 # Linear RGB: a salon is lit by fluorescent tubes, as the catalog's shops are.
@@ -281,38 +302,43 @@ def m(v):
     return v * PPM
 
 
-def tiles(c, x0, x1, y0, y1, u0=0.0, v0=0.0, seed=17, joint=0.55):
-    """Lay the 125 mm tile grid over a rect whose ids are already painted.
+def tiles(c, x0, x1, y0, y1, u0=0.0, v0=0.0, seed=17, joint=0.42):
+    """Lay the 250 x 125 mm tiles, in half bond, over a rect whose ids are
+    already painted.
 
     (X - x0 + u0, Y - y0 + v0) is the grid's phase, so a region painted
-    elsewhere on the sheet can carry the band's own joints. Joints between
-    the white and the accent tiles are grout, an id of their own, a mid grey
-    that is darker than the white and close to the accent in value; the dark
-    plinth is grouted dark, so its joints are only its own tile in shade.
-    A joint is a little over half a texel, which supersampling draws as a
-    fine line rather than a white grid. Faces are cushioned up to
-    TILE_FACE, and each tile takes its own slight tone, hashed from its grid
-    cell modulo the atlas width, so the band still tiles in U.
+    elsewhere on the sheet can carry the band's own joints; every other
+    course is shifted half a tile, so the bed joints run on as lines and the
+    perpends stagger. Joints are grout, ids of their own: a light grey in
+    the white band (ID_GROUT_HI), a mid grey a little lighter than the
+    accent tile in the shopfront storey (ID_GROUT). The dark plinth is
+    grouted dark, so its joints are only its own tile in shade. A joint is
+    0.42 texel, 6.5 mm, a little over a real 4-5 mm joint so that
+    supersampling still draws it as a fine line. Faces are cushioned up to
+    TILE_FACE, and each tile takes its own slight tone, hashed from its cell
+    modulo the atlas width, so the band still tiles in U.
     """
     sy, sx, Y, X = c.field(x0, x1, y0, y1)
     if Y.size == 0:
         return
     gu, gv = X - x0 + u0, Y - y0 + v0
-    fu, fv = np.mod(gu, TILE_PX), np.mod(gv, TILE_PX)
+    iv = np.floor(gv / TILE_PX).astype(np.int64)
+    gu = gu + np.mod(iv, 2) * (TILE_LPX / 2.0)
+    fu, fv = np.mod(gu, TILE_LPX), np.mod(gv, TILE_PX)
     mid = c.mid[sy, sx]
     on = np.isin(mid, TILE_IDS)
     dark = mid == ID_TILE_DK
     joint_m = ((fu < joint) | (fv < joint)) & on
-    iu = np.floor(gu / TILE_PX).astype(np.int64) % int(ATLAS / TILE_PX)
-    iv = np.floor(gv / TILE_PX).astype(np.int64)
-    tone = 0.965 + 0.07 * atlas.hash_unit(iu, iv, seed)
-    d = np.minimum(np.minimum(fu - joint, TILE_PX - fu),
+    iu = np.floor(gu / TILE_LPX).astype(np.int64) % int(ATLAS / TILE_LPX)
+    tone = 0.97 + 0.06 * atlas.hash_unit(iu, iv, seed)
+    d = np.minimum(np.minimum(fu - joint, TILE_LPX - fu),
                    np.minimum(fv - joint, TILE_PX - fv))
     face = TILE_FACE * np.clip(d / 0.9, 0.0, 1.0)
-    c.mid[sy, sx] = np.where(joint_m & ~dark, ID_GROUT, mid)
-    c.shade[sy, sx] = np.where(joint_m, np.where(dark, 0.70, 1.0),
+    grout = np.where(mid == ID_TILE_HI, ID_GROUT_HI, ID_GROUT)
+    c.mid[sy, sx] = np.where(joint_m & ~dark, grout, mid)
+    c.shade[sy, sx] = np.where(joint_m, np.where(dark, 0.78, 1.0),
                                np.where(on, tone, c.shade[sy, sx]))
-    c.ao[sy, sx] = np.where(joint_m, 0.84, c.ao[sy, sx])
+    c.ao[sy, sx] = np.where(joint_m, 0.88, c.ao[sy, sx])
     c.height[sy, sx] = np.where(joint_m, 0.0, np.where(on, face, c.height[sy, sx]))
 
 
@@ -396,31 +422,104 @@ def _bar(c, x0, x1, y0, y1, axes, ao=0.88, mid=ID_FRAME, height=FRAME_H):
     c.bevel(x0, x1, y0, y1, height, 1.0, axes=axes)
 
 
-def _plant(c, cx, y_sill, scale, seed, clip):
-    """A pot plant standing on a sill, behind the glass: a tapered pot and a
-    clump of leaves, drawn as discs and strokes. *clip* = (x0, x1, y0, y1)
-    keeps it inside its pane."""
-    rs = np.random.RandomState(seed)
-    x0, x1, y0, y1 = clip
-    ph, pw = 0.20 * scale * PPM, 0.17 * scale * PPM
+def _pot(c, cx, y_sill, h, w, shade):
+    """A tapered pot *h* x *w* metres on the sill, its rim a shade lighter."""
+    ph, pw = m(h), m(w)
 
-    def inside(X, Y):
-        return (X >= x0) & (X < x1) & (Y >= y0) & (Y < y1)
-
-    def test_pot(X, Y):
+    def test(X, Y):
         t = np.clip((Y - y_sill) / ph, 0.0, 1.0)
-        half = pw * (0.36 + 0.14 * t)
-        return (np.abs(X - cx) <= half) & (Y >= y_sill) & (Y <= y_sill + ph) & inside(X, Y)
-    c.shape(cx - pw, cx + pw, y_sill, y_sill + ph, test_pot, mid=ID_POT, shade=1.0, ao=0.9)
-    top = y_sill + ph
-    for _ in range(int(9 * scale) + 5):
-        a = rs.uniform(0.15, math.pi - 0.15)
-        ln = rs.uniform(0.18, 0.42) * scale * PPM
-        bx, by = cx + math.cos(a) * ln, top + math.sin(a) * ln * 0.9
-        w = rs.uniform(2.2, 3.6) * scale
-        c.stroke((cx, top), (bx, by), w, mid=ID_PLANT,
-                 shade=rs.uniform(0.75, 1.25), clip=(x0, y0, x1 - x0, y1 - y0))
-        c.disc(bx, by, w * 0.9, mid=ID_PLANT, shade=rs.uniform(0.8, 1.3))
+        return (np.abs(X - cx) <= 0.5 * pw * (0.74 + 0.26 * t)) & (Y >= y_sill) & \
+            (Y <= y_sill + ph)
+    c.shape(cx - pw, cx + pw, y_sill, y_sill + ph, test, mid=ID_POT, shade=shade, ao=0.92)
+    c.paint(cx - 0.5 * pw, cx + 0.5 * pw, y_sill + ph - 1.0, y_sill + ph, mid=ID_POT,
+            shade=shade * 1.08)
+    return y_sill + ph
+
+
+def _leaves(c, rs, cx, cy, rx, ry, n, r=(0.7, 1.2), shade=(0.72, 1.08), mid=ID_PLANT):
+    """A mound of *n* small leaves in an ellipse round (cx, cy): darker
+    toward its foot and its inside, as foliage occludes itself."""
+    for _ in range(n):
+        a, t = rs.uniform(0.0, 2.0 * math.pi), math.sqrt(rs.uniform(0.0, 1.0))
+        lx, ly = cx + rx * t * math.cos(a), cy + ry * t * math.sin(a)
+        up = np.clip((ly - (cy - ry)) / max(2.0 * ry, 1e-6), 0.0, 1.0)
+        sh = rs.uniform(*shade) * (0.86 + 0.14 * up) * (1.0 - 0.10 * (1.0 - t))
+        c.disc(lx, ly, rs.uniform(*r), mid=mid, shade=sh)
+
+
+def _plant(c, kind, cx, y_sill, size, seed):
+    """A modest pot plant behind the glass, standing on the sill: a pot and
+    foliage in a muted green, *size* metres tall overall. Kinds:
+
+      bush      a rounded mound of small leaves
+      upright   a few stiff tapering blades (a snake plant)
+      trailing  a low mound with strands hanging over the pot's rim
+      flowering a small mound with a few dusty-rose flowers on it
+    """
+    rs = np.random.RandomState(seed)
+    pot_h = min(0.13, 0.42 * size)
+    top = _pot(c, cx, y_sill, pot_h, 0.75 * pot_h + 0.03, rs.uniform(0.82, 1.05))
+    fh = m(size - pot_h)                       # the foliage's height, px
+    if kind == "upright":
+        for _ in range(rs.randint(4, 7)):
+            bx = cx + rs.uniform(-1.2, 1.2)
+            tip = (bx + rs.uniform(-0.35, 0.35) * fh, top + rs.uniform(0.6, 1.0) * fh)
+            _taper(c, (bx, top - 0.5), tip, rs.uniform(1.4, 1.9), 0.45, ID_PLANT,
+                   shade=rs.uniform(0.80, 1.12))
+        return
+    rx = 0.5 * m(size) * rs.uniform(0.85, 1.15)
+    if kind == "trailing":
+        ry = 0.42 * fh
+        for side in (-1.0, 1.0, rs.choice((-1.0, 1.0))):
+            x, y = cx + side * 0.6 * m(0.75 * pot_h + 0.03), top
+            for _ in range(rs.randint(4, 8)):
+                x += side * rs.uniform(0.0, 0.9)
+                y -= rs.uniform(1.0, 1.6)
+                if y < y_sill + 1.0:
+                    break
+                c.disc(x, y, rs.uniform(0.6, 0.95), mid=ID_PLANT,
+                       shade=rs.uniform(0.70, 0.95))
+    else:
+        ry = 0.55 * fh
+    n = int(2.2 * rx * ry / 1.0) + 6
+    _leaves(c, rs, cx, top + 0.85 * ry, rx, ry, n)
+    if kind == "flowering":
+        for _ in range(rs.randint(4, 8)):
+            a, t = rs.uniform(0.2, math.pi - 0.2), rs.uniform(0.35, 0.95)
+            c.disc(cx + rx * t * math.cos(a), top + 0.85 * ry + ry * t * math.sin(a),
+                   rs.uniform(0.6, 0.9), mid=ID_FLOWER, shade=rs.uniform(0.85, 1.05))
+
+
+def _goods(c, x0, y_sill, n, seed):
+    """A row of *n* hair-care bottles on the sill, 0.12-0.22 m tall, each
+    with a darker cap, from *x0* rightward."""
+    rs = np.random.RandomState(seed)
+    x = x0
+    for _ in range(n):
+        w, h = m(rs.uniform(0.045, 0.07)), m(rs.uniform(0.12, 0.22))
+        sh = rs.uniform(0.55, 1.1)
+        c.rounded_rect(x, y_sill, w, h, min(1.0, w / 2.0), mid=ID_GOODS, shade=sh)
+        c.paint(x + 0.25 * w, x + 0.75 * w, y_sill + h, y_sill + h + m(0.025),
+                mid=ID_GOODS, shade=0.45)
+        x += w + m(rs.uniform(0.01, 0.03))
+    return x
+
+
+def _venetian(c, gx0, gx1, gy_top, drop, seed):
+    """A venetian blind let down *drop* px from the head of a pane: light
+    slats 0.0625 m apart, tilted half open, so each slat has a thin dark
+    line of room under it, and a heavier bottom rail."""
+    rs = np.random.RandomState(seed)
+    gy0 = gy_top - drop
+    c.paint(gx0, gx1, gy0, gy_top, mid=ID_BLIND, shade=0.92, ao=1.0, height=0.0)
+    pitch = 4.0
+    y = gy_top
+    while y - pitch > gy0 + 1.0:
+        y -= pitch
+        c.mul(gx0, gx1, y, y + 0.9, 0.62)
+        c.mul(gx0, gx1, y + 0.9, y + 2.0, rs.uniform(0.96, 1.04))
+    c.paint(gx0, gx1, gy0, gy0 + 1.5, mid=ID_BLIND, shade=0.72, ao=0.9)
+    c.paint(gx0, gx1, gy_top - 2.0, gy_top, mid=ID_BLIND, shade=0.80, ao=0.88)
 
 
 def _blinds(c, gx0, gx1, gy0, gy1, spans, seed):
@@ -446,21 +545,33 @@ def _blinds(c, gx0, gx1, gy0, gy1, spans, seed):
         c.paint(a0, a1, gy1 - 3, gy1, mid=ID_BLIND, shade=0.92, ao=0.9)
 
 
-def paint_display(c):
+def paint_display(c, rect, room):
     """A display window, 2.375 x 2.375 m from the plinth to the shopfront
     head: white aluminium frame, one big light below a transom at the door's
-    leaf head, two top lights over it. Vertical blinds hang in the big light,
-    drawn to both sides, and pot plants stand on the sill in front of them."""
-    x, y, w, h = DISPLAY_R
+    leaf head, two top lights over it. The two windows are two rooms:
+
+      left   vertical blinds drawn to both sides, a snake plant, a small
+             flowering plant and a low bush on the sill;
+      right  a venetian blind let down two fifths of the big light, a bush,
+             a row of hair-care bottles and a trailing plant.
+    """
+    x, y, w, h = rect
     c.paint(x, x + w, y, y + h, mid=ID_GLASS, shade=1.0, ao=1.0, height=0.0)
     t = m(0.05)
     yt = y + m(Z_LEAF - Z_SILL)
     gx0, gx1, gy0 = x + t, x + w - t, y + m(0.07)
-    _blinds(c, gx0, gx1, gy0 + m(0.06), yt - 2, ((0.0, 0.30), (0.74, 1.0)), 41)
-    _plant(c, x + w * 0.20, gy0, 1.15, 7, (gx0, gx1, gy0, yt))
-    _plant(c, x + w * 0.52, gy0, 0.85, 8, (gx0, gx1, gy0, yt))
-    _plant(c, x + w * 0.83, gy0, 1.0, 9, (gx0, gx1, gy0, yt))
-    _frame(c, DISPLAY_R, t)
+    if room == "left":
+        _blinds(c, gx0, gx1, gy0 + m(0.06), yt - 2, ((0.0, 0.20), (0.83, 1.0)), 41)
+        _plant(c, "upright", x + w * 0.30, gy0, 0.42, 7)
+        _plant(c, "flowering", x + w * 0.49, gy0, 0.28, 8)
+        _plant(c, "bush", x + w * 0.68, gy0, 0.26, 9)
+    else:
+        top = yt - m(0.03)
+        _venetian(c, gx0, gx1, top, 0.40 * (top - gy0), 43)
+        _plant(c, "bush", x + w * 0.20, gy0, 0.36, 21)
+        _goods(c, x + w * 0.44, gy0, 5, 22)
+        _plant(c, "trailing", x + w * 0.80, gy0, 0.26, 23)
+    _frame(c, rect, t)
     _bar(c, x, x + w, y, y + m(0.07), "y", ao=0.80)                 # sill rail
     _bar(c, x, x + w, yt - m(0.03), yt + m(0.03), "y")              # transom
     _bar(c, x + w / 2 - m(0.025), x + w / 2 + m(0.025), yt, y + h, "x")
@@ -470,7 +581,9 @@ def paint_display(c):
 def paint_curve(c):
     """The curved shopfront, unrolled along its own arc: a tiled kick to the
     plinth line, then four tall lights between slim mullions, a transom at the
-    door's leaf head and a top light over each. A plant or two on the sill."""
+    door's leaf head and a top light over each. A third room again: a small
+    trailing plant in the first light, a snake plant in the third, and a
+    venetian blind let a third of the way down the last."""
     x, y, w, h = CURVE_R
     zones(c, x - PAD, x + w + PAD, y, 0.0, Z_SILL)          # the plinth's dark tile
     tiles(c, x - PAD, x + w + PAD, y, y + m(Z_SILL), u0=-PAD)
@@ -478,8 +591,10 @@ def paint_curve(c):
     pane = w / 4.0
     yt = y + m(Z_LEAF)
     sill = y + m(Z_SILL + 0.06)
-    _plant(c, x + pane * 0.5, sill, 1.1, 11, (x, x + w, sill, yt))
-    _plant(c, x + pane * 3.4, sill, 0.9, 12, (x, x + w, sill, yt))
+    _plant(c, "trailing", x + pane * 0.45, sill, 0.24, 11)
+    _plant(c, "upright", x + pane * 2.6, sill, 0.34, 12)
+    top = yt - m(0.03)
+    _venetian(c, x + pane * 3.0, x + w, top, 0.33 * (top - sill), 13)
     _bar(c, x, x + w, y + m(Z_SILL), sill, "y", ao=0.80)
     _bar(c, x, x + w, yt - m(0.03), yt + m(0.03), "y")
     _bar(c, x, x + w, y + h - m(0.06), y + h, "y", ao=0.84)
@@ -591,7 +706,7 @@ def paint_louvre(c):
         c.height[sy, sx] = 0.01 * (1.0 - (Y - ly) / m(0.035))
 
 
-def _taper(c, p0, p1, w0, w1, mid):
+def _taper(c, p0, p1, w0, w1, mid, shade=None):
     """A segment whose width runs from *w0* at p0 to *w1* at p1."""
     (ax, ay), (bx, by) = p0, p1
     r = max(w0, w1)
@@ -603,7 +718,7 @@ def _taper(c, p0, p1, w0, w1, mid):
         dist = np.hypot(X - (ax + t * dx), Y - (ay + t * dy))
         return dist <= 0.5 * (w0 + (w1 - w0) * t)
     c.shape(min(ax, bx) - r, max(ax, bx) + r, min(ay, by) - r,
-            max(ay, by) + r, test, mid=mid)
+            max(ay, by) + r, test, mid=mid, shade=shade)
 
 
 def _scissors(c, cx, cy, s, mid, field):
@@ -721,7 +836,12 @@ def paint_awning(c):
         c.mid[sy, sx] = np.where(stripe, ID_AWN_S, ID_AWN_W)
         c.height[sy, sx] = np.where(np.abs(ph - 9.0) < 0.6, -0.002, 0.0)
         if hem:
-            c.mul(x - PAD, x + w + PAD, y - PAD, y + 2, 0.85, ao=0.85)
+            # a binding tape in the accent colour along the valance's foot,
+            # stitched over the stripes, and the fold at its top
+            c.paint(x - PAD, x + w + PAD, y - PAD, y + 2.5, mid=ID_AWN_S, shade=0.90,
+                    ao=0.92)
+            c.lift(x - PAD, x + w + PAD, y - PAD, y + 2.5, 0.002)
+            c.mul(x - PAD, x + w + PAD, y + 2.5, y + 3.0, 0.88, ao=0.9)
             c.mul(x - PAD, x + w + PAD, y + h - 2, y + h + PAD, 0.9, ao=0.9)
         else:
             # the cloth sags between the arms at each end and the middle
@@ -736,22 +856,60 @@ def paint_awning(c):
     c.shade[sy, sx] *= 1.0 + 0.015 * weave[sy, sx]
 
 
+def deck_px(bx, by):
+    """Build-frame plan metres -> atlas pixels on the deck region."""
+    x, y, _w, _h = DECK_R
+    return (x + (bx + HX - PARAPET_T) * DECK_PPM, y + (by + HY - PARAPET_T) * DECK_PPM)
+
+
+# Painted on the deck, in build-frame plan metres: the two roof drains the
+# deck falls to, the roof hatch's lid (x0, y0, x1, y1), and the walking line
+# from the wall ladder's head to the fan.
+DRAINS = ((-3.2, -2.9), (0.6, 2.8))
+HATCH = (-3.85, 2.30, -3.05, 3.10)
+WALK = ((3.0, 3.95), (1.2, 2.6), (-1.2, 1.7))
+
+
 def paint_deck(c):
-    """Bitumen felt on the flat deck, at 16 px/m: one-metre rolls, shallow
-    ponding, a worn walking line from the ladder to the fan."""
+    """Bitumen felt on the flat deck, at 32 px/m: one-metre rolls lapped
+    along X with staggered end laps, shallow ponding, two roof drains with a
+    dark grate in a galvanised ring, and the roof hatch's lid in its curb."""
     x, y, w, h = DECK_R
+    k = DECK_PPM
     c.paint(x, x + w, y, y + h, mid=ID_FELT, shade=1.0, ao=1.0, height=0.0)
-    for i in range(1, int(h / DECK_PPM) + 1):
-        yy = y + i * DECK_PPM
-        c.mul(x, x + w, yy - 0.5, yy + 0.5, 0.90, ao=0.92)
     rs = np.random.RandomState(5)
-    for _ in range(14):
-        cx, cy = rs.uniform(x + 8, x + w - 8), rs.uniform(y + 8, y + h - 8)
-        c.disc(cx, cy, rs.uniform(4, 11), None, rs.uniform(0.93, 0.99), 0.97)
-    c.mul(x, x + w, y, y + 3, 0.92, ao=0.86)
-    c.mul(x, x + w, y + h - 3, y + h, 0.92, ao=0.86)
-    c.mul(x, x + 3, y, y + h, 0.92, ao=0.86)
-    c.mul(x + w - 3, x + w, y, y + h, 0.92, ao=0.86)
+    for i in range(int(h / k) + 1):
+        yy = y + i * k
+        if i:
+            c.mul(x, x + w, yy - 0.5, yy + 0.6, 0.84, ao=0.88)
+            c.lift(x, x + w, yy, yy + 2.5, SEAM_H)
+        x_end = x + rs.uniform(0.0, 5.0) * k
+        while x_end < x + w:
+            c.mul(x_end - 0.5, x_end + 0.6, yy, min(y + h, yy + k), 0.88, ao=0.9)
+            c.lift(x_end, x_end + 2.5, yy, min(y + h, yy + k), SEAM_H)
+            x_end += rs.uniform(4.0, 6.0) * k
+    for _ in range(16):
+        cx, cy = rs.uniform(x + 12, x + w - 12), rs.uniform(y + 12, y + h - 12)
+        c.disc(cx, cy, rs.uniform(6, 18), None, rs.uniform(0.93, 0.99), 0.97)
+    for bx, by in DRAINS:
+        px, py = deck_px(bx, by)
+        c.disc(px, py, 0.20 * k, mid=ID_GALV, shade=0.80, ao=0.80, height=0.004)
+        c.disc(px, py, 0.13 * k, mid=ID_RUBBER, shade=0.70, ao=0.60, height=-0.01)
+        for a in range(4):
+            ang = a * math.pi / 4.0
+            dx, dy = math.cos(ang) * 0.12 * k, math.sin(ang) * 0.12 * k
+            c.stroke((px - dx, py - dy), (px + dx, py + dy), 0.8, mid=ID_GALV, shade=0.7)
+    hx0, hy0 = deck_px(HATCH[0], HATCH[1])
+    hx1, hy1 = deck_px(HATCH[2], HATCH[3])
+    c.paint(hx0, hx1, hy0, hy1, mid=ID_GALV, shade=0.78, ao=0.84, height=0.0)
+    c.bevel(hx0, hx1, hy0, hy1, 0.03, 1.5)
+    c.paint(hx0 + 2.5, hx1 - 2.5, hy0 + 2.5, hy1 - 2.5, mid=ID_GALV, shade=0.96, ao=1.0)
+    c.mul(hx0 + 2.5, hx1 - 2.5, hy1 - 4.0, hy1 - 3.0, 0.75, ao=0.85)   # hinge line
+    c.mul(hx0, hx1, hy0 - 2.0, hy0, 0.85, ao=0.80)                      # curb's foot
+    c.mul(x, x + w, y, y + 5, 0.92, ao=0.86)
+    c.mul(x, x + w, y + h - 5, y + h, 0.92, ao=0.86)
+    c.mul(x, x + 5, y, y + h, 0.92, ao=0.86)
+    c.mul(x + w - 5, x + w, y, y + h, 0.92, ao=0.86)
 
 
 def paint_plant_room(c):
@@ -815,8 +973,12 @@ def check_regions():
     if abs(SIGN_R[2] - m(SIGN_SPAN[1] - SIGN_SPAN[0])) > 1e-6 or \
             abs(SIGN_R[3] - m(SIGN_Z[1] - SIGN_Z[0])) > 1e-6:
         problems.append("the sign region is not its stretch of wall at 64 px/m")
-    if abs(DISPLAY_R[2] - m(DISPLAY_W)) > 1e-6 or abs(DISPLAY_R[3] - m(Z_HEAD - Z_SILL)) > 1e-6:
-        problems.append("the display region is not the display window")
+    for r in (DISPLAY_R, DISPLAY2_R):
+        if abs(r[2] - m(DISPLAY_W)) > 1e-6 or abs(r[3] - m(Z_HEAD - Z_SILL)) > 1e-6:
+            problems.append("a display region is not the display window")
+    if abs(DECK_R[2] - DECK_PPM * 2 * (HX - PARAPET_T)) > 1e-6 or \
+            abs(DECK_R[3] - DECK_PPM * 2 * (HY - PARAPET_T)) > 1e-6:
+        problems.append("the deck region is not the deck at DECK_PPM")
     if abs(CURVE_R[2] - m(ARC_IN_LEN)) > 0.5:
         problems.append("the curve region is not the curved shopfront's length")
     for z in (Z_PLINTH, Z_HEAD, Z_STRIPE[0], Z_STRIPE[1], SIGN_Z[0], SIGN_Z[1]):
@@ -839,13 +1001,13 @@ def weather(c):
                            steel=steel)
     w.grime(amount=0.02)
     w.fade((ID_AWN_W, ID_AWN_S, ID_DOOR, ID_METER, ID_METAL), amount=0.08)
-    w.wash((ID_TILE_HI, ID_TILE_LO, ID_GROUT), amount=0.008)
+    w.wash((ID_TILE_HI, ID_TILE_LO) + GROUT_IDS, amount=0.008)
     w.plinth(0, ATLAS, WALL_Y0, WALL_Y0 + m(Z_PLINTH), (ID_TILE_DK, ID_GROUT))
     w.splash(0, ATLAS, WALL_Y0 + m(Z_PLINTH), WALL_Y0 + m(Z_HEAD),
              (ID_TILE_LO, ID_GROUT), amount=0.10, specks=0.10)
     # runs from the coping's drip, short: tile does not hold them far down
     w.runs(0, ATLAS, WALL_Y0 + m(Z_STRIPE[1]), WALL_Y0 + m(Z_COP0),
-           (ID_TILE_HI, ID_GROUT), 0.14, fall=m(0.10))
+           (ID_TILE_HI, ID_GROUT_HI), 0.14, fall=m(0.10))
     # the curved shopfront's kick and the door's foot
     x, y, cw, _ = CURVE_R
     w.splash(x - PAD, x + cw + PAD, y, y + m(Z_SILL) + 6, (ID_TILE_LO, ID_GROUT, ID_FRAME),
@@ -867,6 +1029,25 @@ def weather(c):
     x, y, dw, dh = DECK_R
     w.add("D", x, x + dw, y, y + dh, lambda Y, X, nz: 0.10 * nz("big") + 0.06 * nz("blotch"),
           (ID_FELT,))
+    # silt dried round each drain, where the deck ponds last
+    for bx, by in DRAINS:
+        px, py = deck_px(bx, by)
+        r = 0.7 * DECK_PPM
+        w.add("D", px - 2 * r, px + 2 * r, py - 2 * r, py + 2 * r,
+              lambda Y, X, nz, px=px, py=py, r=r: 0.16 * np.exp(
+                  -((X - px) ** 2 + (Y - py) ** 2) / r ** 2) * (0.6 + 0.4 * nz("blotch")),
+              (ID_FELT, ID_GALV))
+    # the walking line from the ladder's head to the fan, scuffed paler
+    pts = [deck_px(*p) for p in WALK]
+    for (ax, ay), (bx, by) in zip(pts, pts[1:]):
+        def scuff(Y, X, nz, ax=ax, ay=ay, bx=bx, by=by):
+            dx, dy = bx - ax, by - ay
+            t = np.clip(((X - ax) * dx + (Y - ay) * dy) / (dx * dx + dy * dy), 0.0, 1.0)
+            d = np.hypot(X - (ax + t * dx), Y - (ay + t * dy))
+            return 0.10 * np.exp(-(d / (0.28 * DECK_PPM)) ** 2) * (0.5 + 0.5 * nz("blotch"))
+        r = 0.6 * DECK_PPM
+        w.add("F", min(ax, bx) - r, max(ax, bx) + r, min(ay, by) - r, max(ay, by) + r,
+              scuff, (ID_FELT,))
     for x, y, rw, rh in (COWL_R, PIPE_R):
         w.runs(x, x + rw, y, y + rh, (ID_GALV,), 0.10, fall=rh / 2.0)
     # the awning cloth greys toward its valance, where the rain leaves it
@@ -889,7 +1070,8 @@ def paint(ss=atlas.SS):
     c.check_bands(BAND_IDS)
     paint_curve(c)
     paint_door(c)
-    paint_display(c)
+    paint_display(c, DISPLAY_R, "left")
+    paint_display(c, DISPLAY2_R, "right")
     paint_service_door(c)
     paint_side_window(c)
     paint_rear_window(c)
@@ -904,7 +1086,7 @@ def paint(ss=atlas.SS):
 
     # glazed tile: a faint broad unevenness, no more; sheet and felt grain
     wear = 0.012 * atlas.noise(c, 3, 40.0) + 0.008 * atlas.noise(c, 4, 8.0)
-    tiled = np.isin(c.mid, TILE_IDS + (ID_GROUT,))
+    tiled = np.isin(c.mid, TILE_IDS + GROUT_IDS)
     c.shade[tiled] *= 1.0 + wear[tiled]
     sheeted = np.isin(c.mid, (ID_METAL, ID_FELT, ID_GALV, ID_DOOR, ID_METER))
     grain = atlas.noise(c, 5, 60.0, 0.35)
@@ -924,6 +1106,7 @@ def lut(variant):
     t[ID_TILE_HI] = pal["hi"]
     t[ID_TILE_LO] = pal["lo"]
     t[ID_TILE_DK] = pal["plinth"]
+    t[ID_GROUT] = pal.get("grout", FIXED[ID_GROUT])
     t[ID_AWN_S] = pal["stripe"]
     t[ID_METAL] = pal["metal"]
     t[ID_DOOR] = pal["door"]
@@ -944,7 +1127,7 @@ def export(out_dir, ss=atlas.SS):
     os.makedirs(out_dir, exist_ok=True)
     c = paint(ss)
     cav = atlas.cavity(c, radius_px=1.5, depth_m=0.006)
-    c.weather.dust(cav, (ID_GROUT,), amount=0.10)
+    c.weather.dust(cav, GROUT_IDS, amount=0.10)
     rough = 0.03 * atlas.noise(c, 13, 20.0)
     path = os.path.join(out_dir, ASSET)
     cover = atlas.coverage(c, PANE_IDS)

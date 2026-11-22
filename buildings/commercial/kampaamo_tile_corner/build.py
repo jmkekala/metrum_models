@@ -31,8 +31,8 @@ The roof drains inside the parapet, so there are no gutters or downpipes.
 
 Construction is a set of closed solids unioned with Blender's exact boolean:
 the shell (walls, the corner recess, the parapet and the deck as one solid
-built face by face, with every opening's reveals), the coping, the column,
-the light box, the awnings, the canopy and its rods, and the roof fan and
+built face by face, with every opening's reveals), the coping, the column
+and its steel shoe, the light box, the awnings, the canopy and its rods, and the roof fan and
 pipes. The wall ladder is roof_safety's lean kit, appended after the weld.
 
 Every number the mesh and the atlas share is imported from facade_atlas.py.
@@ -111,7 +111,7 @@ LOU_W, LOU_H, LOU_Z = L.LOUVRE
 # (kind, s0, s1, z0, z1) on each straight wall, s from its p0.
 ITEMS = {
     "front": [("display",) + L.DISPLAYS[0] + (L.Z_SILL, L.Z_HEAD),
-              ("display",) + L.DISPLAYS[1] + (L.Z_SILL, L.Z_HEAD),
+              ("display2",) + L.DISPLAYS[1] + (L.Z_SILL, L.Z_HEAD),
               ("door",) + L.DOOR_SPAN + (0.0, L.Z_HEAD),
               ("sign",) + L.SIGN_SPAN + L.SIGN_Z],
     "east": [("side",) + _span(2.25, SIDE_W) + (SIDE_Z, SIDE_Z + SIDE_H),
@@ -122,11 +122,11 @@ ITEMS = {
     "west": [("side",) + _span(3.0, SIDE_W) + (SIDE_Z, SIDE_Z + SIDE_H),
              ("side",) + _span(6.0, SIDE_W) + (SIDE_Z, SIDE_Z + SIDE_H)],
 }
-REGION = {"display": L.DISPLAY_R, "door": L.DOOR_R, "sign": L.SIGN_R,
-          "side": L.SIDE_R, "meter": L.METER_R, "louvre": L.LOUVRE_R,
-          "rear": L.REAR_R, "service": L.SERVICE_R}
-DEPTH = {"display": L.SHOP_DEPTH, "door": L.SHOP_DEPTH, "side": L.WINDOW_DEPTH,
-         "rear": L.WINDOW_DEPTH, "service": L.SERVICE_DEPTH}
+REGION = {"display": L.DISPLAY_R, "display2": L.DISPLAY2_R, "door": L.DOOR_R,
+          "sign": L.SIGN_R, "side": L.SIDE_R, "meter": L.METER_R,
+          "louvre": L.LOUVRE_R, "rear": L.REAR_R, "service": L.SERVICE_R}
+DEPTH = {"display": L.SHOP_DEPTH, "display2": L.SHOP_DEPTH, "door": L.SHOP_DEPTH,
+         "side": L.WINDOW_DEPTH, "rear": L.WINDOW_DEPTH, "service": L.SERVICE_DEPTH}
 
 # roof plant: (kind, (x, y), radius, height over the deck)
 FAN = ((-1.6, 1.6), 0.28, 0.58, 0.36, 0.76)      # drum r, drum top, hood r, hood top
@@ -140,9 +140,11 @@ LADDER_S = 2.0
 
 # ---------------------------------------------------------- tier choices
 def arc_segments(level):
-    """8, 6, 4, 2 facets round the quarter circle, body, band and coping
-    alike: 11.25 degrees a facet at LOD0, 45 at LOD3. Every count puts a
-    vertex at the curve's middle, where the column and the light box are."""
+    """8, 6, 4, 3 facets round the quarter circle, body, band and coping
+    alike: 11.25 degrees a facet at LOD0, 30 at LOD3. Every tier that keeps
+    the column or the light box has an even count, which puts a vertex at
+    the curve's middle where they stand; LOD3 has neither, and its three
+    facets keep the corner round at the last switch."""
     return L.ARC_SEGMENTS[level]
 
 
@@ -586,6 +588,17 @@ def column(level):
                  uv_patch("blank"))
 
 
+def column_shoe(level):
+    """The column's steel shoe at the pavement: a short wider collar in the
+    coping's dark paint, which grounds the slim column and takes the kicks."""
+    er = _mid_dir()
+    px, py = CX + L.COLUMN_AT * er[0], CY + L.COLUMN_AT * er[1]
+    r, h = L.SHOE
+    d = uv_patch("drip")
+    return prism(px, py, r, 0.0, h, COLUMN_SIDES[level], d, uv_patch("metal_edge"),
+                 uv_patch("blank"))
+
+
 def lightbox():
     """The projecting light box over the column: a slab standing radially out
     of the curved band, lit on both faces. Each face maps so its artwork
@@ -752,6 +765,7 @@ def build_lod(level):
         solids.append(coping(level))
     if COLUMN_SIDES[level]:
         solids.append(column(level))
+        solids.append(column_shoe(level))
     if lightbox_kept(level):
         solids.append(lightbox())
     for s0, s1 in L.DISPLAYS:
@@ -856,9 +870,12 @@ def check_layout():
         bad.append("the light box does not sit on the band")
     if 0.10 > L.PARAPET_T or pz0 + ph > L.Z_PAR:
         bad.append("the light box's back is not buried in the parapet's solid")
-    for n in L.ARC_SEGMENTS:
-        if n % 2:
-            bad.append("%d arc facets put no vertex at the curve's middle" % n)
+    for lv, n in enumerate(L.ARC_SEGMENTS):
+        if n % 2 and (COLUMN_SIDES[lv] or lightbox_kept(lv)):
+            bad.append("LOD%d's %d arc facets put no vertex at the curve's middle, "
+                       "where its column and light box stand" % (lv, n))
+    if not R_IN + 0.05 < L.COLUMN_AT - L.SHOE[0]:
+        bad.append("the column's shoe does not stand clear of the shopfront")
     # the roof: the parapet hides the deck and stands over the plant's base
     if L.Z_COP - L.Z_DECK < 0.5:
         bad.append("the parapet stands only %.2f m over the deck" % (L.Z_COP - L.Z_DECK))

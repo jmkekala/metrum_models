@@ -8,24 +8,27 @@ a parapet with a thin painted coping, and a quarter-round corner as its
 signature. Generic and composite: no real building, business, brand or
 chain look.
 
-- Tile is a true 125 mm grid: a dark tile plinth, a muted accent tile
-  (teal by default) over the whole shopfront storey, and a white tile sign
-  band above it with one accent course near its top. The band runs on
-  unbroken round the curve.
+- Tile is 250 x 125 mm in half bond, on 125 mm courses: a dark tile
+  plinth, a muted accent tile (teal by default) over the whole shopfront
+  storey, and a white tile sign band above it with one accent course near
+  its top. The band runs on unbroken round the curve.
 - At the curve the shopfront stands 0.6 m back from the band under a tiled
   soffit. It is glazed in facets between slim white mullions on a smaller
-  arc, over a dark tile kick. One slim round white column stands free under
-  the middle of the band. A small projecting light box (scissors over a
-  comb) stands out of the band above the column.
+  arc, over a dark tile kick. One slim round white column on a short dark
+  steel shoe stands free under the middle of the band. A small projecting
+  light box (scissors over a comb) stands out of the band above the column.
 - On the straight front are two display windows under striped fabric
-  awnings, with vertical blinds and pot plants behind the glass. The word
+  awnings. Each is its own room: vertical blinds drawn aside over a few
+  small pot plants in one, a half-lowered venetian blind over a plant, a
+  row of hair-care bottles and a trailing plant in the other. The word
   KAMPAAMO is set in dark red block capitals on the band over them. The one
   shop door is beside the corner, at grade, under a thin steel canopy hung
   on two rods.
 - On the sides and back: two windows on the left side; on the right side a
   window, the meter cupboard and an exhaust louvre; at the back a small
   window, the staff door under a small steel canopy, and the wall ladder to
-  the roof. On the deck are a roof extract fan and two vent pipes.
+  the roof. On the felt deck are a roof extract fan, two vent pipes, two
+  roof drains and a flush roof hatch.
 
 ## Category and secondary use
 
@@ -123,6 +126,9 @@ One solid built face by face in `main_body()`:
 - the coping ring;
 - the column: a prism from the pavement up into the band, 0.11 m radius, at
   2.25 m from the arc centre, under the soffit's middle;
+- its shoe: a prism of 0.15 m radius and 0.15 m height round the column's
+  foot, in the coping's darker paint (`SHOE`); on every tier that keeps the
+  column, with the column's side count;
 - the light box: a slab 0.625 m out x 0.8125 m tall x 0.12 m thick, standing
   radially at the curve's middle, z 2.95 m;
 - two awnings: closed wedges from the wall at about 2.82–2.97 m to a
@@ -135,9 +141,12 @@ One solid built face by face in `main_body()`:
 
 ### The curve
 
-- Facets per tier: 8 / 6 / 4 / 2, the same for the band, the soffit, the
-  shopfront, the parapet and the coping. Every count puts a vertex at the
-  curve's middle, where the column and the light box stand.
+- Facets per tier: 8 / 6 / 4 / 3, the same for the band, the soffit, the
+  shopfront, the parapet and the coping (painted on `LOD3`). Every tier
+  that keeps the column or the light box has an even count, which puts a
+  vertex at the curve's middle where they stand; `LOD3` has neither, and
+  its three facets keep the corner round at the last switch
+  (`check_layout()` asserts this per tier).
 - Band UVs unroll along the true arc length: U is the running length round
   the building at 64 px/m. Tile courses and the accent course therefore run
   continuously from the front, round the curve and on down the east side.
@@ -166,8 +175,9 @@ Everything is in `facade_atlas.py`:
   rows);
 - the front layout (`DISPLAYS`, `DOOR_SPAN`, `SIGN_SPAN`);
 - the fittings (`AWN_PROFILE`, `CANOPY`, `REAR_CANOPY`, `LIGHTBOX`,
-  `COLUMN_*`);
-- the other openings.
+  `COLUMN_*`, `SHOE`);
+- the other openings;
+- what is painted on the deck, in plan metres (`DRAINS`, `HATCH`, `WALK`).
 
 `build.py` adds the per-wall item lists, the roof plant and the ladder's
 place. `check_layout()` checks:
@@ -178,9 +188,9 @@ place. `check_layout()` checks:
   canopy;
 - the staff canopy over its door and clear of the back window and the
   ladder;
-- the column under the soffit and the light box buried in the parapet's
-  solid;
-- even facet counts;
+- the column and its shoe under the soffit, clear of the shopfront, and
+  the light box buried in the parapet's solid;
+- even facet counts on every tier with a column or light box;
 - the parapet at least 0.5 m over the deck;
 - the roof plant clear of the parapet;
 - the ladder's place.
@@ -189,37 +199,39 @@ place. `check_layout()` checks:
 
 | Tier | Triangles | Ceiling |
 | --- | --- | --- |
-| `LOD0` | 1,038 | 12,000 |
-| `LOD1` | 836 | 4,000 |
-| `LOD2` | 472 | 1,500 |
-| `LOD3` | 248 | 500 |
+| `LOD0` | 1,168 | 12,000 |
+| `LOD1` | 912 | 4,000 |
+| `LOD2` | 494 | 1,500 |
+| `LOD3` | 258 | 500 |
 
 - **LOD0** carries everything:
   - 8 curve facets;
   - openings cut (shopfront and door 0.15 m, side and back windows 0.12 m,
     staff door 0.10 m);
-  - column 16 sides, fan 12, vents 8;
+  - column and its shoe 16 sides (the shoe about 130 triangles), fan 12,
+    vents 8;
   - the canopy rods;
   - the ladder with every rung and bracket.
-- **LOD1**: 6 facets, column 10 sides, fan 8, vents 6, ladder every other
-  rung.
+- **LOD1**: 6 facets, column and shoe 10 sides, fan 8, vents 6, ladder
+  every other rung.
 - **LOD2**:
   - openings flat on the wall plane with the same regions;
-  - 4 facets, column 6 sides, fan 6 sides;
+  - 4 facets, column and shoe 6 sides, fan 6 sides;
   - vents and canopy rods dropped;
   - ladder every fourth rung, no brackets.
 - **LOD3**:
-  - 2 facets;
+  - 3 facets (10 triangles more than 2 would cost);
   - the coping is not modelled: the parapet runs to 4.125 m with the coping
     painted on its face and top;
-  - column, light box and fan dropped;
+  - column, shoe, light box and fan dropped;
   - the ladder's bare rails kept, because they set the extents;
   - awnings and both canopies kept: they set the front and back plan bounds
     and carry the front's identity.
 
 This is a small one-storey shop, in line with the catalog's sheds and shops
 (300–1,000 at `LOD0`). The parapet, curve and recess are cheap; most of the
-LOD0 count is the ladder, the round column and the roof plant.
+LOD0 count is the ladder, the round column with its shoe and the roof
+plant.
 
 ## LOD review
 
@@ -231,7 +243,10 @@ LOD0 count is the ladder, the round column and the roof plant.
   - `LOD0`/`LOD1` at 30 and 40 m, front and oblique, noon and reverse sun;
   - `LOD1`/`LOD2` at 65 and 75 m, front, oblique and aerial, noon;
   - `LOD0`/`LOD2`/`LOD3` at 115 and 125 m, front, oblique and aerial, noon.
-- Night, emission on: all four tiers at 40 m oblique.
+- Night, emission on: all four tiers at 20 and 40 m, front and oblique.
+- Every tier at 20, 35, 70 and 120 m, front and oblique, noon; `LOD2` and
+  `LOD3` side by side at 120 m, and at 20 m oblique for a consumer that
+  switches by screen size and shows `LOD3` near.
 - Intended switches are the catalog defaults: 35 / 70 / 120 m. No override.
 
 ### Findings
@@ -242,11 +257,12 @@ LOD0 count is the ladder, the round column and the roof plant.
   proportion, frames and glass. The 0.15 m reveal shadow goes, as the
   contract's default allows. The 4-facet curve still reads round.
 - **120 m:**
-  - `LOD3`'s 2-facet curve reads as a chamfered corner against `LOD2`'s
-    rounded one. This is the one visible profile change. It comes from the
-    facet count the brief set, and at that distance the building is about
-    40 px across.
-  - The light box and column go: the column is 0.22 m, under 2 px.
+  - `LOD3`'s 3-facet curve reads as a rounded corner beside `LOD2`'s 4
+    facets; the corner no longer turns into a chamfer at the switch. Up
+    close (20 m) the three facets show as facets, as `LOD2`'s four do, and
+    the band, soffit and recessed shopfront stay aligned.
+  - The light box, the column and its shoe go: the column is 0.22 m, under
+    2 px.
   - The parapet, lettering, awnings, canopy, recess and colour bands all
     hold.
 
@@ -256,10 +272,10 @@ The validator's sampled hidden-surface test passes on every tier:
 
 | Tier | Hidden triangles | Share | Vertical area |
 | --- | --- | --- | --- |
-| `LOD0` | 71 / 1,038 | 6.8 % | 0.0 m² |
-| `LOD1` | 43 / 836 | 5.1 % | 0.0 m² |
-| `LOD2` | 28 / 472 | 5.9 % | 0.0 m² |
-| `LOD3` | 8 / 248 | 3.2 % | 0.9 m² |
+| `LOD0` | 71 / 1,168 | 6.1 % | 0.0 m² |
+| `LOD1` | 43 / 912 | 4.7 % | 0.0 m² |
+| `LOD2` | 28 / 494 | 5.7 % | 0.0 m² |
+| `LOD3` | 8 / 258 | 3.1 % | 0.9 m² |
 
 - On `LOD0`–`LOD2` the candidates are horizontal. They are the coping's
   0.0625 m drip underside at z 4.03 along its inner edge, over the felt
@@ -269,8 +285,8 @@ The validator's sampled hidden-surface test passes on every tier:
   ladder's two bare rails, which face each other across the ladder. They
   are kept because the rails set the extents.
 - There are no buried partitions. The parapet's top inside the coping, the
-  wall band above the coping's drip, and the buried backs of the column,
-  awnings, canopies, rods, light box and roof plant are removed by the
+  wall band above the coping's drip, the column's foot inside its shoe, and
+  the buried backs of the column, awnings, canopies, rods, light box and roof plant are removed by the
   union. The floor cap faces the ground and is kept as the shell's closure.
 
 ## Known simplifications
@@ -285,10 +301,13 @@ The validator's sampled hidden-surface test passes on every tier:
   - the meter cupboard and the louvre (flush panels on every tier);
   - the coping's joints.
 - **Awnings:** closed wedges, without arms, rollers or an open underside.
-- **Behind the glass:** the vertical blinds and the plants are painted in
-  the display and curve regions. Both display windows show the same room.
+- **Behind the glass:** the blinds, the pot plants and the bottles are
+  painted in the two display regions and the curve region, one room each
+  (Glazing treatment). They are flat room content, not geometry.
+- **On the deck:** the felt laps, the two roof drains and the roof hatch
+  are painted flush in the deck region; the hatch has no modelled curb.
 - **Not modelled:**
-  - roof drains, a scupper or overflow;
+  - a scupper or overflow (the roof drains are painted);
   - door hardware beyond the painted pull;
   - signage beyond the band's lettering and the light box;
   - lamps over either door.
@@ -298,7 +317,8 @@ The validator's sampled hidden-surface test passes on every tier:
 - **Size and density:** one 1024 atlas at 64 texels/metre on every wall,
   opening, fitting, awning and coping, with these local deviations:
   - the light box face at 96 px/m (0.625 x 0.8125 m on 60 x 78 px);
-  - the roof deck at 16 px/m (seen from the air only).
+  - the roof deck at 32 px/m (9.375 x 8.375 m on 300 x 268 px; seen from
+    the air only, where its laps, drains and hatch carry it).
 - **Rasterising:** `scripts/atlas.py`, supersampled at `atlas.SS` = 4,
   box-filtered in linear light. `atlas.pad()` runs last, with a 6 px gutter
   at every region and band.
@@ -310,7 +330,7 @@ The validator's sampled hidden-surface test passes on every tier:
 
 Tiling bands, U wrapping:
 
-- **Wall band**, rows 6–270, z 0–4.125 m:
+- **Wall band**, rows 6–270, z 0–4.125 m, 33 tile courses:
   - dark tile plinth to 0.375;
   - accent tile to 2.75, with a sealant hairline at the head;
   - white tile to 3.75;
@@ -323,29 +343,73 @@ Tiling bands, U wrapping:
 
 Regions:
 
-- the curved shopfront (191 x 176), the shop door, a display window and the
-  staff door;
-- the side and back windows, the meter cupboard, the louvre and the light
-  box;
-- the roof fan and pipe;
-- the lettered band (336 x 48), drawn on the band's own tile grid phase;
-- the awning top and valance;
-- the deck;
-- flat patches.
+- row A (y 380): the curved shopfront (191 x 176), the shop door, the left
+  display window (152 x 152), the staff door, the side and back windows,
+  the meter cupboard, the louvre, the light box, the roof fan and pipe;
+- row B (y 576): the lettered band (336 x 48), drawn on the band's own
+  tile phase; the awning top and valance; flat patches;
+- row C (y 722): the deck (300 x 268) and the right display window
+  (152 x 152).
 
-`check_regions()` asserts two gutters between regions and checks that the
-bands and regions agree with the metres they stand for.
+Each display window and the curved shopfront has its own region, so the
+three rooms behind the glass differ. `check_regions()` asserts two gutters
+between regions and checks that the bands and regions (both display
+windows and the deck included) agree with the metres they stand for.
 
 ### Tile and relief
 
-- Joints are 0.55 px, which supersampling draws as fine lines. The grout is
-  a mid grey (150, 150, 146) between the white and the accent tile; the dark
-  plinth is grouted dark.
-- Each tile takes a ±3.5 % hashed tone.
+- **Module:** 250 x 125 mm glazed tile in half bond, 16 x 8 px. Courses
+  are 125 mm, so every colour change (plinth, head, accent course, sign
+  rows) is on a course line; every other course is shifted 125 mm, so the
+  bed joints read as lines and the perpends stagger. 64 tiles span the
+  atlas, so the band still wraps in U.
+- **Joints** are 0.42 px, about 6.5 mm: a little heavier than a real
+  4–5 mm joint, so that supersampling still draws a line. Grout is two
+  ids: a light grey (194, 194, 188) in the white band and a mid grey
+  (156, 156, 150), a little lighter than the accent tile, in the shopfront
+  storey; `brown_tile` takes a darker brown-grey (112, 102, 92) there,
+  because a light joint on brown half bond reads as brick. The dark plinth is grouted dark, its joints only its own tile at
+  0.78 shade, so it reads as courses, not a checkerboard.
+- Each tile takes a ±3 % hashed tone.
 - Relief (height channel): tile faces cushioned 3 mm; aluminium sections
-  25 mm; channel letters 40 mm; coping joints and felt laps 6 mm.
+  25 mm; channel letters 40 mm; coping joints and felt laps 6 mm; the
+  roof hatch's lid 30 mm.
 - Glass and what stands behind it are flat. They take glass roughness in
   the ORM.
+
+### Scale against the catalog
+
+Front views at 20 and 35 m with identical `review_asset.py` settings, this
+asset beside `liikekeskus_pharmacy` (64 px/m, split-face block): the two
+are equally sharp, and the tile courses and the pharmacy's block courses
+read at a similar scale. The earlier 125 mm square grid read as bathroom
+tile with joints heavier than real; the half bond with lighter grout reads
+as a coursed tile facade, and the white band reads as a quiet surface with
+fine lines.
+
+### Rooms behind the glass
+
+Painted in the albedo under glass roughness (`BEHIND_GLASS`); in the
+emission they are lit only as the pane they stand behind:
+
+- left display window: vertical blinds drawn to both sides, a snake plant
+  (0.42 m), a small flowering plant and a low bush;
+- right display window: a venetian blind let down two fifths of the big
+  light, a bush (0.36 m), five hair-care bottles and a trailing plant;
+- curved shopfront: a small trailing plant in the first light, a snake
+  plant in the third, a venetian blind a third of the way down the last.
+
+Plants are 0.24–0.42 m tall overall in muted green (50, 60, 43) with
+per-leaf shade, in terracotta pots 0.10–0.13 m tall; flowers dusty rose
+(146, 98, 100); bottles a neutral (124, 118, 112) at varied shade.
+
+### Deck
+
+Bitumen felt in one-metre rolls lapped along X (a 6 mm lap and a dark
+line each metre) with staggered end laps; shallow ponding; two roof drains
+(a dark grate in a galvanised ring, silt dried round each); a galvanised
+roof hatch lid 0.8 x 0.8 m with its hinge line; a scuffed walking line
+from the ladder's head to the fan.
 
 ### Weathering
 
@@ -358,21 +422,25 @@ tile:
 - kicked dirt on the doors and grime round the pulls;
 - dirty sill flashings;
 - a meter cupboard splashed and faded;
-- the awning cloth greying toward its valance;
-- deck dirt.
+- the awning cloth greying toward its valance, whose foot is bound with a
+  tape in the accent colour;
+- deck dirt, silt round the drains and the walking line.
 
 The lettering, the light box and the glazing stay clean.
 
 ### Filtering
 
-Mip 3 at 75 m (`LOD2`: front, oblique, grazing) and mip 4 at 125 m (`LOD3`:
-oblique, grazing), using `scripts/review_atlas_mips.py`:
+Mip 3 at 75 m (`LOD1` and `LOD2`: front, oblique, grazing, aerial) and
+mip 4 at 125 m (`LOD2` and `LOD3`: oblique, grazing, aerial), using
+`scripts/review_atlas_mips.py`, on the current layout (row C added):
 
 - no colour leaks between regions and no seams on the curve;
 - the awning stripes average to a pale accent tint;
 - the lettering stays red;
-- the tile averages to the band colours without moiré at those
-  distances.
+- the half-bond tile averages to the band colours without moiré at those
+  distances;
+- the deck stays dark felt; the hatch and drains fade to pale specks at
+  mip 4.
 
 ## Glazing treatment
 
@@ -380,12 +448,12 @@ oblique, grazing), using `scripts/review_atlas_mips.py`:
   albedo resolve, with the door's vision panel and transom as one room
   (`merge=8`). Glass base is `glazing.BASE` and roughness 0.08, metallic 0.
 - **Measured** by the validator under the emission's neutral mask:
-  - sRGB 54 (linear 0.033) in all four variants;
-  - 0.23–0.24 x the trim.
-- **Room variation behind the glass** (allowed in albedo):
-  - the display windows' vertical blinds (sRGB about 98, drawn to both
-    sides);
-  - the pot plants in the display windows and the curve.
+  - sRGB 55 (linear 0.035) in all four variants;
+  - 0.24–0.25 x the trim.
+- **Room variation behind the glass** (allowed in albedo), a different
+  room in each display window and the curve (Texture set, Rooms behind the
+  glass): vertical and venetian blinds (sRGB about 98 before shade), pot
+  plants, flowers and bottles.
 - These are their own ids with glass roughness, and are lit as panes in the
   emission. No departure from the Style Direction band.
 
@@ -415,8 +483,8 @@ low-rise building it takes four variants, within the 3–6 range.
 
 - Neutral white, made into lit rooms by `glazing.night_rooms()` (the door
   merged as one room).
-- The blinds and plants are lit as the pane they stand behind; none of them
-  is drawn in the emission.
+- The blinds, plants and bottles are lit as the pane they stand behind;
+  none of them is drawn in the emission.
 
 ### Luminous fixtures
 
@@ -432,16 +500,18 @@ fixtures (18,168 mask pixels):
 
 - One control for the whole building: windows, letters and light box share
   the emissive factor.
-- Shared UVs prevent per-window control: both display windows sample one
-  region.
+- Each display window and the curve has its own region, but the mask has
+  the one control, so there is no per-window control.
 - No schedule or occupancy is baked in.
 
 ### Previews and pending checks
 
 - `variants.png`: day row with emission off, night row with the reference
   factor, fixed camera and exposure (`scripts/variant_previews.py`).
-- Night review renders: all four tiers at 40 m oblique, emission on. The
-  lit pattern is consistent across tiers; `LOD3` drops the light box.
+- Night review renders: all four tiers at 20 and 40 m, front and oblique,
+  emission on. The lit pattern is consistent across tiers; `LOD3` drops
+  the light box. Each display window is now its own lit room, at its own
+  level.
 - No lamp was placed to simulate spill. Any glow on the ground in the
   renders is the renderer lighting from the emissive surfaces.
 - Pending in the consumer: runtime control and the intensity and colour of
@@ -521,9 +591,20 @@ sidecar alone, from a committed tree.
     fabric-white cheeks and heavier lettering strokes.
   - Pass 2: confirmed the fixes; checked the lower tiers.
   - Pass 3: added the staff door's canopy to the plain back elevation.
-- **LOD and night:** LOD pairs at 35, 70 and 120 m, and the night set on all
-  tiers (LOD review, Night lighting).
-- **Mips:** mip 3 and mip 4 stress renders (Texture set).
+  - Polish, two passes: a room of its own in each display window and the
+    curve, with smaller, muted plants; half-bond tile with lighter grout;
+    the column's shoe; the deck at 32 px/m with laps, drains and a hatch;
+    the awning valance's binding; three facets at `LOD3`. Before and after
+    sets (every tier at 20, 35, 70 and 120 m, front and oblique, noon; the
+    night set) rendered with identical settings and compared with
+    `scripts/review_compare.py`.
+- **Scale:** front views at 20 and 35 m beside `liikekeskus_pharmacy`
+  with identical settings (Texture set, Scale against the catalog).
+- **LOD and night:** every tier at 20, 35, 70 and 120 m, `LOD2`/`LOD3` at
+  120 m and up close, and the night set on all tiers (LOD review, Night
+  lighting).
+- **Mips:** mip 3 and mip 4 stress renders on the current layout (Texture
+  set).
 - **GLB:** material bindings and image sources on all four tiers.
 - **Mesh:** manifold and hidden-surface checks on all four tiers.
 - **Glazing:** measured against the band in all four variants.
@@ -549,3 +630,14 @@ sidecar alone, from a committed tree.
   views (`render_views()` in `build.py`, `scripts/review_asset.py`).
 - Textures baked with the system CPython, numpy, scipy and Pillow:
   `python3 facade_atlas.py export`.
+
+## Revision log
+
+- **2026-11-22:** polish. Each display window has its own atlas region
+  (`DISPLAY2_R`, row C) and room; plants smaller, muted and of four kinds,
+  thinned in the curve; bottles and venetian blinds added. Tile changed
+  from a 125 mm square grid to 250 x 125 mm half bond with lighter, finer
+  grout (two grout ids). `LOD3` curve 2 → 3 facets (248 → 258
+  triangles). Column shoe added (`LOD0`–`LOD2`). Deck region 16 → 32
+  px/m with laps, drains, a hatch and a walking line. Awning valance bound
+  with an accent tape. Plan bounds, footprint and doors unchanged.
