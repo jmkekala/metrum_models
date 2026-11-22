@@ -15,7 +15,7 @@ Regenerate the textures first (python3 facade_atlas.py export): the UVs index
 into the atlas, and the renders read it.
 
 The walled transformer yard of a small mid-century Nordic coal-fired heat
-and power plant: a 20.0 x 12.0 m compound behind a plain 1.55 m brick
+and power plant: a 20.0 x 12.0 m compound behind a plain 1.56 m brick
 perimeter wall with plain piers every 4-6 m, closed at the front by a
 sheet-steel double gate. Inside, two power transformers stand on concrete
 plinths either side of a concrete fire wall, their high-voltage bushings
@@ -151,16 +151,20 @@ HI, LO = L.Z_LOUVRE_HI, L.Z_LOUVRE_LO
 # Each wall runs counter-clockwise seen from above, outward face on its
 # right; s runs along it from p0. items: (kind, s at the centre, z of the
 # sill or threshold).
+# Every opening's casing sides on whole or half stretchers in the U its wall
+# samples, u_off from facade_atlas.HOUSE_U_OFF (brick_problems()).
 H_WALLS = [
     dict(name="front", p0=(HX0, HY0), p1=(HX1, HY0),
-         items=[("door", 1.30, 0.0), ("louvre", 3.55, HI)], u_off=0.0),
+         items=[("door", 1.3125, 0.0), ("louvre", 3.50, HI)]),
     dict(name="east", p0=(HX1, HY0), p1=(HX1, HY1),
-         items=[("louvre", 1.20, HI), ("louvre", 2.80, HI)], u_off=5.0),
+         items=[("louvre", 1.25, HI), ("louvre", 2.75, HI)]),
     dict(name="north", p0=(HX1, HY1), p1=(HX0, HY1),
-         items=[("louvre", 1.40, HI)], u_off=9.0),
+         items=[("louvre", 1.375, HI)]),
     dict(name="west", p0=(HX0, HY1), p1=(HX0, HY0),
-         items=[("louvre", 2.00, LO)], u_off=14.0),
+         items=[("louvre", 2.00, LO)]),
 ]
+for _spec in H_WALLS:
+    _spec["u_off"] = L.HOUSE_U_OFF[_spec["name"]]
 
 # ------------------------------------------------------------ the transformers
 TX = L.T_X
@@ -222,8 +226,12 @@ def mode(level):
             truss's sides and string rails), "legs" (the corner angles and
             chords alone, a plain spike for the finial) or "painted" (slim
             solids with the lattice painted on)
-    bush    sides of a bushing, and whether its full profile is turned
-    string  "discs" (turned profile), sides of a plain prism, or 0 (none)
+    bush    sides of a bushing, and whether its full profile is turned (True),
+            one turret and taper (False), one taper (None), or a pyramid
+            standing GAP over the cover, touching nothing ("pyramid")
+    string  "discs" (turned profile), "prism", "pyramid" (sides converging
+            to the clamp, GAP under the truss, touching nothing) or None,
+            and the sides
     cons    sides of the conservator; saddles kept or not
     trench  the cable trench covers, or none
     sw      the switchgear, or None: (sides, profile) of the breaker poles,
@@ -234,27 +242,31 @@ def mode(level):
             the spans; a kind left out is not built
     poles3  LOD3's stand-in for the switchgear: the breaker poles alone,
             one prism each from the ground (poles3())
+    dis3    LOD3's disconnector tables: the deck as a box on two 3-sided
+            legs that stop GAP under it (dis3())
+    gate_gap the gate as a plate GAP short of its piers or runs, touching
+            nothing, instead of running into them (LOD3: no union cuts)
     """
     return [
         dict(item="ring", runs=RUN_SEGS, louvres=None, piers=PIERS, lat="full",
              bush=(8, True), string=("discs", 6), cons=(8, True), cable=True, pads=True,
              rad=True, trench=True,
              sw=dict(pole=(8, True), post=(6, True), ct=(8, True), blades=True, cab=True),
-             cond=dict(drop=(6, 4), span=(4, 4)), poles3=False),
+             cond=dict(drop=(6, 4), span=(4, 4)), poles3=False, dis3=False, gate_gap=False),
         dict(item="cut", runs=RUN_SEGS, louvres=None, piers=PIERS, lat="coarse",
              bush=(5, False), string=("prism", 4), cons=(6, True), cable=True, pads=True,
              rad=True, trench=True,
              sw=dict(pole=(5, True), post=(3, False), ct=(5, "mid"), blades=False, cab=True),
-             cond=dict(drop=(3, 3), span=(2, 3)), poles3=False),
+             cond=dict(drop=(3, 3), span=(2, 3)), poles3=False, dis3=False, gate_gap=False),
         dict(item="flush", runs=RUNS_THICK, louvres=None, piers=[], lat="legs",
              bush=(4, None), string=("prism", 3), cons=(4, False), cable=True, pads=True,
              rad=True, trench=True,
              sw=dict(pole=(4, False), post=(3, False), ct=(4, False), blades=False, cab=False),
-             cond=dict(drop=(1, 3)), poles3=False),
+             cond=dict(drop=(1, 3)), poles3=False, dis3=False, gate_gap=False),
         dict(item="flush", runs=RUNS_THICK, louvres=("front", "east"),
-             piers=[], lat="painted", bush=(3, None), string=(None, 0),
+             piers=[], lat="painted", bush=(3, "pyramid"), string=("pyramid", 3),
              cons=(4, False), cable=False, pads=False, rad="one",
-             trench=False, sw=None, cond=None, poles3=True),
+             trench=False, sw=None, cond=None, poles3=True, dis3=True, gate_gap=True),
     ][level]
 
 
@@ -306,11 +318,20 @@ def box(x0, x1, y0, y1, z0, z1, side, top, bottom):
     return SB.box(Builder(), x0, x1, y0, y1, z0, z1, sides, top, bottom)
 
 
+SMOOTH_SIDES = 4        # turned parts of this many facets or more shade smooth
+
+
 def lathe(c, axis, e1, rings, sides, uvf, cap0, cap1, phase=0.0):
     """A turned solid: *rings* (radius, h) along unit *axis* from point *c*,
     *sides* facets starting at angle *phase* from unit *e1*. uvf(h, frac)
     gives a side vertex's (u, v), frac running 0..1 round; cap0 and cap1
-    the first and last rings' caps' uv functions."""
+    the first and last rings' caps' uv functions.
+
+    With SMOOTH_SIDES facets or more, every side band steeper than 45
+    degrees shades smooth, so a 5- or 8-sided porcelain column reads round
+    instead of as flat glossy facets each catching its own highlight; the
+    caps and the flat steps (a head's top, a shed's underside) stay flat,
+    and Blender treats an edge between a smooth and a flat face as sharp."""
     B = Builder()
     c, axis, e1 = Vector(c), Vector(axis).normalized(), Vector(e1).normalized()
     e2 = axis.cross(e1)
@@ -321,6 +342,7 @@ def lathe(c, axis, e1, rings, sides, uvf, cap0, cap1, phase=0.0):
 
     for i in range(len(rings) - 1):
         (r0, h0), (r1, h1) = rings[i], rings[i + 1]
+        smooth = sides >= SMOOTH_SIDES and abs(h1 - h0) > abs(r1 - r0)
         for k in range(sides):
             def fn(co, k=k, h0=h0, h1=h1, r0=r0, r1=r1):
                 d = Vector(co) - c
@@ -331,11 +353,40 @@ def lathe(c, axis, e1, rings, sides, uvf, cap0, cap1, phase=0.0):
                 if th > math.pi * 1.5:
                     th -= 2.0 * math.pi
                 return uvf(h, (k + th / (2.0 * math.pi / sides)) / sides)
-            B.face([P(r0, h0, k), P(r0, h0, k + 1), P(r1, h1, k + 1), P(r1, h1, k)], fn)
+            B.face([P(r0, h0, k), P(r0, h0, k + 1), P(r1, h1, k + 1), P(r1, h1, k)], fn,
+                   smooth=smooth)
     r, h = rings[0]
     B.face([P(r, h, k) for k in reversed(range(sides))], cap0)
     r, h = rings[-1]
     B.face([P(r, h, k) for k in range(sides)], cap1)
+    return B
+
+
+def pyramid(c, axis, e1, r, length, sides, uvf, cap, phase=0.0):
+    """A *sides*-sided pyramid: its base of circumradius *r* at point *c*,
+    square to unit *axis*, its apex *length* along it; uvf(h, frac) as for
+    lathe(), cap the base's uv function. sides + 1 faces, sides * 2 - 2
+    triangles fewer than a prism of the same base."""
+    B = Builder()
+    c, axis, e1 = Vector(c), Vector(axis).normalized(), Vector(e1).normalized()
+    e2 = axis.cross(e1)
+    ring = [tuple(c + (e1 * math.cos(th) + e2 * math.sin(th)) * r)
+            for th in (phase + 2.0 * math.pi * k / sides for k in range(sides))]
+    apex = tuple(c + axis * length)
+    for k in range(sides):
+        def fn(co, k=k):
+            h = (Vector(co) - c).dot(axis)
+            # the apex takes the face's middle, the base corners its edges
+            if h > length - 1e-6:
+                return uvf(h, (k + 0.5) / sides)
+            th = (math.atan2((Vector(co) - c).dot(e2), (Vector(co) - c).dot(e1)) - phase) \
+                % (2.0 * math.pi)
+            j = th / (2.0 * math.pi / sides)
+            if j < k - 0.5:
+                j += sides
+            return uvf(h, j / sides)
+        B.face([ring[k], ring[(k + 1) % sides], apex], fn)
+    B.face(list(reversed(ring)), cap)
     return B
 
 
@@ -366,11 +417,16 @@ def pier(x, y):
                uv_patch("coping"), uv_patch("blank"))
 
 
-def gate():
+def gate(gap=None):
     """The double gate as one closed plate between the gate piers, its ends
     in them: the front takes the gate region, the back the same leaves
-    mirrored, the edges the gate's paint."""
-    x0, x1 = L.GATE_OPEN[0] - L.GATE_INTO, L.GATE_OPEN[1] + L.GATE_INTO
+    mirrored, the edges the gate's paint. With *gap* its ends stop that far
+    short of the opening's sides instead, touching nothing (LOD3, whose
+    union then cuts no holes in the runs' ends)."""
+    if gap is None:
+        x0, x1 = L.GATE_OPEN[0] - L.GATE_INTO, L.GATE_OPEN[1] + L.GATE_INTO
+    else:
+        x0, x1 = L.GATE_OPEN[0] + gap, L.GATE_OPEN[1] - gap
     y0, y1 = L.GATE_Y
     z0, z1 = L.GATE_Z
     gx, gy = L.GATE_R[:2]
@@ -604,6 +660,19 @@ def transformer(ty, level):
                            uv_patch("steel_dark"), uv_patch("steel_dark")))
     # bushings
     bs, full = md["bush"]
+    br = L.BUSH_R
+    if full == "pyramid":
+        # LOD3: each bushing a 3-sided pyramid standing GAP over the cover,
+        # its tip at the terminal, touching nothing (4 triangles; tapers
+        # cut into the cover cost 76 for the six)
+        for k in PH:
+            bx, by = bushing_xy(ty, k)
+            out.append(pyramid((bx, by, z1 + GAP), (0, 0, 1), (1, 0, 0), 0.14,
+                               L.BUSH_H - 0.05 - GAP, bs,
+                               lambda h, frac: (br[0] + frac * br[2],
+                                                br[1] + (h + 0.05 + GAP) * PPM),
+                               uv_patch("steel_dark"), phase=math.pi / bs))
+        bs = 0
     if bs == 0:
         prof = None
     elif full:
@@ -612,7 +681,6 @@ def transformer(ty, level):
         prof = [(0.14, 0.0), (0.06, L.BUSH_H)]
     else:
         prof = [(0.15, 0.0), (0.15, 0.27), (0.10, 0.27), (0.06, L.BUSH_H)]
-    br = L.BUSH_R
     for k in (PH if prof else ()):
         bx, by = bushing_xy(ty, k)
         out.append(lathe((bx, by, z1 - 0.05), (0, 0, 1), (1, 0, 0), prof, bs,
@@ -917,7 +985,17 @@ def gantry(level):
     if md["lat"] == "painted":      # from GAP under the slim truss to the same clamp
         top = painted_truss_z()[0] - GAP
     length = L.STRING_LEN + top - string_top()
-    if kind is not None:
+    if kind == "pyramid":
+        # LOD3: each string a 3-sided pyramid from GAP under the slim truss
+        # to the clamp's height, touching nothing (4 triangles)
+        for ys in L.STRING_YS:
+            union_parts.append(pyramid((L.G_X, ys, top), (0, 0, -1), (1, 0, 0), 0.10,
+                                       length, sides,
+                                       lambda h, frac: (st[0] + frac * st[2],
+                                                        st[1] + (h - length + L.STRING_LEN)
+                                                        * PPM),
+                                       uv_patch("galv_paint"), phase=math.pi / sides))
+    elif kind is not None:
         for ys in L.STRING_YS:
             rings = L.string_profile() if kind == "discs" else \
                 [(0.10, 0.0), (0.10, length)]
@@ -1029,6 +1107,42 @@ def poles3(ty):
             for k in PH]
 
 
+def dis3(ty):
+    """LOD3's disconnector table: the galvanised deck as a 3-sided prism
+    along the bay, its top the deck's top, its two sloping undersides
+    meeting on the deck's centre line at its underside's height, on its two
+    legs, each a 3-sided prism with the painted lattice (DIS_LAT_R), flat
+    face toward the bay's centre line, stopping GAP under the deck, so
+    nothing touches and the union cuts nothing: 24 triangles a bay."""
+    x0, x1, z0, z1 = L.DIS_DECK
+    xc = (x0 + x1) / 2.0
+    H = L.SW_HALF
+    g = uv_patch("galv_paint")
+    deck = extrude([(x0, z1), (xc, z0), (x1, z1)], lambda u, v, d: (u, d, v),
+                   ty - H, ty + H, lambda a, b: g, g)
+    bmesh.ops.recalc_face_normals(deck.bm, faces=deck.bm.faces[:])
+    out = [deck]
+    lx, ly, lo = L.DIS_LEG
+    R = L.DIS_LAT_R
+
+    def side(a, b):
+        ln2 = (b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2
+        return lambda co: (R[0] + ((co.x - a[0]) * (b[0] - a[0]) + (co.y - a[1]) * (b[1] - a[1]))
+                           / ln2 * R[2], R[1] + co.z * L.DIS_LAT_PPM)
+    for sgn in (-1, 1):
+        yl = ty + sgn * lo
+        yi, yo = yl - sgn * ly / 2.0, yl + sgn * ly / 2.0      # inner (flat) and outer
+        tri = [(xc - lx / 2.0, yi), (xc + lx / 2.0, yi), (xc, yo)]
+        if sgn < 0:
+            tri = [tri[1], tri[0], tri[2]]
+        if (tri[1][0] - tri[0][0]) * (tri[2][1] - tri[0][1]) \
+                - (tri[1][1] - tri[0][1]) * (tri[2][0] - tri[0][0]) < 0:
+            tri.reverse()                                        # counter-clockwise
+        out.append(extrude(tri, lambda u, v, d: (u, v, d), 0.0, z0 - GAP, side,
+                           uv_patch("galv_paint")))
+    return out
+
+
 def tube(points, r, sides):
     """A closed tube through *points* (all in one vertical plane), rings
     square to the local tangent, the aluminium patch all over."""
@@ -1124,7 +1238,7 @@ def build_lod(level):
     base = to_object(house(level), "tmp_house")
     solids = [wall_run(*r) for r in md["runs"]]
     solids += [pier(x, y) for x, y in md["piers"]]
-    solids.append(gate())
+    solids.append(gate(GAP if md["gate_gap"] else None))
     solids.append(fire_wall())
     if md["trench"]:
         solids += trenches()
@@ -1134,6 +1248,8 @@ def build_lod(level):
         solids += conductors(ty, level)
         if md["poles3"]:
             solids += poles3(ty)
+        if md["dis3"]:
+            solids += dis3(ty)
     gparts, after = gantry(level)
     solids += gparts
     parts = [to_object(B, "tmp_%d" % i) for i, B in enumerate(solids)]
@@ -1172,9 +1288,54 @@ def build_lod(level):
     return obj
 
 
+def _on(v, step):
+    return abs(v / step - round(v / step)) < 1e-6
+
+
+def brick_problems():
+    """The brickwork, on the catalog module (scripts/brickwork.py), as the
+    plant hall's: every height the brick meets something at on a course
+    line (the house's plinth, slab and every opening casing's head and foot;
+    the yard wall's footing and coping); every opening casing's sides, and
+    the gate opening's, on a whole or half stretcher in the U its wall
+    samples; the bond turning a half stretcher at the house's four corners.
+    The yard wall's 0.36 m piers and 0.24 m wall are left as they are: a
+    pier is one and a half bricks as the period built them, and the brick
+    runs on round it in the wall's band."""
+    bad = []
+    c, h = L.COURSE, L.HALF
+    for what, z in (("house plinth", L.Z_PLINTH), ("house slab's underside", L.Z_WALL),
+                    ("yard wall's footing", L.Z_FOOT_F), ("coping's foot", L.Z_COPING),
+                    ("yard wall's top", L.Z_FENCE)):
+        if not _on(z, c):
+            bad.append("the %s at %.6f m is off the coursing" % (what, z))
+    for spec in H_WALLS:
+        u = spec["u_off"]
+        if not _on(u, h):
+            bad.append("%s: its U offset is off a half stretcher" % spec["name"])
+        for kind, s, z in spec["items"]:
+            (l, r, b, t), _ = item_rects(kind, s, z)
+            tag = "%s: %s at %.4f" % (spec["name"], kind, s)
+            if not ((b < EPS or _on(b, c)) and _on(t, c)):
+                bad.append(tag + " is off the coursing")
+            if not (_on(u + l, h) and _on(u + r, h)):
+                bad.append(tag + " cuts the bond off a half stretcher")
+    # the yard wall's band samples U = x (+ 8 m) along the front run
+    if not all(_on(x, h) for x in L.GATE_OPEN):
+        bad.append("the gate opening's sides are off a half stretcher")
+    ring = [s["name"] for s in H_WALLS]
+    lens = {s["name"]: Frame(s["p0"], s["p1"]).L for s in H_WALLS}
+    for a, b in zip(ring, ring[1:] + ring[:1]):
+        ua = L.HOUSE_U_OFF[a] + lens[a]
+        ub = L.HOUSE_U_OFF[b]
+        if not _on(ua - ub - h, L.BRICK_L):
+            bad.append("the house's %s/%s corner does not turn the bond" % (a, b))
+    return bad
+
+
 def check_layout():
     """Assert what the numbers hide and a render would show."""
-    problems = []
+    problems = brick_problems()
     gap = 0.05
     # house openings: on the wall, clear of corners, piers and each other,
     # under the slab

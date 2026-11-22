@@ -19,7 +19,7 @@ conveyor: it runs from the head house to the hall's coal wall and ends
 against it, where the hall has a closed inlet of the same section. The
 hall carries no gallery of its own.
 
-- **Tipping shed:** 14.0 × 6.4 m of red brick between the flush columns of a
+- **Tipping shed:** 14.0 × 6.375 m of red brick between the flush columns of a
   concrete frame, on a concrete plinth, under a low 6.8° profiled-sheet
   gable roof. Three tall steel multi-pane windows sit high on the front
   wall, under the concrete ring beam.
@@ -67,24 +67,32 @@ lean-to, which is part of the same plant.
 
 | | Width (X) × depth (Y) × height |
 | --- | --- |
-| Shed walls (lane inside) | 14.00 × 6.40 m, eave underside 7.20 m, ridge 7.83 m |
-| Lean-to walls | 9.20 × 3.60 m behind the shed, roof 3.47–4.13 m |
-| Tower shaft | 2.60 × 4.10 m from inside the shed's rear wall, 0.40 m proud of the lean-to, to 11.30 m |
-| Head house | 4.00 × 4.80 m, 11.30–15.25 m, slab to 15.50 m |
+| Shed walls (lane inside) | 14.00 × 6.375 m, eave underside 7.19 m, ridge 7.82 m |
+| Lean-to walls | 9.25 × 3.65 m behind the shed, roof 3.49–4.15 m |
+| Tower shaft | 2.625 × 4.125 m from inside the shed's rear wall, 0.375 m proud of the lean-to, to 11.33 m |
+| Head house | 4.00 × 4.80 m, 11.33–15.25 m, slab to 15.50 m |
 | Conveyor gallery | 2.60 m wide, 12.00 m in plan behind the tower, top 18.77 m at its end; its collar 2.70 m wide, top 18.82 m |
 | Trestle | two legs on 1.0 m pad footings, x ±1.0…2.0, 10.0–11.0 m behind the tower |
 | Overall bounds (roof overhangs, gallery) | 14.60 × 22.80 × 18.82 m |
 
-In the build frame the shed spans x −7.0…7.0 and y −3.4…3.0, and the other
-parts sit as follows:
+The brick is the catalog module (`scripts/brickwork.py`): every plan
+length a brick corner turns on is a whole number of half stretchers (the
+shed's depth 51, the shaft 21 × 33, the lean-to's rear walls 27 and 26),
+and every brick-bound height a whole number of 0.078125 m courses
+(Construction, *The brick module*). The depth came to 6.375 m by moving
+the rear wall 0.025 m forward, so the bounds and the pivot stayed.
+
+In the build frame the shed spans x −7.0…7.0 and y −3.4…2.975, and the
+other parts sit as follows:
 
 - **The lane** runs from x −7.0 to 7.0 between its side walls at y −3.0 and
-  2.6.
-- **The lean-to** is x −4.5 to 4.7, y 2.9 to 6.6. Its front runs 0.10 m
-  into the shed's rear wall.
-- **The shaft** is x −1.3 to 1.3, y 2.9 to 7.0.
-- **The head house** is x −2.0 to 2.0, y 2.2 to 7.0: 0.70 m over the shaft
-  at the front and both sides, flush with its rear face.
+  2.575.
+- **The lean-to** is x −4.5625 to 4.6875, y 2.875 to 6.625. Its front runs
+  0.10 m into the shed's rear wall.
+- **The shaft** is x −1.3125 to 1.3125, y 2.875 to 7.0.
+- **The head house** is x −2.0 to 2.0, y 2.2 to 7.0: about 0.7 m over the
+  shaft at the front and both sides (0.675 and 0.6875), flush with its rear
+  face.
 - **The gallery** is x −1.3 to 1.3 (its collar ±1.35), y 7.0 to 19.0,
   high in the air; its struts meet the shaft's rear face at 8.85 m (axis).
 - **The trestle** stands with its centre plane at y 17.5, its footings at
@@ -110,17 +118,18 @@ stand outside it but inside the bounds:
   ground;
 - **the trestle, which stands on the ground:** two legs and their pad
   footings (1.0 × 1.0 × 0.25 m) 10.0–11.0 m behind the shaft's rear face,
-  at x ±1.0…2.0; on `LOD2` and `LOD3` the legs alone, 0.30 m square, at x
-  ±1.35…1.65, 10.35–10.65 m out. Nothing else outside the footprint comes
-  within 2.5 m of the ground.
+  at x ±1.0…2.0, on `LOD0`–`LOD2`; on `LOD3` the legs alone, three-sided
+  prisms in the 0.30 m square at x ±1.35…1.65, 10.35–10.65 m out, with an
+  X of bars between them. Nothing else outside the footprint comes within
+  2.5 m of the ground.
 
 ## Story height
 
 **One occupied storey on the ground:** the lean-to's two rooms and the
-shaft's foot. The lean-to's ceiling is about 3.4–3.9 m. The shed is one
-open lane, 5.98 m clear above its floor slab (Construction), and it is not a
-storey. The shaft is the elevator's casing and its stair, with landings, not
-floors; the head house is one plant floor at 11.30 m, 3.95 m to its slab,
+shaft's foot. The lean-to's ceiling is about 3.5–3.9 m. The shed is one
+open lane, 5.996 m clear above its floor slab (Construction), and it is not
+a storey. The shaft is the elevator's casing and its stair, with landings,
+not floors; the head house is one plant floor at 11.33 m, 3.92 m to its slab,
 reached by that stair. None of these is a habitable storey, so the 3.0–3.3 m
 band does not apply. The head house is not stated as a storey in the
 sidecar: it is the elevator's and the belt's machinery floor, visited by a
@@ -128,37 +137,45 @@ fitter, not an occupied floor.
 
 ## Door leaf height
 
-- **Attendant's door (main entrance): 0.95 × 2.10 m** steel leaf in a
-  0.05 m steel frame, with no transom. The threshold is at ground level on
-  the lean-to's east end, build (4.7, 4.0).
-- **Elevator door (service): 0.95 × 2.10 m**, the same door, at the shaft's
-  foot on its rear face, build (0, 7.0). It gives access to the elevator's
-  boot room and the tower's stair, and it opens onto the clear strip under
-  the gallery (Construction). Neither door moved in the revisions.
+- **Attendant's door (main entrance): 0.90 × 2.1375 m** steel leaf in a
+  0.05 m steel frame, with no transom: an opening of 1.0 × 2.1875 m in the
+  brick, 8 half stretchers by 28 courses. The threshold is at ground level
+  on the lean-to's east end, build (4.6875, 4.0).
+- **Elevator door (service): 0.90 × 2.1375 m**, the same door, at the
+  shaft's foot on its rear face, build (0.0625, 7.0). The rear face is 21
+  half stretchers and the door 8, so it cannot be centred: it stands a
+  sixteenth of a metre east of the shaft's axis. It gives access to the
+  elevator's boot room and the tower's stair, and it opens onto the clear
+  strip under the gallery (Construction).
 - **Loading hatch: 1.20 × 1.20 m** on the head house's east face, sill
-  11.60 m, under the hoist beam. It is a hatch, not a door: nothing walks
-  out of it.
+  11.60 m (0.27 m over its floor), under the hoist beam. It is a hatch, not
+  a door: nothing walks out of it.
 - The lane's two mouths have no door leaf and are not doors.
 
 ## Window sills
 
-- **Shed windows:** three of 2.80 × 1.75 m on the front wall, sill 4.25 m,
-  head 6.00 m under the ring beam. They are deliberately high, lighting
+Every brick opening is a whole number of half stretchers wide and courses
+tall, its sides on half stretchers and its sill and head on course lines.
+
+- **Shed windows:** three of 2.75 × 1.797 m (22 half stretchers × 23
+  courses) on the front wall, centred on x −4.625, 0 and 4.625, sill 4.219
+  m, head 6.016 m under the ring beam. They are deliberately high, lighting
   the lane over the trucks; the lane is not an occupied floor.
-- **Lean-to:** small windows of 0.90 × 1.20 m, sill 1.00 m, head 2.20 m,
-  just over the door's 2.10 m head. There is one on the east end beside the
-  door and one in each rear wall.
-- **Attendant's window onto the lane:** 0.90 × 1.20 m in the lane's rear
-  side wall at x 3.3, sill 1.30 m, head 2.50 m, at a truck driver's eye
-  height.
-- **Shaft:** windows of the same size. One on its front face, sill 9.65 m,
-  clear of the shed's roof and 0.45 m under the head house. Three up its
-  east face, one a stair flight 2.50 m apart, sills 4.65, 7.15 and 9.65 m.
-  The sill over 9.5625 m keeps each window inside one of the walls' brick
-  samplings (Texture set).
+- **Lean-to:** small windows of 0.875 × 1.172 m (7 × 15), sill 1.016 m,
+  head 2.188 m, level with the doors' opening head. There is one on the
+  east end beside the door and one in each rear wall.
+- **Attendant's window onto the lane:** 0.875 × 1.172 m in the lane's rear
+  side wall at x 3.3125, sill 1.328 m, head 2.500 m, at a truck driver's
+  eye height (on the lane's own bond, which counts courses from the ground
+  and stretchers from the west mouth).
+- **Shaft:** windows of the same size. One on its front face, sill 9.688 m,
+  clear of the shed's roof and 0.47 m under the head house. Three up its
+  east face, one a stair flight 2.50 m (32 courses) apart, sills 4.688,
+  7.188 and 9.688 m. The sill over 9.5625 m keeps each window inside one of
+  the walls' brick samplings (Texture set).
 - **Head house:** two on its front face, one on each side, sill 12.50 m,
-  1.20 m over its floor. A 1.00 × 0.60 m louvre sits on its west face at
-  13.60 m.
+  1.17 m over its floor, the same 0.875 × 1.172 m windows (sheet, not
+  brick). A 1.00 × 0.60 m louvre sits on its west face at 13.60 m.
 - **Gallery:** a row of eight 0.60 × 0.55 m lights each side, one in every
   1.5 m panel of its side girder, 1.30 m over its floor, painted on the
   cladding.
@@ -172,10 +189,16 @@ fitter, not an occupied floor.
 - **Lean-to:** 0.30 m at its rear eave (with the gutter) and its rakes.
 - **Head house slab:** a flat concrete slab overhanging 0.15 m all round,
   under the default: on a clad box 12 m up a deeper slab read as a cap
-  rather than a roof edge. It drains off its edge, with no gutter.
+  rather than a roof edge. It drains off its edge, with no gutter and so no
+  downpipe: a flat 4.3 × 5.1 m deck 15.5 m up sheds little, and what runs
+  off its edge falls clear of the cladding on the 0.15 m overhang (the
+  runs painted under it, Texture set).
+- **Gallery roof:** no gutter either. The gallery's roof is a 2.6 m wide
+  sloping sheet; it sheds off both long edges, as an enclosed conveyor's
+  does, and its sides carry the dark runs from the top flashing.
 
 The rakes overhang the mouths' wall planes by 0.30 m, with their lowest
-point at 7.16 m, 1.16 m above the lintels (Construction).
+point at 7.14 m, 1.12 m above the lintels (Construction).
 
 ## Construction
 
@@ -187,27 +210,62 @@ Exact boolean (`asset_build.union`):
 
 - the lean-to and shaft, one hand-built brick solid;
 - the head house, one hand-built clad box with its openings, its floor at
-  11.30 m, lowered with the gallery's mouth;
+  11.33 m;
 - the gable roof slab, the lean-to slab and the head house's slab;
-- the conveyor gallery with its end collar, one closed solid;
+- the conveyor gallery with its end collar (none at `LOD3`), one closed
+  solid;
 - the trestle bent: at `LOD0`/`LOD1` H-section legs, pad footings, an
   H-section cross-head and its bracing bars; at `LOD2` one portal solid
-  with the bracing; at `LOD3` two plain legs, separate closed solids;
-- at `LOD0`–`LOD2`, the gallery's two struts, the hoist beam and its
-  trolley; at `LOD0`/`LOD1`, two ventilators on the gallery's roof;
+  with the bracing, on the pad footings; at `LOD3` two plain legs and one
+  X of bars, separate closed solids;
+- the gallery's two struts: square and unioned at `LOD0`–`LOD2`, separate
+  three-sided prisms at `LOD3`;
+- at `LOD0`–`LOD2`, the hoist beam and its trolley and two ventilators on
+  the gallery's roof;
 - at `LOD0`/`LOD1`, two tie beams;
 - at `LOD0`–`LOD2`, six downpipes.
+
+### The brick module
+
+The brick is the catalog's (`scripts/brickwork.py`): 0.25 m stretchers on
+0.078125 m courses, as the plant hall re-coursed to. `brick_problems()` in
+`check_layout()` holds it, as the hall's does:
+
+- every height the brick meets something at is on a course line: the
+  plinth 0.625 (8 courses), the band's foot 6.015625 (77) and top 6.5625
+  (84), the main eave 7.1875 (92), the lean-to's eave 3.515625 (45), the
+  shaft's top under the head house 11.328125 (145), the lane's impact
+  wall 1.171875 (15), and every opening's sill and head;
+- every opening's sides are on whole or half stretchers in the U its wall
+  samples (each wall's `u_off` is itself a half stretcher);
+- the bond turns a half stretcher at every brick corner: the shed's four
+  above the band (under it the corners are the concrete frame's columns),
+  and the lean-to's and the shaft's, the shaft's front corners over the
+  lean-to's roof included (`BRICK_CORNERS`). The lean-to's front corners
+  are buried in the shed's rear wall.
+
+The concrete frame's columns are not held to it: the brick is infill
+between them, cut to the frame as it is laid, so the panels between them
+end on cut bricks. The columns' 0.40 m and the frame's x ±2.4 are as they
+were.
 
 ### The lane as a void cut through the shed
 
 The cutter is one closed solid (`lane_void()`), extended 0.5 m past both
 gables:
 
-- the mouths' sections through the 0.4 m gables, 6.00 m high;
-- between the gables' inner faces, the hall up to its pitched ceiling, 0.30
-  m under the roof's underside (6.95 m at the side walls, 7.28 m at the
-  apex);
-- at `LOD0`/`LOD1`, a second cutter for the attendant's window recess.
+- through `LOD2`, the mouths' sections through the 0.4 m gables, 6.016 m
+  high, and between the gables' inner faces the hall up to its pitched
+  ceiling, 0.30 m under the roof's underside (6.94 m at the side walls,
+  7.27 m at the apex);
+- at `LOD3`, one box at the mouths' section, its ceiling flat at the
+  lintels' soffit (`lane_mode()`): no gable inner faces, ceiling slopes or
+  soffit steps, and no attendant's window, which is seen only through a
+  mouth deep in the lane's side. Past 160 m the lane is a dark void either
+  way; the clear height is the same. Its flat ceiling keeps the ceiling
+  region's mapping, which on a face with no apex vertex samples the
+  region's wall-edge row only, its darkest (a flat dark ceiling);
+- at `LOD0`–`LOD2`, a second cutter for the attendant's window recess.
 
 The cutter's faces become the lane's surfaces with the cutter's own UVs:
 the side walls, the ceiling, the lintels' soffits and the gables' inner
@@ -222,16 +280,16 @@ across each mouth. There is no kerb, threshold or ramp.
 the glTF frame it moved with the pivot, Export):
 
 - it runs along X, the shed's long axis, straight and level, its centre
-  line at build y −0.2;
-- it is 5.60 m clear between its side walls (build y −3.0 and 2.6) and
+  line at build y −0.2125;
+- it is 5.575 m clear between its side walls (build y −3.0 and 2.575) and
   14.00 m from wall plane to wall plane (x −7.0 and 7.0);
-- it is 6.00 m above the ground to the lintels' soffit, the lowest geometry
-  over it, which is 5.98 m above the floor slab trucks run on; tie beams at
-  6.20 m, the ceiling at 6.95–7.28 m;
+- it is 6.016 m above the ground to the lintels' soffit, the lowest
+  geometry over it, which is 5.996 m above the floor slab trucks run on; tie
+  beams at 6.20 m, the ceiling at 6.94–7.27 m;
 - **it is used one way: in at the west mouth (−X), out at the east (+X).**
   The sidecar states it from the west mouth (Export);
 - **stop point:** a truck stops with its centre at the lane's centre,
-  build (0, −0.2), on the floor slab. An 8 m rear-tipping truck then has
+  build (0, −0.2125), on the floor slab. An 8 m rear-tipping truck then has
   its tail 4 m back toward the entry, over the grate;
 - it is see-through on every tier, and nothing stands on the ground beyond
   either mouth's plane (below);
@@ -239,7 +297,7 @@ the glTF frame it moved with the pivot, Export):
 
 **Tipping grate:** 3.0 m along the lane × 4.0 m across it, on the centre
 line with its centre 2.5 m west of the lane's centre (build x −4.0…−1.0,
-y −2.2…1.8), under the stopped truck's tail. It is painted on the floor
+y −2.21…1.79), under the stopped truck's tail. It is painted on the floor
 slab: a steel frame, bars across the traffic every 0.15 m, a cross bearer,
 and coal in the pit below them. The frame column and tie beam at x −2.4
 pass over it, 6.20 m up.
@@ -259,7 +317,7 @@ the catalog view into the east mouth:
   floor;
 - **tipping height:** a banded line 0.15 m tall at 5.50 m on both side
   walls from x −5.0 to 0.0, over the grate: the highest a raised body may
-  go clear of the lintels (6.00 m) and the tie beams (6.20 m);
+  go clear of the lintels (6.016 m) and the tie beams (6.20 m);
 - **grate border:** a banded border 0.15 m wide round the grate;
 - **entry signal:** a steel signal box with a hood over two unlit lenses,
   red over green, on both west jambs at 2.45–3.05 m. Not emissive: it is
@@ -272,21 +330,21 @@ kerb across the lane was ruled out: the lane stays clear and level.
 **Nothing stands beyond a mouth's plane in line with the lane or within 1 m
 of it** below the lintels (`check_layout()`):
 
-- the lean-to and its slab end at x −4.8 and 5.0;
+- the lean-to and its slab end at x −4.86 and 4.99;
 - the downpipes stand 0.65–0.75 m inside the mouths' planes, 3.28 m or more
   from the lane's centre line;
-- only the main roof's rakes pass the planes, 0.30 m, at 7.16 m and up.
+- only the main roof's rakes pass the planes, 0.30 m, at 7.14 m and up.
 
 ### The tower: shaft, head house and gallery
 
 The tower is a slim brick shaft with a head house on it, so that it reads
 as an elevator tower rather than a stair or water tower:
 
-- **Shaft:** 2.6 × 4.1 m of the shed's brick, rising through the lean-to to
-  11.30 m. Its stair's windows climb its east face, one a flight; one
-  window on its front face looks over the shed's roof.
-- **Head house:** 4.0 × 4.8 m, 11.30–15.25 m, oversailing the shaft by
-  0.70 m at the front and both sides and flush with its rear face. Pale
+- **Shaft:** 2.625 × 4.125 m of the shed's brick, rising through the
+  lean-to to 11.33 m. Its stair's windows climb its east face, one a
+  flight; one window on its front face looks over the shed's roof.
+- **Head house:** 4.0 × 4.8 m, 11.33–15.25 m, oversailing the shaft by
+  about 0.7 m at the front and both sides and flush with its rear face. Pale
   profiled sheet on a steel frame, a flat concrete slab over it, the
   oversail's soffit in the same sheet. Two windows to the front, one each
   side, the louvre on the west, and on the east a loading hatch at its floor
@@ -302,8 +360,10 @@ as an elevator tower rather than a stair or water tower:
   (build y 19.0), whose centre is at 13.0 + 12.0 × tan 20° = **17.3676 m**.
   Its underside is 11.60 m over the ground at the head house and 15.97 m
   at its end. Its roof passes the head house's slab about 3 m out, and
-  carries two small steel ventilators at 3.0 and 8.0 m out (`LOD0`/`LOD1`).
-  It starts 0.30 m inside the head house, so the union cuts its mouth.
+  carries two small steel ventilators at 3.0 and 8.0 m out
+  (`LOD0`–`LOD2`), plain vent boxes for the walkway inside, not serviced
+  housings (Roofs). It starts 0.30 m inside the head house, so the union
+  cuts its mouth.
 - **The end and its collar:** the end face is vertical and closed, the
   asset's rear bounds face: nothing of the asset reaches beyond it on any
   tier. A dark painted steel flashing collar (the `strut` patch) runs round
@@ -312,9 +372,13 @@ as an elevator tower rather than a stair or water tower:
   solid: the body's faces stop at the collar's back face, a ring, and the
   collar's faces run on to the end. Inside the collar's ring the end is the
   gallery's dark steel blanking plate in a 0.15 m rim, set back 0.08 m at
-  `LOD0`/`LOD1` and flush at `LOD2`; at `LOD3` the end is one flat dark
-  face and the collar a flare from the gallery's section at its back to its
-  own at the end (8 triangles fewer, the same end outline).
+  `LOD0`/`LOD1` and flush at `LOD2`. At `LOD3` there is no collar: the
+  gallery's own faces run on to the end plane, closed by one flat dark
+  face of the gallery's section (`gal_end_mode()` "bare", 8 triangles
+  fewer than the flare `LOD3` had). The end plane and the inlet's centre
+  stay; the 0.05 m collar is the only thing that goes, and with it the
+  tier's top is 0.05 m lower at the end (18.77 m), a quarter of a pixel
+  past 160 m.
 - **The joint rule:** the plant hall's coal wall is placed on this asset's
   rear bounds plane, with a closed inlet of the gallery's section centred
   at 17.3676 m; the collar covers the joint. If the consumer's 1 cm grid
@@ -327,6 +391,9 @@ as an elevator tower rather than a stair or water tower:
   gallery's floor 4.5 m out (build y 11.5, floor 13.24 m), at about 44° —
   knee braces carrying the first span. Their lowest point is their
   underside at the shaft's face, **8.683 m**, the strip's clear height.
+  At `LOD3` each is a three-sided prism in the same square, flat side
+  down, stopping 0.01 m off the shaft and under the floor, a separate
+  closed solid (`strut_prism()`).
 - **Trestle:** one steel bent across the gallery, its centre plane 10.5 m
   out from the shaft's rear face (build y 17.5), 1.5 m short of the end
   face. Two H-section legs 0.30 m square at x ±1.5, just outside the
@@ -338,8 +405,13 @@ as an elevator tower rather than a stair or water tower:
   panels of X bracing of 0.10 m square bars, each X's two bars either side
   of the bent's plane so they never touch, with two ties between the panels,
   every bar ending in a leg's web. The legs, footings, head and bars are
-  unioned. The spans are 4.5 m of knee-braced cantilever, 6.0 m to the
-  trestle and 1.5 m over to the hall's wall.
+  unioned. At `LOD2` the legs and cross-head are one portal solid on the
+  same footings, with the same bracing; at `LOD3` two plain three-sided
+  legs and one X of 0.22 m three-sided bars over the bracing's whole
+  height, the two bars either side of the bent's plane, every piece a
+  separate closed solid 0.01 m clear of the others (`tr_x_plain()`). The
+  spans are 4.5 m of knee-braced cantilever, 6.0 m to the trestle and 1.5
+  m over to the hall's wall.
 - **The truck road under it:** nothing stands on the ground between the
   shaft's rear face and the trestle's footings, 10.0 m out (the brief's
   minimum is 9.0 m, for a lane 1.5–4.5 m out). This strip is declared as a
@@ -360,8 +432,8 @@ hall's coal side.**
   (`fix_tjunctions()`), so walls meet without T-junctions.
 - **Column strip:** the columns map onto the atlas's column strip, and the
   brick onto the brick band.
-- **The band** at 6.00–6.5625 m runs round the shed as the ring beam and is
-  the portals' lintel. It is painted on both strips.
+- **The band** at 6.016–6.5625 m (7 courses) runs round the shed as the
+  ring beam and is the portals' lintel. It is painted on both strips.
 - **Above the band:** walls sample the brick rows 3.75 m lower (and 7.5 m
   lower above 9.5625 m, on the shaft), a whole tone period, so the bond runs
   on (Texture set).
@@ -372,12 +444,13 @@ hall's coal side.**
   inside the head house. The shaft's side walls rise from the lean-to's lid,
   so the lean-to's roof slab buries their junction.
 - **The head house's walls** are single regions on the cladding (Texture
-  set), each opening cut with sheet reveals at `LOD0`/`LOD1` and flush after,
-  as the brick walls' are.
+  set), each opening cut with sheet reveals through `LOD2` and flush at
+  `LOD3`, as the brick walls' are.
 
 ### Roofs, rainwater goods and roof safety
 
-- **Main roof:** a low gable at 0.12 (6.8°), ridge along X at build y −0.2.
+- **Main roof:** a low gable at 0.12 (6.8°), ridge along X at build y
+  −0.2125.
   Its rear eave runs into the shaft's front face.
 - **Lean-to roof:** 1:10, falling to the rear, its high end buried in the
   shed's rear wall.
@@ -388,9 +461,11 @@ hall's coal side.**
   counts):
   - front wall: s 0.7 and 13.3 (x ∓6.3);
   - shed's rear wall, beyond the lean-to: x ±6.3;
-  - lean-to's rear walls, 0.25 m in from its corners: x 4.45 and −4.25.
+  - lean-to's rear walls, 0.25 m in from its corners: x 4.4375 and −4.3125.
 
   All clear their walls' corners and openings (`downpipes.problems()`).
+- **No gutter on the head house's slab or the gallery's roof** (Eave
+  overhang): both shed off their edges, so neither has downpipes.
 - **Snow guard:** painted near the eave on both main slopes and the
   lean-to.
 - **No roof safety kit, by the brief.** Neither the main roof (0.12) nor the
@@ -399,6 +474,10 @@ hall's coal side.**
   and drive and the gallery's tail pulley are inside the head house, which
   is reached by the stair inside the shaft. The brief settles access as
   internal by that stair, so the tower has no wall ladder and cage.
+- **The gallery's two roof boxes are plain vents**, not serviced items:
+  0.6 m steel ventilator boxes over the walkway inside, with nothing on
+  the roof to maintain, as CLAUDE.md's plain vent pipes. The gallery's
+  roof (20°, steeper than 1:8) therefore needs no roof ladder or walkway.
 - **No handrails:** both doors are at ground level, so there is no entrance
   flight.
 
@@ -406,11 +485,13 @@ hall's coal side.**
 
 `facade_atlas.py` holds every shared number:
 
+- the brick module (`COURSE`, `BRICK_L` from `scripts/brickwork.py`, and
+  `HALF`), the grids the brick-bound heights and positions keep to;
 - the plan (`HX`, `Y_F`, `Y_R`, `WALL_T`), giving the lane `YL0`/`YL1`;
-- `FLOOR_T`, `Z_MOUTH`, the band, `Z_BEAM` and `CEIL_DROP`;
+- `FLOOR_T`, `Z_MOUTH`, the band, `Z_BEAM`, `CEIL_DROP` and `IMPACT_Z`;
 - the roofs (`Z_EAVE`, `TAN`, `Z_AE`, `TAN_A`);
 - the lean-to, shaft and head house (`AX0`, `AX1`, `AY1`, `TX0`, `TX1`,
-  `TY1`, `HH_OV`, `HH_Z0`, `Z_TSLAB`);
+  `TY1`, `HX0`, `HX1`, `HY0`, `HH_Z0`, `Z_TSLAB`);
 - the gallery (`GAL_W`, `GAL_H`, `GAL_ANG`, `GAL_Z0`, `GAL_LEN`, giving its
   end `GAL_Y1` and end centre `GAL_Z1`), its collar (`COLLAR_PROUD`,
   `COLLAR_L`), its struts (`STRUT_FOOT`, `STRUT_OUT`), its trestle (`TR_OUT`,
@@ -422,8 +503,10 @@ hall's coal side.**
   `HAZARD_TOP`, `HAZARD_W`, `STOP_LINE_X`, `TIP_Z`, `TIP_X`, `SIGNAL_Z`);
 - the splits and shifts, the openings.
 
-`build.py` holds the wall specs. `check_layout()` asserts the following:
+`build.py` holds the wall specs, their `u_off` and `BRICK_CORNERS`.
+`check_layout()` asserts the following:
 
+- the brick module (`brick_problems()`, *The brick module* above);
 - openings clear the corners, columns, splits, the band, both roofs, the
   head house and each other, and the head house's clear its floor and slab;
 - the lane is at least 5.0 m wide and 4.6 m clear, with the beams over the
@@ -451,10 +534,10 @@ hall's coal side.**
 
 | Tier | Triangles | Ceiling | What changes |
 | --- | --- | --- | --- |
-| `LOD0` | 1958 | 12,000 | openings recessed with brick or sheet reveals; gallery end plate recessed in its collar; two tie beams; attendant's window recessed; two struts, two roof ventilators, the hoist beam and its trolley; the trestle's H-section legs, pad footings, cross-head and bracing; eight-sided downpipes with swan-necks and shoes |
-| `LOD1` | 1718 | 4,000 | downpipes four-sided, bent |
-| `LOD2` | 978 | 1,500 | openings and the gallery's end plate flush; tie beams, ventilators and the trestle's footings dropped, its legs and cross-head one portal solid with the bracing; coplanar boolean subdivisions dissolved (UV seams kept); downpipes straight, four-sided |
-| `LOD3` | 500 | 500 | **downpipes, struts, hoist beam and trolley and the trestle's cross-head and bracing dropped**; the trestle's two legs kept as plain three-sided prisms; the gallery's end one flat face, its collar a flare; the lane, lean-to, shaft, head house, gallery box and all openings' paint kept |
+| `LOD0` | 1960 | 12,000 | openings recessed with brick or sheet reveals; gallery end plate recessed in its collar; two tie beams; attendant's window recessed; two struts, two roof ventilators, the hoist beam and its trolley; the trestle's H-section legs, pad footings, cross-head and bracing; eight-sided downpipes with swan-necks and shoes |
+| `LOD1` | 1720 | 4,000 | downpipes four-sided, bent |
+| `LOD2` | 1222 | 1,500 | openings still recessed, the attendant's window too; the gallery's end plate flush; tie beams dropped; the ventilators and the trestle's pad footings kept, its legs and cross-head one portal solid with the bracing; coplanar boolean subdivisions dissolved (UV seams kept); downpipes straight, four-sided |
+| `LOD3` | 498 | 500 | openings flush; **downpipes, hoist beam and trolley, ventilators, footings and the trestle's cross-head dropped**; the struts kept as three-sided prisms, the trestle as two three-sided legs and one X of three-sided bars, all separate closed solids; the gallery bare to its end plane (no collar), one flat end face; the lane one box at the mouths' section, without the attendant's window; the lean-to, shaft, head house, gallery box and every other opening's paint kept |
 
 The counts are not padded. The massing is a box with a tunnel, a lean-to, a
 shaft, a head house, a gallery box with its collar, a trestle and three
@@ -466,7 +549,7 @@ Where the triangles go at `LOD0`:
 
 - the six eight-sided downpipes: about 480 (the 240 that `LOD1` saves is
   their halved sides);
-- the trestle: about 440 (two twelve-sided legs, the cross-head, two
+- the trestle: about 440 (two twelve-sided H legs, the cross-head, two
   footings, six X bars and two ties, and the union's cuts where every bar
   ends in a web);
 - the head house with its six recessed openings, its slab, the gallery and
@@ -478,21 +561,60 @@ Where the triangles go at `LOD0`:
   120.
 
 The 12 m gallery costs the same as the 6.5 m one: its length is texture.
-The collar costs 16 triangles (its back ring and four faces), 8 at `LOD3`
-as a flare. At `LOD3` the budget is the gallery and collar (490 with no
-trestle) and 10 more: the trestle's portal, cut into the gallery's floor
-by the union, cost 48, so `LOD3` keeps two plain legs as separate closed
-three-sided prisms, 8 triangles each, standing beside the gallery to its
-floor's height, which brings it to exactly 500. The cross-head and the
-bracing vanish at the 120 m switch (LOD review). Past 120 m a 0.10 m pipe
-and the 0.16–0.24 m steel are about two pixels across (0.24 m ≈ 2.3 px at
-120 m with the review camera), and the pale gallery box against the sky
-carries the tower's identity, not its supports.
+The collar costs 16 triangles (its back ring and four faces).
+
+`LOD2` has the budget to keep what used to go at its switch: the recessed
+openings (+about 150 over flush, with the wall triangulation round them),
+the two ventilators and the two pad footings with their cuts round the
+portal's legs (+about 90); 1222 of 1,500.
+
+`LOD3` sits at its ceiling, so what it keeps of the steel was paid for in
+places nothing shows past 160 m:
+
+- the lane as one box at the mouths' section, without the gables' inner
+  faces over the lintels, the ceiling's slopes, the soffits' steps and the
+  attendant's window deep in the lane's side: about 24 triangles;
+- the gallery bare to its end plane, without the collar's flare: 8.
+
+That paid for the struts as two three-sided prisms (16) and one X of two
+three-sided bars between the trestle's legs (16), each a separate closed
+solid touching nothing, so the union cuts nothing; the legs themselves are
+the same two prisms (16). 498 of 500.
 
 ## LOD review
 
-Intended switches are the catalog defaults: 35, 70 and 120 m, with no
-overrides.
+**The consumer's switches**, by its screen-size measure at 1080p and a
+75° vertical FOV, fall at about 1.8, 4 and 8 times the largest bounds
+dimension (22.8 m): **41, 91 and 182 m**. The 2026-11-22 pass reviewed the
+tier pairs there (`review/older_audit_2026_11_22/fix_industrial_b2/
+hiilenvastaanotto_brick_shed/`: `renders_before/` from the copy in
+`before/`, `renders_after/`, before-above-after sheets in `compare/`,
+`LOD0` at 20 and 35 m in `compare_lod0/`), with the audit's camera (front
+10° up, corner 45° round and 25° up, eye level at 1.7 m, rear), noon, and
+the corner at night:
+
+- **41 m (`LOD0`→`LOD1`):** only the downpipes' sides halve; no change.
+- **91 m (`LOD1`→`LOD2`):** no longer a pop. `LOD2` keeps the recessed
+  openings, the ventilators and the footings; what changes are the tie
+  beams (inside the dark lane), the trestle's H legs and cross-head
+  becoming one portal, and the downpipes straightening. The 99th
+  percentile of the difference fell from 15–25 to 1 in every view.
+- **182 m (`LOD2`→`LOD3`):** the trestle keeps one X between its legs and
+  the struts stay (before, the bent became two bare posts and the struts
+  went); the flush windows take their painted reveals and match `LOD2`'s
+  recesses to within 4 levels on average in the front view; the
+  ventilators go to their painted tops, which read as two fainter dots;
+  the hoist beam, the downpipes, the footings and the collar go. What
+  still shows when blinked: the X is lighter than `LOD2`'s three braced
+  panels, and the ventilators' dark boxes fade (about 2 px each).
+  Pixels differing by more than 24 levels (front / corner / corner night
+  / eye / rear): 76 / 218 / 170 / 111 / 28, against 5 / 177 / 0 / 72 / 25
+  before; the switch carries more now because `LOD2` keeps what used to go
+  at 91 m, where the same count fell from 477 / 518 / 457 / 524 / 60 to
+  5 / 3 / 0 / 7 / 0. At night the flush windows light a little more glass
+  than the recesses show, and the attendant's lane window goes.
+
+The earlier passes' review, at the catalog defaults (35, 70 and 120 m):
 
 The review camera was perspective, 1920×1080 (LOD pairs at 1280×720), 50°
 vertical FOV, with distance along the view to the front or rear bounding
@@ -515,33 +637,30 @@ the six views and a 40 m rear three-quarter.
 
 - **The lane is open on every tier.** End-on at 125 m, `LOD2` and `LOD3`
   both show the ground through the portal.
-- **Openings** go from recessed (`LOD0`/`LOD1`) to flush (`LOD2`), on the
-  brick and on the head house alike. At the 65/75 m switch the flush windows
-  read a touch lighter, without the reveals' shadow, but the rhythm, size
-  and frame colour are unchanged. The gallery's end plate goes flush at the
-  same switch; it stays a dark panel in a pale rim.
+- **Openings** stay recessed through `LOD2` and go flush at `LOD3`, on the
+  brick and on the head house alike; `LOD3`'s windows carry the reveals'
+  occlusion in paint (`REGION3`). (In the earlier pass,
+  `LOD2`'s flush windows read lighter at its switch.) The gallery's end
+  plate goes flush at `LOD2`; it stays a dark panel in a pale rim.
+- **The lane** is a box at `LOD3`, its ceiling flat at the lintels'
+  soffit; seen end-on it is the same dark void.
 - **The tie beams** go at `LOD2`. They are seen only from inside the lane
   or end-on through a mouth, a dark bar under a dark ceiling; nothing
   visibly changes at the switch.
 - **Massing** is unchanged on every tier: shaft, head house, gallery box,
   lean-to, roofs, portals, columns and band (UV regions).
-- **Downpipes, struts, hoist beam and trolley** follow `downpipes.MODES`
-  through `LOD2` and **vanish at `LOD3`** (Per-tier triangle counts). At
-  115/125 m the pipes are under two pixels against their walls and the
-  struts a thin line under the gallery; their loss is not visible at the
-  switch, and the 12 m gallery reads as a long box off the tower either
-  side of it.
-- **The trestle** keeps its shape through `LOD2`: at 65/75 m the portal and
-  its X read as the `LOD1` bent did, less the footings' pale pads at its
-  feet. **At the 120 m switch its X bracing and cross-head vanish**:
-  `LOD3` keeps the two legs, two dark lines from the ground to the
-  gallery's floor. At 115 m the X is still legible on `LOD2` as a lattice,
-  so the switch is visible as the lattice going to two posts; the
-  obstacle's place and height stay. That is the cost of `LOD3`'s 500.
-- **The gallery's end and collar** keep their outline on every tier; the
-  end plate goes flush at `LOD2` and the end becomes one dark face at
-  `LOD3`. It stands against the hall's wall, so the end itself is not seen
-  in the plant.
+- **Downpipes, hoist beam and trolley** follow `downpipes.MODES` through
+  `LOD2` and vanish at `LOD3` (Per-tier triangle counts): the pipes are
+  under half a pixel at 182 m. **The struts** stay on every tier, as
+  three-sided prisms at `LOD3`.
+- **The trestle** keeps its shape through `LOD2`, on its footings: the
+  portal and its X read as the `LOD1` bent did. At `LOD3` the cross-head
+  and footings go and one X of thicker bars stands for the three braced
+  panels between the two legs; the obstacle's place and height stay.
+- **The gallery's end and collar** keep their outline through `LOD2`; the
+  end plate goes flush at `LOD2`, and at `LOD3` the collar goes and the
+  end is one dark face of the gallery's section. It stands against the
+  hall's wall, so the end itself is not seen in the plant.
 - **Coal dust and traffic paint** are texture only, the same on every tier.
   The legs' bands stay legible as yellow and black to 75 m and blend to a
   dull ochre at mip4.
@@ -551,11 +670,11 @@ in the lane, and performance.
 
 ## Interior geometry
 
-The validator's hidden-surface test reports **8/8/10/4 triangles** on
-`LOD0`–`LOD3` (0.6–1.5 %), all of them the gables' inner faces over the
+The validator's hidden-surface test reports **8/8/8/0 triangles** on
+`LOD0`–`LOD3` (0.4–0.7 %), all of them the gables' inner faces over the
 lintels at x ±6.6 and 6.0–7.3 m. These are exterior surface, reachable only
 along the 14 m lane, so few of the test's fixed rays escape; they are not
-buried.
+buried. `LOD3`'s box-shaped lane has no such faces.
 
 - The lane's walls, floor, ceiling, soffits and beams are exterior surface,
   open at both mouths.
@@ -571,8 +690,11 @@ buried.
   the bracing's ends inside the legs' webs are removed by the union.
 - The gallery's end face is exterior surface: it stands against the hall's
   wall in the plant, but the asset is closed on its own. At `LOD3` the two
-  plain legs are separate closed solids, 8 mm under the floor's height
-  beside the gallery, not joined to it.
+  plain legs, the X's two bars and the two struts are separate closed
+  solids: the legs 8 mm under the floor's height beside the gallery, the
+  bars 0.01 m off the legs and 0.005 m either side of the bent's plane, the
+  struts 0.01 m off the shaft's face and under the floor. Their caps are
+  kept closure faces.
 
 ## Known simplifications
 
@@ -609,37 +731,53 @@ One 1024² trim-sheet atlas, rasterised by `scripts/atlas.py` at `atlas.SS`
 
 | Rows | Region | Mapping |
 | --- | --- | --- |
-| 0–422 | BRICK (x 0–944), column strip (x 952, 0.40 m) and the portal legs' strip `PIER` (x 984, 0.40 m) | U along the wall, V = height 0–6.5625 m, 64 px/m: plinth to 0.625, bond, band 6.0–6.5625; `PIER` adds the traffic bands to 2.0 m |
-| 428–524 | ROOF | U = x at 64 px/m; V up the slope from the eave edge, 96 rows over 3.81 m (25 px/m); ridge cap at the main slope's top |
-| 532–548 | EAVE | the fascia (0.25 m) with the gutter |
-| 558–1020 | unique | lane side walls (448 × 246, with the jambs' bands, the stop mark, the tipping height and the entry signal), ceiling (448 × 90) and floor with the grate, its border and the stop line (448 × 179) at 32 px/m; the windows, door, hatch and louvre at 64 px/m; the head house's cladding `CLAD` (448 × 88); the gallery's sides `GAL_SIDE` (364 × 106, 30 px/m along it) and end `GAL_END` (83 × 90, 32 px/m); flat patches |
+| 0–422 | BRICK (x 0–944), column strip (x 952, 0.40 m) and the portal legs' strip `PIER` (x 984, 0.40 m) | U along the wall, V = height 0–6.5625 m, 64 px/m: plinth to 0.625, the catalog bond (`scripts/brickwork.py`), band 6.016–6.5625; `PIER` adds the traffic bands to 2.0 m |
+| 428–547 | `ROOF` (x 4–471), with `GAL_SIDE` (x 480–844, 364 × 106, 30 px/m along it), `GAL_END` (x 852, 83 × 90, 32 px/m) and the hatch (x 943) beside it | ROOF: U = x from the west rake's edge, V up the slope from the eave's edge, both 32 px/m (119 rows over 3.71 m); ridge cap at the main slope's top |
+| 555–575 | EAVE, full width | the fascia (0.25 m) with the gutter, U = x at 64 px/m |
+| 580–1018 | unique | lane side walls (448 × 246, with the jambs' bands, the stop mark, the tipping height and the entry signal), ceiling (448 × 90) and floor with the grate, its border and the stop line (448 × 178) at 32 px/m; the gallery's roof `GAL_ROOF` (419 × 83, 32 px/m); the head house's cladding `CLAD` (224 × 127, 32 px/m); the windows, door and louvre at 64 px/m; `LOD3`'s two windows with their reveals' occlusion (`REGION3`, 32 px/m); flat patches |
 
-**Deviations from 64 px/m:**
+**Deviations from 64 px/m**, each isotropic but `GAL_SIDE`:
 
 - The lane's regions are at 32 px/m. They are in shade and seen
   obliquely; at 64 px/m they would need most of the atlas. Relief there is
   scaled by 32/64 so the normal map's slopes stay physical.
-- The roof band is stretched in V; only its ribs vary there.
-- `CLAD` is 64 px/m across U and 21 px/m up V (4.17 m in 88 rows): its ribs
-  are upright and vary in U only, so the stretch shows only in the noise,
-  the one lap 2.0 m up and the dirt. The gallery's roof samples it with U
-  across the gallery (ribs running down the slope) and V squeezed further.
+- `ROOF` is 32 × 32 px/m. It was 64 px/m along x and 25 up the slope, a
+  full-width band; the roof is seen from above at a distance and its ribs
+  (8 px apart) and snow guard read at 32, though at 20 m the ribs and the
+  snow guard are visibly softer than they were (`compare_lod0/`). Relief scaled by 32/64. The
+  lean-to's slope samples it scaled by 0.81, so 32 × 26 px/m there.
+  Measured on the `LOD0` export (`industrial_b/texel_density.py`): every
+  up-facing surface 32 × 32 but the lean-to; `CLAD` 32 × 32.
+- `CLAD` is 32 × 32 px/m, 7.0 m of U (the walls' offsets overlap in it)
+  by 3.96 m, from the head house's floor to just over its slab's soffit.
+  It was 64 px/m across U and 21 px/m up V, which stretched its lap, rust
+  and runs threefold; the atlas has no room for 7 m × 4 m at 64 px/m, so it
+  takes the isotropic 32 px/m the lane's regions have. Its ribs are
+  painted at 0.25 m (`paint_sheet(..., pitch=)`), relief scaled by 32/64.
+- `GAL_ROOF` is the gallery's roof's own region, 32 × 32 px/m: U down the
+  slope's 13.1 m (from 0.30 m inside the head house to the end plane), V
+  across its 2.6 m, the ribs running down the slope, end laps every 6 m,
+  coal heavier near the head house. The roof sampled `CLAD`, squeezed to
+  about 6 px/m along the slope. The two ventilators' tops are painted on
+  it under their boxes, for `LOD3`, which drops the boxes.
 - `GAL_SIDE` is 30 px/m along the gallery in plan (28 along its slope) and
   38 px/m up its 2.8 m section, so its 12.1 m (from 0.30 m inside the head
-  house to the collar) fit the old slot's row of the sheet; the atlas has
-  no free row 106 px tall and wider. That is the lane regions' density; its
-  ribs are painted at the head house's 0.25 m pitch (`paint_sheet(...,
-  pitch=)`), its lights are 18 × 21 px, its posts 3 px. At 15–30 m it reads
-  softer than the head house beside it; from the street it is seen 15 m up.
-- The gallery's roof samples `CLAD` squeezed to about 6 px/m along its
-  12.9 m slope; only the ribs, which run down it, vary there, and the
-  cladding's lap shows across it as a sheet end lap.
+  house to the collar) fit one row; its ribs are painted at the head
+  house's 0.25 m pitch, its lights 18 × 21 px, its posts 3 px. At 15–30 m
+  it reads softer than the head house beside it; from the street it is
+  seen 15 m up. On `LOD3` the sides run on 0.18 m to the end plane over
+  the same region (1.5 % compressed along).
 - `GAL_END` is at 32 px/m: a rim and a dark plate seen end-on high up.
+- `REGION3`: the shed's and the small windows again at 32 px/m, with the
+  reveal's occlusion round the glass as dark frame (deep under the head,
+  narrower at the sides, a lip at the sill), for `LOD3`'s flush windows,
+  so the switch from `LOD2`'s recesses does not lighten them; the band is
+  not glass, so it neither takes `glazing.rooms()` nor lights at night.
 
 ### Walls above the band
 
 The band ends at 6.5625 m. Higher walls (the gables, the long walls'
-strip under the eave and the shaft to 11.42 m) sample the brick rows 3.75 m
+strip under the eave and the shaft to 11.45 m) sample the brick rows 3.75 m
 lower, and the shaft above 9.5625 m 7.5 m lower. Each shift is 48 courses,
 the bond's tone period, so bond and tone run on across the split. The
 shifted walls sample rows 2.06–5.87 m, which `check_layout()` keeps inside
@@ -649,7 +787,7 @@ This is why the heavy dust on the brick stops at about 2 m rather than
 2.5–3 m: dust that followed height to 3 m would show again on the shaft
 above 9.5625 m, which samples rows from 2.06 m, as a step at the split.
 
-The lean-to roof samples the roof band scaled by 0.82, so its buried end
+The lean-to roof samples the roof region scaled by 0.81, so its buried end
 stops short of the ridge cap's rows.
 
 ### Relief
@@ -659,11 +797,12 @@ stops short of the ridge cap's rows.
 | Brick face over mortar | 6 mm |
 | Band, column arrises | 10 mm, 8 mm |
 | Window frames, bars, sash | 35, 22, 40 mm |
-| Roof ribs | 30 mm |
+| Roof ribs | 30 mm, scaled by 32/64 |
 | Gutter roll | 70 mm |
-| Snow guard tubes | 45 mm, scaled by the band's stretch |
+| Snow guard tubes | 45 mm, scaled by 32/64 |
 | Grate bars over the coal | 40 mm, scaled by 32/64 |
-| Cladding ribs (head house, gallery) | 30 mm |
+| Cladding ribs (head house, gallery's roof) | 30 mm, scaled by 32/64 |
+| Cladding ribs (gallery's sides) | 30 mm |
 | Gallery side girder: bottom chord, its top edge, posts, top flashing | 30, 50, 30, 15 mm |
 | Traffic paint | none (flat) |
 
@@ -748,29 +887,37 @@ windows, the pale head house and gallery and the dark lane all hold. The
 pale lean-to slopes in the rear view are the noon sun's glint, the same at
 full resolution.
 
-The mip review of the current atlas rendered each tier at its switch
+The mip reviews below were of the atlas before the 2026-11-22 repack
+(Revision log), which moved `GAL_SIDE`, `GAL_END`, `CLAD`, the windows,
+door, hatch, louvre and patches and made `ROOF`, `GAL_ROOF` and
+`REGION3`. The repack keeps 6 px or more between regions (8 px round
+`GAL_SIDE`); the whole-atlas mip review has not been run on it (Review
+status, pending).
+
+The earlier mip review rendered each tier at its switch
 distance and one level beyond (`LOD1` 70 m at mip 2–3, `LOD2` 120 m at mip
 3–4, `LOD3` 250 m at mip 4–5), front and oblique, noon and reverse sun, the
 default and one contrasting variant, and again at a per-texel mip level
 matched to each tier's own texel density (renders in
 `review/phase2_2026_11_21/mips/hiilenvastaanotto_brick_shed/`). No gutter
 leak shows at any tier's real distance; the hazard strip is clean on every
-tier. Latent, in the stress renders only:
+tier. Latent, in the stress renders only (the first now gone with the
+repack):
 
-- `GAL_SIDE` (648, 912, …) is 5.2 px above `win_s_b` (648, 830, 57.6,
-  76.8): the brick surround bleeds into the gallery side's bottom edge at
-  mip 2–3 (58–88 levels, `red_brick` worst). Not visible at `LOD1` 70 m,
-  where the gallery's 30–38 px/m samples about level 1.7.
+- `GAL_SIDE` was 5.2 px above `win_s_b`: the brick surround bled into the
+  gallery side's bottom edge at mip 2–3. It now stands 8 px clear of the
+  roof sheet and the gallery's end.
 - The `PIER` hazard strip (984, 0, 25.6, 420) is 6.4 px from `COL`:
   yellow/black reaches the column strip's edge at mip 3 (45 levels), under
   a pixel at 120 m. Nothing reaches the brick.
-- `LANE_FLOOR`'s top is 8.8 px from a window region: white frame into the
-  floor's far edge at mip 3, inside the dark lane.
+- `LANE_FLOOR`'s top is 7.6 px from `CLAD`, a window and the door (it
+  was 8.8 px from a window): frame or sheet into the floor's far edge at
+  mip 3, inside the dark lane.
 - With REPEAT sampling the brick band's bottom rows at y = 0 pick up the
   atlas's top rows at mip 2–3, on the ground line; negligible.
 
-If the atlas is ever repacked, the cheap fixes are 8 px gaps at those
-three edges and starting the brick band a few pixels above y = 0.
+The cheap fixes left are an 8 px gap at the `PIER`/`COL` edge and
+starting the brick band a few pixels above y = 0.
 
 ### Unique textures
 
@@ -781,8 +928,12 @@ shared by all variants.
 ## Glazing treatment
 
 The glazing uses `scripts/glazing.py` `rooms()` on the finished albedo, with
-the default base. It measures sRGB 65 (linear 0.050) in all three albedos,
-0.32–0.36× the trim. Roughness is 0.08 (`glazing.ROUGHNESS`) and metallic 0.
+the default base. The validator measures sRGB 48 (linear 0.025) in all
+three albedos, 0.24–0.27× the trim. Roughness is 0.08
+(`glazing.ROUGHNESS`) and metallic 0. It was 65 before the 2026-11-22
+repack: `rooms()` seeds each window's room from its box in the atlas, so
+moving the window regions drew new, on the whole darker rooms; both are
+inside the 45–70 band.
 
 - The shed's windows are steel frames of 7 × 4 lights with a hopper. The
   small windows are 3 × 4 lights. The gallery's eight lights a side are
@@ -837,7 +988,10 @@ takes that to 102/75/67 (Texture set); the brown measures 77/63/61 there.
 - **Mask:** the window glass only, via `glazing.night_rooms()`. That covers
   the shed's three high windows, the shaft's four, the head house's four,
   the gallery's sixteen lights, the lean-to's three and the attendant's window
-  onto the lane.
+  onto the lane (`LOD0`–`LOD2`: `LOD3`'s box lane has no window). `LOD3`'s
+  flush windows take their own regions (`REGION3`), whose glass lights and
+  whose reveal band does not, so they light about as much glass as the
+  recessed windows show on `LOD2`.
 - **Not lit:** the doors, the loading hatch, the louvre, the gallery's end,
   the lane itself and the entry signal's lenses (painted, unlit). There are
   no lamps or lit signs.
@@ -894,32 +1048,34 @@ build (0, 7.6, 0); a build point (x, y, z) is glTF [x, z, −(y − 7.6)]):
 - **footprint:** the shed rectangle with the lane inside it, its mouths
   closed across their wall planes as `hiilisiilo_drive_through` does, plus
   the lean-to and the shaft's step (Footprint): x −7.0…7.0, z 0.6 (the
-  shaft's rear face) to 11.0 (the shed's front wall). The head house and
-  gallery are in the air and the trestle stands apart: none is in it.
-- **storeys:** one at the ground, 29.18 m². That is the lean-to's rooms
-  inside 0.30 m walls (8.60 × 3.30 m) plus the shaft's step (2.00 × 0.40
+  shaft's rear face) to 11.0 (the shed's front wall); the shed's rear wall
+  at z 4.625, the lean-to x −4.5625…4.6875 to z 0.975, the shaft x
+  ±1.3125. The head house and gallery are in the air and the trestle
+  stands apart: none is in it.
+- **storeys:** one at the ground, 29.74 m². That is the lean-to's rooms
+  inside 0.30 m walls (8.65 × 3.35 m) plus the shaft's step (2.025 × 0.375
   m). The lane is not a storey, as for `hiilisiilo_drive_through`, nor is
   the head house (Story height).
 - **dwellings:** none.
-- **doors:**
-  - `attendant`: `entrance`, main, the lean-to's east end, [4.7, 0, 3.6],
-    facing +X;
-  - `elevator`: `service`, the shaft's rear face, [0, 0, 0.6], facing −Z,
-    onto the strip under the gallery.
+- **doors:** both 0.90 × 2.1375 m leaves:
+  - `attendant`: `entrance`, main, the lean-to's east end, [4.6875, 0,
+    3.6], facing +X;
+  - `elevator`: `service`, the shaft's rear face, [0.0625, 0, 0.6], facing
+    −Z, onto the strip under the gallery.
 
   The lane's mouths are not doors; the loading hatch is not a door.
 - **passages:**
   - `truck_lane`, stated from its entry, the west mouth (glTF −X): it is
-    used one way, out at the east. Position [−7.0, 0, 7.8], the lane's
+    used one way, out at the east. Position [−7.0, 0, 7.8125], the lane's
     centre line on the west gable's outer plane; forward [1, 0, 0]; width
-    5.60 m between the side walls; length 14.00 m to the east gable's plane,
-    through. Clear height 5.98 m, measured on the exported `LOD0` mesh by
-    `measure_lane()`: every triangle clipped to the lane's plan, inset 1 mm.
-    The lowest point over the floor is the lintels' soffit at 6.000 m, above
-    the floor slab's top at 0.020 m. The stop point is the lane's centre,
-    [0, 0, 7.8] (floor 0.02 m), with the grate's centre at [−2.5, 0.02,
-    7.8] under the tail. The lane's wall planes are glTF z 5.0 and 10.6,
-    its mouths' planes x −7.0 and 7.0.
+    5.575 m between the side walls; length 14.00 m to the east gable's
+    plane, through. Clear height 5.996 m, measured on the exported `LOD0`
+    mesh by `measure_lane()`: every triangle clipped to the lane's plan,
+    inset 1 mm. The lowest point over the floor is the lintels' soffit at
+    6.016 m, above the floor slab's top at 0.020 m. The stop point is the
+    lane's centre, [0, 0, 7.8125] (floor 0.02 m), with the grate's centre at
+    [−2.5, 0.02, 7.8125] under the tail. The lane's wall planes are glTF z
+    5.025 and 10.6, its mouths' planes x −7.0 and 7.0.
   - `under_gallery`: the clear ground behind the shaft, from its rear face
     (glTF z 0.6), the rearmost low thing, to the trestle's near face with
     its footings (z −9.4), across the bounds' whole width. Position [−7.3,
@@ -939,27 +1095,33 @@ build (0, 7.6, 0); a build point (x, y, z) is glTF [x, z, −(y − 7.6)]):
 
 Checked here, in Blender, after the revision:
 
-- **Validator:** `scripts/validate_asset.py`, 0 FAIL. The one WARN is
-  `source.dirty`, from an uncommitted tree. Every tier passes:
+- **Validator:** `scripts/validate_asset.py`, 0 FAIL and 0 WARN with the
+  sidecar written from a committed tree (`build.py -- facts`); straight
+  after a rebuild in a working tree its one WARN is `source.dirty`. Every
+  tier passes:
   - welded manifold topology, one material, uri-only images;
   - the normal and emission bindings, the default-off factor;
-  - triangle ceilings (`LOD3` at exactly 500), pivot at ground and
-    centred, every tier's plan bounds equal to `LOD0`'s;
+  - triangle ceilings (`LOD3` 498 of 500), pivot at ground and centred,
+    every tier's plan bounds equal to `LOD0`'s;
   - the sidecar's schema, hashes, counts, bounds, doors and both passages;
-  - hidden surface 8/8/10/4 (Interior geometry).
+  - hidden surface 8/8/8/0 (Interior geometry).
 
-  The glazing measures sRGB 65 (0.34–0.38× trim) in all three albedos.
-- **Layout:** `check_layout()`, including the lane's clearances, the ground
-  beyond the mouths, the truck road and the clear strip under the gallery,
-  the gallery's mouth, length and end centre, the collar, the struts, the
+  The glazing measures sRGB 48 (Glazing treatment) in all three albedos.
+- **Layout:** `check_layout()`, including the brick module
+  (`brick_problems()`), the lane's clearances, the ground beyond the
+  mouths, the truck road and the clear strip under the gallery, the
+  gallery's mouth, length and end centre, the collar, the struts, the
   trestle's footings, legs, head and bracing, and the hoist's trolley.
 - **Exported tiers against the sidecar** (a separate reading of every
-  `.glb`): every tier has the bounds [−7.3, 0, −11.4]–[7.3, 18.8176,
-  11.4]. On every tier:
-  - the end face is the plane glTF z −11.400, the collar's outline on it x
-    −1.35…1.35, y 15.9176…18.8176 (2.70 × 2.90 m, centre 17.3676 m), and the
-    collar's back face at z −11.22 with the gallery's 2.60 m section
-    (x ±1.30) inside it;
+  `.glb`, `review/older_audit_2026_11_22/fix_industrial_b2/shed_measure.py`):
+  every tier has the plan bounds x ±7.3, z ±11.4 and `LOD0`–`LOD2` the
+  height 18.8176 (`LOD3`, without the collar, 18.7676). On every tier:
+  - the end face is the plane glTF z −11.400; through `LOD2` the collar's
+    outline on it x −1.35…1.35, y 15.9176…18.8176 (2.70 × 2.90 m, centre
+    17.3676 m), and the collar's back face at z −11.22 with the gallery's
+    2.60 m section (x ±1.30) inside it; on `LOD3` the gallery's own section
+    on it, centre 17.3676 m (these end figures were measured in the earlier
+    pass; the end's geometry through `LOD2` is unchanged by this one);
   - the gallery's side faces' top and bottom edges run from the head
     house's face (z 0.6: 14.400 and 11.600) to the collar's back (z −11.22:
     18.70213 and 15.90213), both at a slope of 0.363970 (tan 20°); extended
@@ -968,16 +1130,16 @@ Checked here, in Blender, after the revision:
     at the shaft's face, 12.000 m from it in plan; its sides are at x ±1.300,
     centred on x 0;
   - the lowest geometry over the lane (inset 1 mm) is the lintels' soffit at
-    6.000 m, 5.98 m over the slab, and nothing stands beyond either mouth's
-    plane within 1.0 m of the lane's walls lower than 6.0 m;
+    6.0156 m, 5.996 m over the slab, and nothing stands beyond either
+    mouth's plane within 1.0 m of the lane's walls lower than 6.0 m;
   - over the strip z 0.6…−9.4 the lowest geometry is 8.683 m (the struts'
-    undersides at the shaft's face, x ±0.88) on `LOD0`–`LOD2` and 11.60 m
-    (the gallery at the head house) on `LOD3`;
+    undersides at the shaft's face, x ±0.88) on `LOD0`–`LOD2` and 8.856 m
+    (the prism struts' undersides, 0.01 m off the face) on `LOD3`;
   - behind the shaft nothing touches the ground but the trestle: its
-    footings at x ±1.0…2.0, z −10.4…−9.4 on `LOD0`/`LOD1`, its legs at x
-    ±1.35…1.65, z −10.05…−9.75 on `LOD2`/`LOD3`. Elsewhere outside the
-    footprint nothing comes within 2.5 m of the ground but the downpipes'
-    shoes, 0.165 m up.
+    footings at x ±1.0…2.0, z −10.4…−9.4 on `LOD0`–`LOD2`, its legs at x
+    ±1.35…1.65, z −10.05…−9.75 on `LOD3`. Elsewhere outside the footprint
+    nothing comes within 2.5 m of the ground but the downpipes' shoes,
+    0.165 m up.
 - **Six views:** `LOD0` (`review_asset.py --six-views`). The end views show
   straight through the lane; the side views show the gallery's girder
   panels and lights, the struts and the trestle's legs as one line.
@@ -990,25 +1152,32 @@ Checked here, in Blender, after the revision:
   `LOD3` with its flare. 1 cm off, a one-pixel dark hairline shows along
   the collar's edge in the 5 m side view (1280 × 960, 50°) and nothing at
   14 m or from below or above. 1 cm in, the collar's last centimetre is
-  lost in the wall with no visible change.
-- **LOD pairs:** around 35, 70 and 120 m, oblique and rear three-quarter,
-  noon (LOD review).
+  lost in the wall with no visible change. (Not repeated for `LOD3`'s bare
+  end, which only the far distances show.)
+- **LOD pairs:** at the consumer's 41, 91 and 182 m (LOD review), front,
+  corner, eye and rear, noon, and corner at night, before and after the
+  2026-11-22 pass.
 - **Filtering:** mip4 stress renders (`scripts/review_atlas_mips.py`) of
   `LOD2` and `LOD3` at 120 m from the earlier pass, and the mip review of
   the current atlas, the 30 px/m gallery side included (Texture set,
   *Filtering*): every tier at its switch distance and one level beyond,
   whole-atlas and distance-matched per-texel mips. No gutter leak at any
   tier's real distance; latent edges at `GAL_SIDE`, the `PIER` strip,
-  `LANE_FLOOR` and the band's y = 0 rows in the stress renders only.
+  `LANE_FLOOR` and the band's y = 0 rows in the stress renders only. That
+  review predates the 2026-11-22 repack and was not re-run on it.
 - **Before/after:** the review set rendered from the copy taken before the
   revision and again after, compared with `scripts/review_compare.py`.
 - **Variants:** day and night for all three (`variants.png`).
 
+Pending here: the whole-atlas mip review of the repacked atlas (`ROOF`,
+`CLAD`, `GAL_ROOF`, `REGION3` and the moved regions), and the six views
+after the 2026-11-22 pass.
+
 Pending in the consumer:
 
 - import, orientation and pivot on reimport in the engine;
-- that its trucks fit the lane: 2.6 m wide, against 5.60 m clear and 5.98 m
-  over the slab, and stop with their tail over the grate;
+- that its trucks fit the lane: 2.6 m wide, against 5.575 m clear and
+  5.996 m over the slab, and stop with their tail over the grate;
 - that the 0.02 m slab edge across the mouths is acceptable to its driving;
 - that the strip under the gallery routes as declared, and the trestle is
   treated as an obstacle beyond it;
@@ -1016,11 +1185,11 @@ Pending in the consumer:
   (the hall's wall face on this asset's rear bounds plane, its inlet's
   centre at 17.3676 m);
 - that the painted stop mark and tipping height match its trucks;
-- LOD switching (the trestle's bracing going at 120 m), shadows and AO in
-  the lane;
-- filtering of the stretched roof, cladding and gallery bands and the 30–32
-  px/m gallery and lane regions under the consumer's own mip generator and
-  anisotropic filtering, and the emission mask's mips at night;
+- LOD switching (the trestle's bracing going to one X at 182 m), shadows
+  and AO in the lane;
+- filtering of the 30–32 px/m roof, cladding, gallery and lane regions
+  under the consumer's own mip generator and anisotropic filtering, and the
+  emission mask's mips at night;
 - night intensity;
 - performance.
 
@@ -1032,6 +1201,24 @@ with numpy, scipy and Pillow.
 
 ## Revision log
 
+- **2026-11-22:** audit fixes. Re-coursed to the catalog brick module as
+  the plant hall was (`brick_problems()`): the depth 6.40 → 6.375 m by the
+  rear wall (bounds, pivot, gallery and inlet unchanged), the band's foot
+  and lintels 6.00 → 6.016 m (lane clear 5.98 → 5.996 m, width 5.60 →
+  5.575 m), eave 7.20 → 7.1875 m, lean-to eave 3.50 → 3.516 m, shaft
+  2.60 → 2.625 m and its top 11.30 → 11.328 m, lean-to x −4.5…4.7 →
+  −4.5625…4.6875 and rear 6.60 → 6.625 m, shed windows 2.80 × 1.75 →
+  2.75 × 1.797 m (sill 4.25 → 4.219, x ±4.6 → ±4.625), small windows 0.90
+  × 1.20 → 0.875 × 1.172 m (sills 1.00 → 1.016, 1.30 → 1.328, 4.65 / 7.15
+  / 9.65 → 4.688 / 7.188 / 9.688), doors 0.95 × 2.10 → 0.90 × 2.1375 m
+  leaves, the elevator door 0.0625 m east. `LOD2` keeps its openings'
+  recesses, the gallery's ventilators and the trestle's footings; `LOD3`
+  keeps the struts and one X of the trestle's bracing as three-sided
+  prisms, paid for by a box lane and a bare gallery end, and its flush
+  windows and the ventilators' tops are painted (`REGION3`, `GAL_ROOF`).
+  The atlas repacked: the roof sheet, the cladding and a new gallery-roof
+  region isotropic at 32 px/m. Triangles 1958 / 1718 / 978 / 500 →
+  1960 / 1720 / 1222 / 498.
 - **2026-11-21:** mip review of the current atlas recorded (Texture set,
   Review status); no asset change.
 

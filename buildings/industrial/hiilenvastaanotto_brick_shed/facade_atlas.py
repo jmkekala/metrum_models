@@ -23,23 +23,25 @@ A trim sheet. Rows from the bottom:
                              column strip beside it at x 952, and the portal
                              legs' strip (PIER, black and yellow traffic bands
                              to 2.0 m) at x 984, same rows
-    y  426 ..  526   ROOF    profiled roof sheet, V stretched up the slope,
-                             snow guard near the eave, ridge cap at the top
-    y  530 ..  550   EAVE    the eave fascia with its gutter
-    y  556 .. 1020   unique  the lane's side walls, ceiling and floor with the
-                             tipping grate (32 px/m), the windows, the doors,
-                             the loading hatch, the louvre, the head house's
-                             cladding (CLAD), the conveyor gallery's sides
-                             (GAL_SIDE, 30 px/m along it) and closed end
-                             (GAL_END), flat patches; the lane's traffic paint
+    y  428 ..  547   ROOF    profiled roof sheet, isotropic at 32 px/m (x 4 ..
+                             471), snow guard near the eave, ridge cap at the
+                             top; beside it the conveyor gallery's sides
+                             (GAL_SIDE, 30 px/m along it), its closed end
+                             (GAL_END) and the loading hatch
+    y  555 ..  575   EAVE    the eave fascia with its gutter, full width
+    y  580 .. 1018   unique  the lane's side walls, ceiling and floor with the
+                             tipping grate (32 px/m), the gallery's roof sheet
+                             (GAL_ROOF, 32 px/m), the head house's cladding
+                             (CLAD, 32 px/m), the windows, the doors, the
+                             louvre, flat patches; the lane's traffic paint
                              (jamb bands, stop mark, tipping height, the entry
                              signal) is painted into its own regions
 
 Every wall above the band's top (6.5625 m) samples the brick rows again,
 GABLE_SHIFT or twice that lower, a whole tone period of courses, so the bond
 runs on across the line: the gable triangles, the main walls' strip under
-the eave and the elevator tower's brick shaft to 12.4 m all come from one
-band.
+the eave and the elevator tower's brick shaft to 11.45 m all come from one
+band. The brick is the catalog module (scripts/brickwork.py).
 Weather that follows height stays below SAMPLE_LO, the lowest row any shifted
 wall samples, so the shift never shows as a seam.
 """
@@ -64,11 +66,17 @@ LPM = 32.0              # px/m in the lane's own regions
 PAD = 2                 # rows each band paints beyond its own edge
 
 # ------------------------------------------------------------------ plan
-# Metres, build frame: Z up, front toward -Y. The shed is 14.0 x 6.4 m, its
+# Metres, build frame: Z up, front toward -Y. The shed is 14.0 x 6.375 m, its
 # long sides to the front and the rear; the truck lane runs straight through
 # it along X, from the mouth in the west gable to the mouth in the east one.
+# The brick is the catalog module (scripts/brickwork.py): every brick-bound
+# height on a 0.078125 m course line, every opening side and brick corner on
+# a whole or half stretcher (0.125 m) in the U its wall samples, so the bond
+# turns at the corners (build.py's brick_problems()). The depth is 51 half
+# stretchers; the rear wall moved for it, so the bounds (the front eave, the
+# gallery's end) and the pivot stay.
 HX = 7.0                         # half the shed's length: the mouths' planes
-Y_F, Y_R = -3.4, 3.0             # front and rear walls' outer faces
+Y_F, Y_R = -3.4, 2.975           # front and rear walls' outer faces
 WALL_T = 0.4                     # every wall of the shed, and the portal piers
 YL0, YL1 = Y_F + WALL_T, Y_R - WALL_T   # the lane's side walls: 5.60 m clear
 YC = (Y_F + Y_R) / 2.0           # the shed's and the lane's centre line, the ridge
@@ -77,14 +85,18 @@ HALF_SPAN = (Y_R - Y_F) / 2.0
 FLOOR_T = 0.02                   # the lane's floor slab, top over the ground
 
 # ------------------------------------------------------------ vertical layout
-# Every height is a whole number of texels at 64 px/m.
-Z_PLINTH = 0.625        # 40 px: cast concrete base under every wall
-Z_BAND0 = 6.0           # 384 px: the band's foot, the mouths' heads
-Z_BAND1 = 6.5625        # 420 px: its top, and the top of the brick band
+# Every height is a whole number of texels at 64 px/m, and every height the
+# brick meets something at a whole number of courses.
+COURSE = brickwork.COURSE        # brick course pitch: 0.078125 m, 5 px
+BRICK_L = brickwork.BRICK_L      # stretcher: 0.25 m, 16 px
+HALF = BRICK_L / 2.0             # the grid opening sides and corners keep to
+Z_PLINTH = 0.625        # 40 px, 8 courses: cast concrete base under every wall
+Z_BAND0 = 6.015625      # 385 px, 77 courses: the band's foot, the mouths' heads
+Z_BAND1 = 6.5625        # 420 px, 84 courses: its top, and the top of the brick band
 Z_MOUTH = Z_BAND0       # the portal lintels' soffit: the lane's clear height
-Z_WIN = 4.25            # 272 px: the shed's high windows' sill ...
-WIN_W, WIN_H = 2.8, 1.75  # ... their head under the band at 6.0
-Z_EAVE = 7.2            # the main roof's underside at the long walls' faces
+Z_WIN = 4.21875         # 270 px, 54 courses: the shed's high windows' sill ...
+WIN_W, WIN_H = 2.75, 1.796875   # ... 22 half stretchers x 23 courses, head under the band
+Z_EAVE = 7.1875         # 92 courses: the main roof's underside at the long walls' faces
 TAN = 0.12              # 6.8 degrees, a low working-shed gable, ridge along X
 ROOF_T = 0.25
 EAVE_OV, RAKE_OV = 0.40, 0.30
@@ -97,6 +109,7 @@ MAIN_SLOPE = (HALF_SPAN + EAVE_OV) * SLOPE_F      # eave edge to ridge, 3.711 m
 # intermediate frames, whose tie beams cross the lane under its ceiling.
 COL_W = 0.40
 FRAME_X = (-2.4, 2.4)
+IMPACT_Z = 1.171875     # 15 courses: the lane's board-formed impact wall's top
 Z_BEAM = 6.20           # the tie beams' soffit, over the lintels' 6.00
 BEAM_W = 0.30
 
@@ -105,25 +118,25 @@ BEAM_W = 0.30
 # elevator tower rising through it. The annex's front runs ANNEX_BURY into
 # the shed's rear wall.
 ANNEX_BURY = 0.10
-AX0, AX1 = -4.5, 4.7
-AY0, AY1 = Y_R - ANNEX_BURY, 6.6
-Z_AE = 3.5              # the lean-to roof's underside at the annex's rear face
+AX0, AX1 = -4.5625, 4.6875       # its rear walls 3.25 and 3.375 m beside the shaft
+AY0, AY1 = Y_R - ANNEX_BURY, 6.625
+Z_AE = 3.515625         # 45 courses: the lean-to roof's underside at the annex's rear face
 TAN_A = 0.10            # 1:10, falling to the rear
 A_EAVE_OV, A_RAKE_OV = 0.30, 0.30
 A_SLAB_Y0 = Y_R - 0.20  # the lean-to slab's high end, buried in the shed's wall
 SLOPE_FA = math.sqrt(1.0 + TAN_A * TAN_A)
 
 # The elevator tower, housing the bucket elevator from the pit under the
-# grate and its stair: a slim brick shaft 2.6 x 4.1 m in plan, standing 0.4 m
-# proud of the annex's rear face, and on it the head house, sheet-clad,
-# oversailing the shaft by HH_OV on the front and both sides and flush with
-# its rear face, where the inclined conveyor gallery leaves it.
-TX0, TX1 = -1.3, 1.3
+# grate and its stair: a slim brick shaft 2.625 x 4.125 m in plan (21 x 33
+# half stretchers), standing 0.375 m proud of the annex's rear face, and on
+# it the head house, sheet-clad, 4.0 x 4.8 m, oversailing the shaft by about
+# 0.7 m on the front and both sides and flush with its rear face, where the
+# inclined conveyor gallery leaves it.
+TX0, TX1 = -1.3125, 1.3125
 TY0, TY1 = AY0, 7.0
-HH_OV = 0.70
-HX0, HX1 = TX0 - HH_OV, TX1 + HH_OV          # the head house: x -2.0 .. 2.0
-HY0, HY1 = TY0 - HH_OV, TY1                  # ... y 2.2 .. 7.0
-HH_Z0 = 11.30           # its floor: the shaft's top, the oversail's soffit
+HX0, HX1 = -2.0, 2.0                         # the head house: x -2.0 .. 2.0
+HY0, HY1 = 2.2, TY1                          # ... y 2.2 .. 7.0
+HH_Z0 = 11.328125       # 145 courses: its floor, the shaft's top, the oversail's soffit
 Z_TSLAB = 15.25         # its flat roof slab, 15.25 .. 15.50
 T_SLAB_T = 0.25
 T_OV = 0.15
@@ -186,15 +199,16 @@ TR_PANELS = 3                                # X panels up the legs, ties betwee
 # trolley block under its outer end
 HOIST_Y = 4.6
 HOIST_OUT = 1.10
-HOIST_Z = (HH_Z0 + 3.25, HH_Z0 + 3.50)      # 14.55 .. 14.80
+HOIST_Z = (14.55, 14.80)
 HOIST_W = 0.16
 TROLLEY = (0.30, 0.22, 0.28)                 # along, across, down from the beam
-# Openings' sills over the head house's floor, and on the shaft
-HH_WIN_Z = HH_Z0 + 1.20                      # its windows, 12.50
-HH_HATCH_Z = HH_Z0 + 0.30                    # the loading hatch, 11.60
-HH_LOUVRE_Z = HH_Z0 + 2.30                   # the louvre, 13.60
-SHAFT_WIN_Z = (4.65, 7.15, 9.65)             # the stair's windows up the east face
-SHAFT_FRONT_Z = 9.65                         # the front face's window over the roof
+# Openings' sills on the head house (sheet, not brick) and on the shaft (on
+# course lines, one 2.5 m flight, 32 courses, apart)
+HH_WIN_Z = 12.50                             # its windows, 1.17 m over its floor
+HH_HATCH_Z = 11.60                           # the loading hatch
+HH_LOUVRE_Z = 13.60                          # the louvre
+SHAFT_WIN_Z = (4.6875, 7.1875, 9.6875)       # the stair's windows up the east face
+SHAFT_FRONT_Z = 9.6875                       # the front face's window over the roof
 
 
 def gal_floor(y):
@@ -264,8 +278,8 @@ ANNEX_V_K = (MAIN_SLOPE - 0.25) / ANNEX_SLOPE
 # maps onto is the same size. Steel frames are set back REVEAL metres.
 OPENINGS = {
     "win": (WIN_W, WIN_H), "win_b": (WIN_W, WIN_H),
-    "win_s": (0.9, 1.2), "win_s_b": (0.9, 1.2),
-    "door": (1.05, 2.15),       # a 0.95 x 2.10 leaf in a 0.05 m steel frame
+    "win_s": (0.875, 1.171875), "win_s_b": (0.875, 1.171875),   # 7 halves x 15 courses
+    "door": (1.0, 2.1875),      # a 0.90 x 2.1375 leaf in a 0.05 m steel frame, 28 courses
     "hatch": (1.2, 1.2),        # the head house's loading hatch, under the hoist beam
     "louvre": (1.0, 0.6),
 }
@@ -282,40 +296,53 @@ COL = (952.0, 0.0, COL_W * PPM, BRICK_H)      # the column strip, same rows
 # The portal legs: the four corner columns, gable and long-wall faces alike,
 # the frame's column strip with black and yellow bands to HAZARD_TOP
 PIER = (984.0, 0.0, COL_W * PPM, BRICK_H)
-ROOF_Y0, ROOF_H = 428, 96
-ROOF_LEN = MAIN_SLOPE + 0.10     # metres up the slope ROOF_H rows cover
-ROOF_RPM = ROOF_H / ROOF_LEN
-EAVE_Y0, EAVE_H = 532, 16        # the eave fascia, ROOF_T tall
+# The roof sheet: a region over the brick band, isotropic at ROOF_PPM: U = x
+# from the west rake's edge, V up the slope from the eave's edge.
+ROOF_PPM = 32.0
+ROOF_LEN = MAIN_SLOPE + 0.10     # metres up the slope the region covers
+ROOF = (4.0, 428.0, (2 * HX + 2 * RAKE_OV) * ROOF_PPM, math.ceil(ROOF_LEN * ROOF_PPM))
+ROOF_Y0, ROOF_H = ROOF[1], ROOF[3]
+ROOF_RPM = ROOF_H / ROOF_LEN     # rows per metre up the slope, ROOF_PPM to 1 %
+EAVE_Y0, EAVE_H = 557, 16        # the eave fascia, ROOF_T tall: a full-width band
 GUTTER_PX = 9
 PIPE_STRIP = (EAVE_Y0 + EAVE_H - GUTTER_PX + 2, EAVE_Y0 + EAVE_H - 2)
 SNOW_GUARD = 0.55                # the snow guard's lower tube, up the slope
-RIB_P = 16.0                     # profiled sheet: a rib every 0.25 m
+RIB_P = 16.0                     # profiled sheet: a rib every 0.25 m at 64 px/m
 
-COURSE = brickwork.COURSE        # brick course pitch: 5 px
-BRICK_L = brickwork.BRICK_L      # stretcher: 16 px
 TONE_COURSES = 48                # brick tone repeats every 3.75 m
 
 # ------------------------------------------------------------ unique regions
-# (x, y, w, h) in pixels. The lane's at LPM, the rest at 64 px/m.
-UNI_Y = 556
-LANE_SIDE = (4.0, 558.0, 2 * HX * LPM, 7.7 * LPM)            # 448 x 246.4
-LANE_CEIL = (4.0, 812.0, 2 * HX * LPM, CEIL_LEN * LPM)       # 448 x 92.4
-LANE_FLOOR = (460.0, 558.0, 2 * HX * LPM, (YL1 - YL0) * LPM)  # 448 x 179.2
+# (x, y, w, h) in pixels. The lane's at LPM, the sheet regions at 30-32 px/m,
+# the openings at 64 px/m. Two rows of them: beside the roof sheet, between
+# the brick band and the eave band (MID_ROWS), and over the eave band (from
+# UNI_Y).
+MID_ROWS = (BRICK_H + PAD + 4, EAVE_Y0 - PAD - 4)
+UNI_Y = EAVE_Y0 + EAVE_H + PAD + 4
+LANE_SIDE = (4.0, 580.0, 2 * HX * LPM, 7.7 * LPM)            # 448 x 246.4
+LANE_CEIL = (4.0, 834.0, 2 * HX * LPM, CEIL_LEN * LPM)       # 448 x 89.8
+LANE_FLOOR = (460.0, 580.0, 2 * HX * LPM, (YL1 - YL0) * LPM)  # 448 x 178.4
+
+
+def _opening_rect(x, y, kind_w, kind_h):
+    return (x, y, kind_w * PPM, kind_h * PPM)
+
+
 REGION = {
-    "win": (460.0, 746.0, WIN_W * PPM, WIN_H * PPM),
-    "win_b": (460.0, 866.0, WIN_W * PPM, WIN_H * PPM),
-    "win_s": (648.0, 746.0, 0.9 * PPM, 1.2 * PPM),
-    "win_s_b": (648.0, 830.0, 0.9 * PPM, 1.2 * PPM),
-    "door": (714.0, 746.0, 1.05 * PPM, 2.15 * PPM),
-    "hatch": (790.0, 746.0, 1.2 * PPM, 1.2 * PPM),
-    "louvre": (790.0, 830.0, 1.0 * PPM, 0.6 * PPM),
+    "win": _opening_rect(460.0, 900.0, WIN_W, WIN_H),
+    "win_b": _opening_rect(690.0, 766.0, WIN_W, WIN_H),
+    "win_s": _opening_rect(642.0, 900.0, 0.875, 1.171875),
+    "win_s_b": _opening_rect(704.0, 900.0, 0.875, 1.171875),
+    "door": _opening_rect(874.0, 766.0, 1.0, 2.1875),
+    "hatch": _opening_rect(943.0, 430.0, 1.2, 1.2),
+    "louvre": _opening_rect(766.0, 900.0, 1.0, 0.6),
 }
-# The light profiled sheet the head house is clad in and the gallery's roof:
-# ribs every RIB_P px across U at 64 px/m, uniform up V, so V is stretched
-# (CLAD_VPM) to fit: U along a wall, V up it from the head house's floor.
-CLAD = (4.0, 908.0, 448.0, 88.0)
-CLAD_H = Z_HH_TOP - HH_Z0 + 0.10                 # metres V covers
-CLAD_VPM = CLAD[3] / CLAD_H
+# The light profiled sheet the head house is clad in, isotropic at CPPM: ribs
+# upright, U along a wall, V up it from the head house's floor to just over
+# the slab's soffit, where the wall's face ends.
+CPPM = 32.0
+CLAD_H = Z_TSLAB - HH_Z0 + 0.04                  # metres V covers
+CLAD = (460.0, 766.0, 7.0 * CPPM, math.ceil(CLAD_H * CPPM))
+CLAD_VPM = CPPM
 CLAD_GIRTS = (0.10, 1.00, 2.00, 3.00, 3.80)     # fixing rows up the head house's walls
 CLAD_REAR_U = 3.0           # the rear wall's U offset in CLAD (build.py's HH_WALLS)
 GAL_REAR_S = (HX1 - GAL_W / 2.0, HX1 + GAL_W / 2.0)   # the gallery's mouth along it
@@ -324,19 +351,40 @@ GAL_REAR_S = (HX1 - GAL_W / 2.0, HX1 + GAL_W / 2.0)   # the gallery's mouth alon
 # 2.8 m section. GPPM is under half the 64 px/m target so the 12.1 m fit one
 # row of the sheet; the lane's regions are at 32 px/m alike.
 GPPM = 30.0
-GAL_SIDE = (648.0, 912.0, (GAL_YS - TY1 + GAL_BURY) * GPPM, 106.0)
+GAL_SIDE = (480.0, 430.0, (GAL_YS - TY1 + GAL_BURY) * GPPM, 106.0)
 GAL_VPM = GAL_SIDE[3] / GAL_H
 GAL_PANEL = 1.5         # the side girder's panels: a post at every panel point
 GAL_GIRDER = 0.40       # the side girder's bottom chord, up from the floor
 # the side lights' centres from its mouth, one a panel, clear of the collar
 GAL_LIGHT_W = 0.60
 GAL_LIGHTS = tuple(GAL_PANEL * (k + 0.5) for k in range(int(GAL_LEN / GAL_PANEL)))
+# The gallery's roof sheet, isotropic at GRPM: U along its slope from inside
+# the head house (GAL_BURY) to its end face, V across it from its east side,
+# so its ribs, running down the slope, vary in V.
+GRPM = 32.0
+GAL_COS = math.cos(math.radians(GAL_ANG))
+GAL_ROOF_LEN = (GAL_Y1 - TY1 + GAL_BURY) / GAL_COS              # 13.09 m
+GAL_ROOF = (4.0, 932.0, GAL_ROOF_LEN * GRPM, GAL_W * GRPM)
 # The gallery's closed end, at LPM: U across from its west side, V up.
-GAL_END = (914.0, 560.0, GAL_W * LPM, GAL_H * LPM)
+GAL_END = (852.0, 430.0, GAL_W * LPM, GAL_H * LPM)
+# LOD3's flush windows, at W3PM: the same steel windows with the shadow and
+# occlusion of the reveal they stand in on LOD0-LOD2 painted round them, so
+# the switch to flush does not lighten them (paint_window3()).
+W3PM = 32.0
+REGION3 = {
+    "win": (916.0, 582.0, WIN_W * W3PM, WIN_H * W3PM),
+    "win_s": (916.0, 646.0, 0.875 * W3PM, 1.171875 * W3PM),
+}
+REGION3["win_b"] = REGION3["win"]
+REGION3["win_s_b"] = REGION3["win_s"]
+# The gallery's roof ventilators (build.py's ROOF_VENTS, VENT): painted on
+# its roof sheet under the boxes, which LOD3 drops
+GAL_VENTS = (3.0, 8.0)
+GAL_VENT_W = 0.60
 PATCH_NAMES = ("blank", "soffit", "sill", "conc", "barge", "lintel", "beam",
                "felt", "coping", "slab_under", "reveal", "hh_soffit", "gal_under",
                "strut", "clad_rev", "hoist")
-PATCHES = {n: (4.0 + 20.0 * i, 1000.0, 16.0, 16.0) for i, n in enumerate(PATCH_NAMES)}
+PATCHES = {n: (642.0 + 20.0 * i, 1002.0, 16.0, 16.0) for i, n in enumerate(PATCH_NAMES)}
 
 # ----------------------------------------------------------- material ids
 (ID_BLANK, ID_PLINTH, ID_BRICK, ID_BRICK2, ID_MORTAR, ID_CONC, ID_FRAME,
@@ -598,15 +646,17 @@ def paint_sheet(c, x0, x1, y0, y1, mid, seed, rib_h=RIB_H, k=1.0, pitch=1.0):
 
 
 def paint_roof(c):
-    """Profiled steel roof sheet, V stretched up the slope (ROOF_H rows over
-    ROOF_LEN). The ribs vary in U only. The snow guard is two tubes across
-    the band on brackets every metre near the eave, galvanised; the ridge cap
-    over the main roof's last 0.15 m, which the lean-to's mapping stops
-    short of."""
-    y0, h = ROOF_Y0, ROOF_H
-    paint_sheet(c, 0, ATLAS, y0 - PAD, y0 + h + PAD, ID_ROOF, seed=41)
-    sy, sx, Y, X = c.field(0, ATLAS, y0 - PAD, y0 + h + PAD)
-    k = ROOF_RPM / PPM
+    """Profiled steel roof sheet, isotropic at ROOF_PPM (ROOF_H rows over
+    ROOF_LEN up the slope). The ribs vary in U only. The snow guard is two
+    tubes across the sheet on brackets every metre near the eave, galvanised;
+    the ridge cap over the main roof's last 0.15 m, which the lean-to's
+    mapping stops short of. Relief is scaled by ROOF_PPM / PPM, so the normal
+    map's slopes stay physical."""
+    x0, y0, w, h = ROOF
+    k = ROOF_PPM / PPM
+    a, b = x0 - PAD, x0 + w + PAD
+    paint_sheet(c, a, b, y0 - PAD, y0 + h + PAD, ID_ROOF, seed=41, k=k, pitch=k)
+    sy, sx, Y, X = c.field(a, b, y0 - PAD, y0 + h + PAD)
     v = Y - y0
     shade, ao, height = c.shade[sy, sx], c.ao[sy, sx], c.height[sy, sx]
     mid = c.mid[sy, sx]
@@ -622,8 +672,8 @@ def paint_roof(c):
         guard |= inside
     shade = np.where((v >= g - 3) & (v < g - 1), shade * 0.80, shade)
     ao = np.where((v >= g - 3) & (v < g + 4.5), np.minimum(ao, 0.85), ao)
-    xb = X % PPM
-    bracket = (xb >= 0.6) & (xb < 2.6) & (v >= g - 3) & (v < g + 4.5)
+    xb = (X - x0) % ROOF_PPM
+    bracket = (xb >= 0.3) & (xb < 1.3) & (v >= g - 3) & (v < g + 4.5)
     height = np.where(bracket, GUARD_BRACKET_H * k, height)
     shade = np.where(bracket, 0.75, shade)
     guard |= bracket
@@ -690,7 +740,7 @@ def paint_lane_side(c):
     ao = np.where(joint, 0.85, 1.0)
     height = np.where(joint, 0.0, BRICK_FACE * k)
     # concrete: the impact wall, the columns and piers, the band
-    conc = (z < 1.2) | ((z >= Z_BAND0) & (z < Z_BAND1))
+    conc = (z < IMPACT_Z) | ((z >= Z_BAND0) & (z < Z_BAND1))
     conc |= np.abs(xp) > X_IN
     for fx in FRAME_X:
         conc |= np.abs(xp - fx) < COL_W / 2.0
@@ -698,11 +748,11 @@ def paint_lane_side(c):
     ctone = 1.0 + 0.05 * (atlas.hash_unit(53, lift, np.floor(u / 2.0).astype(np.int64)) - 0.5)
     cline = ((z - lift * 0.4) * LPM) < 0.5
     mid = np.where(conc, ID_CONC, mid)
-    shade = np.where(conc, np.where(cline & (z < 1.2), ctone * 0.92, ctone), shade)
+    shade = np.where(conc, np.where(cline & (z < IMPACT_Z), ctone * 0.92, ctone), shade)
     ao = np.where(conc, 1.0, ao)
     height = np.where(conc, 0.0, height)
     # the impact wall's top chamfer and the band's arrises
-    shade = np.where((z >= 1.17) & (z < 1.2), shade * 0.80, shade)
+    shade = np.where((z >= IMPACT_Z - 0.03) & (z < IMPACT_Z), shade * 0.80, shade)
     shade = np.where((z >= Z_BAND0 - 0.04) & (z < Z_BAND0), shade * 0.82, shade)
     # traffic paint: the portal legs' bands on both mouths' jambs, run on
     # from the legs' outer faces (PIER) round the corner
@@ -915,6 +965,29 @@ def paint_window(c, rect, cols, rows, hop, F=5):
     c.mul(gx0, gx1, gy1 - 3, gy1, 0.90, ao=0.84)
 
 
+def paint_window3(c, rect, cols, rows, hop, reveal):
+    """A window as LOD3's flush quad shows it, at W3PM: the steel window,
+    and round it the reveal it stands in on the close tiers, *reveal* m
+    deep, as an occluded band over the glass's edges: deep under the head,
+    narrower at the sides, a sill's lip at the foot. The band is frame, not
+    glass, so it neither takes glazing.rooms() nor lights at night, as the
+    reveal hides those edges on the close tiers."""
+    x, y, w, h = rect
+    paint_window(c, rect, cols, rows, hop, F=3)
+    # the frame and bars in the recess's occlusion (the glass is repainted
+    # by glazing.rooms() and keeps its own level)
+    c.mul(x, x + w, y, y + h, 0.70, ao=0.80)
+    k = W3PM
+    top, side, foot = 0.8 * reveal * k, 0.4 * reveal * k, 0.2 * reveal * k
+    # shade is linear light: 0.06-0.15 takes the light frame to about the
+    # glass's level or under, as the reveal's occlusion does on the close
+    # tiers
+    c.paint(x, x + w, y + h - top, y + h, ID_FRAME, 0.08, 0.40, height=0.0)
+    c.paint(x, x + side, y, y + h - top, ID_FRAME, 0.12, 0.50, height=0.0)
+    c.paint(x + w - side, x + w, y, y + h - top, ID_FRAME, 0.12, 0.50, height=0.0)
+    c.paint(x + side, x + w - side, y, y + foot, ID_FRAME, 0.18, 0.60, height=0.0)
+
+
 def paint_door(c):
     """A steel door: the leaf in a steel frame, two pressed panels, a kick
     plate along its foot, a lever handle on the right (hinges left)."""
@@ -979,17 +1052,60 @@ def paint_louvre(c):
     c.mul(x + F, x + w - F, y + h - F - 3, y + h - F, 0.80, ao=0.7)
 
 
+CLAD_K = CPPM / PPM     # the cladding's px/m against the canvas's: rib pitch and relief
+
+
 def paint_clad(c):
-    """The head house's cladding: pale painted profiled sheet, ribs upright
-    across U, a horizontal end lap 2.0 m up, a drip flashing along the foot
-    and the shadow line under the roof slab's edge along the top."""
+    """The head house's cladding, isotropic at CPPM: pale painted profiled
+    sheet, ribs upright across U, a horizontal end lap 2.0 m up, a drip
+    flashing along the foot and the shadow line under the roof slab's edge
+    along the top."""
     x0, y0, w, h = CLAD
-    paint_sheet(c, x0 - PAD, x0 + w + PAD, y0 - PAD, y0 + h + PAD, ID_CLAD, seed=61)
+    paint_sheet(c, x0 - PAD, x0 + w + PAD, y0 - PAD, y0 + h + PAD, ID_CLAD, seed=61,
+                k=CLAD_K, pitch=CLAD_K)
     lap = y0 + 2.0 * CLAD_VPM
     c.mul(x0 - PAD, x0 + w + PAD, lap, lap + 1, 0.86, ao=0.86)
-    c.paint(x0 - PAD, x0 + w + PAD, y0 - PAD, y0 + 2, ID_FLASH, 0.92, 0.9, height=0.012)
+    c.paint(x0 - PAD, x0 + w + PAD, y0 - PAD, y0 + 1.5, ID_FLASH, 0.92, 0.9,
+            height=0.012 * CLAD_K)
     top = y0 + (Z_TSLAB - HH_Z0) * CLAD_VPM
-    c.mul(x0 - PAD, x0 + w + PAD, top - 2, y0 + h + PAD, 0.84, ao=0.80)
+    c.mul(x0 - PAD, x0 + w + PAD, top - 1.5, y0 + h + PAD, 0.84, ao=0.80)
+
+
+def paint_gal_roof(c):
+    """The gallery's roof, isotropic at GRPM: the pale profiled sheet with
+    its ribs running down the slope (along U, varying across V), an end lap
+    across it every 6 m, and a drip edge along both sides."""
+    x0, y0, w, h = GAL_ROOF
+    k = GRPM / PPM
+    a, b = x0 - PAD, x0 + w + PAD
+    sy, sx, Y, X = c.field(a, b, y0 - PAD, y0 + h + PAD)
+    V = (Y - y0) / k
+    vm = np.mod(V, RIB_P)
+    up = np.clip(vm / 1.5, 0.0, 1.0)
+    down = np.clip((6.0 - vm) / 1.5, 0.0, 1.0)
+    rib = np.where(vm < 6.0, np.minimum(up, down), 0.0)
+    sheet = np.floor(V / (4 * RIB_P)).astype(np.int64)
+    tone = 1.0 + 0.05 * (atlas.hash_unit(71, sheet) - 0.5)
+    foot = (vm >= 6.0) & (vm < 7.0)
+    shade = np.where(foot, tone * 0.90, tone)
+    ao = np.where(foot, 0.84, 1.0)
+    c.mid[sy, sx] = ID_CLAD
+    c.shade[sy, sx], c.ao[sy, sx] = shade, ao
+    c.height[sy, sx] = RIB_H * k * rib
+    for d in (6.0, 12.0):                        # end laps, a sheet's length apart
+        u = x0 + d * GRPM
+        if u < x0 + w - 2:
+            c.mul(u, u + 1, y0 - PAD, y0 + h + PAD, 0.86, ao=0.86)
+    c.mul(a, b, y0 - PAD, y0 + 1, 0.86, ao=0.86)
+    c.mul(a, b, y0 + h - 1, y0 + h + PAD, 0.86, ao=0.86)
+    # the ventilators' tops as LOD3 sees them, inside their feet so the boxes
+    # hide them on the close tiers: dark steel, its downhill edge darker
+    r = (GAL_VENT_W / 2.0 - 0.03) * GRPM
+    for out in GAL_VENTS:
+        uc = x0 + (out + GAL_BURY) / GAL_COS * GRPM
+        vc = y0 + h / 2.0
+        c.paint(uc - r, uc + r, vc - r, vc + r, ID_STEEL, 0.22, 0.60, height=0.0)
+        c.mul(uc - r, uc - r + 2, vc - r, vc + r, 0.70, ao=0.8)
 
 
 def paint_gal_side(c):
@@ -1060,8 +1176,13 @@ def check_regions():
     rects.update(PATCHES)
     rects.update({"lane_side": LANE_SIDE, "lane_ceil": LANE_CEIL,
                   "lane_floor": LANE_FLOOR, "clad": CLAD, "gal_side": GAL_SIDE,
-                  "gal_end": GAL_END})
-    problems = atlas.region_problems(rects, ATLAS, bands_top=EAVE_Y0 + EAVE_H + PAD)
+                  "gal_end": GAL_END, "gal_roof": GAL_ROOF, "roof": ROOF,
+                  "win3": REGION3["win"], "win_s3": REGION3["win_s"]})
+    problems = atlas.region_problems(rects, ATLAS, bands_top=BRICK_H + PAD)
+    for name, (x, y, w, h) in rects.items():
+        # each region lies wholly beside the roof or wholly over the eave band
+        if not (MID_ROWS[0] <= y and y + h <= MID_ROWS[1]) and y < UNI_Y:
+            problems.append("%s crosses the eave band" % name)
     for kind, (w, h) in OPENINGS.items():
         _, _, rw, rh = REGION[kind]
         if abs(rw / PPM - w) > 1e-6 or abs(rh / PPM - h) > 1e-6:
@@ -1085,8 +1206,10 @@ def check_regions():
         problems.append("a gallery light runs into a girder post")
     if ANNEX_SLOPE * ANNEX_V_K > MAIN_SLOPE - 0.15 - 0.05:
         problems.append("the lean-to reaches the ridge cap's rows")
-    if ROOF_Y0 - PAD < BRICK_H + PAD + 2 or EAVE_Y0 - PAD < ROOF_Y0 + ROOF_H + PAD + 2:
-        problems.append("the bands overlap")
+    if abs(ROOF_RPM / ROOF_PPM - 1.0) > 0.01:
+        problems.append("the roof sheet is not isotropic")
+    if CLAD_H * CPPM > CLAD[3] + 1e-6:
+        problems.append("the cladding's rows do not reach the head house's slab")
     if problems:
         raise ValueError("atlas layout: " + "; ".join(problems))
 
@@ -1154,13 +1277,14 @@ def weather(c):
            (ID_CONC,))
     # the roof, its ridge, snow guard, fascia and gutter
     roof = (ID_ROOF,)
-    w.roof(0, ATLAS, ROOF_Y0, ROOF_H, ROOF_LEN, roof)
-    w.coal(0, ATLAS, ROOF_Y0 - PAD, ROOF_Y0 + ROOF_H + PAD, lambda Y, X, nz: 0.05
+    ra, rb = ROOF[0] - PAD, ROOF[0] + ROOF[2] + PAD
+    w.roof(ra, rb, ROOF_Y0, ROOF_H, ROOF_LEN, roof)
+    w.coal(ra, rb, ROOF_Y0 - PAD, ROOF_Y0 + ROOF_H + PAD, lambda Y, X, nz: 0.05
            + 0.08 * nz("blotch"), roof + (ID_FLASH,))
     g = ROOF_Y0 + round(SNOW_GUARD * ROOF_RPM)
-    w.add("D", 0, ATLAS, g + 4.5, g + 12.0, lambda Y, X, nz: 0.20 * nz("blotch")
+    w.add("D", ra, rb, g + 4.5, g + 12.0, lambda Y, X, nz: 0.20 * nz("blotch")
           * (1.0 - (Y - g - 4.5) / 7.5), roof)
-    w.add("D", 0, ATLAS, g - 3, g + 4.5, lambda Y, X, nz: 0.06 + 0.045 * nz("blotch"),
+    w.add("D", ra, rb, g - 3, g + 4.5, lambda Y, X, nz: 0.06 + 0.045 * nz("blotch"),
           (ID_GUTTER,))
     top = EAVE_Y0 + EAVE_H
     w.add("D", 0, ATLAS, top - GUTTER_PX, top - GUTTER_PX + 4,
@@ -1265,7 +1389,9 @@ def weather(c):
         g = y0 + zg * CLAD_VPM
 
         def fix(Y, X, nz, g=g):
-            xm = np.mod(X, 2 * RIB_P)
+            # in the ribs' own units (paint_sheet's pitch), a fixing every
+            # other rib, 0.02 m across
+            xm = np.mod(X / CLAD_K, 2 * RIB_P)
             dot = (np.abs(xm - 10.5) < 1.2) & (np.abs(Y - g) < 0.9)
             run = (np.abs(xm - 10.5) < 0.8) & (Y < g) & (Y > g - 0.45 * CLAD_VPM)
             return (np.where(dot, 0.55 + 0.25 * nz("blotch"), 0.0)
@@ -1280,14 +1406,30 @@ def weather(c):
     # under and beside the gallery's mouth on the rear face (U from
     # HH_WALLS' rear offset): spill from the transfer, and streaks down the
     # seal either side
-    m0 = x0 + (CLAD_REAR_U + GAL_REAR_S[0]) * PPM
-    m1 = x0 + (CLAD_REAR_U + GAL_REAR_S[1]) * PPM
+    m0 = x0 + (CLAD_REAR_U + GAL_REAR_S[0]) * CPPM
+    m1 = x0 + (CLAD_REAR_U + GAL_REAR_S[1]) * CPPM
     zm = (GAL_Z0 - GAL_H / 2.0 - HH_Z0) * CLAD_VPM
     w.coal(m0, m1, y0 - PAD, y0 + zm + 1, lambda Y, X, nz: 0.35 + 0.15 * nz("blotch"),
            (ID_CLAD, ID_FLASH))
-    for a in (m0 - 0.15 * PPM, m1):
-        w.coal(a, a + 0.15 * PPM, y0 - PAD, y0 + ch, lambda Y, X, nz: 0.22
+    for a in (m0 - 0.15 * CPPM, m1):
+        w.coal(a, a + 0.15 * CPPM, y0 - PAD, y0 + ch, lambda Y, X, nz: 0.22
                * atlas.smoothstep(0.0, 1.2, nz("runs")) + 0.08, (ID_CLAD,))
+    # the gallery's roof: the plant's film, heavier near the head house where
+    # the belt is loaded, a few runs off the end laps, chalked paint
+    x0, y0, rw, rh = GAL_ROOF
+    w.add("D", x0 - PAD, x0 + rw + PAD, y0 - PAD, y0 + rh + PAD,
+          lambda Y, X, nz: 0.08 + 0.08 * nz("blotch") + 0.06 * nz("big"), (ID_CLAD,))
+    w.coal(x0 - PAD, x0 + rw + PAD, y0 - PAD, y0 + rh + PAD, lambda Y, X, nz: 0.18
+           + 0.08 * nz("blotch") + 0.25 * np.exp(-np.clip((X - x0) / GRPM - GAL_BURY, 0, None)
+                                                 / 2.0), (ID_CLAD,))
+    for d in (6.0, 12.0):
+        u = x0 + d * GRPM
+        w.add("R", u - 1.0, u + 1.5, y0 - PAD, y0 + rh + PAD, lambda Y, X, nz: 0.10
+              + 0.12 * nz("blotch"), (ID_CLAD,))
+    w.coal(x0 - PAD, x0 + rw + PAD, y0 - PAD, y0 + rh + PAD, 0.45, (ID_STEEL,))
+    # LOD3's windows: as dirty as the close tiers' (the frame's foot)
+    for x, y, rw3, rh3 in (REGION3["win"], REGION3["win_s"]):
+        w.coal(x, x + rw3, y - PAD, y + rh3 + PAD, 0.10, (ID_FRAME,))
     # the gallery's sides: the dust the belt throws out of its joints, thick
     # along the bottom chord and running down from the top flashing and
     # from every window's sill in dark streaks
@@ -1344,10 +1486,13 @@ def paint(ss=atlas.SS):
     paint_window(c, REGION["win_b"], 7, 4, 2)
     paint_window(c, REGION["win_s"], 3, 4, 2, F=4)
     paint_window(c, REGION["win_s_b"], 3, 4, 2, F=4)
+    paint_window3(c, REGION3["win"], 7, 4, 2, REVEAL["win"])
+    paint_window3(c, REGION3["win_s"], 3, 4, 2, REVEAL["win_s"])
     paint_door(c)
     paint_hatch(c)
     paint_louvre(c)
     paint_clad(c)
+    paint_gal_roof(c)
     paint_gal_side(c)
     paint_gal_end(c)
     paint_patches(c)

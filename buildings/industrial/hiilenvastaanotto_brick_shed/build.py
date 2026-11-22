@@ -19,12 +19,14 @@ composite, not any real building. Trucks drive straight through a brick
 tipping shed and tip their coal through a steel grate in the floor into the
 pit, from which a bucket elevator lifts it toward the boiler house's bunkers.
 
-The shed is 14.0 x 6.4 m, red brick on a concrete plinth between the columns
-of a concrete frame, under a low 6.8 degree profiled-sheet gable roof whose
-ridge runs along X. The truck lane runs through it along X, level and
-doorless, 5.60 m between its walls and 14.0 m from the west mouth's wall
+The shed is 14.0 x 6.375 m, red brick on a concrete plinth between the
+columns of a concrete frame, under a low 6.8 degree profiled-sheet gable roof
+whose ridge runs along X. The brick is the catalog module: brick-bound
+heights on course lines, opening sides and brick corners on half stretchers
+(brick_problems()). The truck lane runs through it along X, level and
+doorless, 5.575 m between its walls and 14.0 m from the west mouth's wall
 plane to the east one's, used one way, in at the west mouth. Each gable is a
-concrete portal: two 0.4 m piers and a lintel at 6.00 m, the band that runs
+concrete portal: two 0.4 m piers and a lintel at 6.016 m, the band that runs
 round the shed as its ring beam, brick and the shallow gable above. Inside,
 two tie beams cross the lane at 6.20 m under a pitched sheet ceiling, and the
 tipping grate lies in the floor 2.5 m west of mid-length, under the tail of a
@@ -37,8 +39,8 @@ tall steel windows light the shed high on its front (-Y) wall.
 Behind it (+Y), the side that faces the hall's coal side: a brick lean-to
 with the attendant's room (a window onto the lane, its door in the lean-to's
 east end) and the drive room, and through it the elevator tower: a slim
-brick shaft 2.6 x 4.1 m with its stair's windows stacked up its east face,
-under a sheet-clad head house 4.0 x 4.8 x 4.2 m (floor 11.30 m) that
+brick shaft 2.625 x 4.125 m with its stair's windows stacked up its east
+face, under a sheet-clad head house 4.0 x 4.8 x 4.2 m (floor 11.33 m) that
 oversails it on three sides, a loading hatch and a hoist beam with its
 trolley on its east face. From the head house's rear face the inclined
 conveyor gallery rises at 20 degrees away from the building, 12.0 m in plan
@@ -130,8 +132,12 @@ def uv_patch(name):
     return SB.uv_patch(L.PATCHES[name])
 
 
-def uv_region(fr, kind, s0, z0):
-    """Opening *kind*'s region, its lower-left corner at (s0, z0)."""
+def uv_region(fr, kind, s0, z0, level=0):
+    """Opening *kind*'s region, its lower-left corner at (s0, z0); a flush
+    window at LOD3 takes its LOD3 region, the reveal's shadow painted round
+    it (facade_atlas.REGION3)."""
+    if level == 3 and kind in L.REGION3:
+        return SB.uv_region(fr, L.REGION3[kind], s0, z0, L.W3PM)
     return SB.uv_region(fr, L.REGION[kind], s0, z0, PPM)
 
 
@@ -215,9 +221,10 @@ def item_rect(fr, kind, centre, z0):
 
 
 def opening_mode(level):
-    """LOD0/1 cut every opening into its wall with reveals; LOD2/3 paint the
-    same rectangle flat (CLAUDE.md's default)."""
-    return "cut" if level < 2 else "flush"
+    """LOD0-2 cut every opening into its wall with reveals; LOD3 paints the
+    same rectangle flat. LOD2 keeps the recess (it has the budget): flush, the
+    windows read lighter at its 91 m switch without the reveals' shadow."""
+    return "cut" if level < 3 else "flush"
 
 
 def build_opening(B, fr, kind, rect, level, u_off, shift):
@@ -227,7 +234,7 @@ def build_opening(B, fr, kind, rect, level, u_off, shift):
     lie on the floor cap; left out, the rim detours round the recess."""
     s0, s1, z0, z1 = rect
     poly = [(s0, z0), (s1, z0), (s1, z1), (s0, z1)]
-    closing = uv_region(fr, kind, s0, z0)
+    closing = uv_region(fr, kind, s0, z0, level)
     if opening_mode(level) == "flush":
         B.face([fr.P(s, z) for s, z in poly], closing)
         return poly
@@ -322,20 +329,23 @@ LEGS_LONG = [COLS_LONG[0], COLS_LONG[-1]]       # the corner columns: the portal
 SPAN = L.Y_R - L.Y_F
 GABLE_TOP_F = [(SPAN, house_top(L.Y_R)), (SPAN / 2.0, house_top(YC)), (0.0, house_top(L.Y_F))]
 GABLE_COLS = [(0.0, L.WALL_T), (SPAN - L.WALL_T, SPAN)]   # the portals' legs
-WIN_X = (-4.6, 0.0, 4.6)
+WIN_X = (-4.625, 0.0, 4.625)
+# u_off: each wall's U in the brick band, a whole or half stretcher, chosen so
+# the bond turns a half stretcher at the four corners above the band, where
+# the long walls' brick meets the gables' (brick_problems())
 SHED_WALLS = [
     dict(name="front", p0=(-HX, L.Y_F), p1=(HX, L.Y_F), s_lo=0.0, s_hi=2 * HX,
          top=[(2 * HX, house_top(L.Y_F)), (0.0, house_top(L.Y_F))], cols=COLS_LONG,
          legs=LEGS_LONG,
          items=[("win", WIN_X[0], L.Z_WIN), ("win_b", WIN_X[1], L.Z_WIN),
-                ("win", WIN_X[2], L.Z_WIN)], u_off=0.4),
+                ("win", WIN_X[2], L.Z_WIN)], u_off=0.375),
     dict(name="east", p0=(HX, L.Y_F), p1=(HX, L.Y_R), s_lo=0.0, s_hi=SPAN,
          top=GABLE_TOP_F, cols=GABLE_COLS, legs=GABLE_COLS, items=[], u_off=4.0),
     dict(name="rear", p0=(HX, L.Y_R), p1=(-HX, L.Y_R), s_lo=0.0, s_hi=2 * HX,
          top=[(2 * HX, house_top(L.Y_R)), (0.0, house_top(L.Y_R))], cols=COLS_LONG,
-         legs=LEGS_LONG, items=[], u_off=0.7),
+         legs=LEGS_LONG, items=[], u_off=0.25),
     dict(name="west", p0=(-HX, L.Y_R), p1=(-HX, L.Y_F), s_lo=0.0, s_hi=SPAN,
-         top=GABLE_TOP_F, cols=GABLE_COLS, legs=GABLE_COLS, items=[], u_off=7.0),
+         top=GABLE_TOP_F, cols=GABLE_COLS, legs=GABLE_COLS, items=[], u_off=7.125),
 ]
 
 
@@ -381,8 +391,22 @@ def uv_lane_floor(co):
 
 
 LANE_OVER = 0.5         # the void runs this far past each gable's outer face
-LANE_WIN = ("win_s_b", 3.3, 1.3)    # the attendant's window onto the lane: kind, x, sill
+# the attendant's window onto the lane: kind, x, sill; its sides on half
+# stretchers of the lane's own bond (U = x + HX), its sill and head on courses
+LANE_WIN = ("win_s_b", 3.3125, 1.328125)
 LANE_WIN_DEPTH = 0.15
+
+
+def lane_mode(level):
+    """The lane's void: through LOD2 the mouths' sections through the gables
+    and the hall up to its pitched ceiling between them; at LOD3 one box at
+    the mouths' section, its ceiling flat at the lintels' soffit. Past 160 m
+    the lane is a dark void and its ceiling unseen; the box saves the gables'
+    inner faces, the ceiling's two slopes and the soffits' steps. The clear
+    height is the same. The box drops the attendant's window onto the lane
+    too (8 triangles): seen only through a mouth, deep in the lane's side,
+    under two pixels at 160 m, lit or not."""
+    return "hall" if level < 3 else "box"
 
 
 def lane_win_rect():
@@ -402,6 +426,17 @@ def lane_void(level):
     zm = L.Z_MOUTH
     zc0, zc1, zap = L.ceil_z(YL0), L.ceil_z(YL1), L.ceil_z(YC)
     B.face([(x0, YL0, FT), (x1, YL0, FT), (x1, YL1, FT), (x0, YL1, FT)], uv_lane_floor)
+    if lane_mode(level) == "box":
+        # one box at the mouths' section: the ceiling flat at the lintels'
+        # soffit, so no gable inner faces, ceiling slopes or soffit steps
+        side = [(x0, FT), (x1, FT), (x1, zm), (x0, zm)]
+        B.face([(x, YL0, z) for x, z in side], uv_lane_side)
+        B.face([(x, YL1, z) for x, z in reversed(side)], uv_lane_side)
+        B.face([(x0, YL0, zm), (x0, YL1, zm), (x1, YL1, zm), (x1, YL0, zm)], uv_lane_ceil)
+        for x in (x0, x1):
+            B.face([(x, YL0, FT), (x, YL1, FT), (x, YL1, zm), (x, YL0, zm)],
+                   uv_patch("blank"))
+        return outward(B)
     side = [(x0, FT), (x1, FT), (x1, zm), (X_IN, zm), (X_IN, zc0), (-X_IN, zc0),
             (-X_IN, zm), (x0, zm)]
     B.face([(x, YL0, z) for x, z in side], uv_lane_side)
@@ -483,34 +518,43 @@ TX0, TX1, TY1 = L.TX0, L.TX1, L.TY1
 ZT = L.Z_TOWER_TOP
 AT0, AT1 = annex_top(AY0), annex_top(AY1)
 DOOR_Y = 4.0            # the attendant's door, on the lean-to's east end
+# The lean-to's openings: sills on a course line (1.015625 m, 13 courses), so
+# their heads meet the doors' at 2.1875 m (28 courses).
+A_SILL = 1.015625
+# The shaft's rear face is 21 half stretchers and its door 8 wide, so the
+# door cannot be centred on it: it stands a sixteenth east.
+ELEV_DOOR_X = 0.0625
+# u_off as the shed's: every wall's U a whole or half stretcher, the bond
+# turning a half stretcher at every visible corner of the lean-to and the
+# shaft (brick_problems()); the lean-to's buried front corners are not.
 ANNEX_WALLS = [
     dict(name="a_front", p0=(AX0, AY0), p1=(AX1, AY0), s_lo=0.0, s_hi=AX1 - AX0,
          top=[(AX1 - AX0, AT0), (TX1 - AX0, AT0), (TX1 - AX0, ZT), (TX0 - AX0, ZT),
               (TX0 - AX0, AT0), (0.0, AT0)],
-         items=[("win_s", 0.0, L.SHAFT_FRONT_Z)], u_off=0.3),
+         items=[("win_s", 0.0, L.SHAFT_FRONT_Z)], u_off=0.25),
     dict(name="a_east", p0=(AX1, AY0), p1=(AX1, AY1), s_lo=0.0, s_hi=AY1 - AY0,
          top=[(AY1 - AY0, AT1), (0.0, AT0)],
-         items=[("door", DOOR_Y, 0.0), ("win_s", 5.6, 1.0)], u_off=10.0),
+         items=[("door", DOOR_Y, 0.0), ("win_s", 5.5625, A_SILL)], u_off=10.125),
     dict(name="a_rear_e", p0=(AX1, AY1), p1=(TX1, AY1), s_lo=0.0, s_hi=AX1 - TX1,
          top=[(AX1 - TX1, AT1), (0.0, AT1)],
-         items=[("win_s_b", 3.0, 1.0)], u_off=2.0),
+         items=[("win_s_b", 3.0, A_SILL)], u_off=2.0),
     # the stair's windows, one a flight, stacked up the shaft's east face
     dict(name="t_east", p0=(TX1, AY1), p1=(TX1, TY1), s_lo=0.0, s_hi=TY1 - AY1,
          top=[(TY1 - AY1, ZT), (AY0 - AY1, ZT), (AY0 - AY1, AT0), (0.0, AT1)],
-         items=[("win_s", 4.8, L.SHAFT_WIN_Z[0]), ("win_s_b", 4.8, L.SHAFT_WIN_Z[1]),
-                ("win_s", 4.8, L.SHAFT_WIN_Z[2])],
+         items=[("win_s", 4.8125, L.SHAFT_WIN_Z[0]), ("win_s_b", 4.8125, L.SHAFT_WIN_Z[1]),
+                ("win_s", 4.8125, L.SHAFT_WIN_Z[2])],
          u_off=5.0),
     dict(name="t_rear", p0=(TX1, TY1), p1=(TX0, TY1), s_lo=0.0, s_hi=TX1 - TX0,
          top=[(TX1 - TX0, ZT), (0.0, ZT)],
-         items=[("door", 0.0, 0.0)], u_off=9.6),
+         items=[("door", ELEV_DOOR_X, 0.0)], u_off=9.5),
     dict(name="t_west", p0=(TX0, TY1), p1=(TX0, AY1), s_lo=0.0, s_hi=TY1 - AY1,
          top=[(TY1 - AY1, AT1), (TY1 - AY0, AT0), (TY1 - AY0, ZT), (0.0, ZT)],
-         items=[], u_off=0.4),
+         items=[], u_off=0.5),
     dict(name="a_rear_w", p0=(TX0, AY1), p1=(AX0, AY1), s_lo=0.0, s_hi=TX0 - AX0,
          top=[(TX0 - AX0, AT1), (0.0, AT1)],
-         items=[("win_s", -3.0, 1.0)], u_off=11.5),
+         items=[("win_s", -3.0, A_SILL)], u_off=11.25),
     dict(name="a_west", p0=(AX0, AY1), p1=(AX0, AY0), s_lo=0.0, s_hi=AY1 - AY0,
-         top=[(AY1 - AY0, AT0), (0.0, AT1)], items=[], u_off=5.5),
+         top=[(AY1 - AY0, AT0), (0.0, AT1)], items=[], u_off=5.625),
 ]
 
 
@@ -533,8 +577,10 @@ YE0, YE1 = L.Y_F - L.EAVE_OV, L.Y_R + L.EAVE_OV
 
 
 def uv_roof(co):
+    """The roof sheet region: U = x from the west rake's edge, V up the
+    slope from the eave's edge, both at ROOF_PPM."""
     d = (L.HALF_SPAN + L.EAVE_OV - abs(co.y - YC)) * L.SLOPE_F
-    return ((co.x + XE) * PPM, L.ROOF_Y0 + d * L.ROOF_RPM)
+    return (L.ROOF[0] + (co.x + XE) * L.ROOF_PPM, L.ROOF_Y0 + d * L.ROOF_RPM)
 
 
 def uv_eave(z_edge):
@@ -567,7 +613,7 @@ AXE0, AXE1 = AX0 - L.A_RAKE_OV, AX1 + L.A_RAKE_OV
 
 def uv_annex_roof(co):
     d = (L.A_SLAB_Y1 - co.y) * L.SLOPE_FA * L.ANNEX_V_K
-    return ((co.x + XE) * PPM, L.ROOF_Y0 + d * L.ROOF_RPM)
+    return (L.ROOF[0] + (co.x + XE) * L.ROOF_PPM, L.ROOF_Y0 + d * L.ROOF_RPM)
 
 
 def lean_to_slab():
@@ -620,7 +666,7 @@ HH_WALLS = [
 
 def uv_clad(fr, u_off):
     x0, y0 = L.CLAD[:2]
-    return lambda co: (x0 + (fr.s_of(co) + u_off) * PPM, y0 + (co.z - L.HH_Z0) * L.CLAD_VPM)
+    return lambda co: (x0 + (fr.s_of(co) + u_off) * L.CPPM, y0 + (co.z - L.HH_Z0) * L.CPPM)
 
 
 def head_house(level):
@@ -637,7 +683,7 @@ def head_house(level):
             s0, s1, a, b = item_rect(fr, kind, c, zs)
             poly = [(s0, a), (s1, a), (s1, b), (s0, b)]
             holes.append(poly)
-            closing = uv_region(fr, kind, s0, a)
+            closing = uv_region(fr, kind, s0, a, level)
             if opening_mode(level) == "flush":
                 B.face([fr.P(s, z) for s, z in poly], closing)
                 continue
@@ -688,19 +734,20 @@ def gal_end_recessed(level):
     return level < 2
 
 
-def uv_gal_side(co):
+def uv_gal_side(co, k=1.0):
+    """A side of the gallery, U along it in plan from its start (scaled by
+    *k*, which fits a side run on to the end face into the region)."""
     x0, y0 = L.GAL_SIDE[:2]
-    return (x0 + (co.y - GAL_YA) * L.GPPM, y0 + (co.z - L.gal_floor(co.y)) * L.GAL_VPM)
+    return (x0 + (co.y - GAL_YA) * k * L.GPPM, y0 + (co.z - L.gal_floor(co.y)) * L.GAL_VPM)
 
 
 def uv_gal_roof(co):
-    """The gallery's roof on the cladding: ribs across U run down the slope;
-    V up the slope, squeezed into the cladding's clean rows."""
-    x0, y0, _w, _h = L.CLAD
-    run = (L.GAL_YS - GAL_YA) / math.cos(math.radians(L.GAL_ANG))
-    rows = (L.Z_TSLAB - L.HH_Z0) * L.CLAD_VPM - 8.0
-    return (x0 + (co.x + GAL_XW + 0.5) * PPM,
-            y0 + 4.0 + (co.y - GAL_YA) / math.cos(math.radians(L.GAL_ANG)) / run * rows)
+    """The gallery's roof on its own sheet region (GAL_ROOF), isotropic: U
+    down the slope's length from its start, V across from its east side, so
+    the ribs, running down the slope, vary in V and the mapping keeps its
+    hand (U along +Y, V along -X, its normal up)."""
+    x0, y0 = L.GAL_ROOF[:2]
+    return (x0 + (co.y - GAL_YA) / L.GAL_COS * L.GRPM, y0 + (GAL_XW - co.x) * L.GRPM)
 
 
 def uv_gal_end(co):
@@ -711,11 +758,13 @@ def uv_gal_end(co):
 def gal_end_mode(level):
     """The end face: at the close tiers the collar's ring round the gallery's
     rim and its recessed blanking plate; at LOD2 the ring round a flat
-    plate; at LOD3 one flat face over the collar's whole section, which
-    stands against the hall's wall, and the collar a flare from the
-    gallery's section at its back to its own at the end (8 triangles fewer
-    than its back ring and its faces)."""
-    return ("recessed", "recessed", "flat", "plain")[level]
+    plate; at LOD3 no collar: the gallery's own faces run on to the end
+    plane and one flat face closes it, 8 triangles fewer than the collar's
+    flare the tier had before. The end stands
+    against the hall's wall, whose inlet is the gallery's section, so the
+    0.05 m collar is the only thing that goes (its top is 5 cm over the
+    gallery's, past 160 m under a quarter of a pixel)."""
+    return ("recessed", "recessed", "flat", "bare")[level]
 
 
 def gal_outline(y, proud=0.0):
@@ -761,14 +810,16 @@ def gallery(level):
     xw, H, c = GAL_XW, L.GAL_H, L.COLLAR_PROUD
     za, zb = L.gal_floor(ya), L.gal_floor(yb)
     collar = uv_patch("strut")
-    gal_tube(B, ya, ys, 0.0, [uv_patch("gal_under"), uv_gal_side, uv_gal_roof, uv_gal_side])
+    mode = gal_end_mode(level)
     B.face([(-xw, ya, za), (xw, ya, za), (xw, ya, za + H), (-xw, ya, za + H)],
            uv_patch("blank"))
-    mode = gal_end_mode(level)
-    if mode == "plain":
-        gal_tube(B, ys, yb, 0.0, [collar] * 4, proud1=c)
-        B.face([(x, yb, z) for x, z in reversed(gal_outline(yb, c))], collar)
+    if mode == "bare":
+        k = (ys - ya) / (yb - ya)
+        side = lambda co: uv_gal_side(co, k)  # noqa: E731  (the sides fit GAL_SIDE)
+        gal_tube(B, ya, yb, 0.0, [uv_patch("gal_under"), side, uv_gal_roof, side])
+        B.face([(x, yb, z) for x, z in reversed(gal_outline(yb))], collar)
         return B
+    gal_tube(B, ya, ys, 0.0, [uv_patch("gal_under"), uv_gal_side, uv_gal_roof, uv_gal_side])
     gal_ring(B, ys, gal_outline(ys), gal_outline(ys, c), collar, -1)
     gal_tube(B, ys, yb, c, [collar] * 4)
     gal_ring(B, yb, gal_outline(yb), gal_outline(yb, c), collar, 1)
@@ -807,8 +858,10 @@ def roof_vent(out):
 
 
 def keeps_vents(level):
-    """Two 0.6 m boxes on a roof 15-18 m up: under three pixels past 70 m."""
-    return level < 2
+    """Two 0.6 m plain vent boxes on a roof 15-18 m up, kept through LOD2 so
+    they do not go at its 91 m switch (about 7 px there); at LOD3's 182 m
+    they are about 2 px."""
+    return level < 3
 
 
 def strut(x):
@@ -836,6 +889,33 @@ def strut(x):
     B.face(list(reversed(r0)), fn)
     B.face(list(r1), fn)
     return B
+
+
+STRUT_GAP = 0.01        # LOD3's struts stop this short of the shaft and the floor
+
+
+def strut_prism(x):
+    """A strut at LOD3: a three-sided prism in the strut's square, its flat
+    side down, from STRUT_GAP off the shaft's rear face to STRUT_GAP under
+    the gallery's floor, a separate closed solid that touches nothing: 8
+    triangles, where the union's cuts made the square strut cost about 20."""
+    (fy, fz), ty = L.STRUT_FOOT, L.STRUT_TOP_Y
+    tz = L.gal_floor(ty)
+    a = Vector((0.0, ty - fy, tz - fz)).normalized()
+    p = Vector((0.0, a.z, -a.y))                    # across the axis, in y-z, downward
+    h = L.STRUT_W / 2.0
+    tri = [(-h, h), (h, h), (0.0, -h)]              # flat side down (along +p), apex up
+    # the foot's corner nearest the shaft sits STRUT_GAP off its face, the
+    # head's highest corner STRUT_GAP under the floor
+    t0 = max((STRUT_GAP - v * p.y) / a.y for _, v in tri)
+    # every corner of the head z <= gal_floor(y) - STRUT_GAP, the floor
+    # rising at GAL_TAN along y
+    T = L.GAL_TAN
+    t1 = min((L.gal_floor(fy + p.y * v) - STRUT_GAP - fz - p.z * v) / (a.z - a.y * T)
+             for _, v in tri)
+    o = Vector((x, fy, fz))
+    return prism(tri, lambda q, t: tuple(o + a * t + Vector((q[0], 0.0, 0.0)) + p * q[1]),
+                 t0, t1, uv_patch("strut"))
 
 
 # ---------------------------------------------------------------- trestle
@@ -874,11 +954,13 @@ def trestle_mode(level):
     full   - LOD0/1: H-section legs on concrete pad footings, an H-section
              cross-head, three panels of X bracing with two ties.
     portal - LOD2: the legs and the cross-head as one plain solid, an
-             upturned U standing on the ground, with the bracing.
+             upturned U, on the pad footings, with the bracing.
     legs   - LOD3: two plain legs, each a three-sided prism in the legs'
              square, standing apart from the gallery to the cross-head's
-             top: 16 triangles, where the portal's cuts into the floor
-             cost 48 and LOD3 has 10 to spare.
+             top, and one X of two thin three-sided bars between them over
+             the bracing's whole height (tr_x_plain()), all separate closed
+             solids: 32 triangles, where the portal's cuts into the floor
+             cost 48.
     """
     return ("full", "full", "portal", "legs")[level]
 
@@ -924,6 +1006,34 @@ def tr_leg_plain(xc):
     return prism(tri, lambda p, t: (p[0], p[1], t), 0.0, z1, uv_patch("strut"))
 
 
+TR_X_BAR = 0.22         # LOD3's X bars: the side of their triangle, thicker than
+                        # LOD2's 0.10 m bars, so one X carries about the tone
+                        # of the three panels it stands for at 182 m
+
+
+def tr_x_plain():
+    """LOD3's bracing: one X between the plain legs, from over the footings'
+    height to under the cross-head, each bar a three-sided prism, the two on
+    either side of the bent's plane so they never touch, each stopping 0.01 m
+    short of the legs' inner apexes' planes (the legs are separate solids)."""
+    xa, xb = L.TR_LEG_X
+    s = L.TR_LEG / 2.0
+    ua, ub = xa + s + 0.01, xb - s - 0.01      # the legs' inner apexes, 0.01 m off
+    lo, hi = L.TR_PAD[1] + 0.50, L.TR_HEAD_ZB - 0.30
+    t = TR_X_BAR
+    out = []
+    for i, ((za, zb), side) in enumerate((((lo, hi), -1), ((hi, lo), 1))):
+        y0 = L.TR_Y + side * 0.005
+        y1 = L.TR_Y + side * (0.005 + t * math.sqrt(3.0) / 2.0)
+        prof = [(y0, -t / 2.0), (y0, t / 2.0), (y1, 0.0)]
+
+        def place(p, u, za=za, zb=zb):
+            f = (u - xa) / (xb - xa)
+            return (u, p[0], za + (zb - za) * f + p[1])
+        out.append((prism(prof, place, ua, ub, uv_patch("strut")), "tmp_tr_xp%d" % i))
+    return out
+
+
 def tr_bracing():
     """The X in every panel and a tie at every panel point between them, as
     square bars in the bent's plane: each X's two bars one either side of
@@ -965,11 +1075,16 @@ def trestle(level):
     mode = trestle_mode(level)
     solids = tr_bracing() if mode in ("full", "portal") else []
     if mode == "legs":
-        return [(tr_leg_plain(x), "tmp_tr_leg%d" % i) for i, x in enumerate(L.TR_LEG_X)]
-    if mode != "full":
-        return solids + [(tr_portal(), "tmp_tr_portal")]
-    fn = uv_patch("strut")
+        return [(tr_leg_plain(x), "tmp_tr_leg%d" % i)
+                for i, x in enumerate(L.TR_LEG_X)] + tr_x_plain()
     yc, s, hw = L.TR_Y, L.TR_LEG / 2.0, L.TR_HEAD_W / 2.0
+    conc, p = uv_patch("conc"), L.TR_PAD[0] / 2.0
+    pads = [(outward(box(xc - p, xc + p, yc - p, yc + p, 0.0, L.TR_PAD[1], conc, conc,
+                         uv_patch("blank"))), "tmp_tr_pad%d" % i)
+            for i, xc in enumerate(L.TR_LEG_X)]
+    if mode != "full":
+        return solids + [(tr_portal(), "tmp_tr_portal")] + pads
+    fn = uv_patch("strut")
     zb, top = L.TR_HEAD_ZB, L.tr_head_top
     tf, tw = L.TR_HEAD_TF, L.TR_HEAD_TW
     ys = (yc - hw, yc + hw)
@@ -983,15 +1098,12 @@ def trestle(level):
     solids.append((prism(prof, lambda p, t: (t, p[0], p[1]), *L.TR_HEAD_X, fn), "tmp_tr_head"))
     # legs: flanges square to Y facing along the gallery, the web along Y at
     # the leg's centre, where the bracing ends
-    conc, p = uv_patch("conc"), L.TR_PAD[0] / 2.0
     for i, xc in enumerate(L.TR_LEG_X):
         prof = h_profile(yc - s, yc + s, xc - s, xc + s, L.TR_LEG_TF, L.TR_LEG_TW)
         solids.append((prism(prof, lambda q, t: (q[1], q[0], t),
                              L.TR_PAD[1] - L.TR_PAD_INTO, zb + tf / 2.0, fn),
                        "tmp_tr_leg%d" % i))
-        solids.append((outward(box(xc - p, xc + p, yc - p, yc + p, 0.0, L.TR_PAD[1],
-                                   conc, conc, uv_patch("blank"))), "tmp_tr_pad%d" % i))
-    return solids
+    return solids + pads
 
 
 def tr_plan():
@@ -1025,14 +1137,17 @@ PIPE_WALLS = ["front", "front", "rear", "rear", "a_rear_e", "a_rear_w"]
 # ================================================================ assembly
 def keeps_downpipes(level):
     """LOD3 drops the six downpipes to pay for the gallery and the head
-    house: past 120 m a pipe is under two pixels wide against its wall."""
+    house: at its 182 m switch a pipe is under half a pixel wide against its
+    wall."""
     return level < 3
 
 
 def keeps_fittings(level):
-    """The hoist beam and its trolley and the gallery's two struts, 0.16-0.30
-    m steel, go at LOD3 with the downpipes: past 120 m they are two pixels
-    or so across. The trestle stays (trestle_mode)."""
+    """The hoist beam and its trolley go at LOD3 with the downpipes: at 182
+    m they are a pixel or so against the head house. The gallery's two
+    struts, 6 m long lines under it against the sky, stay at LOD3 as plain
+    prisms (strut_prism()), the square ones unioned through LOD2. The
+    trestle stays (trestle_mode)."""
     return level < 3
 
 
@@ -1052,6 +1167,9 @@ def build_lod(level):
         parts.append(to_object(hoist_beam(), "tmp_hoist"))
         parts.append(to_object(trolley(), "tmp_trolley"))
         parts += [to_object(strut(x), "tmp_strut%d" % i) for i, x in enumerate(L.STRUT_X)]
+    else:
+        parts += [to_object(strut_prism(x), "tmp_strut%d" % i)
+                  for i, x in enumerate(L.STRUT_X)]
     if keeps_vents(level):
         parts += [to_object(roof_vent(o), "tmp_vent%d" % i) for i, o in enumerate(ROOF_VENTS)]
     parts += [to_object(B, name) for B, name in trestle(level)]
@@ -1122,6 +1240,68 @@ def ground_parts():
     return out
 
 
+def _on(v, step):
+    return abs(v / step - round(v / step)) < 1e-6
+
+
+# The brick corners, as (wall A, its s there, wall B, its s there): A runs
+# into the corner, B leaves it, walking anticlockwise seen from above. The
+# shed's are above the band, where the long walls' brick meets the gables'
+# (under it the corners are the concrete frame's columns); the lean-to's
+# front corners are buried in the shed's rear wall and not listed.
+def _wall(name):
+    return next(s for s in SHED_WALLS + ANNEX_WALLS if s["name"] == name)
+
+
+BRICK_CORNERS = [
+    ("front", 2 * HX, "east", 0.0), ("east", SPAN, "rear", 0.0),
+    ("rear", 2 * HX, "west", 0.0), ("west", SPAN, "front", 0.0),
+    ("a_east", AY1 - AY0, "a_rear_e", 0.0), ("a_rear_e", AX1 - TX1, "t_east", 0.0),
+    ("t_east", TY1 - AY1, "t_rear", 0.0), ("t_rear", TX1 - TX0, "t_west", 0.0),
+    ("t_west", TY1 - AY1, "a_rear_w", 0.0), ("a_rear_w", TX0 - AX0, "a_west", 0.0),
+    # the shaft above the lean-to's roof: its front face is a_front's middle
+    ("a_front", TX1 - AX0, "t_east", AY0 - AY1), ("t_west", TY1 - AY0, "a_front", TX0 - AX0),
+]
+
+
+def brick_problems():
+    """The brickwork, on the catalog module (scripts/brickwork.py), as the
+    plant hall's (voimalaitos_brick_hall's brick_problems()): every height the
+    brick meets something at on a course line; every opening's sides on a
+    whole or half stretcher in the U its wall samples; the bond turning a half
+    stretcher at every brick corner. The concrete frame's columns are not
+    held to it: the brick is infill between them, cut to the frame, as it
+    is laid."""
+    bad = []
+    c, h = L.COURSE, L.HALF
+    heights = [("plinth", L.Z_PLINTH), ("band's foot", L.Z_BAND0), ("band's top", L.Z_BAND1),
+               ("main eave", L.Z_EAVE), ("lean-to eave", L.Z_AE),
+               ("shaft's top", L.HH_Z0), ("lane's impact wall", L.IMPACT_Z)]
+    for what, z in heights:
+        if not _on(z, c):
+            bad.append("the %s at %.6f m is off the coursing" % (what, z))
+    for spec in SHED_WALLS + ANNEX_WALLS:
+        fr = Frame(spec["p0"], spec["p1"])
+        u = spec["u_off"]
+        if not _on(u, h):
+            bad.append("%s: its U offset is off a half stretcher" % spec["name"])
+        for k, cc, z in spec["items"]:
+            s0, s1, z0, z1 = item_rect(fr, k, cc, z)
+            tag = "%s: %s at %.4f, %.4f" % (spec["name"], k, cc, z)
+            if not (_on(z0, c) and _on(z1, c)):
+                bad.append(tag + " is off the coursing")
+            if not (_on(u + s0, h) and _on(u + s1, h)):
+                bad.append(tag + " cuts the bond off a half stretcher")
+    s0, s1, z0, z1 = lane_win_rect()
+    if not (_on(z0, c) and _on(z1, c) and _on(s0 + HX, h) and _on(s1 + HX, h)):
+        bad.append("the lane window is off the lane's coursing or stretchers")
+    for a, sa, b, sb in BRICK_CORNERS:
+        ua, ub = _wall(a)["u_off"] + sa, _wall(b)["u_off"] + sb
+        if not (_on(ub, h) and _on(ua - ub - h, L.BRICK_L)):
+            bad.append("the %s/%s corner does not turn the bond" % (a, b))
+    return bad
+
+
 def check_layout():
     """Numbers that have to agree before any geometry is worth looking at:
     openings on their walls, clear of corners, columns, splits and each
@@ -1129,7 +1309,7 @@ def check_layout():
     length in the brief's 12-16 m; nothing beyond a mouth's plane in line
     with the lane or within LANE_BAND of it below the lintel; downpipes clear
     of corners and openings; the roofs."""
-    bad = []
+    bad = brick_problems()
     walls = SHED_WALLS + ANNEX_WALLS
     for spec in walls:
         fr = Frame(spec["p0"], spec["p1"])

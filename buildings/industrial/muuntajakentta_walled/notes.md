@@ -10,7 +10,7 @@ nothing joins them: this asset has no ground slab shared with the others,
 and no cables or busbars leave its compound.
 
 A compound of 20.0 × 12.0 m behind a plain industrial perimeter wall,
-1.55 m of brick with a thin light coping and plain piers at the corners,
+1.56 m of brick with a thin light coping and plain piers at the corners,
 the gate and every 4–6 m, low enough that the plant inside reads over it.
 A painted sheet-steel double gate with a high-voltage warning plate closes
 the front. Inside, from the incoming (west) side:
@@ -72,21 +72,28 @@ switchgear bays, and keeping the origin kept the house's, transformers' and
 trenches' numbers. The pivot is the plan's centre, x −2.0, y 0 in this
 frame.
 
-- **Yard wall:** 0.24 m thick, 1.55 m high with its 0.06 m coping, on a
-  0.31 m concrete footing.
+- **Yard wall:** 0.24 m thick, 1.5625 m high (20 courses) with its
+  0.078 m (one course) coping, on a 0.3125 m (4 courses) concrete footing.
 - **Piers:** 12 of them, 0.36 m square, standing 0.02 m over the wall's
-  coping (1.57 m), with no caps. There is one at each free corner, one each
+  coping (1.58 m), with no caps. There is one at each free corner, one each
   side of the gate, one
   where the east run meets the house's north wall, and between: one on the
   front run (5.4 m bays), one on the west (5.8 m), three on the north
   (4.9 m) and one on the east (3.9 m).
+- **Brick module:** the catalog's (`scripts/brickwork.py`), as the plant
+  hall's: every brick-bound height on a 0.078125 m course line, every
+  opening's sides on a half stretcher in the U its wall samples, and the
+  bond turning a half stretcher at the house's four corners
+  (`brick_problems()`). The piers' 0.36 m and the wall's 0.24 m are kept
+  (one and a half bricks and one brick, as built); the bond runs on round
+  the piers in the wall's band.
 - **House:** its front wall stands in the yard wall's outer plane, y −5.94,
   and its east wall in the east wall's, x 7.94. The piers stand 0.06 m
   proud of both planes.
-- **Gate:** in the front wall between piers at x −0.98 and 2.80, with
-  3.42 m clear between them (x −0.80 to 2.62). The leaves are 0.06 m thick,
-  set 0.08 m behind the wall's outer face, and run from 0.04 to 1.51 m
-  high.
+- **Gate:** in the front wall between piers at x −0.93 and 2.805, with
+  3.375 m clear between them (x −0.75 to 2.625, on half stretchers). The
+  leaves are 0.06 m thick, set 0.08 m behind the wall's outer face, and
+  run from 0.04 to 1.52 m high.
 - **Transformer plinths:** 4.40 × 3.40 × 0.30 m, centred on x −2.00 and
   y ±2.70.
 - **Fire wall:** x −3.80 to −0.20, 0.30 m thick on y 0, 3.80 m high.
@@ -111,32 +118,36 @@ front, origin at the pivot) the house is the rectangle x 4.94–9.94, z
 
 ## Story height
 
-**One storey, 3.20 m** from the ground to the roof slab's underside line,
-3.45 m to the slab's top. This is inside the 3.0–3.3 m band. It is a plant
+**One storey, 3.203 m** (41 courses) from the ground to the roof slab's
+underside line, 3.453 m to the slab's top, over a 0.391 m (5 courses)
+concrete plinth. This is inside the 3.0–3.3 m band. It is a plant
 room, not a habitable floor, and its height carries the high louvres over
 the switchgear cubicles.
 
 ## Door leaf height
 
-**Steel door leaf 1.00 × 2.10 m**, with no fanlight or transom. The pressed
-steel frame adds 0.0625 m at the sides and head. The threshold is at
-ground level and the door faces the street (−Y). It is the house's only
-door.
+**Steel door leaf 1.00 × 2.125 m**, with no fanlight or transom. The pressed
+steel frame adds 0.0625 m at the sides and head, so its opening in the
+brick is 1.125 × 2.1875 m (9 half stretchers by 28 courses). The threshold
+is at ground level and the door faces the street (−Y). It is the house's
+only door.
 
-The gate (two leaves, 3.42 m clear, 1.47 m high) is not a door in the
+The gate (two leaves, 3.375 m clear, 1.48 m high) is not a door in the
 facts schema: it opens onto the open yard, not an occupied space. It reads
-at the scale of the 1.55 m wall it closes, under the 2.0–2.4 m band.
+at the scale of the 1.56 m wall it closes, under the 2.0–2.4 m band.
 
 ## Window sills
 
 n/a: the house has no windows. It has five steel louvres, 0.875 × 0.50 m
-in the clear, each in a 0.0625 m frame:
+in the clear, each in a 0.0625 m frame, so 1.0 × 0.625 m in the brick (8
+half stretchers by 8 courses):
 
-- **High louvres:** sill 2.30 m, head 2.80 m. One is on the front, two on
-  the east wall and one on the north (yard) wall. Their heads stay 0.34 m
-  under the slab, and their sills are 0.20 m over the door's head.
-- **Low louvre:** sill 0.55 m, head 1.05 m, on the west (yard) wall, the
-  intake under the high outlets.
+- **High louvres:** sill 2.328 m, head 2.828 m (frame 2.266–2.891 m, 29–37
+  courses). One is on the front, two on the east wall and one on the north
+  (yard) wall. Their heads stay 0.31 m under the slab, and their sills are
+  0.20 m over the door's leaf.
+- **Low louvre:** sill 0.531 m, head 1.031 m (frame 0.469–1.094 m, 6–14
+  courses), on the west (yard) wall, the intake under the high outlets.
 
 ## Eave overhang
 
@@ -176,10 +187,12 @@ A plain perimeter wall: it closes the yard without hiding it, and the
 catalog and play cameras see the plant over it. It is boxes:
 
 - on `LOD0` and `LOD1`, the wall as separate lengths between piers, 0.24 m
-  thick and 1.55 m high, each running 0.05 m into the pier at either end
+  thick and 1.5625 m high, each running 0.05 m into the pier at either end
   and standing 1 mm off the ground (`between_piers()`);
 - 12 plain piers, 0.36 m square, standing 0.02 m over the coping;
-- the gate, as one 0.06 m plate whose ends run 0.05 m into its piers.
+- the gate, as one 0.06 m plate whose ends run 0.05 m into its piers
+  (through `LOD2`; on `LOD3` it stops 4 mm short of the runs' ends and
+  touches nothing, so the union cuts no holes in them).
 
 With the piers proud of the wall's top and the lengths clear of the
 ground, no face of a length is coplanar with a pier's, so the union cuts
@@ -190,13 +203,14 @@ each length is the piers' and the gate's foot, invisible at any distance.
 
 Every face is closed, both faces of the wall and its top included. The
 gate's east pier stands against the house's front-west corner and runs
-0.04 m into it. The east run ends inside a pier that runs into the house's
+0.045 m into it. The east run ends inside a pier that runs into the house's
 north wall, so no face of the wall is left coplanar and open against the
 house. The piers' faces take the wall's band, so the footing, the brick
 and the thin coping run round them.
 
 The height was chosen from renders at the catalog camera and at 30 m eye
-level: at 1.55 m more of the transformers' tanks and the switchgear's
+level: at 1.55 m (now 1.5625 m, on the course grid) more of the
+transformers' tanks and the switchgear's
 stands show over the front wall, and the yard reads as plant behind a
 wall rather than a walled garden. Lower would no longer read as a
 security wall round high-voltage plant. Coal fines
@@ -225,6 +239,13 @@ Openings by tier:
 - **`LOD1`:** one recess the size of the casing;
 - **`LOD2`/`LOD3`:** a flush painted rectangle.
 
+Every opening's casing is on the brick module: its sides on half
+stretchers in its wall's U (`HOUSE_U_OFF`: front 0, east 5.125, north
+9.0, west 14.125, each a half stretcher, chosen so the bond turns a half
+stretcher at all four corners), its head and foot on course lines. The
+door is centred at s 1.3125 on the front wall, the louvres at s 3.50
+(front), 1.25 and 2.75 (east), 1.375 (north) and 2.00 (west).
+
 The yard walls (north and west) carry painted fittings on the house band,
 at U values that map onto those walls only (`paint_house_fittings()`):
 
@@ -250,7 +271,9 @@ Each transformer is a set of closed solids:
   cover, so it never floats;
 - **bushings:** three, turned from a profile, with a steel turret
   (r 0.15 m), a porcelain body tapering from r 0.115 to 0.075 m and an
-  aluminium terminal, the tip at 3.95 m;
+  aluminium terminal, the tip at 3.95 m; on `LOD3` each a 3-sided pyramid
+  standing 4 mm over the cover to the same tip, touching nothing
+  (`pyramid()`);
 - **cable box:** on the east end.
 
 The sheds, fins, bolts and valves are texture.
@@ -308,7 +331,9 @@ By tier:
   at the foot, 0.17 m at 9.70 m) with a pyramid peak to 10.90 m, and the
   truss one box 0.18 m wide and 0.21 m deep on the lattice's mid-height.
   The painted members are galvanised on a lighter grey (`ID_LAT_GAP`) that
-  stands for the openings against the sky. `LOD3` has no strings.
+  stands for the openings against the sky. `LOD3`'s strings are 3-sided
+  pyramids from 4 mm under the slim truss to the clamp's height, touching
+  nothing (4 triangles each).
 
 ### Switchgear
 
@@ -336,9 +361,17 @@ apart across Y. West to east, with a walkway of 0.75–1.4 m between parts:
   r 0.19 m 0.40 m tall, the top at 3.92 m.
 
 Each turned part is an 8-, 6-, 5- or 4-sided prism by tier; the sheds are
-texture. `LOD3` keeps only the breaker poles, each one 3-sided prism
-from the ground to its top head (`poles3()`), its stand painted at its
-foot on a strip of its own (`POLE3_R`, 32 px/m along V).
+texture. Every turned part of 4 sides or more shades smooth on its steep
+bands (`lathe()`, `SMOOTH_SIDES`), so a porcelain column reads round on
+every tier; its caps and flat steps (a head's top and foot) stay flat.
+
+`LOD3` keeps the breaker poles, each one 3-sided prism from the ground to
+its top head (`poles3()`), its stand painted at its foot on a strip of its
+own (`POLE3_R`, 32 px/m along V), and the disconnector tables
+(`dis3()`): each deck a 3-sided prism along the bay (its top the deck's,
+its undersides meeting on its centre line), on two 3-sided legs with the
+painted lattice that stop 4 mm under it, touching nothing. The posts,
+breaker stands and current transformers go.
 
 ### Conductors
 
@@ -392,8 +425,8 @@ points and sags (`spans()`) and the tiers' modes (`mode()`).
 | --- | --- | --- | --- |
 | `LOD0` | 8,794 | 12,000 | everything; the lattice portal braced on every face (rails and a diagonal per panel), its truss a Warren zigzag on the sides with rails and diagonals top and bottom; turned disc strings (6 sides); 8-sided breaker poles and current transformers, 6-sided disconnector posts with caps and blades; conductors 4-sided, 6 segments on the drop and 4 on each span; 8-sided bushings and conservators; the wall as lengths between piers; house openings as casing rings round recesses |
 | `LOD1` | 3,936 | 4,000 | the lattice coarser: legs and one zigzag of diagonals per face over 6 panels, no rails, the truss's sides a 10-panel zigzag and a rail under each string; strings as plain 4-sided prisms carrying the discs in paint; poles and current transformers 5-sided, the current transformers without the base step, posts 3-sided tapers with no caps, no blades; conductors 3-sided, 3 segments on the drop and 2 on the spans; bushings 5-sided turret and one taper; conservators 6-sided; openings one recess each |
-| `LOD2` | 1,480 | 1,500 | the wall one pier thick, the piers folded in; the lattice's corner angles and chords alone, a plain spike finial; poles and current transformers 4-sided single tapers carrying heads and bases in paint, posts 3-sided, no breaker cabinet; only the six drops kept, straight; strings 3-sided, bushings (one taper) and conservators 4-sided, the conservators' saddles gone and each drum a box down into its cover; openings flush; coplanar boolean splits dissolved |
-| `LOD3` | 482 | 500 | the switchgear goes but for the six breaker poles, each one 3-sided prism from the ground; the gantry slim solids with the lattice painted on; bushings 3-sided single tapers; strings and conductors go; both radiator banks one box through the tank; cable boxes and pads go; trenches go; the house's two yard-side louvres go |
+| `LOD2` | 1,476 | 1,500 | the wall one pier thick, the piers folded in; the lattice's corner angles and chords alone, a plain spike finial; poles and current transformers 4-sided single tapers carrying heads and bases in paint, posts 3-sided, no breaker cabinet; only the six drops kept, straight; strings 3-sided, bushings (one taper) and conservators 4-sided, the conservators' saddles gone and each drum a box down into its cover; openings flush; coplanar boolean splits dissolved |
+| `LOD3` | 494 | 500 | the switchgear goes but for the six breaker poles, each one 3-sided prism from the ground, and the two disconnector tables, each deck a 3-sided prism on two 3-sided legs; the gantry slim solids with the lattice painted on; the strings 3-sided pyramids; the bushings 3-sided pyramids over the covers; every one of those touches nothing, nor does the gate, which stops 4 mm short of its runs; conductors go; both radiator banks one box through the tank; cable boxes and pads go; trenches go; the house's two yard-side louvres go |
 
 Where `LOD0`'s triangles go, measured by building each group alone (with
 the union inside the group) and by leaving groups out of the union:
@@ -441,9 +474,16 @@ painted slim solids (40 triangles with the truss): at 120 m and beyond the
 lattice's members are under a pixel and a thin solid reads as the
 portal's outline. Its truss is 0.21 m deep, a continuous thin line at
 125 m; at 0.33 m it read as a dark bar heavier than `LOD2`'s chords, its
-sides being in shade under most sun directions. Freeing those 56 triangles on the
-gantry brought the transformers' bushings back to `LOD3` as 3-sided
-tapers (76 with their unions).
+sides being in shade under most sun directions.
+
+`LOD3` keeps the yard full of switchgear at the consumer's 160 m switch
+by building what it keeps as separate closed solids that touch nothing,
+so the union cuts nothing: the bushings were 3-sided tapers cut into the
+covers (76 triangles for the six) and are 3-sided pyramids standing 4 mm
+over them (24); that and the gate stopping 4 mm short of its runs (about
+16 fewer) paid for the two disconnector tables (24 each: a 3-sided deck
+prism on two 3-sided legs) and the six strings as 3-sided pyramids (24).
+494 of 500.
 
 **Comparison with the catalog.** `LOD0` is well above the small brick
 buildings (`nostokonehuone_brick` 540, `kaivoskonttori_brick` 896) because
@@ -456,19 +496,45 @@ Trim in CLAUDE.md's sense (the piers, the house's slab edge and the
 trench covers) is under 500 triangles.
 
 **Every tier from `LOD1` down sits near its ceiling** (`LOD1` 64 to
-spare, `LOD2` 20, `LOD3` 18), so any change to them must be recounted. The
+spare, `LOD2` 24, `LOD3` 6), so any change to them must be recounted. The
 union costs more than the parts here: every conductor end, post foot and
 leg cuts the face it enters. Thinning the posts to 3 sides, the spans to 2
 segments and the bushings to one taper paid for `LOD1` before the lattice,
 and the trades above for the lattice; the pier-thick wall, the one-taper
 bushings and dropping every span but the drops paid for `LOD2`. `LOD3`'s
-pointed peaks pay for its conservators' boxes, the six poles cost 48 and
-the bushings 76.
+pointed peaks pay for its conservators' boxes; the six poles cost 48, the
+two tables 48, the strings 24 and the bushings 24.
 
 ## LOD review
 
-Intended switches are the catalog defaults, 35, 70 and 120 m, with no
-overrides.
+**The consumer's switches**, by its screen-size measure at 1080p and a
+75° vertical FOV, fall at about 1.8, 4 and 8 times the largest bounds
+dimension (20.0 m): **36, 80 and 160 m**. The 2026-11-22 pass reviewed
+the tier pairs there (`review/older_audit_2026_11_22/fix_industrial_b2/
+muuntajakentta_walled/`: `renders_before/` from the copy in `before/`,
+`renders_after/`, before-above-after sheets in `compare/`, `LOD0` at 20
+and 35 m in `compare_lod0/`), with the audit's camera (front 10° up,
+corner 45° round and 25° up, eye level at 1.7 m), noon:
+
+- **36 m (`LOD0`→`LOD1`):** the 5-sided porcelain poles and current
+  transformers no longer turn pale and streaked at eye level: every turned
+  part of 4 sides or more shades smooth, so at `LOD1` they keep `LOD0`'s
+  dark red-brown. Pixels differing by more than 24 levels fell from
+  1,272 / 1,699 / 1,710 (front / corner / eye) to 1,229 / 1,292 / 1,105;
+  what is left is the lattice's thinner web, unchanged by design.
+- **80 m (`LOD1`→`LOD2`):** unchanged by the pass (339 px over 24 in the
+  corner view, from 439, with the smooth shading). The piers' 0.06 m
+  returns still fold into the pier-thick wall: 0.5 px at 80 m, and `LOD2`
+  has 24 triangles to spare, so they are neither kept nor painted (a
+  painted pier line would need a band of its own: the wall's band is
+  shared by every run at every tier, and the atlas has no free rows).
+- **160 m (`LOD2`→`LOD3`):** the yard no longer empties: the disconnector
+  tables stand on their legs and the strings hang from the truss, as on
+  `LOD2`; the current transformers, the posts, the drops and the trench
+  covers still go. Over 24 levels: 131 / 307 / 167 px before, 74 / 213 /
+  124 after.
+
+The earlier passes' review, at the catalog defaults (35, 70 and 120 m):
 
 The review camera was perspective, 1920×1080, 50° vertical FOV, with
 distance measured along the view to the visible front or rear wall
@@ -515,12 +581,10 @@ in `review/power_plant_rev_2026_11_21/` and `review/power_plant_2026_11_21/`.
   48 triangles. The gantry becomes slim solids with the lattice painted
   on; at 115/125 m its columns and truss stay thin continuous lines of
   the lattice's outline and tone, the peaks pointed. The transformers'
-  bushings stay, as 3-sided tapers. In the 115/125 m pair the poles keep
-  the bays' verticals and red heads; the disconnectors' tables, the
-  current transformers, the strings and the drops go, which still shows
-  when the pair is blinked: with 18 triangles to spare, the current
-  transformers alone as 3-sided prisms from the ground would cost 48 and
-  the strings 48. The trench covers go too. The radiator banks become one box, keeping their
+  bushings stay, as 3-sided pyramids. The poles keep the bays' verticals
+  and red heads, and since 2026-11-22 the disconnectors' tables and the
+  strings stay too (Per-tier triangle counts); the current transformers,
+  posts and drops go. The trench covers go too. The radiator banks become one box, keeping their
   outline. The gantry, tanks, conservators, fire wall, wall, gate and
   house keep their silhouettes on every tier.
 - **Bounds:** every tier keeps the 20.0 × 12.0 m plan bounds and the
@@ -532,7 +596,7 @@ rear, both sides, top and a raised aerial) were looked at for `LOD0` and
 shows each phase running straight from its string through disconnector,
 breaker and current transformer to its bushing, converging on the
 bushings' closer spacing; the aerial shows the switchgear and gantry well
-over the 1.55 m wall. The lattice pass's six views at all four tiers,
+over the 1.56 m wall. The lattice pass's six views at all four tiers,
 20/30 m eye-level and oblique views and the three LOD pairs were rendered
 before and after with identical settings, with sheets from
 `scripts/review_compare.py` in its `compare/`.
@@ -543,8 +607,13 @@ performance.
 ## Interior geometry
 
 The validator's hidden-surface test reports 19 of 8,794 triangles at
-`LOD0` (1.4 m² of it vertical), 4 at `LOD1`, 2 at `LOD2` and 2 at `LOD3`,
-all PASS. Listed face by face from the exported tiers:
+`LOD0` (1.4 m² of it vertical), 4 at `LOD1`, 2 at `LOD2` and 15 at `LOD3`
+(0.6 m² vertical), all PASS. `LOD3`'s are its separate solids' faces
+that look into their 4 mm gaps: the bushing pyramids' bases over the
+covers, the strings' tops under the slim truss, the disconnector legs'
+tops under their decks, and the gate's two ends against its runs; each
+closes its solid and is kept. The rest, listed face by face from the
+exported tiers:
 
 - **The tank strips** (every tier): the strips of each tank's long sides
   under its radiator banks, between the plinth's top at 0.30 m and the
@@ -627,8 +696,8 @@ the default supersampling (`atlas.SS` = 4) and padded last by
 
 | Rows | Region | Mapping |
 | --- | --- | --- |
-| 0–248 | HOUSE band | U along the wall, V = height, 64 px/m; concrete plinth to 0.375 m, then stretcher-bond brick; on the yard walls' own U ranges the trench cover plates, the yard lamp and the number plate (`HOUSE_U_OFF`) |
-| 252–384 | FENCE band | U along the wall, V = height; concrete footing to 0.3125 m, brick, the thin precast coping from 1.4875 m to 1.55 m; the piers' faces too (their 0.02 m over the coping samples the coping's top row and the padding above it) |
+| 0–248 | HOUSE band | U along the wall, V = height, 64 px/m; concrete plinth to 0.391 m (5 courses), then the catalog's stretcher bond (`scripts/brickwork.py`); on the yard walls' own U ranges the trench cover plates, the yard lamp and the number plate (`HOUSE_U_OFF`) |
+| 252–384 | FENCE band | U along the wall, V = height; concrete footing to 0.3125 m, brick, the thin precast coping one course tall, 1.484–1.5625 m; the piers' faces too (their 0.02 m over the coping samples the coping's top row and the padding above it) |
 | 390–558 | unique, row A | tank side, gate, door, radiator face and end, conservator barrel, gravel bed |
 | 566–734 | unique, row B | tank cover, roof, slab edge, radiator top, louvre, bushing, string, cable box, conservator end |
 | 740–1016 | unique, row C | flat patches (the breakers' head paint among them), breaker pole, disconnector post, current transformer, `LOD3`'s whole-pole strip (32 px/m in V), `LOD3`'s painted lattice (a column face, the truss's sides, its top and bottom), the disconnector legs' painted lattice, the fire wall's board-marked concrete (also the current transformers' tables), the trench covers |
@@ -864,7 +933,7 @@ x −2.0):
 - **storeys:** one, its floor at ground, 15.91 m² inside 0.24 m walls;
 - **dwellings:** none;
 - **doors:** one, the house's steel door (`entrance`, main), facing the
-  street. It is at [6.24, 0, 5.94], facing +Z, 1.00 × 2.10 m.
+  street. It is at [6.2525, 0, 5.94], facing +Z, 1.00 × 2.125 m.
 
 The validator's "doors on the footprint" check fits: the door is on the
 house's front edge.
@@ -873,10 +942,10 @@ The schema has no place for the compound, so these are recorded here
 rather than in the sidecar, in the same glTF frame:
 
 - **Wall line (piers' outer faces):** the rectangle x −10.00 to 10.00, z
-  −6.00 to 6.00, 1.55 m high, the piers 1.57 m. The house fills its corner x 4.94–9.94, z
-  1.94–5.94.
-- **Gate:** its centre on the wall's outer face at [2.91, 0, 5.94], 3.42 m
-  clear between its piers (x 1.20–4.62), 1.47 m high, facing +Z.
+  −6.00 to 6.00, 1.5625 m high, the piers 1.5825 m. The house fills its
+  corner x 4.94–9.94, z 1.94–5.94.
+- **Gate:** its centre on the wall's outer face at [2.9375, 0, 5.94],
+  3.375 m clear between its piers (x 1.25–4.625), 1.48 m high, facing +Z.
 - **Transformer plinths:** x −2.20 to 2.20, z 1.00 to 4.40 (south) and z
   −4.40 to −1.00 (north), 0.30 m high.
 - **Switchgear bays:** on z ±2.70, phases at z ±1.70, ±2.70 and ±3.70.
@@ -890,8 +959,10 @@ rather than in the sidecar, in the same glTF frame:
 
 Checked here, in Blender:
 
-- `scripts/validate_asset.py`: 0 FAIL. The one WARN is `source.dirty`, from
-  an uncommitted tree. On every tier the validator passes:
+- `scripts/validate_asset.py`: 0 FAIL and 0 WARN with the sidecar written
+  from a committed tree (`build.py -- facts`); straight after a rebuild in
+  a working tree its one WARN is `source.dirty`. On every tier the
+  validator passes:
   - welded manifold topology;
   - one material and uri-only images;
   - the normal map at scale 1;
@@ -901,7 +972,8 @@ Checked here, in Blender:
 
   It also passes the five 1024² RGB PNGs and the facts sidecar's schema,
   hashes, tiers, footprint and door.
-- `check_layout()`, with the switchgear's and conductors' checks.
+- `check_layout()`, with the brick module (`brick_problems()`) and the
+  switchgear's and conductors' checks.
 - The bindings traced in each GLB: albedo, ORM twice and normal, no
   emission (Night lighting).
 - The six working views at every tier.
@@ -939,6 +1011,16 @@ Checked here, in Blender:
   unchanged; a 35 m oblique noon render of each variant before and after.
 - `variants.png`, the three colours in daylight (`build.py -- variants`).
 
+- The 2026-11-22 pass: the tier pairs at the consumer's 36, 80 and 160 m
+  and `LOD0` at 20 and 35 m, before and after with identical settings
+  (LOD review); the sidecar diffed against the previous one (only the
+  door's x, 6.24 → 6.2525, and height, 2.10 → 2.125, the `LOD2`/`LOD3`
+  counts, hashes and source moved); the validator, 0 FAIL.
+
+Pending here: the six views and the whole-atlas mip review after the
+2026-11-22 pass (its texture change is the re-coursed heights, gate and
+door, in their own regions).
+
 Pending in the consumer:
 
 - import, orientation and pivot on reimport in the engine;
@@ -960,6 +1042,18 @@ Python 3 with numpy, scipy and Pillow.
 
 ## Revision log
 
+- **2026-11-22 — audit fixes.** Re-coursed to the catalog brick module as
+  the plant hall was (`brick_problems()`): the yard wall 1.55 → 1.5625 m
+  with a one-course coping from 1.484 m (was 1.4875), the gate opening
+  3.42 → 3.375 m (x −0.80…2.62 → −0.75…2.625), the house's plinth 0.375 →
+  0.391 m, slab underside 3.20 → 3.203 m, the door leaf 2.10 → 2.125 m
+  and 1.25 cm east, the high louvres' sills 2.30 → 2.328 m and the low one
+  0.55 → 0.531 m, the louvres 0–10 cm along their walls, the east and west
+  walls' U a half stretcher on. Every turned part of 4 sides or more shades
+  smooth. `LOD3` keeps the disconnector tables and the strings, paid for by
+  bushing pyramids and a gate that touches nothing. Triangles 8,794 /
+  3,936 / 1,480 / 482 → 8,794 / 3,936 / 1,476 / 494; bounds, footprint and
+  pivot unchanged.
 - **2026-11-21 — mip review.** The review at each tier's switch distance
   recorded (Texture set, Review status); no asset change.
 - **2026-11-21 — lattice pass.** The solid portal became a galvanised

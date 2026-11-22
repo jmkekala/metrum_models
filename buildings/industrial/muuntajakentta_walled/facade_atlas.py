@@ -19,7 +19,7 @@ The atlas is a trim sheet. Two bands run the full width and tile in U:
     y    0 ..  248   HOUSE   z 0 .. 3.80 m: concrete plinth, then facing
                              brick; the switchgear house's walls and the
                              fire wall between the transformers
-    y  252 ..  384   FENCE   z 0 .. 1.55 m: concrete footing, the yard wall's
+    y  252 ..  384   FENCE   z 0 .. 1.5625 m: concrete footing, the yard wall's
                              brick, its thin concrete coping; the piers too
     y  390 .. 1024   unique  tank, radiator, conservator, bushing and
                              insulator regions, the switchgear's breaker
@@ -62,16 +62,23 @@ PIER_W = 0.36                   # a brick pier, square (one and a half bricks)
 WALL_T = 0.24                   # the wall between them (one brick)
 WCX0, WCX1 = FX0 + PIER_W / 2.0, FX1 - PIER_W / 2.0   # wall centre lines
 WCY = FY - PIER_W / 2.0
-Z_FENCE = 1.55                  # wall top, coping included (the piers PIER_PROUD over it)
-Z_FOOT_F = 0.3125               # the wall's concrete footing (20 px)
-Z_COPING = Z_FENCE - 4.0 / PPM  # the thin coping's foot, 1.4875 m
+# The brick is the catalog module (scripts/brickwork.py): every height the
+# brick meets something at is a whole number of COURSE from the ground, and
+# every opening side a whole or half stretcher (HALF) in the U its wall
+# samples (build.py's brick_problems()).
+COURSE = brickwork.COURSE       # 0.078125 m, 5 px
+BRICK_L = brickwork.BRICK_L     # 0.25 m, 16 px; 64 bricks per atlas width
+HALF = BRICK_L / 2.0
+Z_FENCE = 1.5625                # wall top, coping included, 20 courses (the piers PIER_PROUD over it)
+Z_FOOT_F = 0.3125               # the wall's concrete footing (20 px, 4 courses)
+Z_COPING = Z_FENCE - COURSE     # the thin coping's foot, 1.484375 m (19 courses)
 PIER_PROUD = 0.02               # the piers stand this much over the coping
 WALL_COAL = 0.55                # coal fines at the yard wall's foot (weather()) ...
 WALL_COAL_FALL = 0.45           # ... falling by 1/e every this many metres up
 
 # The gate: an opening in the front wall between two piers, closed by a
 # sheet-steel double gate set back in the wall's thickness.
-GATE_OPEN = (-0.80, 2.62)       # x of the two piers' inner faces
+GATE_OPEN = (-0.75, 2.625)      # x of the two piers' inner faces (U = x + 8 m: half stretchers)
 GATE_Y = (-WCY - 0.04, -WCY + 0.02)   # the leaves' 0.06 m thickness
 GATE_Z = (0.04, Z_FENCE - 0.04)
 GATE_INTO = 0.05                # the leaves' box runs this far into the piers
@@ -83,9 +90,9 @@ HX0 = HX1 - 5.0
 HY0 = -(WCY + WALL_T / 2.0)     # -5.94, the front wall line
 HY1 = HY0 + 4.0
 H_WALL_T = 0.24                 # the house's own walls (for the floor area)
-Z_WALL = 3.20                   # brick to the roof slab
-Z_TOP = 3.45                    # the flat slab's top, flush with the walls
-Z_PLINTH = 0.375                # 24 px; the house's concrete plinth
+Z_WALL = 3.203125               # brick to the roof slab, 41 courses
+Z_TOP = Z_WALL + 0.25           # the flat slab's top, flush with the walls
+Z_PLINTH = 0.390625             # 25 px, 5 courses; the house's concrete plinth
 
 # The transformers: two, north and south of a brick fire wall, on concrete
 # plinths, their high-voltage bushings at the west end of the cover,
@@ -192,13 +199,15 @@ BEAM_SIDE_N = 18                # the truss's sides: a Warren zigzag of this man
 
 # ------------------------------------------------------------------ openings
 # kind -> (width, height, casing side, casing bottom, casing top), metres.
+# The casings' outer edges are the brick's: the door's 1.125 x 2.1875 m (9
+# half stretchers, 28 courses), a louvre's 1.0 x 0.625 m (8 x 8).
 OPENINGS = {
-    "door": (1.00, 2.10, 0.0625, 0.0, 0.0625),
+    "door": (1.00, 2.125, 0.0625, 0.0, 0.0625),
     "louvre": (0.875, 0.50, 0.0625, 0.0625, 0.0625),
 }
 REVEAL_DEPTH = {"door": 0.12, "louvre": 0.10}
-Z_LOUVRE_HI = 2.30              # high louvres' sill
-Z_LOUVRE_LO = 0.55              # low louvre's sill
+Z_LOUVRE_HI = 2.328125          # high louvres' sill: casing 2.265625 .. 2.890625 (29 .. 37 courses)
+Z_LOUVRE_LO = 0.53125           # low louvre's sill: casing 0.46875 .. 1.09375 (6 .. 14 courses)
 
 # ------------------------------------------------------------------- bands
 H_Y0 = 2.0                      # v of z = 0 on the house band
@@ -206,8 +215,6 @@ H_TOP = 3.80                    # the band reaches the fire wall's top
 F_Y0 = 254.0                    # v of z = 0 on the fence band
 BAND_IDS_ROWS = {"HOUSE": (0, 248), "FENCE": (252, 384)}
 
-COURSE = brickwork.COURSE       # brick course pitch: 5 px
-BRICK_L = brickwork.BRICK_L     # stretcher: 16 px, 64 bricks per atlas width
 TONE_COURSES = 48
 
 # ------------------------------------------------------------ unique regions
@@ -379,7 +386,9 @@ def paint_house_band(c):
 # from its start corner (build.py's H_WALLS); the north wall's whole length
 # and the west wall's first 1.5 m map nowhere else. The trench covers meet
 # the walls at s = TRENCH_S.
-HOUSE_U_OFF = {"front": 0.0, "east": 5.0, "north": 9.0, "west": 14.0}
+# Each a half stretcher, chosen so the bond turns a half stretcher at the
+# house's four corners (build.py's brick_problems()).
+HOUSE_U_OFF = {"front": 0.0, "east": 5.125, "north": 9.0, "west": 14.125}
 TRENCH_S = {"west": -1.94 - T_Y[0], "north": 7.94 - TRENCH_TURN_X}
 LAMP_S, LAMP_Z = 1.05, 2.70     # the yard lamp on the west wall: centre, shade's rim
 PLATE_S, PLATE_Z = 2.30, 1.62   # the enamel number plate on the north wall: centre, foot
