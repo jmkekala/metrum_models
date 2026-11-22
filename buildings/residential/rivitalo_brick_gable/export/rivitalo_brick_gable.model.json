@@ -3,7 +3,7 @@
   "version": 1,
   "name": "rivitalo_brick_gable",
   "path": "buildings/residential/rivitalo_brick_gable",
-  "source": {"commit": "4552f759bcf8beb73335020471cbf928e55f7026", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "5bf03e9985913d6a204d06aed149383504d6cac8", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-15.69, 0.0, -7.72], "max": [15.69, 8.8475, 7.72]},
   "footprint": [
