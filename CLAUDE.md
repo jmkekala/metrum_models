@@ -218,7 +218,7 @@ metrum_models/
           <asset_name>_emission.png           # required: lit lenses and the lit cabin
           <asset_name>_normal.png             # optional
           <asset_name>_interior.glb           # reserved, optional; not built yet
-          <asset_name>.model.json             # required; version 2, kind vehicle
+          <asset_name>.model.json             # required; version 3, kind vehicle
         glass_texels.png     # required; the atlas's glass texels for the validator, not shipped
         notes.md
         preview.png          # required
@@ -271,7 +271,7 @@ to `vehicle_build.VehicleAsset`, its subclass).
 | `atlas.py` | Rasterises every atlas: a supersampled `Canvas` with id, shade, AO and height channels, rect, bevel and shape primitives (stroke, disc, rounded rect), and `pad()`; periodic `noise()`; `cavity()`; and resolvers for albedo, ORM, normal map and emission (Texture Requirements). |
 | `weathering.py` | Weathering as per-sample fields (dirt, algae, rust, faded paint, rain runs, coal dust) that the canvas carries through `pad()` and `atlas.albedo()`/`orm()` resolve per variant, with helpers for a plinth, splash-back, a sheltered eave, runs under a drip, a roof band, a window and a door. Each atlas's `weather()` places them. |
 | `asset_build.py` | The shared half of every `build.py`: `check_toolchain()`, the catalog preview constants, `open_stack()` (a chimney or stack open at the top round a sooted flue), `union()` (the exact boolean, which triangulates any keyhole face it returns round a hole before the build's weld can fold it; opt-in `snap=SNAP` first puts the operands on a 0.1 mm grid) and `difference()`, its subtracting twin, and an `Asset` (`night_lit=False` for one without lit regions; `pivot=` and `levels=` for a prop; `id_attribute`, set by `VehicleAsset`, exports a corner colour attribute as `COLOR_0`, compression off, rewritten as exact bytes) with `material()`, `build_all()`, `export_all()`, `render_preview()`, `render_variants()`, `write_facts()` and `main()`. Runs inside Blender only. |
-| `model_facts.py` | The facts sidecar `export/<asset_name>.model.json`: its schema, the build-frame to glTF conversion, `wall_door()`, `lane_passage()` and `roof_clear_width()` for a `build.py`'s `facts()`, `compose()`/`write()`, and `check()`, which `validate_asset.py` runs on the file: version 1 for buildings and boundary props; version 2 (`kind: vehicle`) with `compose_vehicle()`, `wheel_part()`, `lamp_lens()`, `glass_group()`, `cargo_box()` and `interior_file()` for vehicles. Pure Python (numpy for version 2). |
+| `model_facts.py` | The facts sidecar `export/<asset_name>.model.json`: its schema, the build-frame to glTF conversion, `wall_door()`, `lane_passage()` and `roof_clear_width()` for a `build.py`'s `facts()`, `compose()`/`write()`, and `check()`, which `validate_asset.py` runs on the file: version 1 for buildings and boundary props; version 3 (`kind: vehicle`) with `compose_vehicle()`, `wheel_part()`, `lamp_lens()`, `glass_group()`, `cargo_box()`, `side_doors()`, `rear_door()` and `interior_file()` for vehicles. Pure Python (numpy for vehicles). |
 | `boundary_wall.py` | The brick perimeter wall pieces of `props/boundary/`: their shared 512 atlas (`export`, written into each piece's `export/`), the joint rule, `Run`/`Pier`/`Gate` and their four tiers, layout checks and facts; each piece's `build.py` names its piece and calls `piece_asset()`. |
 | `vehicle_ids.py` | The vehicle contract's numbers and the ids as they ship: class boxes, ceilings, atlas sizes, the part, lamp and glass tables, `encode()`/`decode()`, a GLB accessor reader (`tier()`), `convert_color0_to_ubyte()`, `steer()`, the lens axes, and `save_glass_texels()`/`load_glass_texels()`. numpy only; runs in Blender and in system Python. |
 | `vehicle_build.py` | The vehicle half of `asset_build`: `Builder` (faces with surface and paint ids), `patch_face()`, `wheel_solid()`, `conform()` (inserts T-junction vertices and removes the edges it leaves without faces), `to_object()`, `Piece`, the id attribute's writing and checks, the paint and lamp-gate preview nodes, and `VehicleAsset` (`build_all()`, `write_facts()`, `material(paint=, lamps=)`, `steer()`). Runs inside Blender only. |
@@ -362,7 +362,7 @@ marked "n/a" rather than dropped.
 **Vehicles — required, in order:** `Style brief`, `Body class` (the class
 and its box), `Dimensions` (target and built length, width with and without
 mirrors, height, wheelbase, track, overhangs and ground clearance, against
-the 1.8 m figure), `Construction` (pieces, how lamp and glass faces are cut,
+the 1.8 m figure, and the doors under `### Doors`), `Construction` (pieces, how lamp and glass faces are cut,
 the front and the pivot), `Wheels` (parts, radius, width, sides per tier,
 twin, arch clearance), `Ids` (each tier's ids and the encoding measured),
 `Lamps` (lenses per group, colours, what each tier keeps), `Glass` (groups,
@@ -433,7 +433,7 @@ thumbnail, so the index is browsable without opening asset folders.
 - **Facts sidecar:** every building ships `export/<asset_name>.model.json`,
   version 1, written by `asset_build`'s `write_facts()` from the `build.py`'s
   `facts()` (`scripts/model_facts.py` holds the schema; vehicles write
-  version 2, Vehicles).
+  version 3, Vehicles).
   - It is in the frame of the exported `.glb` files: metres, `+Y` up, `+Z`
     front, origin at the pivot.
   - It states the `LOD0` bounds, the outer wall outline at ground level
@@ -1037,12 +1037,14 @@ about 105 px long at 30 m, 32 at 100 m, 8 at 400 m.
 
 ### Facts sidecar
 
-`export/<asset_name>.model.json`, version 2 with `"kind": "vehicle"`
+`export/<asset_name>.model.json`, version 3 with `"kind": "vehicle"`
 (`scripts/model_facts.py`); buildings and boundary props stay version 1. The
-exported frame, geometry and files only.
+exported frame, geometry and files only. Version 3 is version 2 with the
+`doors` list added.
 
 - The `build.py`'s `facts()` states `cargo` (`model_facts.cargo_box()`;
-  `None` for a car) and may override `lamps`, `glass`, `coupling` or
+  `None` for a car) and `doors` (`model_facts.side_doors()` and
+  `rear_door()`, from the shut lines its atlas draws), and may override `lamps`, `glass`, `coupling` or
   `interior`. `VehicleAsset.write_facts()` measures the rest from `LOD0` and
   reads counts, bounds, id flags and hashes from the exported files.
 - In order: `schema`, `version`, `kind`, `name`, `path`, `source`,
@@ -1060,7 +1062,10 @@ exported frame, geometry and files only.
   `lamp_lens(colour=)`), centre, unit outward facing, width along up x facing,
   height across it); `glass`, one per group present (group, id, area in
   m²); `cargo` (a van's or truck's load box: min, max, door), `null` for a
-  car; `coupling`, `null` (reserved for trailers); `interior`, `null` or the
+  car; `doors`, one per door, front row first, left before right, the
+  rear's last (side left/right/rear, row front/rear/cargo, centre, width
+  of the opening along the body); `coupling`, `null` (reserved for
+  trailers); `interior`, `null` or the
   file, its triangles and hash; `lods`, all four (file, triangles, hash, and
   whether the tier has wheel parts, lamp ids, glass ids); `textures` (orm,
   emission, normal or `null`); `variants` (name, albedo file and hash,
@@ -1068,6 +1073,20 @@ exported frame, geometry and files only.
 - The lists and `LOD0` agree both ways, every lens has a face, and its
   colour matches the emission texels its faces sample. No seats,
   weights, palettes or other consumer terms.
+- **Doors** are where a person reaches the vehicle, as painted shut lines,
+  not geometry. "Left" and "right" are the driver's; the drive side is the
+  consumer's setting and is not stated.
+  - `centre` is the middle of the opening on the body's skin, at ground
+    level (y = 0), with no standing offset: a side door on the plan box's
+    side or up to 0.15 m inside it (a cab narrower than its load box),
+    never outside; a rear door on the centre line, on the plan box's rear.
+  - `row` is `front` or `rear` for side doors and `cargo` for a load door
+    or tailgate, on the rear or a side. A rear door is always `cargo`.
+  - A car, van or truck has both front doors, a bus at least one door. The
+    front row mirrors within 1 mm; the other rows mirror where both sides
+    have a door (a van may have one sliding door).
+  - A van or truck has a cargo door where `cargo.door` says, no wider than
+    the load box.
 - A full rebuild rewrites it; `build.py -- facts` rewrites it alone, from a
   committed tree.
 
@@ -1216,7 +1235,9 @@ covers only its printed check.
 
 The vehicle classes (`vehicle_car`, `vehicle_van`, `vehicle_truck`,
 `vehicle_bus`) take the class's ceilings and atlas size, one material, the
-vehicle notes list and the version 2 sidecar, skip the glazing measure
+vehicle notes list and the version 3 sidecar (its doors included: order,
+mirrored pairs, the plan box's side and rear, the cargo door), skip the
+glazing measure
 (their emission holds lamps), and add `scripts/vehicle_checks.py`, which
 reads the accessors directly: the class box, mirror reach, ground contact,
 origin and `LOD0`'s plan box on every tier; wheel and lens pairs mirrored;
@@ -1329,7 +1350,8 @@ is exterior surface.
   brightness jump between tiers.
 - Every lens states its lit colour, matching the emission.
 - The facts sidecar passes with `source.dirty` false and describes the
-  vehicle as built; `glass_texels.png` matches the atlas.
+  vehicle as built, its doors on the shut lines the atlas draws;
+  `glass_texels.png` matches the atlas.
 - A generic composite after the owner's direction, with no recognisable make
   or real livery; the review sheet looked at, and kept out of the commit.
 
