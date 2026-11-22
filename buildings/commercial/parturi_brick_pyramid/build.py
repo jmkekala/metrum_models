@@ -1,0 +1,1023 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+"""Deterministic rebuild of parturi_brick_pyramid, all four LOD tiers.
+
+Run inside Blender:
+
+    import runpy; ns = runpy.run_path(".../build.py"); ns["build_all"]()
+
+or headless, which builds, exports, and renders preview.png and variants.png:
+
+    blender --background source.blend --python build.py
+
+Regenerate the textures first (python3 facade_atlas.py export): the UVs index
+into the atlas, and the renders read it.
+
+A late-1980s suburban barber's pavilion: one storey of buff facing brick,
+10 x 8 m, under a brown standing-seam hipped roof of one pitch on all four
+sides, so steep and short-ridged it reads as a pyramid. It stands at the back
+of a 20 x 20 m lot with the forecourt in front.
+
+The street elevation (-Y) carries the shop: an entrance lobby set 0.9 m into
+the brick, left of centre, its glazed screen (the door leaf and a sidelight
+under a transom light) at the back, and two windows to its right, all under
+soldier courses on one head line. A brown sheet band under the eave carries
+PARTURI in cut cream letters over the windows, and a square light box on a
+bracket stands out from the pier beside the lobby. The east wall has the
+side window and a small staff window, the rear the service door under a
+small canopy and a high window, the west the meter cupboard and an air
+louvre. A sheet-metal ventilation housing sits on the ridge; the roof safety
+kit reaches it from the back. Gutters run round all four eaves, with two
+downpipes at diagonally opposite corners.
+
+Construction: closed solids unioned with Blender's exact boolean
+(asset_build.union, snapped to 0.1 mm) -- the body (the wall ring with its
+recesses, capped with a floor and a lid), the roof (hip slopes, fascia,
+soffit and underside as one solid), the hip and ridge flashings, the
+housing, the sign band, the light box and its arms, the canopy, the
+downpipes and the roof safety kit.
+
+Every number the mesh and the atlas share is imported from facade_atlas.py.
+"""
+
+import importlib
+import math
+import os
+import sys
+
+import bmesh
+import bpy
+from mathutils import Euler, Vector, geometry
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+if HERE not in sys.path:
+    sys.path.insert(0, HERE)
+import facade_atlas as L  # noqa: E402  (layout constants shared with the atlas)
+importlib.reload(L)       # an interactive session must not keep a stale layout
+
+ASSET = L.ASSET
+sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "scripts"))
+import asset_build  # noqa: E402
+import downpipes as DP  # noqa: E402
+import model_facts  # noqa: E402
+import roof_safety as RS  # noqa: E402
+from asset_build import bounds as _bounds, to_object, union  # noqa: E402
+
+asset_build.check_toolchain()
+BUILD = asset_build.Asset(ASSET, HERE, L.VARIANTS, L.DEFAULT_VARIANT, tint=L.LIT_FACTOR)
+get_material, export_all = BUILD.material, BUILD.export_all
+_show_only, preview_studio = BUILD.show_only, BUILD.preview_studio
+render_preview, render_variants = BUILD.render_preview, BUILD.render_variants
+
+PPM = L.PPM
+EPS = 1e-6
+LEVELS = (0, 1, 2, 3)
+
+# ================================================================== massing
+HX, HY = L.HX, L.HY
+EO = L.EAVE_OUT
+EX, EY = HX + EO, HY + EO                    # the eave's outline, half
+RX = HX - HY                                 # half the ridge: equal pitches
+SLOPE_K = math.sqrt(1.0 + L.TAN * L.TAN)     # slope length per metre of plan
+
+# ------------------------------------------------------------------ elevations
+# Each wall runs counter-clockwise seen from above, so its outward face is on
+# the right and s runs along it from p0. items are (kind, s at the centre);
+# every kind sits at its own fixed heights (facade_atlas.ITEMS). u is the
+# wall's offset into the tiling brick band, so the bond does not repeat in
+# step from wall to wall.
+WALLS = [
+    dict(name="front", p0=(-HX, -HY), p1=(HX, -HY), u=0.0,
+         items=[("screen", 2.1), ("window", 5.3), ("window", 8.1)]),
+    dict(name="east", p0=(HX, -HY), p1=(HX, HY), u=3.1,
+         items=[("side_window", 2.4), ("small_window", 5.6)]),
+    dict(name="rear", p0=(HX, HY), p1=(-HX, HY), u=6.3,
+         items=[("small_window", 2.3), ("service_door", 7.0)]),
+    dict(name="west", p0=(-HX, HY), p1=(-HX, -HY), u=9.7,
+         items=[("meter", 2.0), ("louvre", 5.0)]),
+]
+WALL = {w["name"]: w for w in WALLS}
+
+# The projecting light box, on the pier right of the lobby: its face is
+# square, it stands BOX_OUT off the brick so it clears the sign band, and it
+# hangs from two arms let into the pier below the band.
+BOX_S = 3.8
+BOX_T = 0.15                                 # its thickness, along the wall
+BOX_OUT = (0.15, 0.15 + L.SIGN_BOX_M)        # its inner and outer edges, off the wall
+BOX_Z = (2.25, 2.25 + L.SIGN_BOX_M)
+ARMS = ((2.33, 2.37), (2.65, 2.69))          # z of the two arms
+ARM_W = 0.04
+ARM_OUT = (-0.05, BOX_OUT[0] + 0.15)         # from inside the pier into the box
+
+BAND_OUT = 0.10                              # the sign band, proud of the brick
+
+# the rear door's canopy: a flat steel tray on the wall over the door
+CANOPY_S = (6.25, 7.75)
+CANOPY_OUT = 0.60
+CANOPY_Z = (2.46, 2.56)
+
+# The louvred attic vent on the front slope: a small hood whose vertical
+# front carries the louvre and whose nearly level top runs back into the
+# slope. HOOD_Y is its front's y, HOOD_FACE the louvre's height over the
+# sheet there, HOOD_FALL the top's fall toward the front.
+HOOD_X = 0.45
+HOOD_Y = -2.6
+HOOD_FACE = 0.40
+HOOD_FALL = 0.052
+# a plain soil vent pipe on the rear slope (LOD0/LOD1): (x, y), radius, height
+VENT = ((-2.0, 2.2), 0.06, 0.55)
+
+# Hip and ridge flashings: a five-sided section in a vertical plane across
+# the line it caps, (across, up) from the line, buried at the foot.
+CAP_SECTION = [(-0.09, -0.10), (0.09, -0.10), (0.09, -0.012), (0.0, 0.035),
+               (-0.09, -0.012)]
+CAP_CORNER = 0.14            # a hip cap stops this far (in plan) short of the corner
+
+# Downpipes (scripts/downpipes.py): two, at diagonally opposite corners, on
+# the side walls, so the street front stays clear and each side shows one.
+DOWNPIPES = [DP.eave_pipe(WALL[w]["p0"], WALL[w]["p1"], s, L.Z_EAVE, 0.0, EO)
+             for w, s in (("west", 7.7), ("east", 7.7))]
+
+# Roof safety kit (scripts/roof_safety.py), the way to the ventilation
+# housing on the ridge: a wall ladder up the middle of the rear wall and the
+# roof ladder straight above it up the rear slope to just short of the
+# housing's back. The roof ladder reaches the housing, so no walkway.
+KIT_S = 5.0                                   # rear wall, s = 5 - x: at x = 0
+PAINT = RS.Paint(L.ATLAS, strip=L.PIPE_STRIP)
+EAVE_REAR = RS.Eave(WALL["rear"]["p0"], WALL["rear"]["p1"], L.Z_EAVE, EO, L.Z_FT, L.TAN)
+ROOF_TOP_OUT = -(HY - L.HOUSING_HALF[1] - 0.30)      # 0.30 m short of the housing
+WALL_LADDER = RS.WallLadder(EAVE_REAR, KIT_S)
+ROOF_LADDER = RS.RoofLadder(EAVE_REAR, KIT_S, EAVE_REAR.roof_z(ROOF_TOP_OUT))
+
+
+def item_mode(kind, level):
+    """Openings: recessed with their reveals to LOD1, painted flush from LOD2,
+    where a 0.12 m reveal is a fraction of a pixel. The entrance lobby is
+    massing, 0.9 m deep and 2.2 m wide, and stays cut through LOD2; LOD3
+    paints it on the wall. The meter cupboard and the louvre are flush on
+    every tier."""
+    if kind in ("meter", "louvre"):
+        return "flush"
+    if kind == "screen":
+        return "recess" if level < 3 else "flush"
+    return "recess" if level < 2 else "flush"
+
+
+def caps_kept(level):
+    """The hip and ridge flashings: 0.18 m wide, about 3 px at 70 m, where
+    the change of light between two slopes already draws the hip."""
+    return level < 2
+
+
+def band_modelled(level):
+    """The sign band stands 0.10 m off the brick: under 1.5 px past 70 m.
+    From LOD2 its artwork is painted on the wall's top course instead."""
+    return level < 2
+
+
+def arms(level):
+    return ARMS if level < 2 else ARMS[1:]
+
+
+def canopy_kept(level):
+    return level < 3
+
+
+def housing_lid(level):
+    return level < 2
+
+
+def vent_kept(level):
+    """The soil vent: 0.12 m across, about 2 px at 70 m, behind the ridge
+    from the street; LOD0/LOD1, as plain vent pipes are elsewhere."""
+    return level < 2
+
+
+# ============================================================== mesh builder
+class Builder:
+    """One closed solid under construction, with UVs set as faces are made.
+    Vertices are shared through a position cache, so faces that meet along
+    an edge meet on the same vertices."""
+
+    def __init__(self):
+        self.bm = bmesh.new()
+        self.uv = self.bm.loops.layers.uv.new("UVMap")
+        self.cache = {}
+
+    def v(self, co):
+        key = (round(co[0], 4), round(co[1], 4), round(co[2], 4))
+        vert = self.cache.get(key)
+        if vert is None:
+            vert = self.bm.verts.new(co)
+            self.cache[key] = vert
+        return vert
+
+    def face(self, cos, uvfn):
+        verts = []
+        for co in cos:
+            vv = self.v(co)
+            if not verts or verts[-1] is not vv:
+                verts.append(vv)
+        if len(verts) > 2 and verts[0] is verts[-1]:
+            verts.pop()
+        if len(verts) < 3:
+            return None
+        o = verts[0].co
+        pts = [(v.co.x - o.x, v.co.y - o.y, v.co.z - o.z) for v in verts]
+        nx = ny = nz = 0.0
+        for i in range(len(pts)):
+            (ax, ay, az), (bx, by, bz) = pts[i], pts[(i + 1) % len(pts)]
+            nx += ay * bz - az * by
+            ny += az * bx - ax * bz
+            nz += ax * by - ay * bx
+        if nx * nx + ny * ny + nz * nz < 1e-18:
+            return None
+        try:
+            f = self.bm.faces.new(verts)
+        except ValueError:
+            return None
+        self.set_uv(f, uvfn)
+        return f
+
+    def set_uv(self, f, uvfn):
+        for loop in f.loops:
+            u, w = uvfn(loop.vert.co)
+            loop[self.uv].uv = (u / L.ATLAS, w / L.ATLAS)
+
+
+class Frame:
+    """A wall plane: s runs along the wall from p0, z is world height, and out
+    runs away from the wall on the side the outward normal points."""
+
+    def __init__(self, p0, p1):
+        self.p0 = Vector((p0[0], p0[1], 0.0))
+        d = Vector((p1[0] - p0[0], p1[1] - p0[1], 0.0))
+        self.L = d.length
+        self.t = d / self.L
+        self.n = Vector((self.t.y, -self.t.x, 0.0))
+
+    def P(self, s, z, out=0.0):
+        q = self.p0 + self.t * s + self.n * out
+        return (q.x, q.y, z)
+
+    def s_of(self, co):
+        return (co.x - self.p0.x) * self.t.x + (co.y - self.p0.y) * self.t.y
+
+    def out_of(self, co):
+        return (co.x - self.p0.x) * self.n.x + (co.y - self.p0.y) * self.n.y
+
+
+def frame_of(name):
+    w = WALL[name]
+    return Frame(w["p0"], w["p1"])
+
+
+# ------------------------------------------------------------ UV mappings
+def uv_patch(name):
+    x, y, w, h = L.PATCHES[name]
+    c = (x + w / 2.0, y + h / 2.0)
+    return lambda co: c
+
+
+def uv_brick(fr, u_off):
+    return lambda co: ((fr.s_of(co) + u_off) * PPM, L.BRICK_Y0 + co.z * PPM)
+
+
+def uv_band(fr):
+    x, y, _w, _h = L.SIGN_BAND
+    s0 = L.SIGN_BAND_S[0]
+    return lambda co: (x + (fr.s_of(co) - s0) * PPM, y + (co.z - L.Z_BAND0) * PPM)
+
+
+def uv_item(fr, kind, l, b):
+    x, y, _w, _h = L.ITEM_REGION[kind]
+    return lambda co: (x + (fr.s_of(co) - l) * PPM, y + (co.z - b) * PPM)
+
+
+def uv_cheek(fr, u_off):
+    """A lobby cheek: the brick band, U running back from the wall face."""
+    return lambda co: ((-fr.out_of(co) + u_off) * PPM, L.BRICK_Y0 + co.z * PPM)
+
+
+def uv_lobby_soffit(fr, depth):
+    return lambda co: (fr.s_of(co) * PPM,
+                       L.SOF_Y0 + (depth + fr.out_of(co)) / depth * L.SOF_H)
+
+
+# ================================================================== walls
+def _flip_slivers(pts, tris):
+    """Replace zero-area triangles by flipping their long edge: openings
+    share head and sill heights, so the triangulator may join three collinear
+    corners into a triangle of no area."""
+    tris = [list(t) for t in tris]
+
+    def area2(t):
+        (ax, ay), (bx, by), (cx, cy) = (pts[i] for i in t)
+        return (bx - ax) * (cy - ay) - (by - ay) * (cx - ax)
+
+    for _ in range(4 * len(tris) + 8):
+        bad = next((i for i, t in enumerate(tris) if abs(area2(t)) < 1e-10), None)
+        if bad is None:
+            return tris
+        t = tris[bad]
+        pairs = [(t[0], t[1], t[2]), (t[1], t[2], t[0]), (t[2], t[0], t[1])]
+        e0, e1, mid = max(pairs, key=lambda p: (pts[p[0]][0] - pts[p[1]][0]) ** 2 +
+                          (pts[p[0]][1] - pts[p[1]][1]) ** 2)
+        for j, u in enumerate(tris):
+            if j == bad or e0 not in u or e1 not in u:
+                continue
+            k = next(k for k in range(3) if {u[k], u[(k + 1) % 3]} == {e0, e1})
+            x, y, d = u[k], u[(k + 1) % 3], u[(k + 2) % 3]
+            tris[bad], tris[j] = [x, mid, d], [mid, y, d]
+            break
+        else:
+            raise ValueError("zero-area triangle with no neighbour to flip against")
+    raise ValueError("sliver repair did not converge")
+
+
+def fill_region(B, fr, outline, holes, uvfn, out=0.0):
+    """Triangulate a wall region with holes and add it."""
+    loops = [outline] + holes
+    flat = [p for loop in loops for p in loop]
+    tris = geometry.tessellate_polygon(
+        [[Vector((s, z, 0.0)) for s, z in loop] for loop in loops])
+    for a, b, c in _flip_slivers(flat, tris):
+        B.face([fr.P(*flat[a], out), fr.P(*flat[b], out), fr.P(*flat[c], out)], uvfn)
+
+
+def item_rect(kind, s):
+    """(left, right, bottom, top) of the rectangle an item takes on its wall,
+    and its opening's (bottom, top)."""
+    it = L.ITEMS[kind]
+    b, t = L.item_box(kind)
+    return (s - it["w"] / 2.0, s + it["w"] / 2.0, b, t), (it["z0"], it["z1"])
+
+
+def build_item(B, fr, wall, kind, s, level):
+    """Faces for one item; returns its outline on the wall, counter-clockwise
+    from its bottom left, with every vertex its faces put on that outline."""
+    (l, r, ob, ot), (zb, zt) = item_rect(kind, s)
+    fn = uv_item(fr, kind, l, ob)
+    if item_mode(kind, level) == "flush":
+        B.face([fr.P(l, ob), fr.P(r, ob), fr.P(r, ot), fr.P(l, ot)], fn)
+        return [(l, ob), (r, ob), (r, ot), (l, ot)]
+    d = L.ITEMS[kind]["depth"]
+    if zb > ob + EPS:                                   # the sheet sill
+        B.face([fr.P(l, ob), fr.P(r, ob), fr.P(r, zb), fr.P(l, zb)], fn)
+    if ot > zt + EPS:                                   # the soldier course
+        B.face([fr.P(l, zt), fr.P(r, zt), fr.P(r, ot), fr.P(l, ot)], fn)
+    if kind == "screen":
+        u0 = wall["u"] + 1.3
+        side = (uv_cheek(fr, u0), uv_cheek(fr, u0 + 2.0))
+        head, sill = uv_lobby_soffit(fr, d), uv_patch("blank")
+    else:
+        side = (uv_patch("reveal"), uv_patch("reveal"))
+        head, sill = uv_patch("reveal"), uv_patch("sill_top")
+    c = [(l, zb), (r, zb), (r, zt), (l, zt)]
+    fns = (sill, side[1], head, side[0])
+    for k in range(4):
+        if k == 0 and zb < EPS:
+            continue                    # standing on the ground: the floor cap closes it
+        (s0, z0), (s1, z1) = c[k], c[(k + 1) % 4]
+        B.face([fr.P(s0, z0), fr.P(s1, z1), fr.P(s1, z1, -d), fr.P(s0, z0, -d)], fns[k])
+    B.face([fr.P(a, z, -d) for a, z in c], fn)
+    ring = [(l, ob), (r, ob)]
+    if zb > ob + EPS:
+        ring.append((r, zb))
+    ring.append((r, zt))
+    if ot > zt + EPS:
+        ring += [(r, ot), (l, ot)]
+    ring.append((l, zt))
+    if zb > ob + EPS:
+        ring.append((l, zb))
+    return _dedupe(ring)
+
+
+def wall_cells(spec, fr):
+    """The wall's rectangles of cladding, (s0, s1, z0, z1, uv): brick from
+    the ground to the sign band's foot, and above it brick -- or on the
+    front, between SIGN_BAND_S, the band's artwork, which LOD0/LOD1 hide
+    under the modelled band and LOD2/LOD3 show."""
+    brick = uv_brick(fr, spec["u"])
+    cells = [(0.0, fr.L, 0.0, L.Z_BAND0, brick)]
+    if spec["name"] == "front":
+        a, b = L.SIGN_BAND_S
+        cells += [(0.0, a, L.Z_BAND0, L.Z_TOP, brick), (a, b, L.Z_BAND0, L.Z_TOP, uv_band(fr)),
+                  (b, fr.L, L.Z_BAND0, L.Z_TOP, brick)]
+    else:
+        cells.append((0.0, fr.L, L.Z_BAND0, L.Z_TOP, brick))
+    return cells
+
+
+def _on_edge(p, a, b):
+    """p strictly inside the axis-aligned segment a-b."""
+    if abs(a[0] - b[0]) < EPS:
+        return abs(p[0] - a[0]) < EPS and min(a[1], b[1]) + EPS < p[1] < max(a[1], b[1]) - EPS
+    return abs(p[1] - a[1]) < EPS and min(a[0], b[0]) + EPS < p[0] < max(a[0], b[0]) - EPS
+
+
+def build_wall(B, spec, level):
+    """One elevation: its cells, each holed for the items inside it, or
+    notched at its foot for an item that stands on the ground. Every cell
+    corner that lies on another cell's edge is put on that edge too, so the
+    cells meet vertex to vertex."""
+    fr = Frame(spec["p0"], spec["p1"])
+    cells = wall_cells(spec, fr)
+    corners = {(round(s, 6), round(z, 6)) for s0, s1, z0, z1, _ in cells
+               for s, z in ((s0, z0), (s1, z0), (s1, z1), (s0, z1))}
+    feats = []
+    for kind, s in spec["items"]:
+        (l, r, b, t), _ = item_rect(kind, s)
+        feats.append(dict(kind=kind, s=s, l=l, r=r, b=b, t=t))
+    for s0, s1, z0, z1, uvfn in cells:
+        mine = [f for f in feats if f["l"] > s0 - EPS and f["r"] < s1 + EPS
+                and f["b"] > z0 - EPS and f["t"] < z1 + EPS]
+        for f in feats:
+            if f not in mine and f["l"] < s1 - EPS and s0 + EPS < f["r"] \
+                    and f["b"] < z1 - EPS and z0 + EPS < f["t"]:
+                raise ValueError("%s: the %s crosses a cell edge" % (spec["name"], f["kind"]))
+        holes, notches = [], []
+        for f in mine:
+            ring = build_item(B, fr, spec, f["kind"], f["s"], level)
+            if f["b"] < z0 + EPS:
+                notches.append((f["l"], ring))
+            else:
+                holes.append(ring)
+        edges = [((s0, z0), (s1, z0)), ((s1, z0), (s1, z1)), ((s1, z1), (s0, z1)),
+                 ((s0, z1), (s0, z0))]
+        outline = []
+        for k, (a, b) in enumerate(edges):
+            outline.append(a)
+            marks = [("pt", p) for p in corners if _on_edge(p, a, b)]
+            if k == 0:
+                marks += [("notch", n) for n in notches]
+
+            def key(mk, a=a, b=b):
+                q = mk[1] if mk[0] == "pt" else (mk[1][0], z0)
+                return (q[0] - a[0]) * (b[0] - a[0]) + (q[1] - a[1]) * (b[1] - a[1])
+            for what, val in sorted(marks, key=key):
+                if what == "pt":
+                    outline.append(val)
+                else:
+                    outline += _notch_path(val[1])
+        fill_region(B, fr, _dedupe(outline), holes, uvfn)
+
+
+def _notch_path(ring):
+    """A ground-standing item's outline as the cell's foot walks round it:
+    from its bottom left up its left side, over its top, down its right."""
+    return [ring[0]] + list(reversed(ring[1:]))
+
+
+def _dedupe(pts):
+    out = []
+    for p in pts:
+        if not out or abs(out[-1][0] - p[0]) > EPS or abs(out[-1][1] - p[1]) > EPS:
+            out.append(p)
+    if len(out) > 1 and abs(out[0][0] - out[-1][0]) < EPS and abs(out[0][1] - out[-1][1]) < EPS:
+        out.pop()
+    return out
+
+
+def close_solid(B):
+    """Cap the wall ring: a floor on the ground and a lid at the wall top,
+    walked by hand round the open rims."""
+    bm = B.bm
+    bm.edges.index_update()
+    order = [e for e in bm.edges if len(e.link_faces) == 1]
+    rim = set(order)
+    if any(sum(1 for e in v.link_edges if e in rim) != 2 for e in order for v in e.verts):
+        raise ValueError("the wall ring's rim branches: a T-junction somewhere")
+    loops = []
+    for first in order:
+        if first not in rim:
+            continue
+        rim.discard(first)
+        start, cur = first.verts
+        loop = [start]
+        while cur is not start:
+            loop.append(cur)
+            e = min((x for x in cur.link_edges if x in rim), key=lambda x: x.index)
+            rim.discard(e)
+            cur = e.other_vert(cur)
+        loops.append(loop)
+    if len(loops) != 2:
+        raise ValueError("expected a floor and a lid, got %d open rims" % len(loops))
+    blank = uv_patch("blank")
+    for loop in loops:
+        B.set_uv(bm.faces.new(loop), blank)
+
+
+def main_body(level):
+    B = Builder()
+    for spec in WALLS:
+        build_wall(B, spec, level)
+    close_solid(B)
+    return B
+
+
+# ================================================================== roof
+EAVES = [  # (eave line start, end) on the eave outline, counter-clockwise, and its wall
+    ((-EX, -EY), (EX, -EY), "front"), ((EX, -EY), (EX, EY), "east"),
+    ((EX, EY), (-EX, EY), "rear"), ((-EX, EY), (-EX, -EY), "west")]
+U_ROOF = {"front": 0.0, "east": 4.0, "rear": 8.0, "west": 12.0}
+
+
+def _eave_frame(a, b):
+    fr = Frame(a, b)
+    return fr
+
+
+def uv_slope(fr, u_off):
+    """The roof band: U along the eave, V up the slope from the fascia."""
+    return lambda co: ((fr.s_of(co) + u_off) * PPM,
+                       L.ROOF_Y0 + max(0.0, -fr.out_of(co)) * SLOPE_K * L.ROOF_RPM)
+
+
+def uv_fascia(fr, u_off):
+    return lambda co: ((fr.s_of(co) + u_off) * PPM, L.FASC_Y0 + (co.z - L.Z_EAVE) * PPM)
+
+
+def uv_soffit(fr, u_off):
+    """*fr* is the wall's line; v is the distance out from its face."""
+    return lambda co: ((fr.s_of(co) + u_off) * PPM,
+                       L.SOF_Y0 + min(EO, max(0.0, fr.out_of(co))) * PPM)
+
+
+def roof():
+    """The hipped roof as one closed solid: four slopes rising from the
+    fascia's top to a ridge RX each side of the centre (two trapezoids and
+    two triangles, every hip in plan at 45 degrees since the pitches are
+    equal), the fascia all round, the level soffit back to the wall line and
+    the underside inside it, which the union buries in the body."""
+    B = Builder()
+    F = [(-EX, -EY), (EX, -EY), (EX, EY), (-EX, EY)]
+    W = [(-HX, -HY), (HX, -HY), (HX, HY), (-HX, HY)]
+    R0, R1 = (-RX, 0.0, L.Z_RIDGE), (RX, 0.0, L.Z_RIDGE)
+    zt, zb = L.Z_FT, L.Z_EAVE
+    top = {"front": [F[0], F[1], R1, R0], "east": [F[1], F[2], R1],
+           "rear": [F[2], F[3], R0, R1], "west": [F[3], F[0], R0]}
+    for k, (a, b, name) in enumerate(EAVES):
+        fr = _eave_frame(a, b)
+        u0 = U_ROOF[name]
+        pts = [p if len(p) == 3 else (p[0], p[1], zt) for p in top[name]]
+        B.face(pts, uv_slope(fr, u0))
+        fa, fb = F[k], F[(k + 1) % 4]
+        B.face([(fa[0], fa[1], zb), (fb[0], fb[1], zb), (fb[0], fb[1], zt),
+                (fa[0], fa[1], zt)], uv_fascia(fr, u0))
+        wa, wb = W[k], W[(k + 1) % 4]
+        B.face([(fa[0], fa[1], zb), (wa[0], wa[1], zb), (wb[0], wb[1], zb),
+                (fb[0], fb[1], zb)], uv_soffit(Frame(wa, wb), u0 + 0.0))
+    B.face([(x, y, zb) for x, y in W], uv_patch("blank"))
+    return B
+
+
+def cap(p0, p1, uvfn):
+    """A flashing along the roof line p0 -> p1 (3D), its five-sided section
+    in vertical planes across the line's plan direction."""
+    B = Builder()
+    d = Vector((p1[0] - p0[0], p1[1] - p0[1], 0.0)).normalized()
+    lat = Vector((-d.y, d.x, 0.0))
+    rings = []
+    for p in (p0, p1):
+        rings.append([(p[0] + lat.x * a, p[1] + lat.y * a, p[2] + z) for a, z in CAP_SECTION])
+    n = len(CAP_SECTION)
+    for k in range(n):
+        B.face([rings[0][k], rings[0][(k + 1) % n], rings[1][(k + 1) % n], rings[1][k]], uvfn)
+    B.face(list(reversed(rings[0])), uvfn)
+    B.face(rings[1], uvfn)
+    return B
+
+
+def caps():
+    """The ridge flashing and the four hip flashings, each stopping short of
+    its eave corner so nothing reaches past the fascia's outline."""
+    fn = uv_patch("flashing")
+    out = [(cap((-RX - 0.05, 0.0, L.Z_RIDGE), (RX + 0.05, 0.0, L.Z_RIDGE), fn), "tmp_ridge")]
+    for i, (cx, cy) in enumerate(((-EX, -EY), (EX, -EY), (EX, EY), (-EX, EY))):
+        rx = RX if cx > 0 else -RX
+        run = math.hypot(cx - rx, cy)
+        k = 1.0 - CAP_CORNER * math.sqrt(2.0) / run
+        end = (rx + (cx - rx) * k, cy * k, L.Z_RIDGE + (L.Z_FT - L.Z_RIDGE) * k)
+        out.append((cap((rx, 0.0, L.Z_RIDGE), end, fn), "tmp_hip%d" % i))
+    return out
+
+
+def box(x0, x1, y0, y1, z0, z1, side, top, bottom):
+    """A closed axis-aligned box; *side* is f(axis) -> uv function for the
+    faces along that axis ("x" for the faces facing +-Y)."""
+    B = Builder()
+    ring = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
+    for k in range(4):
+        (ax, ay), (bx, by) = ring[k], ring[(k + 1) % 4]
+        B.face([(ax, ay, z0), (bx, by, z0), (bx, by, z1), (ax, ay, z1)],
+               side("x" if abs(ay - by) < EPS else "y"))
+    B.face([(x, y, z1) for x, y in ring], top)
+    B.face([(x, y, z0) for x, y in reversed(ring)], bottom)
+    return B
+
+
+def housing(level):
+    """The ventilation housing on the ridge: a sheet-steel box, louvred
+    above the roof, its foot buried in both slopes, under a lid with a
+    small overhang (LOD0/LOD1)."""
+    hx, hy = L.HOUSING_HALF
+    z0 = L.Z_RIDGE - L.HOUSING_BURY
+    z1 = L.Z_RIDGE + L.HOUSING_UP
+    x, y, _w, _h = L.HOUSING
+
+    def side(axis):
+        if axis == "x":
+            return lambda co: (x + (co.x + hx) * PPM, y + (co.z - z0) * PPM)
+        return lambda co: (x + (co.y + hy) * PPM, y + (co.z - z0) * PPM)
+    lid = uv_patch("lid")
+    out = [(box(-hx, hx, -hy, hy, z0, z1, side, lid, lid), "tmp_housing")]
+    if housing_lid(level):
+        t, o = L.HOUSING_LID
+        out.append((box(-hx - o, hx + o, -hy - o, hy + o, z1 - 0.01, z1 + t,
+                        lambda a: lid, lid, lid), "tmp_lid"))
+    return out
+
+
+def roof_z(x, y):
+    """The roof's top surface over plan point (x, y): the lowest of the four
+    slopes' planes, as a hipped roof is."""
+    return L.Z_FT + L.TAN * min(EY + y, EY - y, EX + x, EX - x)
+
+
+def hood():
+    """The louvred attic vent on the front slope: a closed solid whose
+    section across X is its vertical louvred front, its top falling
+    HOOD_FALL a metre toward the front, and a back and a foot buried in the
+    roof; the union keeps what stands above the sheet."""
+    zf = roof_z(0.0, HOOD_Y)
+    top_f = zf + HOOD_FACE
+    yb = HOOD_Y + HOOD_FACE / (L.TAN - HOOD_FALL) + 0.15
+    sec = [(HOOD_Y, zf - 0.25), (HOOD_Y, top_f),
+           (yb, top_f + (yb - HOOD_Y) * HOOD_FALL), (yb, zf - 0.25)]
+    x, y, _w, _h = L.HOUSING
+    # the housing's louvre art: the face's sheet-level foot at the region's
+    # buried part's top, so the louvre band sits in the visible face
+    v0 = zf - (L.HOUSING_BURY + 0.04)
+    louvre = lambda co: (x + (co.x + HOOD_X) * PPM, y + (co.z - v0) * PPM)  # noqa: E731
+    fns = (louvre, uv_patch("canopy_top"), uv_patch("blank"), uv_patch("blank"))
+    B = Builder()
+    n = len(sec)
+    for k in range(n):
+        (y0, z0), (y1, z1) = sec[k], sec[(k + 1) % n]
+        B.face([(-HOOD_X, y0, z0), (HOOD_X, y0, z0), (HOOD_X, y1, z1), (-HOOD_X, y1, z1)],
+               fns[k])
+    side = uv_patch("lid")
+    B.face([(-HOOD_X, yy, zz) for yy, zz in sec], side)
+    B.face([(HOOD_X, yy, zz) for yy, zz in reversed(sec)], side)
+    return B
+
+
+def vent_pipe():
+    """A soil vent pipe through the rear slope, octagonal, its foot buried."""
+    (px, py), r, h = VENT
+    z0 = roof_z(px, py) - 0.20
+    z1 = roof_z(px, py) + h
+    B = Builder()
+    ring = [(px + r * math.cos(math.pi / 8 + k * math.pi / 4),
+             py + r * math.sin(math.pi / 8 + k * math.pi / 4)) for k in range(8)]
+    side, cap_ = uv_patch("flashing"), uv_patch("lid")
+    for k in range(8):
+        (ax, ay), (bx, by) = ring[k], ring[(k + 1) % 8]
+        B.face([(ax, ay, z0), (bx, by, z0), (bx, by, z1), (ax, ay, z1)], side)
+    B.face([(a, b, z1) for a, b in ring], cap_)
+    B.face([(a, b, z0) for a, b in reversed(ring)], cap_)
+    return B
+
+
+def wall_box(fr, s0, s1, o0, o1, z0, z1, side, top=None, bottom=None, ends=None):
+    """A closed box in a wall's frame: s along it, out away from it. *side*
+    maps the faces parallel to the wall, *ends* the faces across it."""
+    B = Builder()
+    ring = [(s0, o1), (s1, o1), (s1, o0), (s0, o0)]
+    fns = [side, ends or side, side, ends or side]
+    for k in range(4):
+        (sa, oa), (sb, ob) = ring[k], ring[(k + 1) % 4]
+        B.face([fr.P(sa, z0, oa), fr.P(sb, z0, ob), fr.P(sb, z1, ob), fr.P(sa, z1, oa)], fns[k])
+    B.face([fr.P(s, z1, o) for s, o in ring], top or side)
+    B.face([fr.P(s, z0, o) for s, o in reversed(ring)], bottom or side)
+    return B
+
+
+def sign_band():
+    """The brown sheet band across the front under the eave, BAND_OUT proud
+    of the brick, its back in the wall and its top in the roof slab."""
+    fr = frame_of("front")
+    a, b = L.SIGN_BAND_S
+    edge = uv_patch("band_edge")
+    B = Builder()
+    o0, o1 = -0.05, BAND_OUT
+    z0, z1 = L.Z_BAND0, L.Z_EAVE + 0.05
+    face = uv_band(fr)
+    B.face([fr.P(a, z0, o1), fr.P(b, z0, o1), fr.P(b, z1, o1), fr.P(a, z1, o1)], face)
+    B.face([fr.P(b, z0, o0), fr.P(a, z0, o0), fr.P(a, z1, o0), fr.P(b, z1, o0)], edge)
+    B.face([fr.P(a, z0, o0), fr.P(a, z0, o1), fr.P(a, z1, o1), fr.P(a, z1, o0)], edge)
+    B.face([fr.P(b, z0, o1), fr.P(b, z0, o0), fr.P(b, z1, o0), fr.P(b, z1, o1)], edge)
+    B.face([fr.P(a, z1, o0), fr.P(a, z1, o1), fr.P(b, z1, o1), fr.P(b, z1, o0)], edge)
+    B.face([fr.P(a, z0, o1), fr.P(a, z0, o0), fr.P(b, z0, o0), fr.P(b, z0, o1)], edge)
+    return B
+
+
+def light_box(level):
+    """The projecting light box and its arms. Both faces carry the same art,
+    each mapped to read left to right from its own side; the rims are the
+    dark aluminium frame."""
+    fr = frame_of("front")
+    s0, s1 = BOX_S - BOX_T / 2.0, BOX_S + BOX_T / 2.0
+    o0, o1 = BOX_OUT
+    z0, z1 = BOX_Z
+    x, y, w, h = L.SIGN_BOX
+    rim = uv_patch("sign_rim")
+    span = L.SIGN_BOX_M
+
+    def face(sign):
+        # seen from +s the face's right is toward the wall (out falling)
+        if sign > 0:
+            return lambda co: (x + (o1 - fr.out_of(co)) / span * w, y + (co.z - z0) / span * h)
+        return lambda co: (x + (fr.out_of(co) - o0) / span * w, y + (co.z - z0) / span * h)
+    B = Builder()
+    B.face([fr.P(s1, z0, o0), fr.P(s1, z0, o1), fr.P(s1, z1, o1), fr.P(s1, z1, o0)], face(1))
+    B.face([fr.P(s0, z0, o1), fr.P(s0, z0, o0), fr.P(s0, z1, o0), fr.P(s0, z1, o1)], face(-1))
+    B.face([fr.P(s0, z0, o0), fr.P(s1, z0, o0), fr.P(s1, z1, o0), fr.P(s0, z1, o0)], rim)
+    B.face([fr.P(s1, z0, o1), fr.P(s0, z0, o1), fr.P(s0, z1, o1), fr.P(s1, z1, o1)], rim)
+    B.face([fr.P(s0, z1, o0), fr.P(s1, z1, o0), fr.P(s1, z1, o1), fr.P(s0, z1, o1)], rim)
+    B.face([fr.P(s0, z0, o1), fr.P(s1, z0, o1), fr.P(s1, z0, o0), fr.P(s0, z0, o0)], rim)
+    out = [(B, "tmp_box")]
+    br = uv_patch("bracket")
+    for i, (za, zb) in enumerate(arms(level)):
+        out.append((wall_box(fr, BOX_S - ARM_W / 2.0, BOX_S + ARM_W / 2.0, ARM_OUT[0],
+                             ARM_OUT[1], za, zb, br), "tmp_arm%d" % i))
+    return out
+
+
+def canopy():
+    """The service door's canopy: a flat steel tray let into the rear wall."""
+    fr = frame_of("rear")
+    return wall_box(fr, CANOPY_S[0], CANOPY_S[1], -0.05, CANOPY_OUT, CANOPY_Z[0], CANOPY_Z[1],
+                    uv_patch("canopy_edge"), uv_patch("canopy_top"), uv_patch("canopy_under"))
+
+
+# ================================================================== assembly
+def kit(level, extents=False):
+    """The roof safety kit's solids for this tier. The wall ladder sets the
+    rear of the plan bounds, so the tier that drops the kit keeps its bare
+    rails (extents=True), appended after the weld."""
+    if extents:
+        return RS.solids([WALL_LADDER], level, PAINT, extents=True)
+    return RS.solids([WALL_LADDER, ROOF_LADDER], level, PAINT)
+
+
+def build_lod(level):
+    base = to_object(main_body(level), "tmp_body")
+    parts = [to_object(roof(), "tmp_roof")]
+    if caps_kept(level):
+        parts += [to_object(B, n) for B, n in caps()]
+    parts += [to_object(B, n) for B, n in housing(level)]
+    parts.append(to_object(hood(), "tmp_hood"))
+    if vent_kept(level):
+        parts.append(to_object(vent_pipe(), "tmp_vent"))
+    if band_modelled(level):
+        parts.append(to_object(sign_band(), "tmp_band"))
+    parts += [to_object(B, n) for B, n in light_box(level)]
+    if canopy_kept(level):
+        parts.append(to_object(canopy(), "tmp_canopy"))
+    parts += [to_object(B, n) for B, n in
+              DP.solids(DOWNPIPES, *DP.MODES[level], L.PIPE_STRIP, L.ATLAS)]
+    drop_kit = RS.MODES[level][0] is None
+    if not drop_kit:
+        parts += [to_object(B, n) for B, n in kit(level)]
+    obj = union(base, parts, snap=asset_build.SNAP)
+    obj.name = "{}_LOD{}".format(ASSET, level)
+    obj.data.name = obj.name + "_mesh"
+
+    bm = bmesh.new()
+    bm.from_mesh(obj.data)
+    # 0.1 mm: the snap grid; the smallest authored feature is the kit's 3 cm rung
+    bmesh.ops.remove_doubles(bm, verts=bm.verts[:], dist=1e-4)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+    if level >= 2:
+        # recover coplanar boolean subdivisions; keep UV seams and every
+        # architectural edge
+        bmesh.ops.dissolve_limit(bm, angle_limit=0.001, verts=bm.verts[:],
+                                 edges=bm.edges[:], delimit={'UV', 'MATERIAL'})
+    bm.to_mesh(obj.data)
+    bm.free()
+    if drop_kit:
+        RS.append(obj, kit(level, extents=True), check=True)
+    return obj
+
+
+# ================================================================== checks
+def check_layout():
+    """Numbers that have to agree before any geometry is worth looking at."""
+    bad = []
+    rects = {}
+    for spec in WALLS:
+        fr = Frame(spec["p0"], spec["p1"])
+        rs = []
+        for kind, s in spec["items"]:
+            (l, r, b, t), (zb, zt) = item_rect(kind, s)
+            rs.append((kind, l, r, b, t))
+            if l < 0.4 or r > fr.L - 0.4:
+                bad.append("%s: the %s is within 0.4 m of a corner" % (spec["name"], kind))
+            if t > L.Z_BAND0 - L.COURSE + EPS:
+                bad.append("%s: the %s reaches the sign band's course" % (spec["name"], kind))
+        for i, a in enumerate(rs):
+            for b in rs[i + 1:]:
+                if a[1] < b[2] + 0.4 and b[1] < a[2] + 0.4:
+                    bad.append("%s: the %s and the %s are under 0.4 m apart"
+                               % (spec["name"], a[0], b[0]))
+        rects[spec["name"]] = rs
+    for a, b in zip(WALLS, WALLS[1:] + WALLS[:1]):
+        if tuple(a["p1"]) != tuple(b["p0"]):
+            bad.append("the wall ring breaks between %s and %s" % (a["name"], b["name"]))
+    # human scale
+    if not 2.0 <= L.Z_LEAF <= 2.4:
+        bad.append("the entrance leaf is %.3f m, outside 2.0-2.4" % L.Z_LEAF)
+    if L.Z_HEAD < L.Z_LEAF + 0.15:
+        bad.append("no transom light over the entrance leaf")
+    if not 2.0 <= L.SERVICE_LEAF[1] <= 2.4:
+        bad.append("the service leaf is %.3f m, outside 2.0-2.4" % L.SERVICE_LEAF[1])
+    for kind in ("window", "side_window", "small_window"):
+        z0 = L.ITEMS[kind]["z0"]
+        if not 0.8 <= z0 <= 1.4:
+            bad.append("the %s's sill is %.3f m, outside 0.8-1.4" % (kind, z0))
+        if abs(L.ITEMS[kind]["z1"] - L.ITEMS["screen"]["z1"]) > EPS:
+            bad.append("the %s's head is off the entrance's head line" % kind)
+    # the lobby
+    scr = L.ITEMS["screen"]
+    if not (0.8 <= scr["depth"] <= 1.0 and 2.0 <= scr["w"] <= 2.4):
+        bad.append("the lobby is not a 0.8-1.0 m deep, ~2.2 m wide recess")
+    if L.DOOR_S0 + L.DOOR_LEAF_W + 2 * L.SCREEN_FRAME > scr["w"] - 0.5:
+        bad.append("the screen has no room for its sidelight")
+    # the eave and the roof
+    if not 0.3 <= EO <= 0.6:
+        bad.append("the eave projects %.3f m, outside 0.3-0.6" % EO)
+    pitch = math.degrees(math.atan(L.TAN))
+    if not 20.0 <= pitch <= 25.0:
+        bad.append("the roof pitch is %.1f degrees, outside 20-25" % pitch)
+    if L.TAN <= 1.0 / 8.0:
+        bad.append("the roof is not steeper than 1:8: the kit's rule would not apply")
+    if abs(L.SLOPE_LEN * L.ROOF_RPM - L.ROOF_H) > 1e-6:
+        bad.append("the roof band's height is not the slope's")
+    if not 3.0 <= L.Z_EAVE <= 3.35:
+        bad.append("the eave is at %.3f m, outside about 3.0-3.3" % L.Z_EAVE)
+    band = L.Z_EAVE - L.Z_BAND0
+    if not 0.5 <= band <= 0.6:
+        bad.append("the sign band is %.3f m tall, outside 0.5-0.6" % band)
+    # the housing on the ridge, inside the slopes and clear of the hips
+    hx, hy = L.HOUSING_HALF
+    t, o = L.HOUSING_LID
+    if hx + o > RX + hy - 0.05:
+        bad.append("the housing reaches a hip")
+    if L.Z_RIDGE - hy * L.TAN < L.Z_RIDGE - L.HOUSING_BURY + 0.1:
+        bad.append("the housing's foot is not buried in the slopes")
+    # the light box: clear of the band, the lobby and the window, arms in brick
+    if BOX_OUT[0] <= BAND_OUT + 0.03 and BOX_Z[1] > L.Z_BAND0:
+        bad.append("the light box touches the sign band")
+    front = {k: (l, r) for k, l, r, b, t in rects["front"]}
+    if not (front["screen"][1] + 0.3 < BOX_S - BOX_T / 2 and
+            BOX_S + BOX_T / 2 + 0.3 < min(l for k, l, r, b, t in rects["front"]
+                                          if k == "window")):
+        bad.append("the light box crowds the lobby or a window")
+    for za, zb in ARMS:
+        if not (BOX_Z[0] + 0.05 < za < zb < min(BOX_Z[1] - 0.05, L.Z_BAND0 - 0.02)):
+            bad.append("a light box arm is not inside the box and under the band")
+    if not (BOX_Z[0] >= 2.2 and BOX_Z[1] <= L.Z_EAVE - 0.2):
+        bad.append("the light box is not clear over a head and under the soffit")
+    # the canopy over the service door
+    rear = {k: (l, r, b, t) for k, l, r, b, t in rects["rear"]}
+    sd = rear["service_door"]
+    if not (CANOPY_S[0] < sd[0] and sd[1] < CANOPY_S[1] and CANOPY_Z[0] > sd[3] + 0.03):
+        bad.append("the canopy does not cover the service door clear of its soldiers")
+    # downpipes and the roof safety kit
+    for pipe, name in zip(DOWNPIPES, ("west", "east")):
+        avoid = [(k, l, r) for k, l, r, b, t in rects[name]]
+        bad += DP.problems(pipe, "the %s downpipe" % name, avoid)
+    avoid = [(k, l, r) for k, l, r, b, t in rects["rear"]]
+    avoid.append(("canopy", CANOPY_S[0], CANOPY_S[1]))
+    bad += RS.problems(WALL_LADDER, "the wall ladder", avoid)
+    if (HY - hy) - abs(ROOF_TOP_OUT) < 0.2:
+        bad.append("the roof ladder runs into the housing")
+    # plan bounds within the brief's 11.5 x 9.5 m
+    front_y = HY + BOX_OUT[1]
+    rear_y = HY + WALL_LADDER.standoff + RS.RAIL_D
+    if 2 * EX > 11.5 or front_y + rear_y > 9.5:
+        bad.append("the plan bounds %.2f x %.2f m exceed 11.5 x 9.5"
+                   % (2 * EX, front_y + rear_y))
+    return bad
+
+
+# ================================================================== build
+def build_all():
+    """Build every tier; the tier bookkeeping is asset_build's."""
+    return BUILD.build_all(check_layout, build_lod)
+
+
+# =================================================================== facts
+def facts():
+    """The geometry facts sidecar's per-asset half (scripts/model_facts.py),
+    in the build frame. The footprint is the wall ring at ground level; the
+    entrance lobby is a recess in the front wall and leaves the outline
+    straight, so the entrance stands on the front wall plane, at the leaf's
+    centre, though the leaf itself is 0.9 m back in the lobby. One storey,
+    the ring's area less the lobby's; no dwellings."""
+    ring = [w["p0"] for w in WALLS]
+    area = abs(sum(a[0] * b[1] - b[0] * a[1]
+                   for a, b in zip(ring, ring[1:] + ring[:1]))) / 2.0
+    scr = L.ITEMS["screen"]
+    area -= scr["w"] * scr["depth"]
+    fs = dict(WALL["front"]["items"])["screen"]
+    leaf_s = fs - scr["w"] / 2.0 + L.DOOR_S0 + L.DOOR_LEAF_W / 2.0
+    rs = dict(WALL["rear"]["items"])["service_door"]
+    doors = [
+        model_facts.wall_door("barber", "entrance", WALL["front"]["p0"], WALL["front"]["p1"],
+                              leaf_s, 0.0, L.DOOR_LEAF_W, L.Z_LEAF, main=True),
+        model_facts.wall_door("staff", "service", WALL["rear"]["p0"], WALL["rear"]["p1"],
+                              rs, 0.0, L.SERVICE_LEAF[0], L.SERVICE_LEAF[1]),
+    ]
+    return {"hero": False, "dwellings": 0, "footprint": ring,
+            "storeys": [(0.0, area)], "doors": doors}
+
+
+# ================================================================ previews
+def _figure():
+    """A 1.8 m standing figure for scale in the working views: a plain
+    grey block, 0.45 x 0.28 m, by the lobby's mouth."""
+    me = bpy.data.meshes.new("_figure")
+    bm = bmesh.new()
+    bmesh.ops.create_cube(bm, size=1.0)
+    for v in bm.verts:
+        v.co.x *= 0.45
+        v.co.y *= 0.28
+        v.co.z = (v.co.z + 0.5) * 1.8
+    bm.to_mesh(me)
+    bm.free()
+    ob = bpy.data.objects.new("_figure", me)
+    off = Vector(BUILD.pivot or (0, 0, 0))
+    ob.location = Vector((-1.4, -HY - 1.6, 0.0)) - off
+    bpy.context.scene.collection.objects.link(ob)
+    return ob
+
+
+def render_views(out_dir, level=0, res=(1400, 1000)):
+    """The six working views CLAUDE.md asks for before export -- four
+    orthographic elevations, a plan from above, a raised three-quarter aerial
+    off the front corner -- plus a rear aerial, an eye-level street view and
+    an entrance view with a 1.8 m figure. Working views only."""
+    preview_studio()
+    _show_only(level)
+    scn = bpy.context.scene
+    saved = (scn.camera, scn.render.resolution_x, scn.render.resolution_y)
+    scn.render.resolution_x, scn.render.resolution_y = res
+    centre, radius = _bounds(bpy.data.objects["{}_LOD{}".format(ASSET, level)])
+    fig = _figure()
+    cam = bpy.data.objects.get("_view_cam")
+    if cam is None:
+        cam = bpy.data.objects.new("_view_cam", bpy.data.cameras.new("_view_cam"))
+        scn.collection.objects.link(cam)
+    scn.camera = cam
+    cam.data.clip_end = 1000.0
+    views = {
+        "front": ((0, -1, 0), (90, 0, 0)), "rear": ((0, 1, 0), (90, 0, 180)),
+        "east": ((1, 0, 0), (90, 0, 90)), "west": ((-1, 0, 0), (90, 0, -90)),
+        "top": ((0, 0, 1), (0, 0, 0)),
+    }
+    written = []
+    for name, (d, rot) in views.items():
+        cam.data.type = 'ORTHO'
+        cam.data.ortho_scale = radius * 2.1
+        cam.rotation_euler = Euler([math.radians(a) for a in rot], 'XYZ')
+        cam.location = centre + Vector(d) * 80.0
+        scn.render.filepath = os.path.join(out_dir, "L%d_%s.png" % (level, name))
+        bpy.ops.render.render(write_still=True)
+        written.append(scn.render.filepath)
+    off = Vector(BUILD.pivot or (0, 0, 0))
+    shots = [("aerial", centre + Vector((1.0, -1.0, math.sqrt(2.0))).normalized() * radius * 3.0,
+              centre, 35.0),
+             ("aerial_rear", centre + Vector((-1.0, 1.0, math.sqrt(2.0))).normalized()
+              * radius * 3.0, centre, 35.0),
+             ("street", Vector((6.0, -17.0, 1.7)) - off, Vector((0.0, -4.0, 2.4)) - off, 35.0),
+             ("entrance", Vector((1.5, -10.0, 1.7)) - off, Vector((-2.2, -4.0, 1.9)) - off, 35.0)]
+    for name, loc, aim, lens in shots:
+        cam.data.type = 'PERSP'
+        cam.data.lens = lens
+        cam.location = loc
+        cam.rotation_euler = (aim - loc).to_track_quat('-Z', 'Y').to_euler()
+        scn.render.filepath = os.path.join(out_dir, "L%d_%s.png" % (level, name))
+        bpy.ops.render.render(write_still=True)
+        written.append(scn.render.filepath)
+    me = fig.data
+    bpy.data.objects.remove(fig, do_unlink=True)
+    bpy.data.meshes.remove(me)
+    scn.camera, scn.render.resolution_x, scn.render.resolution_y = saved
+    return written
+
+
+if __name__ == "__main__":
+    BUILD.main(build_all, facts)

@@ -1,0 +1,43 @@
+{
+  "schema": "metrum-model-facts",
+  "version": 1,
+  "name": "parturi_brick_pyramid",
+  "path": "buildings/commercial/parturi_brick_pyramid",
+  "source": {"commit": "44fbec4ae74d89cb4fb63557a8ca3141c5182019", "dirty": true, "blender": "5.3.0"},
+  "license": "CC-BY-4.0",
+  "bounds": {"min": [-5.4531, 0.0, -4.7415], "max": [5.4531, 5.9037, 4.7415]},
+  "footprint": [
+    [-5.0, -4.1084],
+    [5.0, -4.1084],
+    [5.0, 3.8916],
+    [-5.0, 3.8916]
+  ],
+  "storeys": [
+    {"floor_y_m": 0.0, "area_m2": 78.02}
+  ],
+  "dwellings": 0,
+  "doors": [
+    {"id": "barber", "kind": "entrance", "position": [-3.465, 0.0, 3.8916], "facing": [0.0, 0.0, 1.0], "width_m": 0.95, "height_m": 2.1, "main": true},
+    {"id": "staff", "kind": "service", "position": [-2.0, 0.0, -4.1084], "facing": [0.0, 0.0, -1.0], "width_m": 0.94, "height_m": 2.0555, "main": false}
+  ],
+  "lods": [
+    {"file": "parturi_brick_pyramid_lod0.glb", "triangles": 1568, "sha256": "c46d441ae28284d938d63d79704679c01c4dd421f3365f059741b65454a9d5e7"},
+    {"file": "parturi_brick_pyramid_lod1.glb", "triangles": 1228, "sha256": "c2eb32d5fd7549cc314b5f2d4eeff03bb7437994c88d8ee55d1a790972ba6d6e"},
+    {"file": "parturi_brick_pyramid_lod2.glb", "triangles": 442, "sha256": "a4a1b8f148951cf4b93d3fb0dd5beb450e2483cd846cf81e27853400bddde9e4"},
+    {"file": "parturi_brick_pyramid_lod3.glb", "triangles": 232, "sha256": "3e92932beaafb0c1c64b567c8e3330bcf7b42609d563586911c8e68447027a4d"}
+  ],
+  "textures": {
+    "orm": {"file": "parturi_brick_pyramid_orm.png", "sha256": "a344e818a6e250b4c390278dc5fc80b858e8552a132516ab8ef73edc84298c6c"},
+    "normal": {"file": "parturi_brick_pyramid_normal.png", "sha256": "3b09e04d93acbba062ddded66426d221fd82a98957969876bc997ac3fd3ed34d"},
+    "emission": {"file": "parturi_brick_pyramid_emission.png", "sha256": "6b13bc30a420241b3f0adaf18b41cb813b409492a44f2aff533cbeae17f1a2f4"}
+  },
+  "variants": [
+    {"id": "yellow_brick", "albedo": "parturi_brick_pyramid_albedo_yellow_brick.png", "sha256": "5c5622392bf2ab83033112b9fbbfd25aa8915869e61767c9f750beb440f5fcc4"},
+    {"id": "red_brick", "albedo": "parturi_brick_pyramid_albedo_red_brick.png", "sha256": "11e235b5d76fd2daebc37537695d5e5a0ad4d0e97148590f11f38ff957141c10"},
+    {"id": "brown_brick", "albedo": "parturi_brick_pyramid_albedo_brown_brick.png", "sha256": "e2973bee60a5d04b4122f71a9ae97b2364ea6818e620c6df69be7744afbf1b91"},
+    {"id": "white_brick", "albedo": "parturi_brick_pyramid_albedo_white_brick.png", "sha256": "4b14687c30445107897a484395650bfc03e701431f7fb4ef2fd00e4c6db5ba3d"}
+  ],
+  "default_variant": "yellow_brick",
+  "preview": {"file": "../preview.png", "sha256": "b58b4941c7da182cdc4628c4fe7dd5a7f08d1a4da5dfe2008eb87cf7079f8bce"},
+  "hero": false
+}
