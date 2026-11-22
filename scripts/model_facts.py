@@ -628,7 +628,7 @@ LAMP_KEYS = ("group", "lamp", "side", "position", "colour", "centre", "facing",
 GLASS_KEYS = ("group", "id", "area_m2")
 CARGO_KEYS = ("min", "max", "door")
 CARGO_DOORS = ("rear", "side", "top")
-DOOR_KEYS = ("side", "row", "centre", "width_m")
+VEHICLE_DOOR_KEYS = ("side", "row", "centre", "width_m")
 DOOR_SIDES = ("left", "right", "rear")      # the driver's left and right
 DOOR_ROWS = ("front", "rear", "cargo")      # cargo: a load door or tailgate
 # A door's centre is on the body's skin at the opening, at ground level: on
@@ -943,9 +943,9 @@ def _doors(doc, cls):
         return problems                   # the body block is reported already
     half, good = body["width_m"] / 2.0, []
     for i, d in enumerate(doors):
-        if not isinstance(d, dict) or tuple(d) != DOOR_KEYS:
+        if not isinstance(d, dict) or tuple(d) != VEHICLE_DOOR_KEYS:
             problems.append("doors[%d]: keys %s, not %s" % (
-                i, list(d) if isinstance(d, dict) else d, list(DOOR_KEYS)))
+                i, list(d) if isinstance(d, dict) else d, list(VEHICLE_DOOR_KEYS)))
             continue
         side, row, c, w = d["side"], d["row"], d["centre"], d["width_m"]
         what = "doors[%d] (%s %s)" % (i, row, side)
