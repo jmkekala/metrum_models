@@ -3,7 +3,7 @@
   "version": 1,
   "name": "rintamamiestalo_porch",
   "path": "buildings/residential/rintamamiestalo_porch",
-  "source": {"commit": "1ae4b7c8e22e9556f2646e0f96f62bfe080dcf84", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "749e8be8dc81faff4d0b08564fd3ae1e65572d90", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-5.35, 0.0, -6.84], "max": [5.35, 9.5625, 6.84]},
   "footprint": [
