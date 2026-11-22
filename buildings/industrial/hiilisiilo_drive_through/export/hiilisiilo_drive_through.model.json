@@ -3,7 +3,7 @@
   "version": 1,
   "name": "hiilisiilo_drive_through",
   "path": "buildings/industrial/hiilisiilo_drive_through",
-  "source": {"commit": "1854f39bb5189710ceba593b6e4965f2215eca86", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "2d9af2b7ba19aef1f62db08a4eba7779ff73a491", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-10.325, 0.0, -4.35], "max": [10.325, 13.08, 4.35]},
   "footprint": [
