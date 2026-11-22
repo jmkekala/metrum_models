@@ -350,27 +350,28 @@ def _arc(cx, cy, rx, ry, a0, a1, n=16):
 # A geometric sans, drawn as stroked centrelines on a unit em: y = 0 is the
 # baseline, y = 1 the cap line, and the advance is the first item. Only the
 # letters the sign board needs exist, which is the point of drawing them here
-# rather than shipping a font: PHARMACY.
+# rather than shipping a font: APTEEKKI. Every glyph's ink runs from x = 0 to
+# its advance, so spacing and centring measured on the boxes hold on the ink;
+# the I is a lone stem at x = 0 and so has no advance.
 GLYPHS = {
     " ": (0.34, []),
     "A": (0.70, [[(0.00, 0.00), (0.35, 1.00), (0.70, 0.00)],
                  [(0.105, 0.30), (0.595, 0.30)]]),
-    # Stem, upper bowl and waist in one polyline, then the lower bowl from the
-    # waist back to the baseline: the two meet on the stem at half height.
-    "C": (0.72, [_arc(0.36, 0.50, 0.36, 0.50, 55, 305, 18)]),
-    "H": (0.70, [[(0.00, 1.00), (0.00, 0.00)], [(0.70, 1.00), (0.70, 0.00)],
-                 [(0.00, 0.50), (0.70, 0.50)]]),
-    "M": (0.86, [[(0.00, 0.00), (0.00, 1.00), (0.43, 0.30), (0.86, 1.00),
-                  (0.86, 0.00)]]),
+    # Arms from the stem; the middle one shorter, as in any geometric sans.
+    "E": (0.56, [[(0.56, 1.00), (0.00, 1.00), (0.00, 0.00), (0.56, 0.00)],
+                 [(0.00, 0.50), (0.48, 0.50)]]),
+    "I": (0.00, [[(0.00, 0.00), (0.00, 1.00)]]),
+    # Upper arm from the cap line into the stem a little under half height;
+    # the leg leaves the arm, not the stem, so the joint stays open at weight.
+    "K": (0.62, [[(0.00, 0.00), (0.00, 1.00)],
+                 [(0.62, 1.00), (0.00, 0.40)],
+                 [(0.20, 0.59), (0.62, 0.00)]]),
+    # Stem, upper bowl and waist in one polyline: the bowl closes on the stem
+    # just above half height.
     "P": (0.62, [[(0.00, 0.00), (0.00, 1.00), (0.30, 1.00)]
                  + _arc(0.30, 0.755, 0.32, 0.245, 90, -90, 10)
                  + [(0.00, 0.51)]]),
-    "R": (0.64, [[(0.00, 0.00), (0.00, 1.00), (0.30, 1.00)]
-                 + _arc(0.30, 0.755, 0.32, 0.245, 90, -90, 10)
-                 + [(0.00, 0.51)],
-                 [(0.28, 0.51), (0.64, 0.00)]]),
-    "Y": (0.68, [[(0.00, 1.00), (0.34, 0.48), (0.68, 1.00)],
-                 [(0.34, 0.48), (0.34, 0.00)]]),
+    "T": (0.62, [[(0.00, 1.00), (0.62, 1.00)], [(0.31, 1.00), (0.31, 0.00)]]),
 }
 
 
@@ -706,7 +707,7 @@ def _mark(c, cx, cy, r, mid):
 # What each display window's board carries. The shop is named once, over the
 # left window; the right board is the same green field with the mark on it, so
 # the two read as one fascia broken by the pier rather than as two shops.
-FASCIA_TEXT = {"left": "PHARMACY", "right": ""}
+FASCIA_TEXT = {"left": "APTEEKKI", "right": ""}
 
 
 def paint_fascia(c, key):

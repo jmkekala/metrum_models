@@ -18,7 +18,7 @@ kick panel, one each side of the middle pier, and the entrance -- a glazed
 pair under a transom light -- through a portal in the foot of that pier, on
 the centre line, so a central walk can run straight to it between parking
 either side. One green sign band over the windows, broken only by the pier,
-names the shop once ("PHARMACY", over the left window) and carries the mark
+names the shop once ("APTEEKKI", over the left window) and carries the mark
 once (over the right); a lit plaque with the same mark hangs on the pier over
 the door.
 
@@ -367,9 +367,13 @@ read and the artwork carries no third party's licence.
 
 The pharmacy mark is this asset's own device: a bold cross with a broken ring,
 four short arcs sitting in the quadrants between its arms. The shop is named
-once, by the generic trade word "PHARMACY" (0.47 m capitals, 3.7 m long,
-centred on the left board), not by a business name. The right board carries
-the mark alone. The glyph table holds only the letters that word needs.
+once, by the generic Finnish trade word "APTEEKKI" (0.47 m capitals, 30 px
+at a 5.3 px stroke, 3.2 m of ink centred on the 9.0 m left board, 2.9 m clear
+each side), not by a business name. The right board carries the mark alone.
+The glyph table holds only the letters that word needs (A, E, I, K, P, T).
+Each glyph's ink runs from its origin to its advance, so the word is centred
+and spaced on its ink: the I, a lone stem, has no advance, and the doubled E
+and K sit at the same 0.16 em ink gap as every other pair.
 
 ### Supersampled atlas, normal map and padding
 
@@ -676,6 +680,17 @@ Checked here, in Blender:
   real distance; a latent white bleed onto the plaque's sides one level
   beyond only.
 
+- The Finnish sign word, before against after with
+  `scripts/review_asset.py` and `scripts/review_compare.py` (identical
+  settings): `LOD0` and `LOD1` front and oblique at 20, 35 and 70 m, noon
+  and night (lit), and `LOD1` front, oblique and grazing at 70 m on the
+  whole-atlas mip 3. Only the lettering differs; the rebaked PNGs differ from
+  the old ones inside the left board alone, and the GLBs are byte-identical.
+  The word reads at 35 m and still at 70 m on the full-resolution atlas; on
+  mip 3 it blurs to a light strip on the green, as the old word did, with no
+  leak. The word's ink was measured on the emission mask: 206 px, 185 px
+  clear each side, letter gaps 4-5 px.
+
 Pending, and outside this repository:
 
 - Anisotropic appearance, the emission mask's mips at night, the
@@ -704,6 +719,16 @@ files, not newer ones. The `.glb` and PNG exports are unaffected.
   texture export.
 
 ## Revision log
+
+- **2026-11-22 — sign in Finnish.** The left board reads "APTEEKKI" instead
+  of "PHARMACY", in the same letterforms, cap height and weight, centred on
+  the same board (Signage and artwork). The glyph table gained E, I, K and T
+  and lost C, H, M, R and Y. Geometry, UVs, the mark, the colours and the
+  board are unchanged; triangles 1,024 / 898 / 428 / 328 as before. The
+  albedos, ORM and emission changed inside the board only; the normal map
+  did not. The GLBs were re-exported byte-identical; `source.blend`,
+  `preview.png` and `variants.png` were rewritten, and the sidecar changed
+  only in its texture and preview hashes and its source record.
 
 - **2026-11-21 — mip review.** The review at the switch distances recorded
   (Texture set, Review status); no asset change.
