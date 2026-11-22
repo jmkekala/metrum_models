@@ -1368,9 +1368,15 @@ def build_all():
 
 
 def facts():
+    """The load box inside the walls. The doors from the outlines the atlas
+    draws: the cab doors between their shut lines, on the cab's side at the
+    belt (inside the plan box, which is the load box's), and the roller door
+    between the rear frame's posts, on the plan box's rear."""
     inner = L.BOX_HW - 0.045
     return {"cargo": model_facts.cargo_box((-inner, Y(L.BOX_S0 + 0.05), L.BOX_Z0 + 0.10),
-                                           (inner, Y(L.DOOR_FACE), L.HEADER_Z), door="rear")}
+                                           (inner, Y(L.DOOR_FACE), L.HEADER_Z), door="rear"),
+            "doors": model_facts.side_doors("front", Y(L.DOOR[0]), Y(L.DOOR[1]), L.BELT_HW)
+            + [model_facts.rear_door(-L.REAR_POST_HW, L.REAR_POST_HW)]}
 
 
 if __name__ == "__main__":

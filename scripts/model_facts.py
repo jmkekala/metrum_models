@@ -39,7 +39,7 @@ read from the .glb files themselves, so the sidecar describes what ships.
 
 Pure Python, no bpy: scripts/validate_asset.py runs check() on what is on disk.
 
-Vehicles write version 2 with "kind": "vehicle" (compose_vehicle(), the
+Vehicles write version 3 with "kind": "vehicle" (compose_vehicle(), the
 helpers under "vehicles" below); buildings and boundary props stay version
 1, unchanged. dumps(), write() and check() take either version. A vehicle
 build.py's facts() is completed by scripts/vehicle_build.py's VehicleAsset,
@@ -400,10 +400,9 @@ def check(doc, export_dir):
     every door of a DOOR_KINDS kind, on a footprint edge
     (within DOOR_TOL) or inside the outline, facing out along a unit
     horizontal normal. Passages, when present, are checked by _passages().
-    A version 2 vehicle document is checked by check_vehicle().
+    A vehicle document is checked by check_vehicle().
     """
-    if isinstance(doc, dict) and (doc.get("kind") == VEHICLE_KIND
-                                  or doc.get("version") == VEHICLE_VERSION):
+    if isinstance(doc, dict) and doc.get("kind") == VEHICLE_KIND:
         return check_vehicle(doc, export_dir)
     problems = []
     if tuple(doc) != schema_keys(doc):
@@ -608,14 +607,15 @@ def check_file(path):
 
 
 # ================================================================= vehicles
-# Version 2, "kind": "vehicle" (CLAUDE.md, Vehicles). The field order is the
-# contract's example's. numpy and scripts/vehicle_ids.py are imported inside
+# Version 3, "kind": "vehicle" (CLAUDE.md, Vehicles): version 2 with the
+# doors list added after cargo and nothing else changed. The field order is
+# the contract's example's. numpy and scripts/vehicle_ids.py are imported inside
 # the functions that need them, so the version 1 path stays standard-library.
-VEHICLE_VERSION = 2
+VEHICLE_VERSION = 3
 VEHICLE_KIND = "vehicle"
 VEHICLE_KEYS = ("schema", "version", "kind", "name", "path", "source", "license",
                 "bounds", "body", "axles", "wheels", "attributes", "lamps", "glass",
-                "cargo", "coupling", "interior", "lods", "textures", "variants",
+                "cargo", "doors", "coupling", "interior", "lods", "textures", "variants",
                 "default_variant", "preview")
 BODY_KEYS = ("class", "length_m", "width_m", "width_mirrors_m", "height_m",
              "wheelbase_m", "front_overhang_m", "rear_overhang_m",
@@ -628,6 +628,13 @@ LAMP_KEYS = ("group", "lamp", "side", "position", "colour", "centre", "facing",
 GLASS_KEYS = ("group", "id", "area_m2")
 CARGO_KEYS = ("min", "max", "door")
 CARGO_DOORS = ("rear", "side", "top")
+DOOR_KEYS = ("side", "row", "centre", "width_m")
+DOOR_SIDES = ("left", "right", "rear")      # the driver's left and right
+DOOR_ROWS = ("front", "rear", "cargo")      # cargo: a load door or tailgate
+# A door's centre is on the body's skin at the opening, at ground level: on
+# the plan box's side or rear, or this far inside it at most (a cab narrower
+# than the load box behind it).
+DOOR_INSET = 0.15
 INTERIOR_KEYS = ("file", "triangles", "sha256")
 VEHICLE_LOD_KEYS = ("file", "triangles", "sha256", "wheel_parts", "lamp_ids", "glass_ids")
 VARIANT_KEYS = ("name", "albedo", "paint")
@@ -681,6 +688,25 @@ def cargo_box(lo, hi, door="rear"):
     return {"lo": tuple(lo), "hi": tuple(hi), "door": door}
 
 
+def side_doors(row, y0, y1, x=None, sides=("left", "right")):
+    """The doors of one *row* (front, rear, or cargo for a side load door),
+    one a side: the opening from *y0* to *y1* along the body (build-frame
+    y, between the shut lines at their widest), on the body's skin at half
+    width *x* there; None takes the plan box's side. *sides* names one side
+    for a door without a mirror (a van's single sliding door)."""
+    return [{"side": s, "row": row, "y": (y0 + y1) / 2.0, "width": abs(y1 - y0),
+             "x": None if x is None else abs(x) * (1 if s == "left" else -1)}
+            for s in sides]
+
+
+def rear_door(x0, x1, y=None):
+    """A load door or tailgate in the rear, its opening from *x0* to *x1*
+    across the body, on the rear plane at build-frame *y*; None takes the
+    plan box's rear."""
+    return {"side": "rear", "row": "cargo", "x": (x0 + x1) / 2.0, "y": y,
+            "width": abs(x1 - x0)}
+
+
 def interior_file(here, name):
     """The optional interior mesh, export/<name>_interior.glb, once one is
     built: its file, triangle count and hash. None until then."""
@@ -705,20 +731,22 @@ def tier_ids(path):
 
 
 def compose_vehicle(name, here, variants, default_variant, levels, facts, blender):
-    """The version 2 document, from the vehicle facts and the files on disk.
+    """The version 3 document, from the vehicle facts and the files on disk.
 
     *variants* is [(name, paint), ...]: paint false for a livery that paints
     its panels in full colour. *facts* (build frame) holds "class", "body"
     (measured: "lo"/"hi" the plan-and-height box without mirrors,
     "width_mirrors", "ground_clearance"), "wheels" (wheel_part()), "lamps"
     (lamp_lens()), "glass" (glass_group()), "cargo" (cargo_box() or None),
+    "doors" (side_doors() and rear_door(); listed front row first, left
+    before right, the rear's last, each centre at ground level),
     "coupling" (None) and "interior" (interior_file()). Bounds, triangle
     counts, per-tier id flags and hashes are read from the exported files.
     """
     import vehicle_ids as vi
     edir = os.path.join(here, "export")
     unknown = set(facts) - {"class", "body", "wheels", "lamps", "glass", "cargo",
-                            "coupling", "interior"}
+                            "doors", "coupling", "interior"}
     if unknown:
         raise ValueError("vehicle facts have unknown keys: %s" % sorted(unknown))
     cls = facts["class"]
@@ -809,6 +837,18 @@ def compose_vehicle(name, here, variants, default_variant, levels, facts, blende
         cargo = {"min": [_r(min(p, q)) for p, q in zip(a, bb)],
                  "max": [_r(max(p, q)) for p, q in zip(a, bb)],
                  "door": cargo["door"]}
+    # doors: each centre at ground level, on the skin the build.py states or
+    # on the plan box (its rear is build-frame +y, the exported zmin)
+    doors = []
+    for d in facts.get("doors") or ():
+        x, y = d["x"], d["y"]
+        if d["side"] == "rear":
+            y = -zmin if y is None else y
+        elif x is None:
+            x = abs(hi[0] - lo[0]) / 2.0 * (1 if d["side"] == "left" else -1)
+        doors.append({"side": d["side"], "row": d["row"], "centre": g((x, y, 0.0)),
+                      "width_m": _r(d["width"])})
+    doors.sort(key=_door_order)
 
     lods = []
     for level in levels:
@@ -834,7 +874,7 @@ def compose_vehicle(name, here, variants, default_variant, levels, facts, blende
                    "max": [_r(v) for v in lod0["max"]]},
         "body": body, "axles": axles, "wheels": wheel_docs,
         "attributes": dict(ATTRIBUTES), "lamps": lamps, "glass": glass,
-        "cargo": cargo, "coupling": facts.get("coupling"),
+        "cargo": cargo, "doors": doors, "coupling": facts.get("coupling"),
         "interior": facts.get("interior"),
         "lods": lods, "textures": textures,
         "variants": [{"name": v, "albedo": entry("%s_albedo_%s.png" % (name, v)),
@@ -844,6 +884,10 @@ def compose_vehicle(name, here, variants, default_variant, levels, facts, blende
                     "sha256": sha256(os.path.join(here, "preview.png"))},
     }
     return {k: doc[k] for k in VEHICLE_KEYS}
+
+
+def _door_order(d):
+    return (DOOR_ROWS.index(d["row"]), DOOR_SIDES.index(d["side"]))
 
 
 def _dumps_vehicle(doc):
@@ -857,7 +901,7 @@ def _dumps_vehicle(doc):
     for i, (k, v) in enumerate(items):
         comma = "," if i + 1 < len(items) else ""
         if isinstance(v, list) and v and k in ("axles", "wheels", "lamps", "glass",
-                                               "lods", "variants"):
+                                               "doors", "lods", "variants"):
             out.append("  %s: [" % flat(k))
             out += ["    %s%s" % (flat(e), "," if j + 1 < len(v) else "")
                     for j, e in enumerate(v)]
@@ -879,14 +923,109 @@ def _vec(v, n=3):
     return isinstance(v, list) and len(v) == n and all(map(_number, v))
 
 
+def _doors(doc, cls):
+    """Every problem with a vehicle document's doors list: each entry's
+    keys, side and row (a rear door is a cargo door; the front and rear
+    rows are side doors), its centre at ground level on the body's skin
+    (the plan box's side or rear, or up to DOOR_INSET inside it, never
+    outside), its opening within the body's length or width, the list in
+    order (front row first, left before right, the rear's last) without
+    repeats, the front row on both sides and every left and right pair
+    mirrored within GEOM_TOL. A car, van or truck has both front doors, a
+    bus at least one door; a van or truck has a cargo door, on the rear or
+    a side as cargo.door says and no wider than the load box."""
+    problems = []
+    doors, body = doc["doors"], doc["body"]
+    lo, hi = doc["bounds"]["min"], doc["bounds"]["max"]
+    if not isinstance(doors, list):
+        return ["doors must be a list"]
+    if not (isinstance(body, dict) and _number(body.get("width_m"))):
+        return problems                   # the body block is reported already
+    half, good = body["width_m"] / 2.0, []
+    for i, d in enumerate(doors):
+        if not isinstance(d, dict) or tuple(d) != DOOR_KEYS:
+            problems.append("doors[%d]: keys %s, not %s" % (
+                i, list(d) if isinstance(d, dict) else d, list(DOOR_KEYS)))
+            continue
+        side, row, c, w = d["side"], d["row"], d["centre"], d["width_m"]
+        what = "doors[%d] (%s %s)" % (i, row, side)
+        if side not in DOOR_SIDES or row not in DOOR_ROWS or \
+                (side == "rear" and row != "cargo"):
+            problems.append("%s: sides are %s, rows %s, and a rear door is a cargo door"
+                            % (what, list(DOOR_SIDES), list(DOOR_ROWS)))
+            continue
+        if not (_vec(c) and _number(w) and w > 0):
+            problems.append("%s: centre %r or width_m %r is malformed" % (what, c, w))
+            continue
+        good.append(d)
+        if abs(c[1]) > GEOM_TOL:
+            problems.append("%s: centre.y is %s, not ground level" % (what, c[1]))
+        if side == "rear":
+            if abs(c[0]) > GEOM_TOL:
+                problems.append("%s: centre.x %s is off the centre line" % (what, c[0]))
+            if not -GEOM_TOL <= c[2] - lo[2] <= DOOR_INSET + GEOM_TOL:
+                problems.append("%s: centre.z %s is not on the body's rear, %s"
+                                % (what, c[2], lo[2]))
+            if w > 2 * half + GEOM_TOL:
+                problems.append("%s: width_m %s is over the body's width" % (what, w))
+        else:
+            if (c[0] > 0) != (side == "left"):
+                problems.append("%s: x %s is on the other side (+x is the driver's left)"
+                                % (what, c[0]))
+            if not -GEOM_TOL <= half - abs(c[0]) <= DOOR_INSET + GEOM_TOL:
+                problems.append("%s: centre.x %s is not on the plan box's side, %s"
+                                % (what, c[0], half))
+            if c[2] - w / 2.0 < lo[2] - GEOM_TOL or c[2] + w / 2.0 > hi[2] + GEOM_TOL:
+                problems.append("%s: the opening leaves the body's length" % what)
+    names = [(d["row"], d["side"]) for d in good]
+    if len(set(names)) != len(names) or good != sorted(good, key=_door_order):
+        problems.append("doors repeat or are out of order (front row first, left before "
+                        "right, the rear's last): %s" % names)
+    by = dict(zip(names, good))
+    for row in DOOR_ROWS:
+        a, b = by.get((row, "left")), by.get((row, "right"))
+        if a and b:
+            if (abs(a["centre"][0] + b["centre"][0]) > GEOM_TOL
+                    or abs(a["centre"][2] - b["centre"][2]) > GEOM_TOL
+                    or abs(a["width_m"] - b["width_m"]) > GEOM_TOL):
+                problems.append("doors: the %s row's left and right doors are not mirrored"
+                                % row)
+        elif (a or b) and row == "front":
+            problems.append("doors: the front row has a door on one side only")
+    if cls in ("car", "van", "truck") and ("front", "left") not in by \
+            and ("front", "right") not in by:
+        problems.append("doors: a %s has a front door on each side" % cls)
+    if cls == "bus" and not good:
+        problems.append("doors: a bus has at least one door")
+    cargo = doc["cargo"]
+    cargo_doors = [d for d in good if d["row"] == "cargo"]
+    if cls in ("van", "truck") and not cargo_doors:
+        problems.append("doors: a %s has a cargo door" % cls)
+    if isinstance(cargo, dict) and cargo.get("door") in ("rear", "side") and cargo_doors:
+        want = ("rear",) if cargo["door"] == "rear" else ("left", "right")
+        match = [d for d in cargo_doors if d["side"] in want]
+        if not match:
+            problems.append("doors: cargo.door is %r, but no cargo door is there"
+                            % cargo["door"])
+        elif _vec(cargo.get("min")) and _vec(cargo.get("max")):
+            axis = 0 if cargo["door"] == "rear" else 2
+            for d in match:
+                c, w = d["centre"][axis], d["width_m"] / 2.0
+                if c - w < cargo["min"][axis] - GEOM_TOL or \
+                        c + w > cargo["max"][axis] + GEOM_TOL:
+                    problems.append("doors: the %s cargo door is wider than the load box"
+                                    % d["side"])
+    return problems
+
+
 def check_vehicle(doc, export_dir):
-    """Every problem with a version 2 vehicle document against the files
+    """Every problem with a version 3 vehicle document against the files
     beside it: the schema's keys in order, each record's keys, ids and
     names against the tables in scripts/vehicle_ids.py, the body block
     against the bounds and the axles, wheels resting on the ground, the
     hashes, triangle counts and id flags of the tiers, the variants against
-    the albedo files, and the lamp and glass lists against LOD0's ids both
-    ways. Whether a lens lies on its faces is scripts/vehicle_checks.py's."""
+    the albedo files, the lamp and glass lists against LOD0's ids both
+    ways, and the doors (_doors()). Whether a lens lies on its faces is scripts/vehicle_checks.py's."""
     import vehicle_ids as vi
     problems = []
     if not isinstance(doc, dict) or tuple(doc) != VEHICLE_KEYS:
@@ -1077,6 +1216,7 @@ def check_vehicle(doc, export_dir):
                 problems.append("cargo door %r is not one of %s" % (cargo["door"], CARGO_DOORS))
     elif cls in ("van", "truck"):
         problems.append("cargo is null; a %s states its load box" % cls)
+    problems += _doors(doc, cls)
     if doc["coupling"] is not None:
         problems.append("coupling must be null (reserved for trailers)")
     interior = doc["interior"]

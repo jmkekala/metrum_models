@@ -29,6 +29,7 @@ import estate_atlas as A  # noqa: E402
 importlib.reload(A)
 sys.path.insert(0, A.SCRIPTS)
 import asset_build  # noqa: E402
+import model_facts  # noqa: E402
 import vehicle_build as VB  # noqa: E402
 import vehicle_ids as vi  # noqa: E402
 
@@ -141,7 +142,15 @@ def build_all():
 
 
 def facts():
-    return {"cargo": None}
+    """No load box. The doors from the shut lines the atlas draws: two a
+    side on the door skin, which is the plan box's side, and the tailgate
+    between its cut lines at the bumper, on the plan box's rear."""
+    s0, s1, s2 = A.DOOR_S
+    gate = S.cap_x("rear", "S4", "RE")
+    return {"cargo": None,
+            "doors": model_facts.side_doors("front", s0 - S.HL, s1 - S.HL)
+            + model_facts.side_doors("rear", s1 - S.HL, s2 - S.HL)
+            + [model_facts.rear_door(-gate, gate)]}
 
 
 if __name__ == "__main__":

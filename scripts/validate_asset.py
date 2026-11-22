@@ -65,7 +65,7 @@ TEX_MAX = {("building", False): 1024, ("building", True): 2048,
            ("prop_boundary", False): 512}
 FOUR_TIERS = ("building", "prop_boundary")     # every tier required, sidecar too
 # Vehicles: four required tiers with the class's ceilings and atlas size
-# (scripts/vehicle_ids.py), one material, a version 2 sidecar and the
+# (scripts/vehicle_ids.py), one material, a version 3 sidecar and the
 # vehicle checks; kind -> body class.
 VEHICLE_KINDS = {"vehicle_" + c: c for c in vehicle_ids.CLASSES}
 for _kind, _cls in VEHICLE_KINDS.items():

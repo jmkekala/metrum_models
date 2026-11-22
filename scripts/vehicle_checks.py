@@ -192,12 +192,15 @@ def check(results, asset, adir, body_class):
             doc = json.load(fh)
         assert tuple(doc) == model_facts.VEHICLE_KEYS
     except (OSError, ValueError, AssertionError):
-        R("FAIL", "facts", "no readable version 2 vehicle sidecar: the vehicle checks need it")
+        R("FAIL", "facts", "no readable version %d vehicle sidecar: the vehicle checks need it"
+          % model_facts.VEHICLE_VERSION)
         return
     if not problems:
         R("PASS", "facts", "%s: schema, hashes, tiers and id flags, %d wheels, %d lenses, "
-                           "%d glass groups, lists match LOD0's ids both ways"
-          % (os.path.basename(path), len(doc["wheels"]), len(doc["lamps"]), len(doc["glass"])))
+                           "%d glass groups, lists match LOD0's ids both ways, %d doors on "
+                           "the body's sides and rear, pairs mirrored"
+          % (os.path.basename(path), len(doc["wheels"]), len(doc["lamps"]), len(doc["glass"]),
+             len(doc["doors"])))
     if doc["source"].get("dirty"):
         R("WARN", "facts", "source.dirty is true: rewrite the sidecar from a committed tree "
                            "(build.py -- facts)")

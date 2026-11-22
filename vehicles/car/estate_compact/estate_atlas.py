@@ -236,6 +236,10 @@ class Region:
 SEAM = 0.0135                   # a panel gap's painted width: 1.7 texels, to read at 30 m
 ARCH_TRIM = 0.008               # the dark trim edge round each wheel arch
 DOOR_FOOT = S.Z_MID["S1"] + 0.012   # the doors' lower edge, over the sill cover
+# the doors' shut lines, s: the front door's front edge, the line between
+# the doors, and the rear door's rear edge above the arch (build.py's
+# facts() states the doors from these)
+DOOR_S = (1.305, 2.44, 3.20)
 STRIP_Z = (0.462, 0.500)        # the side mouldings and the bumpers' rub strips
 STRIP_FRONT_S, STRIP_REAR_S = 0.47, 3.90      # where the strips end short of the arches
 STRIP_X = 0.50                  # and where they start on the bumpers' faces
@@ -320,9 +324,9 @@ def paint_side(c):
             R.put((r >= S.ARCH_R + 0.026) & (r < S.ARCH_R + 0.034), shade=0.96, add_h=0.002,
                   on=BODY)
         # door cut lines
-        R.groove(near(s, 1.305) & (z > DOOR_FOOT) & (z < bz - 0.004), on=BODY)
-        R.groove(near(s, 2.44) & (z > DOOR_FOOT) & (z < bz - 0.004), on=BODY)
-        R.groove(near(s, 3.20) & (z > 0.585) & (z < bz - 0.004), on=BODY)
+        R.groove(near(s, DOOR_S[0]) & (z > DOOR_FOOT) & (z < bz - 0.004), on=BODY)
+        R.groove(near(s, DOOR_S[1]) & (z > DOOR_FOOT) & (z < bz - 0.004), on=BODY)
+        R.groove(near(s, DOOR_S[2]) & (z > 0.585) & (z < bz - 0.004), on=BODY)
         ra = np.hypot(s - 3.51, z - 0.335)
         R.groove(near(ra, 0.40) & (s < 3.205) & (z > DOOR_FOOT + 0.035) & (z < 0.59), on=BODY)
         R.groove(near(s, 3.11) & (z > DOOR_FOOT) & (z < DOOR_FOOT + 0.04), on=BODY)

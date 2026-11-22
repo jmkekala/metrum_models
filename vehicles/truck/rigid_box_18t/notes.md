@@ -58,6 +58,15 @@ to the cab 0.10, closed in side view by the cab's collars and the fairing
 over them. Against the review sheet's 1.8 m figure the cab floor sits at
 chest height and the box floor above head height, as it should.
 
+### Doors
+
+Three in the sidecar, from the outlines the atlas draws, each centre at
+ground level under the opening's middle: the cab doors between their shut
+lines, s 0.445-1.40 (0.955 wide), on the cab's side at the belt, |x| 1.162,
+which is 0.103 inside the plan box's side (the load box's, 1.265); the
+roller door 2.24 wide between the rear frame's posts, on the plan box's
+rear, matching the load box's `door: rear`.
+
 ## Construction
 
 Stations and the atlas share one module, `truck_atlas.py` (s metres back
@@ -577,6 +586,9 @@ Blender 5.3.0 (2026-11-11); Blender MCP extension not used for this build
 (headless scripts only).
 
 ## Revision log
+
+- 2026-11-22. Sidecar version 3: the `doors` list (two cab doors, the
+  roller door). No mesh, texture, id or tier change.
 
 - 2026-11-21, final round. Headlamp and fog lenses back from near white to
   bright silver: a field of about sRGB 200, each reflector a soft bowl to a

@@ -8,7 +8,7 @@ own objects with the origin at the wheel centre, the ids written as the
 FLOAT_COLOR corner attribute vehicle_ids.ID_ATTRIBUTE, one joined mesh and
 one material per tier, the checks the ids and the frame must pass before
 export, the measured facts (wheels, lamp lenses, glass areas, body block)
-for the version 2 sidecar, previews painted through the B channel, and
+for the version 3 sidecar, previews painted through the B channel, and
 wheels turned for review.
 
     import vehicle_build as VB
@@ -757,18 +757,23 @@ class VehicleAsset(asset_build.Asset):
         """The build.py's facts() completed with what LOD0 measures.
 
         The build.py states "cargo" (model_facts.cargo_box(), or None for a
-        car) and may override "lamps", "glass", "coupling" or "interior";
-        the body block, the wheels, the lenses and the glass areas are
-        measured here."""
+        car) and "doors" (model_facts.side_doors() and rear_door(), from the
+        door outlines its atlas draws) and may override "lamps", "glass",
+        "coupling" or "interior"; the body block, the wheels, the lenses
+        and the glass areas are measured here."""
         user = dict(facts() if callable(facts) else (facts or {}))
-        unknown = set(user) - {"cargo", "coupling", "interior", "lamps", "glass"}
+        unknown = set(user) - {"cargo", "doors", "coupling", "interior", "lamps", "glass"}
         if unknown:
             raise ValueError("facts() has unknown keys: %s" % sorted(unknown))
+        if "doors" not in user:
+            raise ValueError("facts() states no doors (model_facts.side_doors(), "
+                             "rear_door())")
         return {"class": self.body_class, "body": self.body_block(),
                 "wheels": list(self.measured["wheels"]),
                 "lamps": user.get("lamps") or self.lamp_lenses(),
                 "glass": user.get("glass") or self.glass_areas(),
-                "cargo": user.get("cargo"), "coupling": user.get("coupling"),
+                "cargo": user.get("cargo"), "doors": list(user["doors"]),
+                "coupling": user.get("coupling"),
                 "interior": user.get("interior",
                                      model_facts.interior_file(self.here, self.name))}
 

@@ -43,6 +43,15 @@ body is 1.79 wide over the wheel arches and 1.768 along the doors. A
 1.8 m figure stands beside the car on the review sheet: the roof comes to
 its chin.
 
+### Doors
+
+Five in the sidecar, from the shut lines the atlas draws (`DOOR_S` in
+`estate_atlas.py`), each centre at ground level under the opening's
+middle: front doors s 1.305-2.44 (1.135 wide), rear doors s 2.44-3.20
+(0.76, at the belt; the arch cuts the lower corner), both pairs on the
+plan box's sides at |x| 0.895; the tailgate 1.15 wide between its cut
+lines at the bumper, on the plan box's rear.
+
 ## Construction
 
 `estate_shape.py` holds the whole shape as plain face lists (numpy only), so
