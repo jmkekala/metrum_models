@@ -25,8 +25,8 @@ A trim sheet, not one picture per elevation:
                              a galvanised snow guard 0.5 m up from the eave
     y  674 ..  710   LEDGE   the base's sloped top, trowelled concrete
     y  716 .. 1024   unique  the doors, the window, the louvre, the rope
-                             opening, flat patches, the sheave card (32 px/m)
-                             and the sheave bay's picture for the flat tier
+                             opening, flat patches and the sheave bay's
+                             picture for the flat tier
 
 Every band spans the full width and tiles in U. The tower is 21 m to its
 eave, which no band at 64 px/m holds in a 1024 atlas, so W2 tiles in V:
@@ -147,11 +147,6 @@ ITEM_ORIGIN = {
 PATCHES = {name: (494.0 + 14.0 * i, UNI_Y0, 8.0, 8.0) for i, name in enumerate(
     ("soffit", "csoffit", "reveal", "blank", "barge", "steel", "interior", "rope"))}
 BAY_ORIGIN = (608.0, UNI_Y0)     # the bay's sill at its west jamb
-# One sheave face-on on dark, at half density, for the tier that builds each
-# sheave as a plain disc (build.py): its faces sample this, centred.
-CARD_PPM = 32.0
-CARD_ORIGIN = (496.0, 740.0)     # lower left; the card is 2 SHEAVE_R square
-
 
 
 def item_size_px(kind):
@@ -162,13 +157,13 @@ def item_size_px(kind):
 # ----------------------------------------------------------- material ids
 ID_WALL, ID_SURR, ID_SILL, ID_FRAME, ID_GLASS, ID_DOOR = 0, 1, 2, 3, 4, 5
 ID_ROOF, ID_METAL, ID_GUTTER, ID_BLANK, ID_HANDLE, ID_DARK = 6, 7, 8, 9, 10, 11
-# (roughness, metallic). The steel doors, window frames and louvres are
-# painted, so the light sees paint, not metal; the gutter, downpipes, ladder
-# and snow guard are galvanised.
+# (roughness, metallic). The steel doors, window frames, louvres, the roof
+# sheet and its fascia are painted, so the light sees paint, not metal:
+# dielectric. The gutter, downpipes, ladder and snow guard are galvanised.
 SURFACE = {
     ID_WALL: (0.90, 0.0), ID_SURR: (0.86, 0.0), ID_SILL: (0.84, 0.0),
     ID_FRAME: (0.50, 0.0), ID_GLASS: (glazing.ROUGHNESS, 0.0),
-    ID_DOOR: (0.55, 0.0), ID_ROOF: (0.46, 0.25), ID_METAL: (0.44, 0.25),
+    ID_DOOR: (0.55, 0.0), ID_ROOF: (0.46, 0.0), ID_METAL: (0.46, 0.0),
     ID_GUTTER: (0.48, 0.60), ID_BLANK: (0.95, 0.0), ID_HANDLE: (0.40, 0.70),
     ID_DARK: (0.95, 0.0),
 }
@@ -235,10 +230,14 @@ def paint_concrete(c, y_lo, y_hi, y_ref, seed=11):
     so that y_ref is a lift line. Everything is periodic in W2_H rows and in
     the atlas width, so S1 and W2 are one pattern and both wrap.
 
-    Each 0.125 m board row has its own tone and its own butt joints, the
-    joint between two boards leaves a small grout fin, every 2 m lift starts
-    on a dark recessed lift line with a grout leak over the top of the lift
-    below, and the plugged form-tie holes sit in two staggered rows a lift."""
+    Each 0.125 m board row has its own butt joints, the joint between two
+    boards leaves a small grout fin, every 2 m lift starts on a dark recessed
+    lift line with a grout leak over the top of the lift below, and the
+    plugged form-tie holes sit in two staggered rows a lift. The tone is
+    broad, not per row: every 2 m board is a little apart from its
+    neighbours, and boards reused from the same pour stand in runs of four
+    (0.5 m) that share most of their tone, so the wall reads as patches of
+    formwork rather than a stripe per board."""
     sy, sx, Y, X = c.field(0, ATLAS, y_lo, y_hi)
     lp, bp = m(LIFT), m(BOARD)
     v = np.mod(Y - y_ref, W2_H)
@@ -246,10 +245,15 @@ def paint_concrete(c, y_lo, y_hi, y_ref, seed=11):
     vl = v - lift * lp                                    # up from the lift line
     b = np.floor(v / bp).astype(np.int64) % int(W2_H // bp)
     vb = v - np.floor(v / bp) * bp
-    tone = (1.0 + 0.09 * (atlas.hash_unit(seed, b) - 0.5)
-            + 0.07 * (atlas.hash_unit(seed + 3, lift) - 0.5))
     # butt joints: boards 2 m long, each row's joints at its own offset
     off = atlas.hash_unit(seed + 5, b) * m(2.0)
+    seg = np.floor((X - off) / m(2.0)).astype(np.int64) % int(ATLAS // m(2.0))
+    group = b // 4                                        # four boards to a run
+    gseg = np.floor((X - atlas.hash_unit(seed + 7, group) * m(2.0)) / m(2.0)
+                    ).astype(np.int64) % int(ATLAS // m(2.0))
+    tone = (1.0 + 0.025 * (atlas.hash_unit(seed, b, seg) - 0.5)
+            + 0.07 * (atlas.hash_unit(seed + 9, group, gseg) - 0.5)
+            + 0.07 * (atlas.hash_unit(seed + 3, lift) - 0.5))
     xb = np.mod(X - off, m(2.0))
     butt = xb < 0.8
     fin = vb < 0.9
@@ -524,15 +528,6 @@ def paint_sheave(c, cx, cy, ppm, shade, ao, rect):
     c.disc(cx, cy, k * 0.08, shade=shade * 0.7, height=0.04)
 
 
-def paint_card(c):
-    """The sheave card: one sheave on the dark of the machinery space."""
-    x0, y0 = CARD_ORIGIN
-    sz = 2.0 * SHEAVE_R * CARD_PPM
-    c.paint(x0 - 2, x0 + sz + 2, y0 - 2, y0 + sz + 2, ID_DARK, 1.0, 0.45, height=0.0)
-    paint_sheave(c, x0 + sz / 2.0, y0 + sz / 2.0, CARD_PPM, 0.95, 0.75,
-                 (x0, x0 + sz, y0, y0 + sz))
-
-
 def paint_bay(c):
     """The sheave bay for the tiers that build it flat: the dark machinery
     space, the two sheaves face-on where build.py puts them (the rear one
@@ -541,16 +536,18 @@ def paint_bay(c):
     rear sheave's AO, never a sunlit rim."""
     x0, y0 = BAY_ORIGIN
     w, h = m(BAY_W), m(BAY_H)
-    c.paint(x0 - 2, x0 + w + 2, y0 - 2, y0 + h + 2, ID_DARK, 1.0, 0.45, height=0.0)
+    # Flat on the facade, the picture takes the sun the open bay's 2 m of
+    # depth never sees: its dark is darkened below ID_DARK's own level, and
+    # the sheaves below the modelled ones', as the occlusion there, which
+    # holds whatever the sun does; the rear sheave most, so the picture
+    # reads as one sheave in front of a dim one, not two alike.
+    c.paint(x0 - 2, x0 + w + 2, y0 - 2, y0 + h + 2, ID_DARK, 0.5, 0.45, height=0.0)
     c.mul(x0, x0 + w, y0, y0 + m(0.06), 0.85, ao=0.40)            # the deck's edge
     lines = rope_lines()
     for k in reversed(range(len(SHEAVES))):
         u, z = SHEAVES[k]
         cx, cy = x0 + m(u), y0 + m(z)
-        # flat on the facade, they would read lighter than the modelled
-        # sheaves deep under the bay's head: darkened as the occlusion
-        # there, which holds whatever the sun does
-        shade, ao = (0.82, 0.72) if k == 0 else (0.68, 0.55)
+        shade, ao = (0.72, 0.72) if k == 0 else (0.50, 0.55)
         paint_sheave(c, cx, cy, PPM, shade, ao, (x0, x0 + w, y0, y0 + h))
         for (pa, pb) in lines[k]:
             c.stroke((x0 + m(pa[0]), y0 + m(max(pa[1], 0.0))),
@@ -573,10 +570,25 @@ def check_regions():
     rects = {k: ITEM_ORIGIN[k] + item_size_px(k) for k in OPENINGS}
     rects.update({"patch_" + k: r for k, r in PATCHES.items()})   # "rope" is both
     rects["bay"] = BAY_ORIGIN + (m(BAY_W), m(BAY_H))
-    rects["card"] = CARD_ORIGIN + (2 * SHEAVE_R * CARD_PPM,) * 2
     problems = atlas.region_problems(rects, ATLAS, bands_top=UNI_Y0, band_gap=0)
     if problems:
         raise ValueError("atlas layout: " + "; ".join(problems))
+
+
+class Weather(weathering.Weather):
+    """weathering.Weather with two more named noises for the concrete's
+    rain streaks: weathering.py's own runs are a texel or two wide, and
+    across the whole wall they cross the board lines as a fine weave. These
+    are 0.1-0.15 m wide and laid sparse (their peaks only, weather())."""
+
+    STREAKS = {"streak": (111, 5.0, 90.0), "drip": (112, 3.0, 30.0)}
+
+    def noise(self, name):
+        if name in self.STREAKS and name not in self._noise:
+            seed, sx, sy = self.STREAKS[name]
+            self._noise[name] = atlas.noise(self.c, seed, sx, sy,
+                                            tile_y=self.tile_y).astype(np.float32)
+        return super().noise(name)
 
 
 def weather(c):
@@ -584,25 +596,28 @@ def weather(c):
     like. Height-following weather goes on S1 only, whose V is height from
     the ground; W2 repeats in V, so it gets only noise on its own period,
     and its runs hang from its own lift lines."""
-    w = weathering.Weather(c, clean=(ID_GLASS,),
-                           steel=(ID_ROOF, ID_METAL, ID_GUTTER, ID_FRAME, ID_DOOR),
-                           tile_y=TILE)
+    w = Weather(c, clean=(ID_GLASS,),
+                steel=(ID_ROOF, ID_METAL, ID_GUTTER, ID_FRAME, ID_DOOR),
+                tile_y=TILE)
     w.grime()
     w.fade((ID_WALL, ID_SURR, ID_SILL, ID_FRAME, ID_DOOR), amount=0.08)
-    w.wash((ID_WALL, ID_SURR), amount=0.05)
+    w.wash((ID_WALL, ID_SURR))
     walls = ((0, S1_TOP + 4), (W2_Y0 - 4, W2_Y0 + W2_H + 4))
-    # rain streaks down the concrete, long and patchy, on the band period
+    # rain streaks down the concrete: few, broad and long, on the band
+    # period, over broad patches of dirt
     for y0, y1 in walls:
-        w.add("D", 0, ATLAS, y0, y1, lambda Y, X, nz: 0.26 * atlas.smoothstep(
-            0.0, 1.6, nz("long")) + 0.06 * nz("big"), (ID_WALL,))
+        w.add("D", 0, ATLAS, y0, y1, lambda Y, X, nz: 0.24 * atlas.smoothstep(
+            0.9, 2.2, nz("streak")) + 0.06 * nz("big"), (ID_WALL,))
     # runs hanging under every lift line, where water leaves the cold joint
     lines = [S1_Y0 + m(LIFT), S1_TOP, W2_Y0 + m(LIFT), W2_Y0 + W2_H]
     for yl in lines:
-        w.runs(0, ATLAS, yl - 60, yl, (ID_WALL,), 0.28, fall=22.0)
+        w.runs(0, ATLAS, yl - 60, yl, (ID_WALL,), 0.24, fall=22.0, noise="drip",
+               lo=0.8, hi=2.0)
         w.add("F", 0, ATLAS, yl - 6, yl + 2, lambda Y, X, nz: 0.18 * atlas.smoothstep(
             0.5, 1.6, nz("bloom")), (ID_WALL,))                   # lime bloom
     # the W2 gutter under the band holds the runs of the line at its top
-    w.runs(0, ATLAS, W2_Y0 - 4, W2_Y0, (ID_WALL,), 0.28, fall=22.0)
+    w.runs(0, ATLAS, W2_Y0 - 4, W2_Y0, (ID_WALL,), 0.24, fall=22.0, noise="drip",
+           lo=0.8, hi=2.0)
     # S1: soil and algae at the foot, splash above it
     w.plinth(0, ATLAS, S1_Y0, S1_Y0 + m(0.30), (ID_WALL,))
     w.splash(0, ATLAS, S1_Y0 + m(0.30), S1_TOP, (ID_WALL,), amount=0.16)
@@ -666,14 +681,15 @@ def paint(ss=atlas.SS):
         paint_opening(c, kind)
     paint_patches(c)
     paint_bay(c)
-    paint_card(c)
     c.check_bands(BAND_IDS)
 
     wear = 0.025 * noise(c, 3, 40.0) + 0.015 * noise(c, 4, 8.0)
     c.shade *= 1.0 + wear
     conc = c.mid == ID_WALL
-    grain = noise(c, 5, 30.0, 0.45)                    # the boards' grain, along U
-    c.shade[conc] *= 1.0 + 0.035 * grain[conc]
+    # the boards' grain, along U: faint in the colour, so it reads as a
+    # print in the concrete (its relief) and not as woven or sawn wood
+    grain = noise(c, 5, 30.0, 0.8)
+    c.shade[conc] *= 1.0 + 0.012 * grain[conc]
     c.height[conc] += GRAIN_H * grain[conc]
     mottle = noise(c, 6, 50.0)                         # pour-to-pour mottling
     c.shade[conc] *= 1.0 + 0.04 * mottle[conc]

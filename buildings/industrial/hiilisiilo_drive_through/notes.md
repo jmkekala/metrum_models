@@ -148,7 +148,7 @@ boolean (`asset_build.union`):
 - the gallery;
 - the intake house's walls and its roof slab;
 - the trestle: its legs, cross-head, bracing and footings (one solid at
-  `LOD2`/`LOD3`);
+  `LOD3`);
 - three hoppers;
 - two downpipes.
 
@@ -239,10 +239,12 @@ wall). Its members are closed solids; nothing is a lattice or needs alpha.
   leg's web, inside it, and the two pass 0.01 m apart, one each side of the
   bent's centre plane, so neither touches the other.
 - **Paint:** dark painted steel, coal-caked at its feet (Texture set).
-- **Tiers:** `LOD0` and `LOD1` build all of it. `LOD2` and `LOD3` build the
+- **Tiers:** `LOD0`, `LOD1` and `LOD2` build all of it. `LOD3` builds the
   legs and head as one plain solid, an upturned U of the legs' 0.20 m width
-  standing on the ground, with no footings. `LOD2` keeps the X, its bars
-  ending inside the solid legs; `LOD3` drops it (LOD review).
+  standing on the ground, with no footings, and drops the X (LOD review).
+  `LOD2` built the same plain solid until 2026-11-22; its sunlit flat legs
+  read grey where `LOD1`'s shaded H channels read black, and its feet lost
+  the footings' dark blocks, a visible change at the 83 m switch.
 
 The trestle stays inside the `LOD0` bounds, so the pivot, the doors, the
 footprint and the passage are unchanged by it.
@@ -251,7 +253,11 @@ footprint and the passage are unchanged by it.
 
 The roof is a mono-pitch at 1:10 (5.7°), falling to the rear. The underside
 is at 12.80 m at the front wall line and 12.00 m at the rear. The walls run
-0.12 m up into the slab.
+0.12 m up into the slab. Its top is cut across every 2.00 m up the slope
+from the low edge (at 2, 4, 6 and 8 m), as the walls are at their strip
+joints, so each strip maps the repeating ROOF band (Texture set); the rake
+edges carry the cuts. The gallery's top is cut the same way from its lower
+end. `LOD3` leaves both uncut (Texture set).
 
 - **Gutter:** painted on the rear fascia (Texture set).
 - **Downpipes:** modelled with `scripts/downpipes.py` on the rear wall, at
@@ -295,16 +301,18 @@ is at 12.80 m at the front wall line and 12.00 m at the rear. The walls run
   flanges, and its UVs stay inside their region;
 - the downpipes clear the lane's mouth (`downpipes.problems()`);
 - the cladding's U stays inside its band;
+- the roof band is one 2.00 m repeat at 64 px/m, and the eave strip ends
+  inside its first repeat;
 - the roof is no steeper than 1:8.
 
 ## Per-tier triangle counts
 
 | Tier | Triangles | Ceiling | What changes |
 | --- | --- | --- | --- |
-| `LOD0` | 1,022 | 12,000 | openings with a frame ring and a 0.12/0.15 m recess; three hoppers; eight-sided downpipes with swan-necks and shoes; the full trestle |
-| `LOD1` | 870 | 4,000 | each opening one recess the size of its frame; downpipes four-sided, bent; the full trestle |
-| `LOD2` | 534 | 1,500 | openings flush; coplanar boolean subdivisions dissolved (UV seams kept); downpipes straight, four-sided; the trestle one U-shaped solid with its X of bars |
-| `LOD3` | 486 | 500 | downpipes three-sided; the trestle's bracing dropped; the lane, hoppers, gallery, intake and the U-shaped trestle kept |
+| `LOD0` | 1,054 | 12,000 | openings with a frame ring and a 0.12/0.15 m recess; three hoppers; eight-sided downpipes with swan-necks and shoes; the full trestle; roof and gallery top cut every 2 m |
+| `LOD1` | 902 | 4,000 | each opening one recess the size of its frame; downpipes four-sided, bent; the full trestle |
+| `LOD2` | 718 | 1,500 | openings flush; coplanar boolean subdivisions dissolved (UV seams kept); downpipes straight, four-sided; the full trestle |
+| `LOD3` | 486 | 500 | downpipes three-sided; the trestle one U-shaped solid without its X; roof and gallery top uncut; the lane, hoppers, gallery and intake kept |
 
 The counts are not padded. The massing is three boxes, a tunnel, a gallery
 and its trestle. The walls are polygons with holes, and everything shallow
@@ -319,27 +327,51 @@ Where the triangles go at `LOD0`:
   legs and the H-section cross-head take most of it, each 12-sided, with
   the legs' joints into the head and the footings; the bracing bars and
   footings take the rest;
+- the roof's and the gallery top's 2 m cuts for the repeating roof band:
+  32 on `LOD0`–`LOD2` (eight more top triangles and their breakpoints on
+  the rakes and the gallery's sides);
 - the downpipes and the gallery's cuts make up most of the rest.
 
-The trestle costs 240 at `LOD0` and `LOD1`. At `LOD2` and `LOD3` its legs
-and head are one solid, 48; the bracing adds 40 at `LOD2`. Built there as
-three boxes, the leg tops' holes in the head cost 64, which took `LOD3` to
-502, over its ceiling.
+The trestle costs 240 at `LOD0`, `LOD1` and `LOD2`. At `LOD3` its legs and
+head are one solid, 48, without the bracing. Built there as three boxes,
+the leg tops' holes in the head cost 64, which took `LOD3` to 502, over its
+ceiling; the 2 m roof cuts, 32 more, are why `LOD3` maps its roof uncut.
 
-`LOD3` keeps the hoppers and the trestle (LOD review), so it sits near
-`LOD2`. It stays 14 under the ceiling. The gallery's mouth shares the east wall's cladding strips
-with the screen house window, so the wall's triangulation round both is a
-little denser than a bare wall's.
+`LOD3` keeps the hoppers and a trestle (LOD review). It stays 14 under the
+ceiling, 232 under `LOD2`: the trestle's H-sections, footings and X, the
+roof cuts and the downpipes' fourth sides. The gallery's mouth shares the
+east wall's cladding strips with the screen house window, so the wall's
+triangulation round both is a little denser than a bare wall's.
 
 ## LOD review
 
-Intended switches are the catalog defaults: 35, 70 and 120 m, with no
-overrides.
+**Switches: about 37 / 83 / 165 m**, the consumer's screen-size measure:
+1.8, 4 and 8 times the largest bounds dimension (20.65 m, the width), with
+a 75° vertical FOV at 1920×1080. Reviewed there on the exported tiers, each
+pair at the same camera, distance to the centre of `LOD0`'s bounds: front
+(10° up), corner (45° round, 25° up) and eye level (30° round, camera at
+1.7 m) at noon, and the corner at night with the reference emission
+(`review/older_audit_2026_11_22/fix_industrial_a2/hiilisiilo_drive_through/`,
+`renders_before/` and `renders_after/`, before-above-after pair sheets in
+`compare/`). Pixels changing by more than 24 at each switch, front / corner
+/ eye / night: `LOD0`→`LOD1` 485 / 387 / 760 / 207 (the opening rings
+becoming recesses; 434 / 307 / 717 / 220 before the 2026-11-22 fixes, the
+dielectric frames now a little brighter in sun); `LOD1`→`LOD2`
+92 / 94 / 154 / 205 (72 / 83 / 229 / 209 before: the eye view's 229 was
+`LOD2`'s plain trestle legs turning grey and losing their footings; what
+remains is the openings going flush, thin light frames round each window
+and door, a little brighter now the frames are dielectric, and the lit
+windows' outlines at night); `LOD2`→`LOD3` 0 / 0 / 24 / 0 (the
+trestle's H-sections, footings and X becoming the plain U, under a pixel
+wide at 165 m). `LOD3` reads the same as `LOD2` at 165 m in every view:
+it keeps everything with an outline at that size, and the 232 triangles
+it saves are what is under a pixel there (trestle detail, the roof's
+2 m cuts, the downpipes' fourth sides).
 
-The review camera was perspective, 1920×1080, 50° vertical FOV, with
-distance measured along the view to the front or rear bounding face
-(`scripts/review_asset.py`). Rendering was Cycles CPU, 16–20 samples with
-denoising, AgX, exposure 0. Pairs compared:
+Earlier authoring passes used `scripts/review_asset.py`: perspective,
+1920×1080, 50° vertical FOV, distance measured along the view to the front
+or rear bounding face, Cycles CPU, 16–20 samples with denoising, AgX,
+exposure 0. Pairs compared there:
 
 - `LOD0`/`LOD1` at 30/40 m, front and oblique, noon;
 - `LOD1`/`LOD2` at 65/75 m, front, oblique and rear, noon and reverse sun;
@@ -352,7 +384,8 @@ beside the earlier passes in `review/mine_2026_11_20/`. The trestle pass is
 in `review/bunker_trestle_2026_11_21/`: the six views, 25 m close renders
 (`oblique` and `grazing`, noon and morning, `LOD0`/`LOD1`) and every tier
 at 35, 70 and 120 m (`oblique` and `front`, noon), each before and after,
-with `review_compare.py` sheets in `compare/`.
+with `review_compare.py` sheets in `compare/`. Distances in the bullets
+below that are not the consumer's 37 / 83 / 165 m are those passes'.
 
 - **The lane is a real opening on every tier.** It costs about 40
   triangles. From the front it reads as a dark tunnel with the lit ground at
@@ -368,14 +401,18 @@ with `review_compare.py` sheets in `compare/`.
   rising from the right into the screen house; at 120 m all four tiers show
   the same diagonal. The frame's columns and the ring beam are UV regions,
   so they keep their contrast at every tier.
-- **The trestle** reads at 35 m as two dark legs on black footings with
-  the X between them, the cross-head under the gallery's floor. At 70 m
-  `LOD1` and `LOD2` both show the legs and the X; the H-sections and the
-  footings flatten to the `LOD2` solid without a visible change. At 120 m
-  the X is a faint pair of lines against the shaded east wall; `LOD3`
-  drops it and keeps the two legs and the head, so the gallery stays
-  visibly supported. The X's vanishing at the 120 m switch is the one
-  transition it adds, and it is barely visible.
+- **The trestle** reads at 37 m as two dark legs on black footings with
+  the X between them, the cross-head under the gallery's floor. `LOD2`
+  keeps all of it: at the 83 m switch the old plain `LOD2` solid showed
+  sunlit grey legs where `LOD1`'s shaded H channels read black, and lost
+  the footings' dark feet (Construction). At 165 m the X is a faint pair of
+  lines against the shaded east wall; `LOD3` drops it and the H-sections
+  and keeps the two legs and the head as one plain solid, so the gallery
+  stays visibly supported; the change there is barely visible (24 pixels
+  in the eye view).
+- **The roof** maps the repeating band on 2 m strips through `LOD2` and
+  uncut, the band once over its length, on `LOD3`; at 165 m the corner
+  view, which sees the roof most, shows no pixel over 24 changing.
 - **The coal dust** is texture only, so it is the same on every tier; at 70
   and 120 m the dark feet and the dark lane hold. The intake roof's drifts
   read from raised views at 25 m and blur to a darker roof by 70 m.
@@ -443,9 +480,9 @@ One 1024² trim-sheet atlas, rasterised by `scripts/atlas.py` at `atlas.SS`
 | --- | --- | --- |
 | 0–414 | S1, concrete | U along the wall, V = height 0–6.40 m, 64 px/m |
 | 414–554 | C, cladding (x 0–960) and column strip (x 972) | one 2.00 m repeat (rows 420–548) tiling in V, 64 px/m; periodic gutters 6 rows each side |
-| 558–658 | ROOF | U = x at 64 px/m; V up the slope from the low edge, 96 rows over 9.60 m (10 px/m); also the gallery's top |
-| 660–680 | FASCIA | front and rake edges, 64 px/m |
-| 684–944 | unique | lane ceiling (160 × 256) and side walls (256 × 166) at 32 px/m; door, window, intake door at 64 px/m; hopper side; flat patches; the intake's roof (112 × 106 at x 444, y 834) and the trestle's steel (84 × 200 at x 880, y 706), both at 32 px/m |
+| 558–694 | ROOF | U = x at 64 px/m; V up the slope from the low edge, one 2.00 m repeat (rows 562–690) at 64 px/m tiling in V; periodic gutters 4 rows each side; also the gallery's top |
+| 696–956 | unique | lane ceiling (160 × 256) and side walls (256 × 166) at 32 px/m; door, window, intake door at 64 px/m; hopper side; flat patches; the intake's roof (112 × 106 at x 444, y 846) and the trestle's steel (84 × 200 at x 880, y 718), both at 32 px/m |
+| 960–980 | FASCIA | front and rake edges, 64 px/m |
 | 988–1024 | EAVE_R | rear fascia with the gutter, then the roof's lowest 0.40 m at 40 px/m with the snow guard |
 
 **Deviations from 64 px/m:**
@@ -459,7 +496,36 @@ One 1024² trim-sheet atlas, rasterised by `scripts/atlas.py` at `atlas.SS`
   horizontal run and V up from the ground, so the coal on its feet follows
   height. At 64 px/m its 6.25 m of height would need 400 rows. It is plain
   plate with no relief.
-- The roof band is stretched in V; only its ribs vary there.
+- The gallery's sides are sheared, a 15 % stretch: their U is taken from x
+  alone, so the sheets' ribs stand plumb as on the walls, while V runs
+  square to the 30° axis. Measured 64 px/m along the axis and 55.4 px/m
+  across it (anisotropy 1.15), and the same on the tail housing's visible
+  end. Kept: plumb ribs match the walls', and the stretch runs across the
+  ribs, where only the band's noise varies.
+- `LOD3`'s roof and gallery top are uncut and map the ROOF band once over
+  their length: the roof from the eave strip's last row to the band's top,
+  102 rows over 8.34 m (12 px/m), the gallery's top 128 rows over 9.24 m
+  (14 px/m). Its ceiling has no room for the cuts (Per-tier triangle
+  counts); past 165 m a metre is 4 px on screen, so the band's weathering
+  is mip-averaged either way.
+
+### Repeating roof
+
+Until 2026-11-22 the roof band was 96 rows stretched over 9.60 m of slope
+(10 px/m up the slope, anisotropy 6.4), so on the surface the catalog view
+sees most its weathering was smeared six-fold. It now repeats as the
+cladding does: one 2.00 m repeat at 64 px/m, every 2 m strip of the roof
+and the gallery's top mapping the same rows (Construction), with its
+noise and weather on the band's 128-row period (`noise()` covers both
+bands). The ribs vary only in U. What follows the slope cannot live on a
+repeating band, so it moved to the eave strip, whose V is the slope from
+the low edge: the sheet's drip edge (0.85 shade over its first 0.15 m) and
+the dirt gathering toward the gutter (`Weather.roof()`'s eave term, 0.15
+falling by 1/e every 0.30 m). The band keeps that function's runs and
+chalking at their slope-average strength (0.10 runs, 0.05 + 0.04 chalk in
+broad patches), so the high front no longer chalks paler than the rest.
+The eave strip still resamples the finished band's first rows, which now
+sit at the same 64 px/m, so the strips meet without a seam.
 
 ### Repeating cladding
 
@@ -470,8 +536,8 @@ own 128-row period (`noise()` and the `Weather` subclass in
 `facade_atlas.py`), so the repeat is seamless. Height-following weather goes
 only on S1.
 
-The gallery's sides map onto C with U along the axis and V square to it, so
-the ribs stand square to the gallery.
+The gallery's sides map onto C with U from x and V square to the axis, so
+the ribs stand plumb, sheared by the slope (Deviations above).
 
 ### Relief
 
@@ -547,17 +613,40 @@ ceiling to 0.55 and 0.40. Both darken further into the corners. The lane is
 open at both ends, so the fall is symmetric about its middle, and one side
 region serves both walls.
 
+### Roughness and metallic
+
+One ORM for both variants (`SURFACE` in `facade_atlas.py`). Everything
+painted is dielectric, metallic 0: the cladding 0.55, the roof and its
+flashings 0.52, the sashes 0.50, the doors 0.55, and the painted steel of
+the hoppers, the trestle and the reveals 0.55. Until 2026-11-22 they
+carried 0.10–0.30 metallic, which made the dark roof and steel flare grey
+in the sun. Metal stays metal only where it is bare: the galvanised
+gutter, downpipes and snow guard 0.48 / 0.60 and the door hardware
+0.45 / 0.55. Concrete 0.90, coal 0.92, felt 0.90, glass 0.08, all 0; coal
+dust adds roughness and strips metallic (Weathering).
+
 ### Filtering
 
 Whole-atlas mip4 stress renders (`scripts/review_atlas_mips.py`) of `LOD2`
 and `LOD3` at 120 m, front, 75° grazing and rear, under noon sun, showed no
 roof/cladding colour leaks and no dark seams. The columns, the ring beam
-line, the windows and the dark lane all hold.
+line, the windows and the dark lane all hold. Repeated after the
+2026-11-22 repeating roof band and atlas re-layout (the unique block up 12
+rows, the fascia band above it) for `LOD2` and `LOD3` at 83 and 120 m,
+oblique and aerial, base against mip3 and mip4
+(`review/older_audit_2026_11_22/fix_industrial_a2/hiilisiilo_drive_through/mips/`):
+at mip3 the roof's 2 m strip joints do not show; at mip4 they show on
+`LOD2` as faint lighter lines across the roof, where the 16-texel average
+reaches past the band's 4-row gutters. With the consumer's camera the
+roof samples about mip3 at the 83 m switch and nears mip4 only toward
+165 m, where `LOD3`, which maps the roof uncut, takes over; so the lines
+can show faintly at the far end of `LOD2`'s range. Pending in the
+consumer's sampler.
 
 ### Unique textures
 
-Six 1024² RGB PNGs, about 24 MB uncompressed (4 MiB each in memory without
-mips): two albedos, plus one ORM, one normal map and one emission mask
+Five 1024² RGB PNGs (4 MiB each in memory as RGBA without mips): two
+albedos, plus one ORM, one normal map and one emission mask
 shared by both variants.
 
 ## Glazing treatment
@@ -657,21 +746,28 @@ culling is on, and the material is single-sided and opaque. The preview is
   The lane's mouths are not doors.
 - **passages:** one, `truck_lane`, stated from the front mouth trucks
   enter by:
-  - position [−5.925, 0, 4.05]: the lane's centre line (build x −1.90) on
-    the front wall's plane (build y −4.0), not the roof overhang's edge at
-    4.35;
+  - position [−5.925, 0, 4.35]: the lane's centre line (build x −1.90) on
+    the front edge of the plan bounds (build y −4.30), under the roof
+    slab's 0.30 m front overhang. The contract takes the whole plan bounds
+    as solid, so a mouth under an overhang is stated on the bounds' edge,
+    not on the wall plane (z 4.05), where an earlier sidecar put it;
   - forward [0, 0, −1], into the building towards the rear;
-  - width 5.00 m between the side walls, length 8.00 m from the front
-    mouth to the rear one at z −3.95, through (open at the rear);
-  - clear height 4.60 m, the hoppers' mouths (`Z_HOP`); the ceiling is
-    at 5.20 m.
+  - width 5.00 m between the side walls, length 8.70 m from the front
+    bounds edge to the rear one at z −4.35 (build y 4.40, under the 0.40 m
+    rear overhang), through (open at the rear). Under the overhangs nothing
+    narrows the lane: the rear downpipes stand at build x ±5.75, outside
+    it;
+  - clear height 4.60 m, the hoppers' mouths (`Z_HOP`), over the whole
+    length; the ceiling is at 5.20 m and the overhangs' undersides at
+    12.83 m (front) and 11.96 m (rear).
 
 ## Review status
 
 Checked here, in Blender:
 
-- **Validator:** `scripts/validate_asset.py`, 0 FAIL. The one WARN is
-  `source.dirty`, from an uncommitted tree. Every tier passes:
+- **Validator:** `scripts/validate_asset.py`, 0 FAIL, 9 MANUAL, and 0 WARN
+  on a sidecar written from a committed tree (one WARN, `source.dirty`,
+  until `build.py -- facts` rewrites it from one). Every tier passes:
   - welded manifold topology, one material, uri-only images;
   - the normal and emission bindings, the default-off factor;
   - triangle ceilings, pivot at ground and centred;
@@ -701,13 +797,26 @@ Checked here, in Blender:
 - **Sidecar against `LOD0`:** the bounds match the mesh's; every footprint
   corner on a wall is a ground vertex (the strip's four corners under the
   gallery are not, by design); both doors sit on their walls' outer planes,
-  facing out. The passage was measured on the exported `LOD0`: rays across
-  the lane meet its walls at x −8.425 and −3.425 at every height and
-  depth below the hoppers, rays along it meet the wall planes at z 4.05 and
-  −3.95, and the lowest geometry clipped to the lane's plan is 4.600 m,
-  the hoppers' mouths.
-- **LOD pairs:** around 35, 70 and 120 m, under two sun directions.
-- **Filtering:** mip4 stress renders at 120 m.
+  facing out. The passage was measured on the exported `LOD0` (vertical
+  rays from 1 cm up over a 41 × 88 grid on the lane's plan, from z 4.35 to
+  −4.35, and sideways rays at 0.5, 2.5 and 4.4 m): the walls stand 2.50 m
+  each side of the centre line between the wall planes (z 4.05 to −3.95),
+  nothing stands inside the 5.00 m width under either overhang (the first
+  thing sideways there is the rear downpipes, 3.8 and 7.6 m off), and the
+  lowest geometry over the lane is 4.600 m, the hoppers' mouths; under the
+  overhangs it is 12.83 m (front) and 11.96 m (rear).
+- **LOD pairs:** at the consumer's 37 / 83 / 165 m (LOD review), and
+  earlier around 35, 70 and 120 m under two sun directions.
+- **The 2026-11-22 fixes** (lane, roof band, dielectric paint, `LOD2`
+  trestle), before and after with identical settings in
+  `review/older_audit_2026_11_22/fix_industrial_a2/hiilisiilo_drive_through/`:
+  the tier pairs, and `LOD0` front and oblique at 20, 35 and 40 m (noon
+  and `reverse`), both colours (`compare/lod0/`, `compare/lod0_red/`).
+  The sidecar's only changes are the passage's position and length, the
+  triangle counts of `LOD0`–`LOD2` and the hashes; bounds, footprint,
+  storeys and doors are unchanged.
+- **Filtering:** mip3/mip4 stress renders at 83 and 120 m, after the
+  2026-11-22 roof band and atlas re-layout (Texture set).
 - **Variants:** day and night for both (`variants.png`).
 
 Pending in the consumer:
@@ -716,7 +825,8 @@ Pending in the consumer:
 - that its trucks fit the lane: 3.5 × 4.0 m against 5.00 m clear and 4.60 m
   under the hoppers;
 - LOD switching, shadows and AO in the lane;
-- filtering of the stretched roof band and the 32 px/m lane regions;
+- filtering of the repeating roof band's strip joints and the 32 px/m
+  lane regions;
 - night intensity;
 - performance.
 
@@ -725,3 +835,16 @@ Pending in the consumer:
 Blender 5.3.0 (built 2026-11-11), run headless (`--background`) throughout.
 The MCP addon was not used. Texture generation used the system Python 3
 with numpy, scipy and Pillow.
+
+## Revision log
+
+- **2026-11-22:** audit fixes. The sidecar's truck lane now starts on the
+  plan bounds' front edge under the overhang (z 4.05 to 4.35) and runs to
+  the rear edge (length 8.00 to 8.70 m); width and clear height unchanged.
+  The roof band repeats at 64 px/m on a 2 m period (was 10 px/m stretched),
+  the roof and the gallery's top cut every 2 m on `LOD0`–`LOD2`; the atlas
+  re-laid (unique block up 12 rows, the fascia band above it). Painted
+  cladding, roof, flashings, sashes, doors and steel dielectric. `LOD2`
+  keeps the full trestle. The gallery sides' 15 % shear recorded; LOD
+  review at the consumer's 37 / 83 / 165 m. Triangles
+  1,022 / 870 / 534 / 486 to 1,054 / 902 / 718 / 486.

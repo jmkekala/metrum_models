@@ -21,22 +21,26 @@ A trim sheet. Rows from the bottom:
     y  414 ..  554   C       profiled sheet cladding, one 2.00 m repeat (rows
                              420 .. 548) tiling in V, x 0 .. 960; the concrete
                              frame's column strip beside it at x 972, same rows
-    y  558 ..  658   ROOF    profiled roof sheet, V stretched up the slope
-    y  660 ..  680   FASCIA  the roof slab's front and rake edges
-    y  684 ..  944   unique  the lane's ceiling and side walls (32 px/m), the
+    y  558 ..  694   ROOF    profiled roof sheet, one 2.00 m repeat up the
+                             slope (rows 562 .. 690) tiling in V, periodic
+                             gutters 4 rows each side; also the gallery's top
+    y  696 ..  956   unique  the lane's ceiling and side walls (32 px/m), the
                              doors, the window, a hopper side, flat patches,
                              the intake's roof (32 px/m) and the trestle's
                              steel (32 px/m, V = height from the ground)
+    y  960 ..  980   FASCIA  the roof slab's front and rake edges
     y  988 .. 1024   EAVE_R  the rear (low) eave: fascia with the gutter, then
                              the roof's lowest 0.40 m with the snow guard
 
 The screen house is taller than any band at 64 px/m, so the cladding band
 repeats in V: build.py cuts the walls at 6.40, 8.40, 10.40 and 12.40 m and
-maps every strip onto the same rows. Profiled sheet varies only across its
-ribs, so the repeat has nothing to show but its noise, which is drawn on the
-band's period (noise() below). Weather that follows height (splash, coal
-dust thrown up by the trucks) goes only on S1, whose V is height from the
-ground.
+maps every strip onto the same rows. The roof does the same up its slope:
+build.py cuts it, and the gallery's top, every 2.00 m from the low end. Profiled
+sheet varies only across its ribs, so the repeat has nothing to show but its
+noise, which is drawn on the bands' period (noise() below). Weather that
+follows height (splash, coal dust thrown up by the trucks) goes only on S1,
+whose V is height from the ground, and what follows the roof's slope only on
+the eave strip, whose V is the slope from the low edge.
 
 The lane under the bunker is outside surface of the one closed shell, seen in
 shade and open at both ends, so its walls and ceiling darken toward the
@@ -174,12 +178,16 @@ C_Y0, C_H = 420.0, CLAD_P * PPM                   # one 2.00 m repeat, 128 rows
 C_G = 6.0                    # gutter rows each side, periodic
 C_W = 960.0                  # the cladding band's width; U stays inside it
 COL = (972.0, C_Y0, COL_W * PPM, C_H)             # column strip, same rows
-ROOF_Y0, ROOF_H = 560.0, 96.0
-ROOF_LEN = 9.60              # metres up the slope ROOF_H rows cover
-ROOF_RPM = ROOF_H / ROOF_LEN
-FASC_Y0 = 662.0
+# The roof band: one ROOF_P repeat up the slope at 64 px/m, tiling in V as
+# the cladding does, with periodic gutters ROOF_G rows each side. V = 0 is
+# the slope's low (rear) edge, so the eave strip resamples its first rows.
+ROOF_P = 2.00
+ROOF_G = 4.0
+ROOF_Y0, ROOF_H = 562.0, ROOF_P * PPM             # rows 558 .. 694
+ROOF_RPM = PPM
+UNI_Y0 = 698.0
+FASC_Y0 = 962.0              # above the unique block, under the rear eave band
 FASC_H = ROOF_T * PPM        # 16 rows
-UNI_Y0 = 686.0
 
 LANE_CEIL = (4.0, UNI_Y0, (XL1 - XL0) * LPM, 2 * HY * LPM)      # 160 x 256
 LANE_SIDE = (172.0, UNI_Y0, 2 * HY * LPM, Z_DECK * LPM)         # 256 x 166.4
@@ -196,12 +204,12 @@ PATCHES = {name: (870.0 + 14.0 * i, UNI_Y0, 8.0, 8.0) for i, name in enumerate(
 # X on a face square to Y) from TR_U0 / TR_UX0, V up from the ground, at TPM,
 # so the coal on its feet can follow height.
 TPM = 32.0
-TRESTLE = (880.0, 706.0, 84.0, 200.0)            # V: 6.25 m from the ground
+TRESTLE = (880.0, UNI_Y0 + 20.0, 84.0, 200.0)    # V: 6.25 m from the ground
 TR_U0 = TR_HEAD_Y[0] - 0.02
 TR_UX0 = TR_X - 1.25
 # The intake's roof, planar from its slab's south-west corner at LPM: felt
 # under the coal that spills where the gallery's tail stands through it.
-INT_ROOF = (444.0, 834.0, (INT_X[1] - INT_X[0] + 2 * INT_OV) * LPM,
+INT_ROOF = (444.0, UNI_Y0 + 148.0, (INT_X[1] - INT_X[0] + 2 * INT_OV) * LPM,
             (INT_Y[1] - INT_Y[0] + 2 * INT_OV) * LPM)      # 112 x 105.6
 
 # The rear eave band, as konehalli_open_bays: the rear fascia (V = height over
@@ -235,13 +243,14 @@ def hop_at_deck():
 (ID_CONC, ID_CLAD, ID_METAL, ID_ROOF, ID_SASH, ID_GLASS, ID_DOOR, ID_STEEL,
  ID_COAL, ID_FELT, ID_BLANK, ID_HW, ID_GUTTER) = range(13)
 # (roughness, metallic). One ORM for both variants, so the cladding is a
-# painted sheet in both: grey paint (or galvanising long since dulled under
-# coal dust) and red oxide alike, all but dielectric. The gutter, downpipes
-# and snow guard are the catalog's galvanised rainwater steel.
+# painted sheet in both, grey or red oxide; it, the roof, the flashings, the
+# sashes, the doors and the painted steel (hoppers, trestle) are paint to
+# the light, dielectric. The gutter, downpipes and snow guard are the
+# catalog's galvanised rainwater steel, the door hardware bare steel.
 SURFACE = {
-    ID_CONC: (0.90, 0.0), ID_CLAD: (0.58, 0.10), ID_METAL: (0.52, 0.20),
-    ID_ROOF: (0.52, 0.12), ID_SASH: (0.50, 0.15), ID_GLASS: (glazing.ROUGHNESS, 0.0),
-    ID_DOOR: (0.56, 0.12), ID_STEEL: (0.62, 0.30), ID_COAL: (0.92, 0.0),
+    ID_CONC: (0.90, 0.0), ID_CLAD: (0.55, 0.0), ID_METAL: (0.52, 0.0),
+    ID_ROOF: (0.52, 0.0), ID_SASH: (0.50, 0.0), ID_GLASS: (glazing.ROUGHNESS, 0.0),
+    ID_DOOR: (0.55, 0.0), ID_STEEL: (0.55, 0.0), ID_COAL: (0.92, 0.0),
     ID_FELT: (0.90, 0.0), ID_BLANK: (0.95, 0.0), ID_HW: (0.45, 0.55),
     ID_GUTTER: (0.48, 0.60),
 }
@@ -266,11 +275,12 @@ GLASS_BASE = glazing.BASE
 BAND_IDS = {
     "S1": ((0, 414), {ID_CONC, ID_METAL}),
     "C": ((C_Y0 - C_G, C_Y0 + C_H + C_G), {ID_CLAD, ID_CONC}),
-    "ROOF": ((ROOF_Y0 - 2, ROOF_Y0 + ROOF_H + 2), {ID_ROOF}),
+    "ROOF": ((ROOF_Y0 - ROOF_G, ROOF_Y0 + ROOF_H + ROOF_G), {ID_ROOF}),
     "FASCIA": ((FASC_Y0 - 2, FASC_Y0 + FASC_H + 2), {ID_METAL}),
     "EAVE_R": ((988, 1024), {ID_METAL, ID_ROOF, ID_GUTTER}),
 }
-TILE_C = int(ATLAS // C_H)   # 8: noise over C's rows repeats every 128 rows
+TILE_C = int(ATLAS // C_H)   # 8: noise over C's and ROOF's rows repeats every 128 rows
+assert ROOF_H == C_H
 
 # ---------------------------------------------------------------- relief
 # Metres, relative to the face each region maps onto: only what the mesh
@@ -300,12 +310,15 @@ def m(v):
 
 # ================================================================== noise
 def noise(c, seed, sx, sy=None):
-    """atlas.noise() over the whole canvas, but on the cladding band's
-    period over its rows, so the band stays seamless where it repeats."""
+    """atlas.noise() over the whole canvas, but on the cladding and roof
+    bands' 128-row period over their rows, so both stay seamless where they
+    repeat."""
     n = atlas.noise(c, seed, sx, sy)
     nt = atlas.noise(c, seed + 1000, sx, sy, tile_y=TILE_C)
-    rows, _ = c.sl(0, 1, C_Y0 - C_G, C_Y0 + C_H + C_G)
-    n[rows] = nt[rows]
+    for y0, y1 in ((C_Y0 - C_G, C_Y0 + C_H + C_G),
+                   (ROOF_Y0 - ROOF_G, ROOF_Y0 + ROOF_H + ROOF_G)):
+        rows, _ = c.sl(0, 1, y0, y1)
+        n[rows] = nt[rows]
     return n
 
 
@@ -446,13 +459,13 @@ def paint_c(c):
 
 
 def paint_roof(c):
-    """Profiled roof sheet, V stretched up the slope (ROOF_H rows over
-    ROOF_LEN). The ribs vary in U only, so the stretch does not show."""
+    """Profiled roof sheet, one ROOF_P repeat up the slope at 64 px/m, over
+    its rows and both gutters: the ribs vary in U only and every noise on
+    the band's period, so each strip's neighbour up the slope is what it
+    finds in the gutter. The drip edge at the low edge is the eave strip's
+    (paint_eave_roof()), which this band would otherwise repeat every 2 m."""
     y0, h = ROOF_Y0, ROOF_H
-    paint_sheet(c, 0, ATLAS, y0 - 2, y0 + h + 2, ID_ROOF, seed=41, rib_h=0.030)
-    sy, sx, Y, _ = c.field(0, ATLAS, y0 - 2, y0 + h + 2)
-    v = Y - y0
-    c.shade[sy, sx] = np.where(v < 1.5, c.shade[sy, sx] * 0.85, c.shade[sy, sx])
+    paint_sheet(c, 0, ATLAS, y0 - ROOF_G, y0 + h + ROOF_G, ID_ROOF, seed=41, rib_h=0.030)
 
 
 def paint_fascia(c):
@@ -514,6 +527,12 @@ def paint_eave_roof(c):
     w = c.weather
     for k in w.f:                   # coal dust's K among them
         w.f[k][r0:] = w.f[k][i0] * (1.0 - f) + w.f[k][i1] * f
+    # what follows the slope from the low edge, which the repeating ROOF
+    # band cannot carry: the sheet's drip edge, and dirt gathering toward
+    # the gutter (weathering.Weather.roof()'s eave term)
+    c.mul(0, ATLAS, EAVE_ROOF_Y0, EAVE_ROOF_Y0 + 0.15 * EAVE_RPM, 0.85)
+    w.add("D", 0, ATLAS, EAVE_ROOF_Y0, ATLAS, lambda Y, X, nz: 0.15 * np.exp(
+        -(Y - EAVE_ROOF_Y0) / EAVE_RPM / 0.30), (ID_ROOF,))
 
     rpm = EAVE_RPM
     k = rpm / PPM
@@ -804,10 +823,16 @@ def weather(c):
     w.coal(0, ATLAS, rows[0], rows[1], lambda Y, X, nz: 0.05 + 0.07 * nz("big")
            + 0.14 * atlas.smoothstep(0.2, 1.8, nz("long"))
            + 0.05 * atlas.smoothstep(0.5, 1.6, nz("runs")), (ID_CLAD, ID_CONC))
-    # roof, fascia, rear fascia and gutter
-    w.roof(0, ATLAS, ROOF_Y0, ROOF_H, ROOF_LEN, (ID_ROOF,))
-    w.add("D", 0, ATLAS, ROOF_Y0 - 2, ROOF_Y0 + ROOF_H + 2,
-          lambda Y, X, nz: 0.12 * nz("blotch") + 0.08, (ID_ROOF,))
+    # roof, fascia, rear fascia and gutter. The roof band repeats up the
+    # slope, so it takes weathering.Weather.roof()'s runs and chalking at
+    # their slope-average strength on the band's period, nothing that
+    # follows the slope; the dirt gathering toward the low edge is the eave
+    # strip's (paint_eave_roof()).
+    rows = (ROOF_Y0 - ROOF_G, ROOF_Y0 + ROOF_H + ROOF_G)
+    w.add("D", 0, ATLAS, rows[0], rows[1], lambda Y, X, nz: 0.10 * atlas.smoothstep(
+        0.0, 1.5, nz("long")) + 0.12 * nz("blotch") + 0.08, (ID_ROOF,))
+    w.add("F", 0, ATLAS, rows[0], rows[1], lambda Y, X, nz: 0.04 * nz("big") + 0.05,
+          (ID_ROOF,))
     w.runs(0, ATLAS, FASC_Y0 - 2, FASC_Y0 + FASC_H - 2, (ID_METAL,), 0.18, fall=6.0,
            lo=0.4, hi=1.6)
     top = EAVE_ROOF_Y0

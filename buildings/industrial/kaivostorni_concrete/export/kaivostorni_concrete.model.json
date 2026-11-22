@@ -3,7 +3,7 @@
   "version": 1,
   "name": "kaivostorni_concrete",
   "path": "buildings/industrial/kaivostorni_concrete",
-  "source": {"commit": "c92ea00140c23e1078f58786abe78fb30d398558", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "a700517823f982b8b19930405d20ce058299e39b", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-5.95, 0.0, -3.8477], "max": [5.95, 21.9428, 3.8477]},
   "footprint": [
@@ -27,19 +27,19 @@
   "lods": [
     {"file": "kaivostorni_concrete_lod0.glb", "triangles": 3602, "sha256": "e4890991c8a91316a9acdc841fca86c95c3a4c996f354b97a7c372537fdc7d79"},
     {"file": "kaivostorni_concrete_lod1.glb", "triangles": 2294, "sha256": "a28d318f5b660bc5941891d182d22daf5f14cc39eccbc900e2ca8085dec2e61f"},
-    {"file": "kaivostorni_concrete_lod2.glb", "triangles": 792, "sha256": "5af26cb03330cc2e7f4946b8a14b925f0ccfd956b188c0003f10bdb1a8aa2e19"},
+    {"file": "kaivostorni_concrete_lod2.glb", "triangles": 1342, "sha256": "00a9829c803b3f6a1cb1fa3c3f50395008cf1a6375715eeca9ed2bc6b5574153"},
     {"file": "kaivostorni_concrete_lod3.glb", "triangles": 458, "sha256": "55e7d53164e0dfb76a1728989e0baa8955fcd4dadd93446de8ed05f7fb4f7a1c"}
   ],
   "textures": {
-    "orm": {"file": "kaivostorni_concrete_orm.png", "sha256": "23ff634e8a0ff8b20b63101e2595d819335833710e6f6c99dba38a18b157a35c"},
-    "normal": {"file": "kaivostorni_concrete_normal.png", "sha256": "2b0d9d12d141556987d6afdbb01029412a7b1d4ab7477175681f3fdf76541820"},
+    "orm": {"file": "kaivostorni_concrete_orm.png", "sha256": "0d815c8427d6e78d83950781f9da2b95d96c1f51d68d72eadd0f22745d3671e5"},
+    "normal": {"file": "kaivostorni_concrete_normal.png", "sha256": "c883e2c91e233fdfb1d84a12de45002d18e5ff1685de78fb520481bba24e3075"},
     "emission": {"file": "kaivostorni_concrete_emission.png", "sha256": "aeb3259fc48657a240e9076ead189049823667cd301d1804127dbb8e5af49d40"}
   },
   "variants": [
-    {"id": "grey_concrete", "albedo": "kaivostorni_concrete_albedo_grey_concrete.png", "sha256": "54bf178f6899d9116608051a602d29eb2ea6abad28b524f402ef35735077a811"},
-    {"id": "ochre_render", "albedo": "kaivostorni_concrete_albedo_ochre_render.png", "sha256": "13dc6a259d9da10756a06b2cca47fe7cf05ce9edbf25b606c01377ae37b75833"}
+    {"id": "grey_concrete", "albedo": "kaivostorni_concrete_albedo_grey_concrete.png", "sha256": "d06c113cc6608f321b49a6e6386eb11902bac4b75ea05173a95ef223702f021e"},
+    {"id": "ochre_render", "albedo": "kaivostorni_concrete_albedo_ochre_render.png", "sha256": "432cfed9fe1d5fdc1020f449a733447b7b1ab38235ad664aeae5699a4adb27ba"}
   ],
   "default_variant": "grey_concrete",
-  "preview": {"file": "../preview.png", "sha256": "44563125eee343350b4f05f0ed7cff267d04bfae6f891f378f2877477aa9f93e"},
+  "preview": {"file": "../preview.png", "sha256": "770023710bbd589d2b4b0a2b899d3f2e69d519e6db25bc79b92a46d0c10bb61d"},
   "hero": false
 }

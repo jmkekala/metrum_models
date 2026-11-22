@@ -173,12 +173,14 @@ SPOKE_T = 0.06                  # a spoke's thickness along the axle
 HUB_W = 0.30                    # the hub's length along the axle
 AXLE_R = 0.08                   # the axle runs back into the bay's back
 # Per tier: how each sheave is built, its rim's sides, its hub's and axle's
-# sides, and whether the ropes are. "spoked": rim, hub, spokes and axle;
-# "disc": one closed disc whose faces sample the painted sheave card
-# (facade_atlas.paint_card); None: the bay is flat and painted with the
-# sheaves (facade_atlas.paint_bay).
-SHEAVE_MODES = (("spoked", 32, 12, True), ("spoked", 20, 8, False),
-                ("disc", 12, 0, False), None)
+# sides, whether the ropes are and whether the axle is. "spoked": rim, hub,
+# spokes and, with the flag, the axle; None: the bay is flat and painted
+# with the sheaves (facade_atlas.paint_bay). LOD2 keeps them spoked, at 12
+# sides and without the axle, which hides behind the hub in the bay's
+# shade: an opaque disc there turned the bay's shaded dark between the
+# spokes into sunlit paint, a pale half-disc at the switch.
+SHEAVE_MODES = (("spoked", 32, 12, True, True), ("spoked", 20, 8, False, True),
+                ("spoked", 12, 6, False, False), None)
 
 
 def bay_mode(level):
@@ -623,38 +625,19 @@ def _disc_ring(c, r, y, n, phase=0.5):
              c[2] + r * math.sin(2.0 * math.pi * (k + phase) / n)) for k in range(n)]
 
 
-def sheave_disc(c, y0, y1, sides, side_uv):
-    """A sheave as one closed disc: its rim's outside in the steel, its two
-    faces mapped onto the painted sheave card, centred, so the spokes and
-    the dark between them are texture."""
-    x0, v0 = L.CARD_ORIGIN
-    half = L.SHEAVE_R * L.CARD_PPM
-
-    def card(co):
-        return (x0 + half + (co.x - c[0]) * L.CARD_PPM, v0 + half + (co.z - c[2]) * L.CARD_PPM)
-    B = Builder()
-    r0, r1 = _disc_ring(c, L.SHEAVE_R, y0, sides), _disc_ring(c, L.SHEAVE_R, y1, sides)
-    _prism(B, r0, r1, side_uv, caps=False)
-    B.face(list(reversed(r0)), card)
-    B.face(list(r1), card)
-    return B
-
-
 def sheave_solids(level):
     """Each sheave as closed solids for the union: the rim (an annulus), the
-    hub, SPOKES spokes running into both, and the axle back into the bay's
-    back; the rims' feet run below the deck, as a sheave's do. On LOD0 the
-    ropes too: square strands from inside each rim's groove down into the
-    deck and across to the east jamb, toward the rope opening."""
-    kind, sides, hub_n, ropes = SHEAVE_MODES[level]
+    hub, SPOKES spokes running into both, and (through LOD1) the axle back
+    into the bay's back; the rims' feet run below the deck, as a sheave's
+    do. On LOD0 the ropes too: square strands from inside each rim's groove
+    down into the deck and across to the east jamb, toward the rope
+    opening."""
+    _kind, sides, hub_n, ropes, axle = SHEAVE_MODES[level]
     steel = uv_patch("steel")
     out = []
     for (u, z), depth in zip(L.SHEAVES, SHEAVE_DEPTH):
         c = bay_point(u, z, depth)
         y0, y1 = c[1] - SHEAVE_W / 2.0, c[1] + SHEAVE_W / 2.0
-        if kind == "disc":
-            out.append(sheave_disc(c, y0, y1, sides, steel))
-            continue
         B = Builder()
         o0, o1 = (_disc_ring(c, L.SHEAVE_R, y, sides) for y in (y0, y1))
         i0, i1 = (_disc_ring(c, L.SHEAVE_RI, y, sides) for y in (y0, y1))
@@ -667,8 +650,9 @@ def sheave_solids(level):
         out.append(B)
         out.append(_prism(Builder(), _disc_ring(c, L.HUB_R, c[1] - HUB_W / 2.0, hub_n),
                           _disc_ring(c, L.HUB_R, c[1] + HUB_W / 2.0, hub_n), steel))
-        out.append(_prism(Builder(), _disc_ring(c, AXLE_R, c[1], hub_n),
-                          _disc_ring(c, AXLE_R, -TY + BAY_DEPTH + 0.10, hub_n), steel))
+        if axle:
+            out.append(_prism(Builder(), _disc_ring(c, AXLE_R, c[1], hub_n),
+                              _disc_ring(c, AXLE_R, -TY + BAY_DEPTH + 0.10, hub_n), steel))
         r0, r1 = L.HUB_R * 0.6, (L.SHEAVE_RI + L.SHEAVE_R) / 2.0
         for k in range(L.SPOKES):
             a = 2.0 * math.pi * k / L.SPOKES

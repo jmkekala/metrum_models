@@ -200,10 +200,43 @@ def uv_lane_ceil(co):
     return (x0 + (co.x - XL0) * L.LPM, y0 + (co.y + HY) * L.LPM)
 
 
-def uv_roof(co):
-    """Profiled sheet: U along x, V up the slope from the low (rear) edge."""
+def roof_s(y):
+    """Metres up the roof's slope from its low (rear) edge, over plan y."""
+    return (L.Y_REAR - y) * L.SLOPE_F
+
+
+def uv_roof(k):
+    """Profiled sheet, the strip from k * ROOF_P up the slope: U along x, V
+    up the slope on ROOF's one repeat."""
+    return lambda co: ((co.x + 16.0) * PPM,
+                       L.ROOF_Y0 + (roof_s(co.y) - k * L.ROOF_P) * L.ROOF_RPM)
+
+
+def uv_roof_far(co):
+    """LOD3's uncut roof: the whole slope above the eave strip once over the
+    band, from the row the eave strip leaves off at to the band's top."""
+    s0, s1 = L.EAVE_STRIP_LEN, roof_s(L.Y_FRONT)
+    v0 = s0 * L.ROOF_RPM
     return ((co.x + 16.0) * PPM,
-            L.ROOF_Y0 + (L.Y_REAR - co.y) * L.SLOPE_F * L.ROOF_RPM)
+            L.ROOF_Y0 + v0 + (roof_s(co.y) - s0) * (L.ROOF_H - v0) / (s1 - s0))
+
+
+def band_cuts(length, start=0.0):
+    """The distances k * ROOF_P (k >= 1) strictly between *start* and
+    *length*, where a face mapped onto the repeating roof band is cut."""
+    out, k = [], 1
+    while k * L.ROOF_P < length - 0.05:
+        if k * L.ROOF_P > start + 0.05:
+            out.append(k * L.ROOF_P)
+        k += 1
+    return out
+
+
+def cut_roof(level):
+    """Whether the tier cuts the roof and the gallery's top into ROOF_P
+    strips (64 px/m on the repeating band); LOD3 maps each uncut, once
+    over the band, which its ceiling has no room to cut."""
+    return level < 3
 
 
 def uv_eave(co):
@@ -375,13 +408,14 @@ def intake_body(level):
 
 
 # ================================================================== roof
-def roof_slab():
+def roof_slab(level):
     """The mono-pitch roof as one closed slab, ROOF_T thick vertically, over
     the bunker house. Its underside is one face, the soffit; the part over
-    the walls is inside the house and the union removes it. Its top is two
+    the walls is inside the house and the union removes it. Its top is
     strips across y: the roof's lowest EAVE_STRIP_LEN, with the snow guard,
-    maps onto the rear eave band, the rest onto ROOF. The rake edges carry
-    that breakpoint."""
+    maps onto the rear eave band, the rest onto ROOF, cut every ROOF_P up
+    the slope from the low edge where the band repeats (cut_roof()). The
+    rake edges carry every breakpoint."""
     B = Builder()
     xr = HX + L.RAKE_OV
     y0, y1 = L.Y_FRONT, L.Y_REAR
@@ -390,17 +424,24 @@ def roof_slab():
     B.face([(-xr, y0, zu(y0)), (-xr, y1, zu(y1)), (xr, y1, zu(y1)), (xr, y0, zu(y0))],
            uv_patch("soffit"))
     ys = y1 - L.EAVE_STRIP_LEN / L.SLOPE_F
-    B.face([(-xr, y0, zu(y0) + t), (xr, y0, zu(y0) + t), (xr, ys, zu(ys) + t),
-            (-xr, ys, zu(ys) + t)], uv_roof)
+    cuts = []
+    if cut_roof(level):
+        cuts = [y1 - s / L.SLOPE_F for s in band_cuts(roof_s(y0), L.EAVE_STRIP_LEN)]
+    edges = [ys] + cuts + [y0]                      # down the plan, from the eave strip
+    for k, (ya, yb) in enumerate(zip(edges, edges[1:])):
+        B.face([(-xr, yb, zu(yb) + t), (xr, yb, zu(yb) + t), (xr, ya, zu(ya) + t),
+                (-xr, ya, zu(ya) + t)], uv_roof(k) if cut_roof(level) else uv_roof_far)
     B.face([(-xr, ys, zu(ys) + t), (xr, ys, zu(ys) + t), (xr, y1, zu(y1) + t),
             (-xr, y1, zu(y1) + t)], uv_eave)
     B.face([(-xr, y0, zu(y0)), (xr, y0, zu(y0)), (xr, y0, zu(y0) + t),
             (-xr, y0, zu(y0) + t)], uv_fascia_x)
     B.face([(xr, y1, zu(y1)), (-xr, y1, zu(y1)), (-xr, y1, zu(y1) + t),
             (xr, y1, zu(y1) + t)], uv_fascia_rear)
+    tops = [ys] + cuts
     for x, ya, yb in ((-xr, y1, y0), (xr, y0, y1)):
-        B.face([(x, ya, zu(ya)), (x, yb, zu(yb)), (x, yb, zu(yb) + t),
-                (x, ys, zu(ys) + t), (x, ya, zu(ya) + t)], uv_fascia_y)
+        mids = sorted(tops, reverse=yb > ya)        # along the top edge, from yb to ya
+        B.face([(x, ya, zu(ya)), (x, yb, zu(yb)), (x, yb, zu(yb) + t)]
+               + [(x, y, zu(y) + t) for y in mids] + [(x, ya, zu(ya) + t)], uv_fascia_y)
     return B
 
 
@@ -425,15 +466,17 @@ def intake_slab():
 
 
 # ============================================================== the gallery
-def gallery():
+def gallery(level):
     """The conveyor gallery: a 2.0 x 2.0 m box whose axis runs along X and
     falls at GAL_DEG from inside the screen house's east wall to inside the
-    intake house. Its sides take the cladding band with U along the axis and
-    V square to it, so the sheets' ribs stand square to the gallery as they
-    are fixed; its top takes the roof band up the slope from its lower end;
-    its floor a dark steel patch. Both ends are buried except the lower
-    end's top, which stands up out of the intake's roof and takes the
-    cladding."""
+    intake house. Its sides take the cladding band with U along the axis,
+    taken from x alone, so the sheets' ribs stand plumb as on the walls,
+    and V square to the axis; that shears the mapping, a recorded 15 %
+    stretch (notes.md, Texture set). Its top takes the roof band up the
+    slope from its lower end, cut every ROOF_P where the band repeats
+    (cut_roof()), the sides' top edges carrying the cuts; its floor a dark
+    steel patch. Both ends are buried except the lower end's top, which
+    stands up out of the intake's roof and takes the cladding."""
     B = Builder()
     (x0, x1), (y0, y1) = L.GAL_X, L.GAL_Y
     hv = L.GAL_H / L.GAL_COS
@@ -446,15 +489,29 @@ def gallery():
         d = (co.z - L.gal_bottom(co.x)) * L.GAL_COS
         return (8.0 + (t_of(co) + 1.0) * PPM, L.C_Y0 + d * PPM)
 
-    def top(co):
-        return ((co.y + 16.0) * PPM, L.ROOF_Y0 + (L.GAL_LEN - t_of(co)) * L.ROOF_RPM)
+    def top(k):
+        return lambda co: ((co.y + 16.0) * PPM, L.ROOF_Y0
+                           + (L.GAL_LEN - t_of(co) - k * L.ROOF_P) * L.ROOF_RPM)
+
+    def top_far(co):
+        return ((co.y + 16.0) * PPM,
+                L.ROOF_Y0 + (L.GAL_LEN - t_of(co)) * L.ROOF_H / L.GAL_LEN)
 
     def end(co):
         return (8.0 + (co.y - y0) * PPM, L.C_Y0 + (co.z - b1) / hv * L.C_H)
 
-    B.face([(x0, y0, b0), (x1, y0, b1), (x1, y0, b1 + hv), (x0, y0, b0 + hv)], side)
-    B.face([(x1, y1, b1), (x0, y1, b0), (x0, y1, b0 + hv), (x1, y1, b1 + hv)], side)
-    B.face([(x0, y0, b0 + hv), (x1, y0, b1 + hv), (x1, y1, b1 + hv), (x0, y1, b0 + hv)], top)
+    # the cuts, as x along the axis, from the lower end up
+    xs = [x1 - q * L.GAL_COS for q in band_cuts(L.GAL_LEN)] if cut_roof(level) else []
+    B.face([(x0, y0, b0), (x1, y0, b1)] + [(x, y0, L.gal_bottom(x) + hv) for x in [x1] + xs]
+           + [(x0, y0, b0 + hv)], side)
+    B.face([(x1, y1, b1), (x0, y1, b0)]
+           + [(x, y1, L.gal_bottom(x) + hv) for x in [x0] + list(reversed(xs))]
+           + [(x1, y1, b1 + hv)], side)
+    edges = [x1] + xs + [x0]                        # up the axis, from the lower end
+    for k, (xa, xb) in enumerate(zip(edges, edges[1:])):
+        za, zb = L.gal_bottom(xa) + hv, L.gal_bottom(xb) + hv
+        B.face([(xb, y0, zb), (xa, y0, za), (xa, y1, za), (xb, y1, zb)],
+               top(k) if cut_roof(level) else top_far)
     B.face([(x0, y0, b0), (x0, y1, b0), (x1, y1, b1), (x1, y0, b1)], uv_patch("gal_under"))
     B.face([(x0, y0, b0), (x0, y0, b0 + hv), (x0, y1, b0 + hv), (x0, y1, b0)],
            uv_patch("blank"))
@@ -466,14 +523,17 @@ def gallery():
 def trestle_mode(level):
     """How the trestle under the gallery's span is built at each tier.
 
-    full   - LOD0/1: H-section legs on concrete pad footings, an H-section
-             cross-head, the X of two bars.
-    portal - LOD2/3: the legs and the cross-head as one plain solid, an
+    full   - LOD0-2: H-section legs on concrete pad footings, an H-section
+             cross-head, the X of two bars. LOD2 keeps it: as the plain
+             portal there, the legs' sunlit flat faces read grey where
+             LOD1's shaded channels read black, a visible change at the
+             83 m switch.
+    portal - LOD3: the legs and the cross-head as one plain solid, an
              upturned U of the legs' plan width standing on the ground; no
              footings. As separate boxes the leg tops' holes in the head
              cost LOD3 its last triangles under the ceiling.
     """
-    return ("full", "full", "portal", "portal")[level]
+    return ("full", "full", "full", "portal")[level]
 
 
 def keeps_bracing(level):
@@ -651,8 +711,8 @@ def hopper(yc):
 # ================================================================ assembly
 def build_lod(level):
     base = to_object(house_body(level), "tmp_house")
-    parts = [to_object(roof_slab(), "tmp_roof"),
-             to_object(gallery(), "tmp_gallery"),
+    parts = [to_object(roof_slab(level), "tmp_roof"),
+             to_object(gallery(level), "tmp_gallery"),
              to_object(intake_body(level), "tmp_intake"),
              to_object(intake_slab(), "tmp_intake_slab")]
     if keeps_hoppers(level):
@@ -737,9 +797,10 @@ def check_layout():
     if max(L.HOP_Y) + hy / 2 > HY - 0.6 or min(L.HOP_Y) - hy / 2 < -HY + 0.6:
         problems.append("a hopper reaches the lane's mouth")
     # the roof
-    slope = (L.Y_REAR - L.Y_FRONT) * L.SLOPE_F
-    if slope > L.ROOF_LEN or L.GAL_LEN > L.ROOF_LEN:
-        problems.append("a slope is longer than the roof band's %.2f m" % L.ROOF_LEN)
+    if not L.EAVE_STRIP_LEN * L.ROOF_RPM < L.ROOF_H:
+        problems.append("the eave strip outruns the roof band's first repeat")
+    if L.ROOF_H != L.ROOF_P * PPM or L.ROOF_RPM != PPM:
+        problems.append("the roof band is not one ROOF_P repeat at 64 px/m")
     if L.WALL_INTO >= L.ROOF_T:
         problems.append("the wall ring's lid is above the roof slab")
     if L.TAN > 1.0 / 8.0:
@@ -844,11 +905,15 @@ def facts():
     door leaf and are not doors.
 
     The lane is the one passage, stated from the front mouth trucks enter
-    by: its centre on the front wall's plane, running +Y to the rear mouth
-    2 * HY on, XL1 - XL0 between its side walls, open at the far end. Its
-    clear height is the hoppers' mouths at Z_HOP, the lowest geometry over
-    the lane (check_layout() keeps them clear of its walls and mouths), or
-    the ceiling at Z_DECK on a tier without them."""
+    by. The roof slab overhangs both mouths, and the contract takes the
+    whole plan bounds as solid, so the mouth is on the bounds' front edge
+    under the overhang (the slab's front edge, Y_FRONT), not on the wall
+    plane, and the lane runs +Y to the bounds' rear edge (Y_REAR), open at
+    the far end. Its width is XL1 - XL0 between its side walls; under the
+    overhangs nothing narrows it. Its clear height is the hoppers' mouths at
+    Z_HOP, the lowest geometry over the lane's whole length, the overhangs
+    (about 12 m up) included (check_layout() keeps the hoppers clear of its
+    walls and mouths), or the ceiling at Z_DECK on a tier without them."""
     walls = {spec["name"]: spec for spec in WALLS + INTAKE_WALLS}
 
     def door(door_id, kind, wall, main=False):
@@ -871,7 +936,8 @@ def facts():
         "doors": [door("control", "entrance", "front", main=True),
                   door("intake", "vehicle", "int_front")],
         "passages": [model_facts.lane_passage(
-            "truck_lane", (L.LANE_C, -HY), (0.0, 1.0), XL1 - XL0, 2 * HY,
+            "truck_lane", (L.LANE_C, L.Y_FRONT), (0.0, 1.0), XL1 - XL0,
+            L.Y_REAR - L.Y_FRONT,
             min(L.Z_HOP, Z_DECK) if keeps_hoppers(0) else Z_DECK, through=True)],
     }
 
