@@ -28,6 +28,12 @@ other end of the same wall the walls step back under the roof to make a covered
 loading bay deep enough to take all but the nose of a delivery van, with the
 goods door in its back wall and a column at the open corner.
 
+The roof plant is serviced from the deck, so a wall ladder (scripts/
+roof_safety.py) climbs the rear wall to it, at the back, away from the street
+and the entrance: off the wall on long brackets, passing outside the 1.5 m
+eave and running a metre above its edge. It is the building's rearmost point,
+so every tier keeps at least its bare rails and the plan bounds hold.
+
 Construction is a set of closed solids unioned with Blender's exact boolean:
 the wall ring, the roof, the sign, the column, the render panels and the roof
 plant. Each is simple on its own; the union is what trims the wall tops into
@@ -62,6 +68,7 @@ EXPORT_DIR = os.path.join(HERE, "export")
 sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "scripts"))
 import asset_build  # noqa: E402
 import model_facts  # noqa: E402
+import roof_safety as RS  # noqa: E402
 import shell_build as SB  # noqa: E402
 from asset_build import pivot_offset, to_object, union  # noqa: E402,F401
 from shell_build import Frame, fill_region, rect_poly  # noqa: E402
@@ -157,6 +164,41 @@ PIER_OUT = 0.25
 # it strictly inside the eave's own thickness.
 PIER_TOP = 4.40625
 
+# ------------------------------------------------------------- roof safety
+# The air handlers and fans on the deck are serviced from it, and a flat deck
+# needs only a wall ladder up to it (CLAUDE.md, Geometry and Construction). It
+# stands on the rear wall, between the two render panels west of the staff
+# door, behind the plant it serves. The lean kit: separate solids that cut
+# nothing, appended after the weld, so the wall keeps its triangles.
+#
+# This eave falls outward, so its soffit is lowest at the fascia, not at the
+# wall, and the ladder's brackets run out under the whole slope to reach the
+# rails outside it. The Eave's z_wall -- where roof_safety keeps the top
+# bracket SOFFIT_CLEAR below, and problems() checks it -- is therefore the
+# soffit's outer bottom edge, the lowest point any bracket passes under; tan
+# is the skirt's fall. The ladder runs to the fascia top plus LADDER_TOP, 5.06
+# m, under CAGE_LADDER, so it has no cage.
+LADDER_S = 25.0
+REAR = next(w for w in WALLS if w["name"] == "rear")
+KIT_PAINT = RS.Paint(L.ATLAS, strip=L.LADDER_STRIP)
+KIT_EAVE = RS.Eave(REAR["p0"], REAR["p1"], L.Z_EAVE_B, L.EAVE_OUT, L.Z_EAVE_T, FALL)
+WALL_LADDER = RS.WallLadder(KIT_EAVE, LADDER_S, lean=True)
+KIT = [WALL_LADDER]
+
+
+def kit(level):
+    """The wall ladder, roof_safety's MODES unchanged, with extents: it stands
+    furthest out at the back, so LOD3 keeps its bare rails.
+
+    roof_safety builds those bare rails as two mirrored three-sided prisms
+    with the same winding, so one of them comes out inside out, and append()
+    recalculates nothing; every piece gets outward normals here."""
+    pieces = RS.solids(KIT, level, KIT_PAINT, extents=True)
+    for M, _name in pieces:
+        bmesh.ops.recalc_face_normals(M.bm, faces=M.bm.faces[:])
+    return pieces
+
+
 def item_mode(level):
     """LOD0/1 cut every opening into the wall; LOD2/3 paint it flat.
 
@@ -175,11 +217,12 @@ def lobby_kept(level):
 def plant_kept(level, kind):
     """Roof plant.
 
-    The two air handlers are 2.2 and 1.8 m boxes standing 0.3 m proud of the
-    crown, so they break the roof line seen from above and are kept to LOD2.
-    The cowls and pipes are under 0.5 m across -- under a pixel at LOD1's
-    distance, and behind the parapet from any ground camera -- so they stop at
-    LOD0. None of it changes the plan, which is what the parapet defines.
+    The two air handlers are 1.8 and 2.2 m boxes about 0.9 m tall on the
+    deck, so they break the roof line seen from above and are kept to LOD2.
+    The cowls and pipes are under 0.5 m across -- a pixel or two at LOD1's
+    distance, small on the dark deck, which the falling eave leaves open to
+    any raised view -- so they stop at LOD0. None of it changes the plan,
+    which the eave's outer edge and the wall ladder define.
     """
     if level >= 3:
         return False
@@ -235,6 +278,22 @@ def uv_soffit(fr):
     surface has reached, as a fraction of the eave's own slope length."""
     return lambda co: (fr.s_of(co) * PPM,
                        L.SOF_Y0 + max(0.0, fr.out_of(co)) / L.EAVE_OUT * L.SOF_H)
+
+
+def uv_skirt_top(fr):
+    """The skirt's top face: U along the run at 64 px/m from the start of its
+    straight side, so the seams fall every 0.5 m and meet across a breakpoint
+    in that side; V how far out, across SKIRT_STRIP."""
+    v0, v1 = L.SKIRT_STRIP
+    return lambda co: (fr.s_of(co) * PPM,
+                       v0 + min(1.0, max(0.0, fr.out_of(co) / L.EAVE_OUT)) * (v1 - v0))
+
+
+def uv_fascia(fr):
+    """The fascia: the same seamed strip, U as the skirt's top, V its height."""
+    v0, v1 = L.SKIRT_STRIP
+    return lambda co: (fr.s_of(co) * PPM,
+                       v0 + (co.z - L.Z_EAVE_B) / (L.Z_EAVE_T - L.Z_EAVE_B) * (v1 - v0))
 
 
 def uv_deck(co):
@@ -608,21 +667,33 @@ def roof():
     Top: the deck, then the skirt folding down and out from the wall line to
     the fascia. Outer: the fascia. Bottom: the soffit back to the wall line,
     then the underside, whose face over the loading bay is that bay's ceiling.
-    The skirt is sheeted the whole way round, the entrance included.
+    The skirt is sheeted the whole way round, the entrance included: its top
+    face and the fascia sample the eave band's seamed strip along the run,
+    measured from the start of each straight side, so a side broken at the
+    loading bay's corner carries one run of seams, and the soffit the whole
+    band from its own edge's start, as before.
     """
     B = Builder()
     loop = _roof_loop()
     md = _mitres(loop, closed=True)
     n = len(loop)
     out = [(Vector(loop[k]) + md[k] * L.EAVE_OUT) for k in range(n)]
-    cap, fascia = uv_patch("cap"), uv_patch("fascia")
+
+    def side_start(k):
+        """The first vertex of the straight side edge *k* belongs to."""
+        while True:
+            a, b, c = loop[(k - 1) % n], loop[k], loop[(k + 1) % n]
+            if abs((b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0])) > EPS:
+                return b
+            k -= 1
 
     B.face([(x, y, L.Z_DECK) for x, y in loop], uv_deck)
     for k in range(n):
         p0, p1 = loop[k], loop[(k + 1) % n]
         q0, q1 = out[k], out[(k + 1) % n]
         fr = Frame(p0, p1)
-        top, under, edge = cap, uv_soffit(fr), fascia
+        run = Frame(side_start(k), p1)
+        top, under, edge = uv_skirt_top(run), uv_soffit(fr), uv_fascia(run)
         B.face([(p0[0], p0[1], L.Z_DECK), (p1[0], p1[1], L.Z_DECK),
                 (q1.x, q1.y, L.Z_EAVE_T), (q0.x, q0.y, L.Z_EAVE_T)], top)
         B.face([(q0.x, q0.y, L.Z_EAVE_T), (q1.x, q1.y, L.Z_EAVE_T),
@@ -730,12 +801,12 @@ def plant_parts(level):
 
 def build_lod(level):
     base = to_object(main_body(level), "tmp_body")
+    # The column is kept on every tier: a consumer switching by screen size
+    # shows LOD3 from about 280 m, where the eave corner over the loading bay
+    # left standing on nothing read at eye level as a missing support.
     parts = [to_object(roof(), "tmp_roof"),
-             to_object(placard(), "tmp_sign")]
-    if level < 3:
-        # a 0.32 m post is about 2 px at LOD3's distance and it stands inside
-        # the roof's own projection, so dropping it cannot move the plan
-        parts.append(to_object(column(), "tmp_column"))
+             to_object(placard(), "tmp_sign"),
+             to_object(column(), "tmp_column")]
     for B, name in piers():
         parts.append(to_object(B, name))
     for B, name in plant_parts(level):
@@ -762,6 +833,7 @@ def build_lod(level):
             delimit={'UV', 'MATERIAL'})
     bm.to_mesh(obj.data)
     bm.free()
+    RS.append(obj, kit(level), check=True)
     return obj
 
 
@@ -841,11 +913,19 @@ def check_layout():
         (cx, cy) = item[1]
         if not (-HX + 1.5 < cx < HX - 1.5 and -HY + 1.5 < cy < HY - 1.5):
             bad.append("plant at %s stands over the eave" % (item[1],))
+    # the wall ladder: clear of the rear wall's corners, openings and render
+    # panels; under the eave's lowest edge; short enough to need no cage
+    avoid = [(k,) + tuple(item_rects(k, s, z)[0][:2]) for k, s, z in REAR["items"]]
+    avoid += [("render panel", s0, s1) for s0, s1 in REAR["piers"]]
+    bad += RS.problems(WALL_LADDER, "the wall ladder", avoid)
+    if WALL_LADDER.length > RS.CAGE_LADDER:
+        bad.append("the wall ladder is %.2f m long and needs a cage" % WALL_LADDER.length)
     return bad
 
 
 def check_roof(obj):
-    """Nothing but the plant and the sign stands above the roof deck."""
+    """Nothing but the plant, the sign and the wall ladder's top stands above
+    the roof deck."""
     over = [v.co for v in obj.data.vertices if v.co.z > L.Z_DECK + 1e-4]
     return len(over)
 

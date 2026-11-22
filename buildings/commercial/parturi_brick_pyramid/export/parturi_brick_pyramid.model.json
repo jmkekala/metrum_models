@@ -3,7 +3,7 @@
   "version": 1,
   "name": "parturi_brick_pyramid",
   "path": "buildings/commercial/parturi_brick_pyramid",
-  "source": {"commit": "685906c4a14d0dd09fc293dd0ec3249dd32a48b4", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "1854f39bb5189710ceba593b6e4965f2215eca86", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-5.4531, 0.0, -4.7415], "max": [5.4531, 5.9538, 4.7415]},
   "footprint": [
@@ -23,8 +23,8 @@
   "lods": [
     {"file": "parturi_brick_pyramid_lod0.glb", "triangles": 1982, "sha256": "d0acb89c0a06c01f10e23128dc11414b8fe5f364d736b05762d0f5df269e9ead"},
     {"file": "parturi_brick_pyramid_lod1.glb", "triangles": 1642, "sha256": "05877f5b7ef65b41515f63176fea2df2a33ec8a8c6fe2ce0c10f8c824a835e6f"},
-    {"file": "parturi_brick_pyramid_lod2.glb", "triangles": 496, "sha256": "7936a4eb62e46664ed9d98ac6915c8e730e4bbeeabf228f75e59f768ed9f2412"},
-    {"file": "parturi_brick_pyramid_lod3.glb", "triangles": 236, "sha256": "ed505a1f7acc53b1b57016026b23a6d727d3741bc0c10d9f6354ef08cd348db2"}
+    {"file": "parturi_brick_pyramid_lod2.glb", "triangles": 1080, "sha256": "17fbf4c401803693b0fca6203fe85845301fb35590c4683c94ed5d03a205c1eb"},
+    {"file": "parturi_brick_pyramid_lod3.glb", "triangles": 330, "sha256": "ebdd0cadcf670bc08421ef8d6882c79286ed79a01167c6a921f65ea385ef73c5"}
   ],
   "textures": {
     "orm": {"file": "parturi_brick_pyramid_orm.png", "sha256": "07b283b0691ec270b092628fbdbc59566d546fe75e6a8e3e52f7eca3aa6fab98"},
@@ -38,6 +38,6 @@
     {"id": "white_brick", "albedo": "parturi_brick_pyramid_albedo_white_brick.png", "sha256": "0f2b9b53073c8454986ceca0785f652dcd95b6d65b78df7cf410192280f75af6"}
   ],
   "default_variant": "yellow_brick",
-  "preview": {"file": "../preview.png", "sha256": "e66992a094ff150cda1388ff48607944f8f51bb855abb70f0e01bb187232122f"},
+  "preview": {"file": "../preview.png", "sha256": "2772a4552d810ce919d3c6607fb5a73964aeed6eca8fb7891f5c499d510b710b"},
   "hero": false
 }

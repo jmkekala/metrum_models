@@ -19,6 +19,11 @@ The whole public side of the shop is on one elevation, which faces `-Y`:
   with a sectional goods door in its back wall, a staff door in its side wall,
   and a steel column at the open corner where two walls have been taken away.
 
+The roof plant is serviced from the deck, so a **wall ladder** climbs the rear
+wall to it, at the back of the shop away from the street and the entrance:
+light aluminium, on long brackets that carry it out past the 1.5 m eave, its
+rails rising a metre above the eave's edge.
+
 The brickwork is broken by white rendered panels standing 0.25 m proud of it,
 plus the continuous band of render along the top of every wall under the eave.
 That was the point of the brief: a thirty-metre brick elevation with nothing on
@@ -51,9 +56,12 @@ The loading bay is a notch taken out of that rectangle at the front-west
 corner, **7.0 m** along the front wall by **5.0 m** deep. The roof passes
 straight over it, so the notch is in the walls only and never in the plan.
 
-The roof, and therefore the plan extent a consumer has to place, is the
-rectangle plus the eave's 1.5 m projection on all four sides: **35.0 x 21.0 m**.
-The 0.25 m render panels sit inside that projection and do not widen it.
+The roof is the rectangle plus the eave's 1.5 m projection on all four sides,
+35.0 x 21.0 m. The wall ladder on the rear wall stands outside the eave, its
+rails' backs 1.68 m off the wall, so the plan extent a consumer has to place is
+**35.0 x 21.18 m**, and the plan-centred pivot sits 0.09 m behind the wall
+rectangle's centre. The 0.25 m render panels sit inside the eave's projection
+and do not widen it.
 Overall height **5.719 m** to the top of the sign; the roof deck itself is at
 4.5625 m and the eave's outer edge comes down to 3.8125 m.
 
@@ -126,7 +134,11 @@ recognisable feature, so it is an authored exception rather than a drift:
   separate canopy is needed at the shopfront head, and none is modelled.
 - Seen from the street it is read from below, as a white soffit over the brick;
   seen from above it is the white frame round the dark deck. Both faces carry
-  the same standing-seam sheeting, the whole way round.
+  the same standing-seam sheeting, the whole way round: the soffit samples the
+  whole eave band, and the skirt's top face and the fascia a seamed strip of
+  it (`SKIRT_STRIP`), with U along the run at 64 px/m from the start of each
+  straight side, so the seams fall every 0.5 m on both faces and over the
+  fascia between them (Texture set).
 - It costs 30 quads swept round a ten-vertex outline, a small fraction of the
   tier budgets, and it is retained unchanged at every tier including `LOD3`.
 
@@ -147,8 +159,11 @@ Five closed solids unioned with Blender's exact boolean:
    and a lid at the wall top;
 2. **the roof** — deck, skirt, fascia, soffit and underside as *one* solid;
 3. **the sign**;
-4. **the column**;
+4. **the column**, on every tier;
 5. **the eleven render panels** and the six pieces of roof plant.
+
+The wall ladder is not in the union: it is `scripts/roof_safety.py`'s lean kit,
+separate closed solids that cut nothing, appended after the weld (below).
 
 Each is simple on its own and `to_object()` refuses any that is not closed. The
 union is what does the work: it trims the wall tops into the roof, trims the
@@ -227,16 +242,61 @@ capped with; the two coplanar faces left the export non-manifold at the
 threshold until `recess()` was given a `floor` flag. Left out, the rim simply
 detours round the recess and the floor cap covers it.
 
+### The wall ladder
+
+The two air handlers and two fans are serviced from the deck, and a flat deck
+needs a fixed wall ladder up to it (CLAUDE.md, roof safety equipment). It is
+`roof_safety.WallLadder(..., lean=True)`, placed and checked in `build.py`:
+
+- **Where:** the rear wall (+Y in Blender, away from the street and the
+  entrance), centred at s 25.0 m along it (x = -9.0 m), between the two render
+  panels west of the staff door (s 21.0-22.0 and 28.2-29.2), behind the plant
+  it serves. `check_layout()` runs `roof_safety.problems()` against the rear
+  wall's openings and render panels and its corners.
+- **Shape:** 0.45 m between rails, from the ground to the fascia top plus
+  1.0 m (z 0 to 5.0625 m, 5.06 m long, under the 8 m that would need a cage).
+  The rails pass 0.12 m outside the fascia, 1.62-1.68 m off the wall, on
+  three pairs of brackets at 0.6, 2.08 and 3.56 m that run back to the wall
+  under the whole eave. The eave falls outward, so its soffit is lowest at the
+  fascia (3.8125 m); the `Eave` is given that edge as its `z_wall`, so the top
+  bracket stays `SOFFIT_CLEAR` below the lowest soffit it passes under and
+  `problems()` checks it there.
+- **Lean kit:** rails, rungs and brackets are separate closed solids that stop
+  1.5 mm short of each other and of the wall, appended after the union, weld
+  and dissolve with `check=True`, so the wall is not cut and nothing is split.
+- **Colour:** there is no gutter, so the kit samples the trim metal: the
+  middle rows of the shopfront's transom bar (`LADDER_STRIP`), light anodised
+  aluminium running the full width of the shopfront band.
+- **Tiers:** `roof_safety.MODES` unchanged: every rung and prism brackets at
+  `LOD0`, every other rung and tetrahedral brackets at `LOD1`, every fourth
+  rung and no brackets at `LOD2`, and at `LOD3` the bare rails alone. The
+  ladder is the building's rearmost point, so `RS.solids(..., extents=True)`
+  keeps those rails on every tier and every tier keeps `LOD0`'s plan bounds and
+  pivot.
+- **Normals:** `roof_safety` builds the bare rails as two mirrored prisms with
+  the same winding, so one comes out inside out, and `append()` recalculates
+  nothing. `build.py`'s `kit()` recalculates every kit piece's normals before
+  the append; recorded here because the shared script still has the defect.
+
 ## Per-tier triangle counts
 
 Measured on the exported, triangulated GLBs by `scripts/validate_asset.py`:
 
 | Tier | Triangles | Ceiling | Status |
 | --- | --- | --- | --- |
-| `LOD0` | 868 | 12,000 | far under, explained |
-| `LOD1` | 716 | 4,000 | far under, explained |
-| `LOD2` | 458 | 1,500 | far under, explained |
-| `LOD3` | 404 | 500 | under |
+| `LOD0` | 1,076 | 12,000 | far under, explained |
+| `LOD1` | 836 | 4,000 | far under, explained |
+| `LOD2` | 502 | 1,500 | far under, explained |
+| `LOD3` | 434 | 500 | under |
+
+The wall ladder costs **208 / 120 / 44 / 16** triangles: rails (24), 17
+three-sided rungs (136) and six prism brackets (48) at `LOD0`; nine rungs and
+six tetrahedral brackets at `LOD1`; five tetrahedral rungs at `LOD2`; the two
+bare three-sided rails at `LOD3`. The bay column kept at `LOD3` costs 14 there
+(its box and its hole in the bay ceiling). The skirt top and fascia sampling a
+seamed strip instead of a single texel cost nothing: their faces are the same,
+and on `LOD2`/`LOD3` a straight side's faces keep matching UVs across its
+breakpoint, so the dissolve still merges them.
 
 The entrance standing on the ground costs 12 triangles at `LOD0` and `LOD1`
 and 8 at `LOD2` and `LOD3`: the plinth's cut ends, the lobby sides and the
@@ -262,14 +322,14 @@ What geometry there is went where it earns shadow:
   a low tier to lose,
 - the loading bay recess and its column,
 - the shopfront's 0.20 m reveals and the entrance's further 0.50 m lobby,
-- the sign and the roof plant.
+- the sign, the roof plant and the wall ladder up to it.
 
 Padding the count would mean subdividing flat walls, which
 CLAUDE.md forbids outright. The counts are reported as they are.
 
-The `LOD0` to `LOD1` step is modest (18%) for the same reason: most of what is
-in `LOD0` is massing that cannot be dropped at 35-70 m. The step that carries
-the ladder is `LOD1` to `LOD2` (35%).
+The `LOD0` to `LOD1` step is modest (22%) for the same reason: most of what is
+in `LOD0` is massing that cannot be dropped at the first switch; half of it is
+the ladder's thinning. The largest step is `LOD1` to `LOD2` (40%).
 
 ## LOD review
 
@@ -285,8 +345,33 @@ view direction to that point. Emission off.
 | --- | --- | --- |
 | `LOD0` → `LOD1` | 35 m | Indistinguishable at intended screen size. The openings drop their casing ring for a single recess of the same depth, and the two fan cowls and two vent pipes leave the roof. At 35 m a 0.45 m cowl is about 2 px, on a dark deck seen at a shallow angle; at the switch it is not visible. |
 | `LOD1` → `LOD2` | 70 m | Indistinguishable. The openings go flat; the 0.14–0.20 m reveals they lose are under a quarter of a pixel at this distance. The render panels, the eave, the sign, the bay and the column all remain. |
-| `LOD2` → `LOD3` | 120 m | The two air handlers and the bay column leave. Enlarged 3x the change is visible; at true screen size the air handlers are about 2 px of grey on a dark roof and the column is about 1 px of dark against an already-dark bay. Neither is on the silhouette and neither moves the plan, which the eave's outer edge defines. |
+| `LOD2` → `LOD3` | 120 m | The two air handlers leave; at true screen size about 2 px of grey on a dark roof. The bay column now stays (Consumer switch pass, below). |
 | `LOD3` alone | 200 m | Silhouette, eave line, chamfer, sign and the white/brick rhythm all still read. |
+
+These rows predate the wall ladder; at these distances it is two rails of
+5 cm at the back, and its rungs thin by `roof_safety.MODES`.
+
+### Consumer switch pass (screen size)
+
+The consumer switches by screen size, at about 1.8, 4 and 8 times the
+largest bounds dimension (35.0 m): **63 / 140 / 280 m**, judged with its
+camera, **75° vertical FOV at 1920 x 1080**, distance to the centre of
+`LOD0`'s bounds; front (10° up), corner (45° round, 25° up) and eye-level
+(30° round, camera at 1.7 m) by noon, and the corner by night with the
+emission at the reference factor (`render_game_fov.py` and
+`pair_sheets.py` in `review/older_audit_2026_11_22/fix_commercial_a/`,
+before-above-after sheets in its `lahikauppa_corner/compare_pairs/`; not
+committed). Pixels differing by more than 24, per view (front / corner /
+eye / night), before and after the 2026-11-22 fixes:
+
+| Switch | Distance | Before | After | Verdict |
+| --- | --- | --- | --- | --- |
+| `LOD0` → `LOD1` | 63 m | 31 / 101 / 0 / 0 | 30 / 108 / 0 / 0 | Holds: the cowls and pipes leave the deck, the casing rings go. |
+| `LOD1` → `LOD2` | 140 m | 0 / 37 / 21 / 234 | 3 / 37 / 21 / 231 | Holds. The shopfront's 0.20 m reveals and the lobby go flat: by day only the x4 difference shows them; by night the lit glazing's edges shift by a pixel at the reveals, faint at true size and not a pop, so left. |
+| `LOD2` → `LOD3` | 280 m | 3 / 22 / 19 / 0 | 0 / 11 / 10 / 0 | The bay column used to drop, leaving the eave corner over the loading bay unsupported at eye level; it is kept now. Left: the two air handlers leaving the deck, a couple of pixels on the roofline. |
+
+The wall ladder is on the rear, out of these views; it was checked at 14 m
+from the rear and above on every tier (Review status).
 
 Checked in both directions at each switch, and against `LOD0` directly at all
 three distances. Preserved at every tier: the overall silhouette, the level
@@ -304,9 +389,17 @@ time nor VRAM.
 ## Interior geometry
 
 `scripts/validate_asset.py`'s sampled hidden-surface test, 40 rays per face
-centre: **zero hidden triangles on every tier**.
+centre: **25 / 8 / 0 / 0** hidden triangles, every one of them on the wall
+ladder and none on the building, listed and located one by one: at `LOD0` the
+brackets' end caps facing the wall and the rails across their 1.5 mm gaps
+(nine, 0.0008 m² each) and the rung end caps facing the left rail (sixteen,
+0.00045 m² each); at `LOD1` the same rung end caps of the rungs it keeps.
+They are exterior faces of the lean kit's separate solids, closed off by the
+1.5 mm gap the kit leaves so that nothing is cut; no ray of the test gets out
+of a gap that narrow. Kept: removing them would open the solids. The
+building itself has no hidden triangles on any tier.
 
-It was not always zero. The exact boolean had left one sliver of about a square
+The building's count was not always zero. The exact boolean had left one sliver of about a square
 millimetre at the top of the chamfer wall, where the eave's soffit crossed it at
 the boundary of the glazed length — three surfaces meeting very near a point.
 Removing the glazing removed the boundary and with it the sliver, which is the
@@ -356,8 +449,13 @@ edges**, all four tiers.
 - **The shopfront's mullions, the eave's rafter ends and the goods door's ribs
   are painted, not modelled.** All are well under the 0.25 m relief threshold
   and all repeat.
-- **No roof hatch or ladder.** Plant only, as the brief asked: two air
-  handlers, two fan cowls, two vent pipes.
+- **The roof plant is reached by the wall ladder alone.** Two air handlers,
+  two fan cowls and two vent pipes on a flat deck need no roof ladder or
+  walkway, and there is no roof hatch. The ladder's brackets are thin 4 cm
+  bars bridging 1.6 m to the wall under the eave; they are not braced, and
+  they go at `LOD2` with roof_safety's other fittings, leaving the rails
+  standing free of the wall at 140 m and beyond, where a bracket is a fifth of
+  a pixel.
 
 ## Texture set
 
@@ -478,13 +576,16 @@ region gets the same anti-aliasing, and the sign needs no separate pass.
 ### Texel density
 
 64 texels/metre on everything a customer stands in front of: both cladding
-bands, the shopfront, the entrance, the glazed eave slope and the sign. The
-deliberate local deviations, all of them on surfaces seen from a van bay or
-from the air:
+bands, the shopfront, the entrance and the sign. The deliberate local
+deviations, all of them on surfaces seen from a van bay or from the air, or
+across a seamed sheet whose seams run along that axis:
 
 | Surface | px/m | Why |
 | --- | --- | --- |
-| eave soffit, across the slope | 30.8 | 64 along the run; across it the artwork is two seam lines and a rafter end, so the cross-slope axis is compressed. Anisotropic by design. |
+| eave soffit, across the slope | 35.4 | 64 along the run; across it the artwork is the seams, the sky-occlusion gradient and a rafter end, so the cross-slope axis (56 rows for the 1.581 m slope) is compressed. Anisotropic by design. |
+| skirt top, across the slope | 6.3 | 64 along the run, where the standing seams fall every 0.5 m; the 1.581 m slope is compressed onto the 10 rows of `SKIRT_STRIP` (rows 732-742 of the eave band, clear of the rafter ends, near its bright end), along which the seams run unchanged. |
+| fascia, its height | 40 | 64 along the run; its 0.25 m on the same 10 rows, so the seams carry over the edge. |
+| wall ladder | 64 along each bar | samples `LADDER_STRIP`, two rows of the transom bar, across its 3-6 cm faces. |
 | goods door | 40 | inside a shadowed bay |
 | staff door | 33 | rear elevation and bay |
 | staff window | 49 | 1.2 m opening on the rear elevation |
@@ -594,7 +695,7 @@ mipmaps, which this repository does not own.
 - Roughness **0.08**, metallic **0**, from `scripts/glazing.ROUGHNESS`.
 - Panes painted by `scripts/glazing.py`'s `rooms()`, called on the finished
   albedo after the id/shade/AO pass, exactly as CLAUDE.md's default requires.
-  Each 2 m shopfront bay, each door leaf and the glazed eave get their own
+  Each 2 m shopfront bay, each door leaf and each staff window get their own
   level, vertical falloff and — on rather more than half of them — a lit patch
   of far wall. Nothing about a reflection is in base colour: no sky gradient,
   no fixed highlight.
@@ -740,9 +841,9 @@ strips the placeholder `bufferView` keep-originals leaves.
 
 Completed in this repository:
 
-- `scripts/validate_asset.py`: no FAIL. The one WARN is the facts sidecar's
+- `scripts/validate_asset.py`: 0 FAIL, 1 WARN (the facts sidecar's
   `source.dirty`, which clears once the sidecar is rewritten from a committed
-  tree.
+  tree), 10 MANUAL.
 - The entrance brought down to the ground, before against after with
   `scripts/review_compare.py`: `LOD0`/`LOD1` oblique, front and rear at 20 and
   40 m, `LOD2`/`LOD3` oblique and rear at 70 and 120 m, under noon and
@@ -795,6 +896,15 @@ Completed in this repository:
   foot at the wall's 0.375 m line, where white render used to reach the
   ground.
 
+- Audit fixes (2026-11-22: wall ladder, seamed skirt, column on `LOD3`),
+  before against after: tier pairs at the consumer's 63 / 140 / 280 m with
+  its 75° / 1080p camera (LOD review); `review_asset.py` `LOD0` front and
+  oblique at 20 and 35 m by noon and reversed sun (`review_compare.py`);
+  every tier at 14 m oblique, rear and aerial by noon, where the skirt's
+  top and fascia now show their seams and the ladder stands clear of the
+  wall and the eave on every tier; every hidden-surface candidate located
+  (Interior geometry); texture re-export byte-identical.
+
 Pending, and outside this repository:
 
 - Consumer import, LOD switching and runtime emission control.
@@ -827,6 +937,20 @@ Pending, and outside this repository:
   texture export.
 
 ## Revision log
+
+- **2026-11-22 — audit fixes: wall ladder, seamed skirt, column on LOD3.** A
+  lean `roof_safety` wall ladder on the rear wall (x = -9 m) up to the roof
+  plant, kit normals recalculated before the append (Construction, The wall
+  ladder); it stands outside the eave, so the plan bounds grew from
+  35.0 x 21.0 to 35.0 x 21.18 m and the pivot moved 0.09 m toward the rear
+  (in the sidecar's glTF frame every z, the doors' and the footprint's
+  included, +0.09; bounds z ±10.59). The skirt's top face and the fascia,
+  each one texel of flat white, now sample a seamed strip of the eave band
+  (`SKIRT_STRIP`), same faces. The bay column stays on `LOD3`. Triangles
+  868 / 716 / 458 / 404 → 1,076 / 836 / 502 / 434. Textures unchanged
+  (byte-identical re-export); GLBs, `preview.png`, `variants.png`,
+  `source.blend` and the sidecar regenerated. Stale statements about the
+  glazed eave slope, the soffit's density and a parapet corrected.
 
 - **2026-11-20 — the entrance stands on the ground.** The sliding unit had
   been built from the plinth top to the head, so its leaves were 1.9375 m and

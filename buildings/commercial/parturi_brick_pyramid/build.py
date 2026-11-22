@@ -35,8 +35,8 @@ with two downpipes at diagonally opposite corners.
 Construction: closed solids unioned with Blender's exact boolean
 (asset_build.union, snapped to 0.1 mm) -- the body (the wall ring with its
 recesses, capped with a floor and a lid), the roof (hip slopes, fascia,
-soffit and underside as one solid), the hip and ridge flashings, the
-housing with its louvre blades, skirt and lid, the hood with its blades and
+soffit and underside as one solid), the hip and ridge flashings (to LOD2),
+the housing with its louvre blades, skirt and lid (to LOD2), the hood with its blades and
 cap, the fittings, the sign band, the light box and its arms, the canopy,
 the downpipes and the roof safety kit.
 
@@ -179,28 +179,32 @@ ROOF_LADDER = RS.RoofLadder(EAVE_REAR, KIT_S, EAVE_REAR.roof_z(ROOF_TOP_OUT))
 
 
 def item_mode(kind, level):
-    """Openings: recessed with their reveals to LOD1, painted flush from LOD2,
-    where a 0.12 m reveal is a fraction of a pixel. The entrance lobby is
-    massing, 0.88 m deep and 2.25 m wide, and stays cut through LOD2; LOD3
-    paints it on the wall. The meter cupboard and the louvre are flush on
-    every tier."""
+    """Openings: recessed with their reveals to LOD2, painted flush at LOD3.
+    The consumer switches by screen size, LOD1 to LOD2 at about 44 m, where a
+    0.12 m reveal's shadow is still two pixels and flush windows popped; at
+    LOD3's 87 m it is under one. The entrance lobby is massing, 0.88 m deep
+    and 2.25 m wide, and stays cut on every tier: painted flush at LOD3 it
+    read lighter than the dark recess. The meter cupboard and the louvre are
+    flush on every tier."""
     if kind in ("meter", "louvre"):
         return "flush"
     if kind == "screen":
-        return "recess" if level < 3 else "flush"
-    return "recess" if level < 2 else "flush"
+        return "recess"
+    return "recess" if level < 3 else "flush"
 
 
 def caps_kept(level):
-    """The hip and ridge flashings: 0.18 m wide, about 3 px at 70 m, where
-    the change of light between two slopes already draws the hip."""
-    return level < 2
+    """The hip and ridge flashings: 0.18 m wide, kept to LOD2, whose 44 m
+    switch still shows their highlight lines; at LOD3's 87 m they are about
+    1.5 px and the change of light between two slopes draws the hip."""
+    return level < 3
 
 
 def band_modelled(level):
-    """The sign band stands 0.10 m off the brick: under 1.5 px past 70 m.
-    From LOD2 its artwork is painted on the wall's top course instead."""
-    return level < 2
+    """The sign band stands 0.10 m off the brick; modelled to LOD2, so its
+    letters stay as lit and as proud at the 44 m switch as on LOD1. LOD3
+    paints its artwork on the wall's top course instead."""
+    return level < 3
 
 
 def arms(level):
@@ -212,25 +216,29 @@ def canopy_kept(level):
 
 
 def housing_mode(level):
-    """The ridge housing: "full" to LOD1 (modelled louvre blades, the
-    flashing skirt, the hipped lid with its drip edge); "lid" at LOD2, a box
-    under a plain overhanging lid, the louvres painted; "box" at LOD3."""
-    return ("full", "full", "lid", "box")[level]
+    """The ridge housing: "full" to LOD2 (modelled louvre blades, the
+    flashing skirt, the hipped lid with its drip edge), since the blades'
+    shadows still read at the 44 m switch; "lid" at LOD3, a box under a
+    plain overhanging slab, the louvres painted: the oversailing lid is the
+    housing's outline at 87 m, and the bare box ("box", unused) lost it."""
+    return ("full", "full", "full", "lid")[level]
 
 
 def hood_mode(level):
-    """The front hood: its louvre blades and cap plate to LOD1; from LOD2
-    the bare wedge, its louvres painted."""
-    return level < 2
+    """The front hood: its louvre blades and cap plate to LOD2; at LOD3 the
+    bare wedge, its louvres painted."""
+    return level < 3
 
 
 def fittings(level):
-    """Which small fittings a tier keeps: everything to LOD1; at LOD2 the
-    front lamp and the house number, the two lit points on the street side
-    at night; none at LOD3."""
-    if level < 2:
+    """Which small fittings a tier keeps: everything to LOD2, so the lobby
+    light and the rear lamp stay lit and the opening-hours board stays at
+    the 44 m switch; at LOD3 the four that light at night (the three lamps
+    and the house number), points of light that would go out at 87 m. The
+    unlit opening-hours board goes."""
+    if level < 3:
         return ("front_lamp", "number", "hours", "lobby_lamp", "rear_lamp")
-    return ("front_lamp", "number") if level < 3 else ()
+    return ("front_lamp", "number", "lobby_lamp", "rear_lamp")
 
 
 def vent_kept(level):
@@ -774,9 +782,15 @@ def canopy():
 def kit(level, extents=False):
     """The roof safety kit's solids for this tier. The wall ladder sets the
     rear of the plan bounds, so the tier that drops the kit keeps its bare
-    rails (extents=True), appended after the weld."""
+    rails (extents=True), appended after the weld. roof_safety builds those
+    bare rails as two mirrored three-sided prisms with the same winding, so
+    one of them comes out inside out, and append() recalculates nothing:
+    they get outward normals here."""
     if extents:
-        return RS.solids([WALL_LADDER], level, PAINT, extents=True)
+        pieces = RS.solids([WALL_LADDER], level, PAINT, extents=True)
+        for M, _name in pieces:
+            bmesh.ops.recalc_face_normals(M.bm, faces=M.bm.faces[:])
+        return pieces
     return RS.solids([WALL_LADDER, ROOF_LADDER], level, PAINT)
 
 

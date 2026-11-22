@@ -29,7 +29,7 @@ badge and the plant's discs come out anti-aliased like everything else
 
 Density is 64 texels/metre on everything a customer stands in front of. The
 back-of-house surfaces are deliberately coarser -- the goods door at 40, the
-roof deck at about 5 -- because they are seen from a van bay or from the air.
+roof deck at about 10 -- because they are seen from a van bay or from the air.
 notes.md lists each deviation.
 
 Dirt, algae, rust and faded paint are scripts/weathering.py's fields: weather()
@@ -102,6 +102,17 @@ STUCCO_Y0, STUCCO_H = 228, 276    # z 0 .. Z_WALL, plinth in the bottom 24
 SHOP_Y0, SHOP_H = 508, 184        # z Z_SILL .. Z_HEAD
 SOF_Y0, SOF_H = 696, 56           # the eave's slope, compressed across it
 PAD = 2                 # rows each band paints beyond its own edge
+# The skirt's top face and the fascia sample a seamed strip of the eave band:
+# U along the run at 64 px/m, so its standing seams fall every 0.5 m as they
+# do on the soffit, and the slope (or the fascia's height) compressed onto
+# these rows, which lie clear of the rafter ends and near the band's bright,
+# outer end, where its sky-occlusion gradient is shallow.
+SKIRT_STRIP = (SOF_Y0 + 36, SOF_Y0 + 46)
+# The wall ladder (scripts/roof_safety.py) has no gutter to take its colour
+# from, so it samples the trim metal: the middle rows of the shopfront's
+# transom bar, light anodised aluminium running the full width of the band.
+LADDER_STRIP = (SHOP_Y0 + (Z_TRANSOM - Z_SILL) * PPM - 1,
+                SHOP_Y0 + (Z_TRANSOM - Z_SILL) * PPM + 1)
 
 COURSE = brickwork.COURSE      # brick course pitch: 5 px, 40 courses over the brickwork
 BRICK_L = brickwork.BRICK_L    # stretcher length: 16 px, 64 bricks per atlas width
@@ -355,8 +366,9 @@ def paint_shopfront(c):
 def paint_soffit(c):
     """The white eave: standing-seam sheet running down the slope, with the
     rafter ends that show along its outer edge. Both faces of the skirt sample
-    these rows -- the underside a customer looks up at, and the top the snow
-    is pushed over."""
+    these rows -- the underside a customer looks up at across the whole band,
+    and the top the snow is pushed over, with the fascia, across SKIRT_STRIP
+    alone."""
     y0, h = SOF_Y0, SOF_H
     c.paint(0, ATLAS, y0 - PAD, y0 + h + PAD, ID_EAVE, 1.0, 1.0, height=0.0)
     # seams every 0.5 m along the run: 32 px, so the band tiles

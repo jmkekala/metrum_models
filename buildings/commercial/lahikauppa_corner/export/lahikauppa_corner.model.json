@@ -3,33 +3,33 @@
   "version": 1,
   "name": "lahikauppa_corner",
   "path": "buildings/commercial/lahikauppa_corner",
-  "source": {"commit": "2dbe474483bc446451ecf6106283b03f45b59394", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "a700517823f982b8b19930405d20ce058299e39b", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
-  "bounds": {"min": [-17.5, 0.0, -10.5], "max": [17.5, 5.7188, 10.5]},
+  "bounds": {"min": [-17.5, 0.0, -10.59], "max": [17.5, 5.7188, 10.59]},
   "footprint": [
-    [-16.0, -9.0],
-    [16.0, -9.0],
-    [16.0, 4.5],
-    [11.5, 9.0],
-    [-9.0, 9.0],
-    [-9.0, 4.0],
-    [-16.0, 4.0]
+    [-16.0, -8.91],
+    [16.0, -8.91],
+    [16.0, 4.59],
+    [11.5, 9.09],
+    [-9.0, 9.09],
+    [-9.0, 4.09],
+    [-16.0, 4.09]
   ],
   "storeys": [
     {"floor_y_m": 0.0, "area_m2": 530.88}
   ],
   "dwellings": 0,
   "doors": [
-    {"id": "loading", "kind": "vehicle", "position": [-12.5, 0.0, 4.0], "facing": [0.0, 0.0, 1.0], "width_m": 3.2, "height_m": 3.2, "main": false},
-    {"id": "loading_staff", "kind": "service", "position": [-9.0, 0.0, 5.6], "facing": [-1.0, 0.0, 0.0], "width_m": 1.1, "height_m": 2.125, "main": false},
-    {"id": "main", "kind": "entrance", "position": [13.75, 0.0, 6.75], "facing": [0.7071, 0.0, 0.7071], "width_m": 2.4, "height_m": 2.3125, "main": true},
-    {"id": "staff", "kind": "service", "position": [-1.0, 0.0, -9.0], "facing": [0.0, 0.0, -1.0], "width_m": 1.1, "height_m": 2.125, "main": false}
+    {"id": "loading", "kind": "vehicle", "position": [-12.5, 0.0, 4.09], "facing": [0.0, 0.0, 1.0], "width_m": 3.2, "height_m": 3.2, "main": false},
+    {"id": "loading_staff", "kind": "service", "position": [-9.0, 0.0, 5.69], "facing": [-1.0, 0.0, 0.0], "width_m": 1.1, "height_m": 2.125, "main": false},
+    {"id": "main", "kind": "entrance", "position": [13.75, 0.0, 6.84], "facing": [0.7071, 0.0, 0.7071], "width_m": 2.4, "height_m": 2.3125, "main": true},
+    {"id": "staff", "kind": "service", "position": [-1.0, 0.0, -8.91], "facing": [0.0, 0.0, -1.0], "width_m": 1.1, "height_m": 2.125, "main": false}
   ],
   "lods": [
-    {"file": "lahikauppa_corner_lod0.glb", "triangles": 868, "sha256": "f396484f262b7690e2b5d1e0deaba9a561d454c500d02bfec14eb6531d8d04a9"},
-    {"file": "lahikauppa_corner_lod1.glb", "triangles": 716, "sha256": "76e9d9b8b6c77104b49c8758d49e24197ab6d5b20db18fb51ef49049e626e220"},
-    {"file": "lahikauppa_corner_lod2.glb", "triangles": 458, "sha256": "4c49442ad4199ad68b5cc4c191dddd9e798918fd65904b5247bf96705ed366cf"},
-    {"file": "lahikauppa_corner_lod3.glb", "triangles": 404, "sha256": "e80b67cf035b6e01990826b3298eb633b1e012c5be0535ab56010891703a0ae7"}
+    {"file": "lahikauppa_corner_lod0.glb", "triangles": 1076, "sha256": "e1f31719464ad277e70c63179d3b2e30699424c39e2c6034768e4ec7055da3dd"},
+    {"file": "lahikauppa_corner_lod1.glb", "triangles": 836, "sha256": "656ca9bc5c53bf111e13f6e74226f6af559ffba60169254d8b81f1684d1a3ee1"},
+    {"file": "lahikauppa_corner_lod2.glb", "triangles": 502, "sha256": "c692114c60fcaf4b0fa7097e1637b7c2601362bffd6cbf2fbdf73610cd0b25e4"},
+    {"file": "lahikauppa_corner_lod3.glb", "triangles": 434, "sha256": "ef6b7b6c9a32ffa63118f8cb3e1e06fb49014f6ab1102af6ee3b68a4d79b2c39"}
   ],
   "textures": {
     "orm": {"file": "lahikauppa_corner_orm.png", "sha256": "ba7b87ff2f2270815b3c45d4059ab9a48e8e6044463a707de65e1f5d75804be8"},
@@ -43,6 +43,6 @@
     {"id": "grey_brick", "albedo": "lahikauppa_corner_albedo_grey_brick.png", "sha256": "b5fa474315fef71a9e8702c19a99b6e9ab1694b3feef391d79fea1ff48a1028f"}
   ],
   "default_variant": "red_brick",
-  "preview": {"file": "../preview.png", "sha256": "a185ec760edb738ee9c890cd70299e34ff4b39bdfe9af8bcec8feb20820cd37a"},
+  "preview": {"file": "../preview.png", "sha256": "f4b2b8c7a9248c54c619bb6a7095e024428924599dbb54433ff6fa3da2bf9f88"},
   "hero": false
 }
