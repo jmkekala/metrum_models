@@ -144,9 +144,9 @@ a 0.1 mm weld.
    left). Every segment is cut on one shared set of rows,
    `WALL_Z = 0, 1.05, 2.17, 2.84, 3.00`, so the corners carry the same
    vertices from both sides.
-   - Each cell is boarding (wall band UV), a flush item (posters; every
-     opening at `LOD2`/`LOD3`), or a recessed item with its back face, jambs,
-     sill and head.
+   - Each cell is boarding (wall band UV), a flush item (posters; the band
+     and the staff door at `LOD2`; every opening at `LOD3`), or a recessed
+     item with its back face, jambs, sill and head.
    - The glazing band is one recess running across the front's end, every
      corner chord and the side's start. Its back faces meet at mitred
      points behind each chord joint, so there are jambs only at the band's
@@ -168,15 +168,16 @@ a 0.1 mm weld.
    the flashing on two 0.04 m square galvanised posts, 0.40 m in from its
    ends, 0.04 m behind the edge, so they stand on the canopy's 0.08 m rim
    and are sunk 0.04 m into it. Every tier keeps board and posts.
-4. **Downlights** (`downlights()`), `LOD0`/`LOD1`: three closed drums
-   r 0.13 m (12 sides at `LOD0`, 8 at `LOD1`), an opal band from 2.75 to
-   2.805 m and an opal base under a white housing up to the soffit, sunk
-   0.02 m into the slab. From `LOD2` the same discs are painted on the
-   soffit.
+4. **Downlights** (`downlights()`), every tier: three closed drums
+   r 0.13 m (12 sides at `LOD0`, 8 at `LOD1`, 6 at `LOD2`, 4 at `LOD3`),
+   an opal band from 2.75 to 2.805 m and an opal base under a white
+   housing up to the soffit, sunk 0.02 m into the slab. The soffit's
+   painted discs lie under them, hidden on every tier.
 5. **Counter** (`counter()`): a 0.04 m stainless plate from x 0.15 along the
    front, round the corner (outer radius 0.9 m, in the wall's chords) and
    along the side to y 0.15. Top at 1.04 m, 0.30 m proud, 0.05 m into the
-   wall.
+   wall. It follows the wall's chords on every tier: four at
+   `LOD0`/`LOD1`, two at `LOD2`, one chamfer at `LOD3`.
 6. **Shutter stacks** (`shutter_stack()`): 0.52 m wide, 0.10 m proud, from
    1.08 m up into the soffit, against the wall at each end of the band
    (front: x -0.34..0.18; side: y 0.12..0.64). Each is one closed prism
@@ -187,21 +188,24 @@ a 0.1 mm weld.
    - three 0.025 m leaves, 0.52, 0.496 and 0.472 m wide, so their edges
      step 0.012 m a side.
 
-   `LOD2` keeps one 0.52 x 0.10 m block in the same box.
+   `LOD2` and `LOD3` keep one 0.52 x 0.10 m block in the same box.
 7. **Furniture:**
-   - rack: 0.60 x 0.22 x 0.95 m on the side, y 0.85..1.45;
+   - rack: 0.60 x 0.22 x 0.95 m on the side, y 0.85..1.45, one box on
+     every tier;
    - bench: seat 2.0 x 0.32 m at 0.42–0.47 m on the left wall, y -1.1..0.9,
-     with two front legs at `LOD0`;
-   - litter bin: r 0.17 m, 0.50–1.00 m, on a 0.035 m post;
+     with two front legs at `LOD0`; from `LOD1` the seat alone, one box
+     with its slatted top, on every tier;
+   - litter bin: r 0.17 m, 0.50–1.00 m, on a 0.035 m post; 10 sides on a
+     6-sided post at `LOD0`, 6 on 4 at `LOD1`/`LOD2`, 4 on 4 at `LOD3`;
    - wall lamp: a 0.16 x 0.14 x 0.14 m graphite bulkhead over the staff
      door, its opal lens in the lower part of its face and on its
-     underside.
+     underside, through `LOD2`.
 
 Openings, centre on the outer wall plane, build frame:
 
 | Opening | Wall | Centre | Size | Recess `LOD0`/`LOD1` |
 | --- | --- | --- | --- | --- |
-| customer door (`kiosk`) | front, y -1.7 | x -1.65 | leaf 0.90 x 2.10, opening 1.04 x 2.84 | 0.10 |
+| customer door (`kiosk`) | front, y -1.7 | x -1.65 | leaf 0.90 x 2.10, opening 1.04 x 2.84 | 0.10, kept at `LOD2` |
 | glazing band | front x 0.2..1.8, corner, side y -1.1..0.1 | see below | 3.736 m along the wall, 1.05–2.84 m | 0.06 |
 | staff door (`staff`) | rear, y 1.7 | x 0.90 | leaf 0.90 x 2.10, cased to 2.17 | 0.06 |
 | poster cases | left, x -2.4 | y 0.55, -0.45 | 0.70 x 1.12, flush | none |
@@ -294,8 +298,8 @@ build offset is (0.625, -0.625, 0), shared by every tier.
 | --- | --- | --- | --- |
 | `LOD0` | **1,080** | 12,000 | everything: four corner chords, recessed band and doors, 6-segment canopy corners with the hidden deck, sign board on its posts, three 12-sided drum downlights, counter, stepped shutter stacks, rack, bench with legs, 10-sided bin on a 6-sided post, wall lamp |
 | `LOD1` | **890** | 4,000 | canopy corners 4 segments; downlights 8-sided; bench legs dropped; bin 6-sided on a 4-sided post; the rest as `LOD0` |
-| `LOD2` | **248** | 1,500 | two corner chords; openings painted flat; canopy corners 2 segments; downlights painted on the soffit; counter, rack, bench, bin and lamp dropped; shutter stacks as plain blocks, sign board and posts, and the deck's rim kept; coplanar splits dissolved |
-| `LOD3` | **166** | 500 | one chord (a chamfer) at the wall's corner; shutter stacks dropped; canopy as `LOD2` but with one flat top and no sunk deck; sign board and posts kept |
+| `LOD2` | **508** | 1,500 | two corner chords; the customer door still recessed, the band and the staff door painted flat; canopy corners 2 segments; downlights 6-sided drums; counter on the two chords; rack; bench seat as one box; bin 6-sided on a 4-sided post; wall lamp; shutter stacks as plain blocks, sign board and posts, and the deck's rim kept; coplanar splits dissolved |
+| `LOD3` | **382** | 500 | one chord (a chamfer) at the wall's corner; every opening flat; canopy as `LOD2` but with one flat top and no sunk deck; sign board and posts; downlights 4-sided drums; counter on the chamfer; shutter blocks, rack and bench seat as `LOD2`; bin 4-sided on a 4-sided post; wall lamp dropped |
 
 The triangles go mostly to the canopy (its rounded fascia, rim, upstand and
 deck, which the union splits round the walls, the sign's posts and the
@@ -304,10 +308,19 @@ downlights), to the recessed glazing band across the corner chords, and at
 with the sign's posts account for the rise from the earlier 732 / 616 /
 220 / 130. The rest is small closed solids.
 
+`LOD2` and `LOD3` keep the dressing because a consumer switching by screen
+size shows them near (LOD review): `LOD2` from about 25 m, `LOD3` from about
+52 m. Against the earlier 248 / 166, `LOD2`'s 260 more triangles are the
+counter, the rack, the bench, the bin, the lamp, the three drums (about
+30 each with the soffit's cuts) and the door's recess; `LOD3`'s 216 more
+are the counter, the shutter blocks, the rack, the bench, the bin and the
+drums, with the union's cuts in the walls and the soffit round them.
+
 That is a little above the catalog's small-commercial range (300–1,000 at
 `LOD0`), for a 4.8 x 3.4 m kiosk under a large canopy whose soffit, lamps and
 shutters are seen at eye level. Every tier is a separate reduction. `LOD3`
-differs from `LOD2` in the wall corner, the deck and the shutters.
+differs from `LOD2` in the wall corner, the deck, the door's recess, the
+drums' and the bin's sides and the wall lamp.
 
 ## LOD review
 
@@ -324,11 +337,68 @@ Setup: `scripts/review_asset.py` on the exported tiers.
 | Switch | Distance | Verdict |
 | --- | --- | --- |
 | `LOD0` → `LOD1` | 35 m | Indistinguishable. Two fewer canopy segments per corner and 8-sided downlights do not show at the switch; the bench legs and the bin's sides are sub-pixel. |
-| `LOD1` → `LOD2` | 70 m | The recesses go flat; the counter, bin, bench and rack go; the downlight drums become painted discs and the shutter stacks plain blocks. The counter was a one-pixel light line here, so the band loses a faint underline; the drums and the stacks' steps are under a pixel. The glazing stays a dark band framed in graphite, the canopy keeps its shape, and the sign on its posts stays a readable block. Accepted. |
-| `LOD2` → `LOD3` | 120 m | The chamfered corner, the flat roof top and the dropped shutter blocks cannot be told apart at ~130 px wide. |
-| `LOD3` up close | 20 m | Reviewed because a consumer switching by screen size can show the last tier near. The chamfer reads as a corner, the canopy's corners as polygonal and the band as flat. The kiosk is still recognisable: thin asymmetric canopy, dark serving corner, ribbed ochre walls, the KIOSKI board on its posts. |
+| `LOD1` → `LOD2` | 70 m | The band's and the staff door's recesses go flat, the drums lose sides, the shutter stacks become plain blocks and the bench, bin and canopy corners lose facets; the counter, rack, bench, bin, lamp and drums stay. A subset of the earlier, accepted transition; not re-rendered at 70 m with this camera since (the 25 m review below is the harder case). Accepted. |
+| `LOD2` → `LOD3` | 120 m | The chamfered corner and counter, the flat roof top, the flat door and the dropped wall lamp cannot be told apart at ~130 px wide (judged from the 50–55 m review below; not re-rendered at 120 m). |
+| `LOD3` up close | 20 m | Reviewed because a consumer switching by screen size can show the last tier near. The chamfer reads as a corner, the canopy's corners as polygonal and the band as flat. The kiosk is still recognisable: thin asymmetric canopy, dark serving corner with its counter, ribbed ochre walls, the KIOSKI board on its posts. (Reviewed before the dressing was kept in `LOD3`; it now also has the counter, shutter blocks, rack, bench, bin and drums.) |
 
 - The default switch distances are kept, with no override.
+
+### Screen-size switching (consumer measurement)
+
+**The consumer's measurement, at 1080p with a 75° vertical FOV:** the
+consumer switches by screen size, not by the distance bands above. It shows
+`LOD0` to about 11 m, `LOD1` at 12–22 m, `LOD2` at 25–50 m and `LOD3` from
+about 52–56 m. These are the consumer's figures, not measured here.
+
+At those switches `LOD2` used to drop the counter, the bin, the bench, the
+rack, the lamp and the drums, a visible pop at 23–25 m. `LOD2` and `LOD3`
+were reworked for them, and reviewed with a 75° camera of their own:
+
+- Setup: 1920 x 1080, 75° vertical FOV, Cycles 24 samples, AgX,
+  `review_asset.py`'s scene, noon and night (emission on at the reference
+  factor). Distance from the camera to the centre of `LOD0`'s bounds.
+  Views: front (10° up), the serving corner (45° round, 25° up), eye level
+  (1.7 m camera, 30° round, level), the rear (150° round, 25° up) and
+  the left (90° round, 15° up). `LOD1`/`LOD2` at 22, 25 and 30 m;
+  `LOD2`/`LOD3` at 50 and 55 m. Before and after, from a copy of the
+  previous export.
+- **`LOD1` → `LOD2` at 25 m**, what each dropped item measured and whether
+  `LOD2` keeps it:
+  - counter (0.30 m proud, a light line under the band and its shadow),
+    bin (a 10 x 14 px drum on its post, with its shadow), rack (a 17 x 27 px
+    coloured block) and bench (a 56 px timber line with its shadow): each
+    popped. Kept.
+  - drums: at night three lit lamps under the soffit vanished. Kept, 6
+    sides.
+  - wall lamp: at night its lit lens vanished from the rear. Kept.
+  - customer door recess: its sunlit 0.10 m jamb, a 2 px light line from
+    the serving corner, vanished. Kept, the door only.
+  - band and staff door recesses: the band's head sits in the soffit's
+    shadow and its sill under the counter, so only ~1 px pane-edge parallax
+    changes, by day and at night. Left flat.
+  - stepped shutter stacks to plain blocks: the 0.05 m shadow gap and
+    0.012 m steps are under 1.5 px. Left.
+  - canopy corners 4 → 2 segments: a 1.7 px chord deviation on a 22 px
+    radius, read as a slightly firmer corner, not a change. Left.
+- Measured on the renders, `LOD1`/`LOD2` mean absolute difference at 25 m
+  fell from 1.07–1.61 to 0.21–0.44 (8-bit, noon) and pixels changing by more
+  than 24 levels from 519–1,062 to 26–178 per view.
+- **`LOD2` → `LOD3` at 50 and 55 m:** with the dressing now in `LOD2`, the
+  counter, the rack, the bench (from the left), the bin, the shutter blocks
+  (their sunlit sides) and the drums (at night, lit points) each popped when
+  `LOD3` dropped them. `LOD3` keeps them all, at their fewest sides, within
+  its 500 ceiling. What still changes at 52 m: the corner's two chords
+  become one (counter with it), the canopy loses its sunk deck, the door's
+  recess goes flat (a 1 px edge on the lit door at night) and the wall
+  lamp goes (under a pixel by day and night from the rear at 50 m). Noon
+  difference at 50 m is 0.21–0.42 mean, at or under the old `LOD2`/`LOD3`
+  pair's.
+- Night: glazing, door, sign letters and drums are lit on every tier; the
+  wall lamp through `LOD2`.
+- Renders, pair sheets and scripts are in
+  `review/small_shops_2026_11_22/lippakioski_corner_glazed_lod2/`
+  (`sheets/pairs_lod1_lod2_*` and `sheets/pairs_lod2_lod3_*`, one per
+  light and view, before over after, with a x4 difference image).
 - Kept on every tier: the canopy's asymmetric plan and rounded corners, its
   thin white-soffited slab, the sign board, the glazing band's extent and
   rhythm, the doors' positions, the ribbed boards, the plinth, and the dark
@@ -374,7 +444,15 @@ manifold check are summarised under Review status.
   and drip, the plinth's drip, the hatch's sashes, the push bar, the
   transom bar and the door hardware.
 - **Soffit:** the downlights are plain drums with no trim ring; their sheet
-  joints are painted. From `LOD2` the downlights are painted discs.
+  joints are painted. The drums keep their place on every tier, with fewer
+  sides (6 at `LOD2`, 4 at `LOD3`).
+- **Far tiers' dressing:** `LOD2` and `LOD3` keep the counter, rack, bench,
+  bin and drums as plain closed solids: the counter on the wall's chords
+  (two at `LOD2`, one chamfer at `LOD3`), the bench as its seat alone with
+  no legs or bevels, the bin a 6- then 4-sided prism. The wall lamp is
+  modelled through `LOD2` and goes at `LOD3`. The customer door's recess
+  is kept through `LOD2`; the band and the staff door are flat from
+  `LOD2`.
 - **Roof:** the deck's outlet is painted (a galvanised ring round a dark
   grate, with a ponding stain), not modelled. There is no roof hatch or
   penetration: the kiosk is serviced from the ground.
@@ -548,13 +626,13 @@ reads as painted ochre boarding, not orange.
   The staff door, frames, walls, canopy and roof are black. The painted goods
   are not in the emission.
 - **Luminous fixtures**, each in its own warm colour (channel spread far over
-  24), which the validator reports as 19,193 coloured mask pixels, not
+  24), which the validator reports as 19,194 coloured mask pixels, not
   glazing:
   - the KIOSKI letters and rules on the board **(255,226,160)**; the
     graphite face and its frame stay dark;
-  - the three downlights **(255,212,146)**: at `LOD0`/`LOD1` the drums'
-    opal band and base (the `light` patch), from `LOD2` the painted soffit
-    discs;
+  - the three downlights **(255,212,146)**: on every tier the drums' opal
+    band and base (the `light` patch); the painted soffit discs under them
+    are hidden by the drums;
   - the staff door lamp's lens, the lower part of its face and its
     underside **(255,194,118)**.
 - **Eye-level check** (1.6 m camera, about 10 m off the serving corner, at
@@ -574,8 +652,11 @@ reads as painted ochre boarding, not orange.
   - Glazing, sign, downlights and lamp share one material and one factor, so
     they switch together. Separate control would need a second material slot
     or the consumer masking UV regions.
-  - The lamp is modelled through `LOD1`. From `LOD2` it is gone, and so is
-    its glow; this is recorded.
+  - The lamp is modelled through `LOD2`. At `LOD3` it is gone, and so is
+    its glow, under a pixel from 52 m (LOD review); this is recorded.
+  - The lit regions match across tiers at the consumer's screen-size
+    switches (night pairs at 22–30 m and 50–55 m, LOD review): glazing,
+    door, sign and drums on every tier, the lamp through `LOD2`.
 - **`variants.png`:** all four colours at `LOD0`, a day row (emission off)
   over a night row at the reference factor, by
   `scripts/variant_previews.render_sheet()` (Cycles, camera and exposure
@@ -681,14 +762,20 @@ Completed here:
   and night (Construction, Sign position); KIOSKI reads at 35 m in both.
 - **Texture scale** against `lahikauppa_corner` at 20 and 35 m (Texture
   set).
-- **LOD pairs** at 20, 35, 70 and 120 m, front and oblique, noon, all from
-  the final build, with `LOD3` reviewed at 20 m (LOD review).
+- **LOD pairs** at 20, 35, 70 and 120 m, front and oblique, noon, with
+  `LOD3` reviewed at 20 m (LOD review), from the polishing round's build;
+  `LOD0`/`LOD1` are byte-identical since.
+- **Screen-size switches** (LOD review): `LOD1`/`LOD2` at 22, 25 and 30 m
+  and `LOD2`/`LOD3` at 50 and 55 m with a 75° camera, five views, noon and
+  night, before and after the far tiers kept their dressing.
 - **Night**, `review_asset.py --lights night --emission on` at 20 and 35 m,
   and at eye level (Night lighting): the panes, the door, the board's
   letters, the three downlights and the wall lamp glow.
 - **Mip-3 stress:** `review_atlas_mips.py` with `review_asset.py
   --texture-dir`, `LOD1` and `LOD2` at 70 m, front, oblique and grazing,
-  noon, after the atlas layout changed. No colour leaks and no dark seams.
+  noon, after the atlas layout changed (before `LOD2` kept its dressing;
+  not repeated, since the dressing samples the same patches and regions as
+  at `LOD1`). No colour leaks and no dark seams.
   The ribs average to a flat colour. The fascia, rim and sign keep their
   colours, the board's letters stay apart, and the glass stays dark.
 - **`scripts/validate_asset.py`:** 0 FAIL. The one WARN is the facts
@@ -725,6 +812,15 @@ Pending, outside this repository:
 - Textures: CPython 3.14.10, numpy 2.5.5, scipy 1.18.1, Pillow 13.0.0.
 
 ## Revision log
+
+- **2026-11-22, far tiers for screen-size switching.** The consumer shows
+  `LOD2` from ~25 m and `LOD3` from ~52 m (its measurement, 1080p, 75°
+  FOV), where `LOD2` dropping the dressing popped. `LOD2` now keeps the
+  counter, rack, bench, bin, wall lamp, drums (6 sides) and the customer
+  door's recess; `LOD3` the counter, shutter blocks, rack, bench, bin and
+  drums (4 sides). Triangles 248 / 166 → 508 / 382 at `LOD2` / `LOD3`;
+  `LOD0`, `LOD1`, textures, bounds, pivot, footprint and doors unchanged.
+  Pair sheets in `review/small_shops_2026_11_22/lippakioski_corner_glazed_lod2/sheets/`.
 
 - **2026-11-22, shared lettering.** KIOSKI is set in `scripts/lettering.py`,
   the catalog's one alphabet, instead of this file's own glyphs. Only the K

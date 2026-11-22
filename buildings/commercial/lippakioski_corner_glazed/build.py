@@ -99,10 +99,12 @@ def wall_facets(level):
     return L.WALL_FACETS[level]
 
 
-def recessed(level):
+def recessed(level, what="band"):
     """LOD0/LOD1 set the glass, the doors and the staff door back in their
-    openings; LOD2/LOD3 paint the same rectangles flat on the wall plane."""
-    return level < 2
+    openings; LOD2 keeps the customer door's recess, whose sunlit jamb
+    pops at 25 m when it goes, and paints the band and the staff door flat
+    on the wall plane, as LOD3 paints all three."""
+    return level < (3 if what == "door" else 2)
 
 
 def canopy_segs(level, corner):
@@ -111,11 +113,16 @@ def canopy_segs(level, corner):
 
 def kept(level, what):
     """Which attached pieces each tier keeps (notes.md, Per-tier triangle
-    counts): the counter through LOD1, the shutters through LOD2, the
-    small furniture fading out from LOD1."""
-    return level <= {"counter": 1, "shutters": 2, "shutter_leaves": 1, "rack": 1,
-                     "bench": 1, "bench_legs": 0, "bin": 1, "lamp": 1, "well": 2,
-                     "sign": 3, "downlights": 1}[what]
+    counts). A consumer switching by screen size shows LOD2 from about 25 m
+    and LOD3 from about 52 m (notes.md, LOD review), so LOD2 keeps the
+    counter, the rack, the bench, the bin, the wall lamp and the drums,
+    which pop when they go there, and drops only what is under a pixel at
+    25 m; LOD3 keeps what pops at 52 m: the counter, the shutter blocks, the
+    rack, the bench, the bin and the drums, each at its fewest sides. The
+    wall lamp goes at LOD3, under a pixel there by day and by night."""
+    return level <= {"counter": 3, "shutters": 3, "shutter_leaves": 1, "rack": 3,
+                     "bench": 3, "bench_legs": 0, "bin": 3, "lamp": 2, "well": 2,
+                     "sign": 3, "downlights": 3}[what]
 
 
 # ============================================================== mesh builder
@@ -271,7 +278,8 @@ def segments(level):
     dw = L.DOOR_SIZE[0]
     ds0 = DOOR_X - dw / 2.0 - L.WX0
     front.items.append(Item(ds0, ds0 + dw, 0.0, L.Z_HEAD,
-                            L.DOOR_DEPTH if rec else 0.0, region_uv(L.DOOR, ds0, 0.0)))
+                            L.DOOR_DEPTH if recessed(level, "door") else 0.0,
+                            region_uv(L.DOOR, ds0, 0.0)))
     s0 = L.BAND_X0 - L.WX0
     front.items.append(Item(s0, front.L, bz0, bz1, d_band, band_uv(-s0), cont1=True))
     # the corner's facets: wholly glazed above the counter
@@ -569,7 +577,7 @@ def downlights(level):
     """The soffit's three surface-mounted drum lamps: a white housing over
     an opal band and an opal base, the housing's top sunk 0.02 m into the
     slab so the union seats it."""
-    n = 12 if level == 0 else 8
+    n = (12, 8, 6, 4)[level]
     zb, zl = L.DOWNLIGHT_Z
     zt = L.Z_SOFFIT + 0.02
     r = L.DOWNLIGHT_R
@@ -720,7 +728,7 @@ def bench(level):
 
 def litter_bin(level):
     """A litter bin on a short post under the canopy, clear of the door."""
-    n, np_ = (10, 6) if level == 0 else (6, 4)
+    n, np_ = ((10, 6), (6, 4), (6, 4), (4, 4))[level]
     bx, by = BIN_AT
     B = Builder()
     ring = [(bx + BIN_R * math.cos(2 * math.pi * (k + 0.5) / n),
