@@ -3,7 +3,7 @@
   "version": 1,
   "name": "nostokonehuone_brick",
   "path": "buildings/industrial/nostokonehuone_brick",
-  "source": {"commit": "400ce70ef5f2a345bd87d4339eedcefcb07547f2", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "aed49adb10e3f55b2e4923aa6eadee39e70b416f", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-4.9, 0.0, -6.05], "max": [4.9, 7.9, 6.05]},
   "footprint": [
