@@ -493,6 +493,20 @@ thumbnail, so the index is browsable without opening asset folders.
   visibly flattens or vanishes, keep it within budget or move the switch.
   A consumer may switch by screen size instead, so a small asset's last
   tier is seen near: review it at its switch's screen size too.
+- **The consumer switches by screen size, so a small asset changes tier
+  much nearer than the table.** Measured in the consumer at 1080p and a
+  75° vertical FOV (two assets, November 2026; a measurement, not a
+  guarantee): the 6.75 m kiosk showed `LOD1` from about 12 m, `LOD2` from
+  25 m and `LOD3` from 52 m; the 10.4 m salon from about 20, 45 and 85 m.
+  As a rule of thumb the switches fall at about 1.8, 4 and 8 times the
+  asset's largest bounds dimension.
+  - Review every adjacent pair at those distances too, rendered at 75°
+    and 1920x1080, face-on, oblique and from eye level, whenever they are
+    nearer than the table's.
+  - What a tier drops must not pop there. Counters, bins, benches, racks,
+    canopies' fittings and other parts seen against the wall stay,
+    simplified, until the tier whose switch hides their loss; record the
+    distances used in `notes.md`.
 - **20–150 m is a near-view review range**, not a consumer camera limit. Review
   `LOD3` into its intended distant range; the consumer owns culling and farther
   representations.
