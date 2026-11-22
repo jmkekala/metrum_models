@@ -239,7 +239,10 @@ ID_DOME, ID_KERB, ID_STACK, ID_SOOT, ID_GALV, ID_LOUVRE = 18, 19, 20, 21, 22, 23
 ID_LETTER, ID_CONC, ID_GROUT, ID_SOFFIT, ID_RUBBER, ID_SPANDREL = 24, 25, 26, 27, 28, 29
 ID_LADDER, ID_MONTOP, ID_ALU = 30, 31, 32
 
-# (roughness, metallic)
+# (roughness, metallic). Painted steel is dielectric: the fascia sheet, the
+# doors, the ladder and the black-painted flue (ID_STACK). Bare metal stays
+# metallic: the galvanised plant and its louvres, the aluminium frames and
+# the handles.
 SURFACE = {
     ID_BLANK: (0.95, 0.0), ID_PLINTH: (0.90, 0.0), ID_AGG: (0.93, 0.0),
     ID_STONE_D: (0.80, 0.0), ID_STONE_L: (0.78, 0.0), ID_SEAL: (0.88, 0.0),
@@ -247,7 +250,7 @@ SURFACE = {
     ID_SILL: (0.48, 0.0), ID_FASCIA: (0.52, 0.0), ID_OPANEL: (0.80, 0.0),
     ID_DECK: (0.93, 0.0), ID_LAP: (0.90, 0.0), ID_DOOR: (0.50, 0.0),
     ID_SDOOR: (0.50, 0.0), ID_HANDLE: (0.32, 0.85), ID_DARK: (0.96, 0.0),
-    ID_DOME: (0.30, 0.0), ID_KERB: (0.55, 0.0), ID_STACK: (0.62, 0.15),
+    ID_DOME: (0.30, 0.0), ID_KERB: (0.55, 0.0), ID_STACK: (0.55, 0.0),
     ID_SOOT: (0.97, 0.0), ID_GALV: (0.42, 0.65), ID_LOUVRE: (0.48, 0.55),
     ID_LETTER: (0.40, 0.0), ID_CONC: (0.90, 0.0), ID_GROUT: (0.92, 0.0),
     ID_SOFFIT: (0.70, 0.0), ID_RUBBER: (0.90, 0.0), ID_SPANDREL: (0.55, 0.0),

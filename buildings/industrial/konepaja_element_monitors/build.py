@@ -93,22 +93,42 @@ def ribbon_whole(level):
 
 
 def opening_mode(level):
-    """LOD0/1 cut every opening into its wall with reveals; LOD2/3 paint the
-    same rectangle flat. The hall's high windows are in the wall band
-    itself, so on the flat tiers they need no geometry at all."""
-    return "cut" if level < 2 else "flush"
+    """LOD0-LOD2 cut every opening into its wall with reveals; LOD3 paints
+    the same rectangle flat. The hall's high windows are in the wall band
+    itself, so on the flat tier they need no geometry at all. At the
+    consumer's LOD1/LOD2 switch (about 132 m) the 0.12-0.2 m reveals'
+    shade still darkened every opening, and flattened there they lightened
+    at once; LOD2 has the triangles to keep them, but for the hall's band
+    windows (band_cut())."""
+    return "cut" if level < 3 else "flush"
+
+
+def band_cut(level):
+    """The hall's high windows are recessed to LOD1 and painted in the wall
+    band from LOD2: the band carries their frames, sills and the reveal's
+    occlusion inside the panel's edge, so flat they keep their shade, and
+    the triangles go to the monitors' lights (monitor_split())."""
+    return level < 2
 
 
 def dome_form(level):
-    """Kerb and pyramid to 35 m, kerb and flat top to 70 m, then painted on
-    the deck: a 1.3 m dome is 6 px at 120 m."""
-    return ("pyramid", "box", None, None)[level]
+    """Kerb and pyramid to LOD2, then painted on the deck. The domes stand
+    0.31 m over the felt: dropped at the consumer's LOD1/LOD2 switch (about
+    132 m) the eight light squares sank into the deck at once, and as
+    flat-topped boxes on LOD1 they lost the pyramid's lit and shaded
+    facets at the LOD0/LOD1 switch (about 59 m). A pyramid is 8 triangles
+    more than a box. Past LOD3's switch (about 264 m) a 1.3 m dome is
+    3 px."""
+    return ("pyramid", "pyramid", "pyramid", None)[level]
 
 
 def monitor_split(level):
     """A monitor's sides are ten lights each, every light its own face, to
-    70 m; past it one face samples the whole side at DPPM."""
-    return level < 2
+    LOD2; on LOD3 one face samples the whole side at DPPM. At night the
+    whole-side region's glow is wider and brighter than the ten lit
+    lights, and at the consumer's LOD1/LOD2 switch (about 132 m) the three
+    strips visibly changed."""
+    return level < 3
 
 
 def stack_sides(level):
@@ -124,8 +144,10 @@ def stack_rings(level):
 
 
 def guys_kept(level):
-    """The guys are 2 cm rods: LOD0 only."""
-    return level == 0
+    """The guys are 2.5 cm rods, seen as fine lines against the deck by
+    their shadows: to LOD1, so they do not go at the consumer's LOD0/LOD1
+    switch (about 59 m)."""
+    return level < 2
 
 
 def fan_sides(level):
@@ -315,13 +337,22 @@ def _zone_polys(L_, z0, z1, ops):
     return out
 
 
+def op_mode(o, level):
+    """opening_mode() for opening *o*: the hall's windows, painted in the
+    wall band with their reveal's occlusion, are flat from LOD2 (band_cut)."""
+    if o.band and not band_cut(level):
+        return "flush"
+    return opening_mode(level)
+
+
 def build_wall(B, wall, level):
     """One wall, ground to its deck, every opening in it built and holed."""
-    fr, mode = wall.fr, opening_mode(level)
+    fr = wall.fr
     zlines = [z0 for z0, _z1, _mk in wall.zones[1:]]
     ops = [whole(o) if o.lo and ribbon_whole(level) else o for o in wall.items
-           if not (mode == "flush" and o.band)]
+           if not (op_mode(o, level) == "flush" and o.band)]
     for o in ops:
+        mode = op_mode(o, level)
         o.jz = sorted(set([o.a0, o.a1] + [z for z in zlines if o.a0 + EPS < z < o.a1 - EPS]
                           + (o.hcuts if mode == "flush" else [])))
         o.bs = o.vcuts if mode == "flush" else [o.s0, o.s1]
@@ -330,7 +361,7 @@ def build_wall(B, wall, level):
         for outline, holes in _zone_polys(fr.L, z0, z1, ops):
             fill_planar(B, [outline] + holes, lambda s, z: fr.P(s, z), uv)
     for o in ops:
-        build_opening(B, fr, o, mode)
+        build_opening(B, fr, o, op_mode(o, level))
     return ops
 
 
@@ -367,13 +398,12 @@ def body(walls, z_top, level):
     every recess that stands on the ground."""
     B = Builder()
     ground = []
-    mode = opening_mode(level)
     for w in walls:
         ops = build_wall(B, w, level)
         fr = w.fr
         ground.append(fr.P(0.0, 0.0)[:2])
         for o in sorted([o for o in ops if o.ground], key=lambda o: o.s0):
-            if mode == "cut":
+            if op_mode(o, level) == "cut":
                 ground += [fr.P(o.s0, 0.0)[:2]] + [fr.P(s, 0.0, -o.depth)[:2] for s in o.vcuts]
                 ground.append(fr.P(o.s1, 0.0)[:2])
             else:

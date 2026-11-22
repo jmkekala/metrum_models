@@ -62,7 +62,8 @@ import shell_build as SB  # noqa: E402
 from shell_build import InwardFrame, fill_region, overlap, rect_poly  # noqa: E402
 
 asset_build.check_toolchain()
-BUILD = asset_build.Asset(ASSET, HERE, L.VARIANTS, L.DEFAULT_VARIANT)
+BUILD = asset_build.Asset(ASSET, HERE, L.VARIANTS, L.DEFAULT_VARIANT,
+                          tint=L.LIT_FACTOR)
 get_material, export_all = BUILD.material, BUILD.export_all
 render_preview, render_variants = BUILD.render_preview, BUILD.render_variants
 Builder = functools.partial(SB.Builder, L.ATLAS)
@@ -227,8 +228,8 @@ def kit_modes():
     """The kit's tiers: roof_safety.MODES but thinner, since the row has only
     about 500 triangles to spare at LOD1 and 70 at LOD2. LOD1 keeps every
     fourth rung and no brackets or posts, which are under a pixel past 35 m.
-    From LOD2 the housings the walkway serves are gone, and the kit goes with
-    them but for the wall ladder's bare rails, which stand outside the rake,
+    From LOD2, where the housings are plain boxes and nothing is left for a
+    30 m walkway, the kit goes but for the wall ladder's bare rails, which stand outside the rake,
     the building's west extreme, so every tier keeps LOD0's bounds and pivot."""
     return ((1, True), (4, False), (None, False), (None, False))
 
@@ -254,6 +255,18 @@ def canopy_span(k):
 def patio_door_x():
     """X of each yard door. The rear wall runs -X, so s = HX - x."""
     return [HX - (j * UNIT_W + REAR_UNIT[0][1]) for j in range(UNITS)]
+
+
+def housing_form(level):
+    """The ridge vent housings per tier: open stacks with their flue sunk
+    FLUE_DEPTH (open_stack()) to LOD1; plain boxes on LOD2, their top one
+    face painted with the flue's soot patch; none at LOD3. At the consumer's
+    LOD1/LOD2 switch (about 147 m) the housings are 4 x 5 px dark blocks
+    on the ridge, and dropping them there was the row's most visible pop.
+    LOD2 has 52 triangles to spare, which a box apiece fits and an open
+    flue (16 more each) does not; the 0.10 m rim round the flue is half a
+    pixel there."""
+    return ("open", "open", "box", None)[level]
 
 
 def downpipe_mode(level):
@@ -655,14 +668,19 @@ def build_lod(level):
     base = to_object(main_body(level), "tmp_body")
     parts = [to_object(gable_slab("x", 0.0, HY, L.Z_EAVE, EAVE_OV,
                                   -HX - RAKE_OV, HX + RAKE_OV), "tmp_roof")]
-    if level < 2:
-        for i, vx in enumerate(VENT_X):
-            hx_, hy_, below, above = VENT
-            parts.append(to_object(asset_build.open_stack(
+    form = housing_form(level)
+    for i, vx in enumerate(VENT_X if form else ()):
+        hx_, hy_, below, above = VENT
+        if form == "open":
+            B = asset_build.open_stack(
                 Builder(), vx - hx_, vx + hx_, -hy_, hy_, Z_RIDGE - below,
                 Z_RIDGE + above, FLUE_WALL, FLUE_DEPTH, uv_patch("cap"),
-                uv_patch("cap"), uv_patch("flue"), uv_patch("blank")),
-                "tmp_vent%d" % i))
+                uv_patch("cap"), uv_patch("flue"), uv_patch("blank"))
+        else:
+            B = SB.box(Builder(), vx - hx_, vx + hx_, -hy_, hy_, Z_RIDGE - below,
+                       Z_RIDGE + above, uv_patch("cap"), uv_patch("flue"),
+                       uv_patch("blank"))
+        parts.append(to_object(B, "tmp_vent%d" % i))
     for i, xc in enumerate(shed_x()):
         parts.append(to_object(shed(xc, level), "tmp_shed%d" % i))
     for k in range(UNITS):

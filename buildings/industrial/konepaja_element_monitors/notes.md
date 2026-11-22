@@ -247,23 +247,29 @@ Measured on the exported GLBs by `scripts/validate_asset.py`:
 | Tier | Triangles | Ceiling | Shell | Rooflights | Plant | Ladder and cage |
 | --- | --- | --- | --- | --- | --- | --- |
 | `LOD0` | 2428 | 12,000 | 734 | 616 | 442 | 636 |
-| `LOD1` | 2002 | 4,000 | 734 | 552 | 332 | 384 |
-| `LOD2` | 850 | 1,500 | 434 | 92 | 164 | 160 |
+| `LOD1` | 2130 | 4,000 | 734 | about 616 | about 396 | 384 |
+| `LOD2` | 1484 | 1,500 | about 544 | about 616 | 164 | 160 |
 | `LOD3` | 486 | 500 | 326 | 88 | 48 | 24 |
 
 Shell = the three bodies with their 23 openings, the fascia rings, the
 canopy and the landing; rooflights = the three monitors and eight domes;
 plant = the flue and its guys, the fans and the air handler (each share by
 rebuilding the tier without it; the kit's from its own solids, which are
-appended, so exact). The count is low for 768 m2 of plan because the hall is
-a box of plain walls whose windows are in the wall band: on the flat tiers
-the hall's walls are four quads. `LOD1` keeps every recess and drops the
-guys, the domes' pyramids and two sides of each fan; `LOD2` flattens the
-openings, paints the domes, draws each monitor side as one face, the flue
-with six sides and the fans with four; `LOD3` draws each office ribbon as
-one face on a whole-ribbon region, the flue square, drops the fans and the
-landing, and keeps the ladder's bare rails and the cage's back strap, which
-set the plan's west extent.
+appended, so exact; the shares marked "about" were not re-measured after
+the 2026-11-22 change: `LOD2`'s rooflights are `LOD1`'s, and its shell the
+remainder). The
+count is low for 768 m2 of plan because the hall is a box of plain walls
+whose windows are in the wall band: on the flat tiers the hall's walls are
+four quads. `LOD1` keeps every recess, the domes' pyramids and the guys,
+and drops two sides of each fan; `LOD2` keeps every recess but the hall's
+band windows (painted in the band with their reveal's occlusion), keeps the
+domes' pyramids and every monitor light as its own face, and draws the flue
+with six sides and the fans with four, dropping the guys; `LOD3` flattens
+the openings, paints the domes, draws each monitor side as one face and
+each office ribbon as one face on a whole-ribbon region, the flue square,
+drops the fans and the landing, and keeps the ladder's bare rails and the
+cage's back strap, which set the plan's west extent. `LOD2` is 16 under its
+ceiling.
 
 ## LOD review
 
@@ -278,7 +284,8 @@ set the plan's west extent.
   75 m, front, oblique and aerial, noon and reverse sun; `LOD2`/`LOD3` at
   115 and 125 m, front, oblique and aerial, noon and night; top and aerial
   of `LOD0` and `LOD3` at 65 and 75 m, noon and night.
-- **Results:**
+- **Results** (the tiers as they were before 2026-11-22; see the consumer's
+  switches below for the current ones):
   - `LOD0`/`LOD1`: indistinguishable at 30-40 m but for the domes, pyramids
     to flat-topped kerbs, which keep their light square from every view, and
     the ladder's rungs.
@@ -295,6 +302,27 @@ set the plan's west extent.
     monitors, the domes, the flue, the office's step down from the hall, the
     air handler and the lettering's band are all there, and the night
     pattern is the same on both.
+- **At the consumer's screen-size switches:** the consumer switches by
+  screen size, measured here at **1920 x 1080 and a 75 degree vertical
+  FOV**, adjacent tiers at 1.8, 4 and 8 times the largest bounds dimension
+  (32.97 m), so **59, 132 and 264 m** from the centre of `LOD0`'s bounds;
+  front (0 round, 10 up), corner (45, 25) and rear (160, 20), noon and
+  night with the reference emission on; renders and before/after pair
+  sheets in `review/older_audit_2026_11_22/fix_stale_three/konepaja_element_monitors/`.
+  - `LOD0`/`LOD1` at 59 m: nothing seen. The domes keep their pyramids and
+    the guys stay on `LOD1` (2026-11-22); before, the domes' facets flattened
+    and the guys' fine lines went here.
+  - `LOD1`/`LOD2` at 132 m: the hall's band windows go flat, painted with
+    their reveal's occlusion; at night their lit panes grow slightly on
+    oblique views. Before 2026-11-22 every reveal flattened, the eight domes
+    sank into the deck and the monitors' lit glazing changed to one painted
+    face a side, the building's clearest pop by day and by night; all three
+    now carry on to `LOD2`. The guys go (2.5 cm, 0.25 px).
+  - `LOD2`/`LOD3` at 264 m: the reveals flatten, the domes are painted on the
+    deck, and each monitor side becomes one face, whose glow at night is a
+    little wider and brighter than the ten lit lights'; the flue goes
+    square, the fans and the landing go. Each is about 3 px or less. Left as
+    is: `LOD3` is 14 under its ceiling.
 - **Identity from above** (the consumer's usual view): by day three dark
   monitor strips with glass along both sides, two rows of pale domes, the
   flue in the back west corner and the box of the air handler; by night
@@ -314,8 +342,8 @@ or duplicate surfaces. Hidden-surface test:
   rung ends off the rails, hoop ends at the rails) and the fans' cowl
   undersides, 2 cm rings 0.6 m over the deck whose downward rays all meet
   the deck or the body. Exterior surface in narrow gaps, not buried faces.
-- **`LOD1`:** 23 of 2002 (1.1%), the same.
-- **`LOD2`:** 4 of 850.
+- **`LOD1`:** 26 of 2130 (1.2%), the same.
+- **`LOD2`:** 6 of 1484 (0.4%).
 - **`LOD3`:** 17 of 486 (3.5%), 2.7 m2 vertical: the wall-facing sides of
   the ladder's bare rails and the cage's strap, which every ray from them
   meets the wall. Exterior, seen from the side.
@@ -339,8 +367,9 @@ bodies' faces against one another are removed by the union.
 - The fascias' profile is in the normal map on a flat face; the decks are
   level, their laps, outlets and the plant's flashings painted.
 - The hall's windows are recessed on `LOD0`/`LOD1` and painted in the wall
-  band on `LOD2`/`LOD3`; the other openings are flat there.
-- The domes are pyramids, then flat-topped kerbs, then painted; the
+  band on `LOD2`/`LOD3`; the other openings are recessed to `LOD2` and flat
+  on `LOD3`.
+- The domes are pyramids to `LOD2`, then painted; the
   monitors' ends are plain sheet; the air handler has no ducts, the fans no
   wiring; the flue no foundation or breeching (it rises from the deck).
 
@@ -350,8 +379,11 @@ bodies' faces against one another are removed by the union.
   RGB PNGs. Deviations, each on a surface seen at its own scale: the roof
   plan region at 8 texels/m (the decks and monitor tops, seen from above;
   felt laps a metre apart are 8 texels); the flue, the fans and the air
-  handler at 32; the dome's top at 24; on the flat tiers only, the monitor
-  sides at 8 and the office's whole ribbons (`LOD3`) at 12.
+  handler at 32; the dome's top at 24; on `LOD3` only, the monitor sides at
+  8 and the office's whole ribbons at 12.
+- **ORM:** painted steel is dielectric (the fascia sheet, the doors, the
+  ladder, and the black-painted flue at roughness 0.55); the galvanised
+  plant and louvres, the aluminium frames and the handles stay metallic.
 - **Bands** (tile in U, each on a 16-row boundary, 16 rows clear of the
   next):
   - **AGG 0-480** (z 0-7.5 m): the cast plinth to 0.75 m (formwork tie
@@ -384,7 +416,7 @@ bodies' faces against one another are removed by the union.
   glazing 160 x 80), the truck door's plain and windowed sections
   (212 x 84), the personnel door (68 x 140), one office ribbon light
   (80 x 76) and one strip light (64 x 64), one monitor light (80 x 80) and
-  the monitor's whole side for the flat tiers (100 x 10), the whole ribbons
+  the monitor's whole side for `LOD3` (100 x 10), the whole ribbons
   for `LOD3` (105 x 14, 75 x 14), the flue (224 x 64: up it by round it),
   the fan's side and cowl, the air handler's side and end, the dome's top,
   the lettering (352 x 48: KONEPAJA on 5.5 m of the office fascia, its
@@ -487,6 +519,12 @@ ORM, normal and emission are shared: only colour changes.
   `scripts/variant_previews.py`, camera, framing, exposure and colour
   management fixed. Light on the ground in the night row is the preview's
   bounce, **simulated**; spill is the consumer's.
+- **Across the tiers:** night pairs at the consumer's switches (LOD review)
+  show the same lights lit on every tier. `LOD0`-`LOD2` light the monitors'
+  glazing light by light; on `LOD3` each side is one face on the whole-side
+  region, a little wider and brighter at night. The hall's windows, flat in
+  the band from `LOD2`, show slightly more lit pane on oblique views than
+  their recesses do on `LOD1`.
 - **Pending in the consumer:** off/on behaviour on reimported tiers, distant
   filtering under emission, LOD switches when lit.
 
@@ -563,6 +601,18 @@ Completed in this repository:
 - **Mip review of the roof plan** at each tier's switch distance and one
   level beyond, whole-atlas and distance-matched per-texel mips (Texture
   set, Filtering): the domes clean at real distance, 250 m included.
+- **The 2026-11-22 change** (Revision log), from a snapshot in
+  `review/older_audit_2026_11_22/fix_stale_three/konepaja_element_monitors/before/`:
+  tier pairs at the consumer's 59, 132 and 264 m, front, corner and rear,
+  noon and night, before and after (`compare/pairs_lod*_lod*.png`), and
+  `review_asset.py` `LOD0` front and oblique at 20 and 35 m under noon and
+  reversed sun (`compare/lod0/`, mean difference 0.00-0.01/255: the flue's
+  ORM). Pixels changed by more than 24/255 at the `LOD1`/`LOD2` switch fell
+  from 100-380 (noon) and 292-1401 (night) to 2-50 and 0-342; at
+  `LOD0`/`LOD1` from 203-479 to 0-16. `LOD2`/`LOD3` rose from 2-79 to
+  41-402, the reveals, domes and monitor lights now changing there at half
+  the screen size. The mip review above predates the change and was not
+  repeated.
 
 Pending, outside this repository:
 
@@ -588,6 +638,13 @@ Pending, outside this repository:
 
 ## Revision log
 
+- **2026-11-22 — the domes, the reveals and the monitors' lights to
+  `LOD2`.** `LOD1` and `LOD2` keep the domes' pyramids, `LOD1` the guys;
+  `LOD2` keeps every recess but the hall's band windows (`band_cut()`) and
+  every monitor light as its own face (`monitor_split()`). Tiers
+  2428/2002/850/486 to 2428/2130/1484/486. The black-painted flue went from
+  metallic 0.15, roughness 0.62 to dielectric at 0.55; only `_orm.png`
+  changed. Bounds, pivot, footprint and doors unchanged.
 - **2026-11-22 — re-exported on the current toolchain.** The four tiers were
   re-exported from an unchanged build. Since the union took over the 0.1 mm
   snap (`asset_build.union(..., snap=asset_build.SNAP)`), UVs are computed

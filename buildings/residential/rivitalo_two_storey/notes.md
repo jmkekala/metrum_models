@@ -117,7 +117,12 @@ the result is the boundary of one empty volume.
 rim round one flue sunk 0.80 m to a floor, lined and floored in the `flue`
 patch (`asset_build.open_stack()`). The floor stays 0.15 m over the ridge, so
 the roof slab never reaches into the flue; `check_layout()` asserts it. The
-flue stays recessed on both tiers that keep the housings.
+flue stays recessed on `LOD0` and `LOD1`. **On `LOD2` each housing is a plain
+box of the same size** (`housing_form()`), its top one face mapped to the
+`flue` soot patch: the tier had 52 triangles to spare, three boxes cost 46,
+and an open flue would cost 16 more each. The 0.10 m rim is half a pixel at
+that tier's switch, so the painted top reads as the open stack. `LOD3` has
+no housings.
 
 Things in the builder worth knowing:
 
@@ -222,8 +227,8 @@ the union joins to the roof.
 The tiers are the module's thinned to this row's budgets (`kit_modes()`):
 every rung with brackets and posts at `LOD0`; every fourth rung and the plank
 alone at `LOD1`, whose 500 spare triangles would not take more along a 30 m
-walkway; and from `LOD2`, where the housings the walkway serves go, only the
-gable ladder's bare rails, three-sided, kept because they stand outside the
+walkway; and from `LOD2`, where the housings are plain boxes and the tier
+has no triangles for a 30 m walkway, only the gable ladder's bare rails, three-sided, kept because they stand outside the
 rake and so set the row's west extent and its pivot. They touch nothing, so
 they join the tier after its weld and dissolve (`roof_safety.append()`):
 unioned as one more operand, they changed what those passes merged on the
@@ -236,8 +241,8 @@ ground faces, for 8 triangles `LOD3` does not have.
 | --- | --- | --- | --- |
 | `LOD0` | 6592 | 12,000 | casing rings, reveals and glass on every window and door on all four elevations; shed doors recessed; yard gates flush; six downpipes, eight-sided with swan-neck and shoe; roof safety kit with every rung, brackets and posts |
 | `LOD1` | 3806 | 4,000 | each opening becomes one recess the size of its casing (casing painted on the recessed plane); downpipes four-sided; kit with every fourth rung, no brackets or posts |
-| `LOD2` | 1448 | 1,500 | openings flush; coplanar subdivisions dissolved; ridge vents dropped, and the kit with them but for the gable ladder's bare rails; downpipes straight, no swan-neck or shoe |
-| `LOD3` | 494 | 500 | front and rear walls painted, not cut (see below); downpipes dropped; the gable ladder's bare rails kept |
+| `LOD2` | 1494 | 1,500 | openings flush; coplanar subdivisions dissolved; ridge vent housings as plain boxes with a painted flue; the kit dropped but for the gable ladder's bare rails; downpipes straight, no swan-neck or shoe |
+| `LOD3` | 494 | 500 | front and rear walls painted, not cut (see below); vent housings and downpipes dropped; the gable ladder's bare rails kept |
 
 **`LOD0` sits far under its ceiling, and that is correct rather than
 something to pad.** The row is a 36 × 8.5 m box with one gable roof, six shed boxes and a
@@ -283,7 +288,10 @@ Three things do still go at `LOD3`, and each is small and checked:
   The end walls are blank at every tier, and the rear's small windows are
   painted into its bay region.
 
-The ridge vent housings go at `LOD2`, as rooftop clutter should.
+The ridge vent housings go at `LOD3`. On `LOD2` they are boxes (46
+triangles for the three, roof cuts included): dropped there, they were the
+row's most visible change at the consumer's `LOD1`/`LOD2` switch (LOD
+review).
 
 Modelled trim (roof-slab overhangs, canopies, shed boxes, vent housings) is a
 few hundred triangles at `LOD0`, far under the quarter-budget cap. Opening the
@@ -296,7 +304,7 @@ the walkway's 26 posts with the squares they cut in the sheet.
 
 **The six downpipes cost 484, 244 and 90 triangles** on `LOD0`-`LOD2`, the
 pipes' own faces and the holes they leave in the soffit together. With the
-kit that leaves `LOD2` 52 under its ceiling. `LOD3` drops them: it has 6
+kit and the three housing boxes that leaves `LOD2` 6 under its ceiling. `LOD3` drops the pipes: it has 6
 triangles to spare, and six three-sided pipes would cost about 70.
 
 ## LOD review
@@ -320,6 +328,21 @@ exact positions and sizes because both sides read the elevation layout from
 These are authoring comparisons in Blender. They are not evidence about
 runtime switching, mipmap selection or frame time; the consumer-side items are
 listed under Review status.
+
+### At the consumer's screen-size switches
+
+The consumer switches by screen size, measured here at **1920 x 1080 and a
+75 degree vertical FOV**: adjacent tiers at 1.8, 4 and 8 times the largest
+bounds dimension (36.78 m), so **66, 147 and 294 m** from the centre of
+`LOD0`'s bounds. Front (0 round, 10 up), corner (45, 25) and rear (160, 20),
+noon and night with the reference emission on; renders and before/after pair
+sheets in `review/older_audit_2026_11_22/fix_stale_three/rivitalo_two_storey/`.
+
+| Switch | Distance | What changes |
+| --- | --- | --- |
+| `LOD0` → `LOD1` | 66 m | Every window's casing goes from a ring on the wall to paint on the recessed plane, so the reveal's shadow moves from inside the casing to its outer edge and the head casing darkens: a mild shift on every opening, the largest difference at this switch. Left: `LOD1` has 194 triangles to spare and casing rings on its 54 openings would cost several hundred. |
+| `LOD1` → `LOD2` | 147 m | The openings go flush (shadow lines about a pixel), and the walkway and roof ladder go, a faint line behind the ridge. The vent housings stay, as boxes. |
+| `LOD2` → `LOD3` | 294 m | The front and rear become painted bays, the housings go (about 2 px square each), and the downpipes, the landings and steps. |
 
 **Downpipes across the switches**, from `review/downpipes_shared_2026_09_25/`
 (front, oblique and rear at 35 and 70 m, front and oblique at 120 m, under
@@ -348,8 +371,8 @@ Measured with `scripts/validate_asset.py` on the exports:
 | Tier | Hidden triangles | Share |
 | --- | --- | --- |
 | `LOD0` | 66 of 6592 | 1.0 % |
-| `LOD1` | 51 of 3806 | 1.3 % |
-| `LOD2` | 28 of 1448 | 1.9 % |
+| `LOD1` | 49 of 3806 | 1.3 % |
+| `LOD2` | 28 of 1494 | 1.9 % |
 | `LOD3` | 8 of 494 | 1.6 % |
 
 The roof ladder's rung undersides, a few centimetres over the sheet, and on
@@ -391,8 +414,12 @@ dwellings, by construction.
   pipes' clips are the gutter's painted hangers, and each shoe discharges
   onto open ground, with no splash block or gully.
 - **Only three ridge vent housings** stand for the row's roof stacks, at the
-  second, fourth and sixth bay lines. They are rooftop clutter and are dropped
-  at `LOD2`, where they are insignificant.
+  second, fourth and sixth bay lines. `LOD2` keeps them as plain boxes whose
+  flue is a painted soot top, not a recess, for want of triangles; `LOD3`
+  drops them.
+- **The housings' flues are 0.80 m deep**, not the "about 1 m" CLAUDE.md
+  asks: a deeper flue would put its floor in the roof slab at this 0.95 m
+  height over the ridge.
 - **Windows pop from recessed to flat at the `LOD1`→`LOD2` switch**, as
   CLAUDE.md expects.
 - **The six dwellings are identical, not mirrored in pairs.** Real rows of this
@@ -457,8 +484,10 @@ Eight unique 1024² images in total, one normal map among them.
   carried by roughness, and nothing is reflected into the albedo. See Glazing
   treatment below.
 - Roughness separates the materials: cladding 0.76, casings 0.56, sashes 0.50,
-  glass 0.08, concrete 0.90, roof steel 0.44 with metallic 0.25, render 0.88,
-  gate timber 0.72, shed boarding 0.68.
+  glass 0.08, concrete 0.90, painted roof steel 0.48, painted gutter and drip
+  caps 0.45, painted sheet coping and housings 0.50, render 0.88, gate timber
+  0.72, shed boarding 0.68. Painted steel is dielectric, metallic 0; only the
+  door handles are metal (0.80).
 - **The ORM's AO reaches the engine.** The red channel is wired to a
   `glTF Material Output` group's Occlusion input, so the exporter writes an
   `occlusionTexture` pointing at the same PNG as `metallicRoughnessTexture`.
@@ -604,7 +633,8 @@ added.
 All four GLBs bind the same external sRGB mask through `emissiveTexture` on
 UV0, shared across every colour and tier. Every GLB defaults to
 `emissiveFactor = [0, 0, 0]` with the texture binding retained; a reference lit
-factor is linear RGB `[1.0, 0.55, 0.23]`. The consumer owns occupancy, time and
+factor is linear RGB `[1.0, 0.88, 0.72]` (`facade_atlas.LIT_FACTOR`, passed
+to `asset_build.Asset` as its tint), a neutral warm white for the previews. The consumer owns occupancy, time and
 fading, and should keep that state per placed building — which matters more for
 this asset than for the single houses, since one placement is six households
 and a real row is never uniformly lit. Reused glazing UVs mean this is one
@@ -724,6 +754,21 @@ ladder and the walkway are the only additions; the west extent grew 0.18 m
 and the pivot moved 0.09 m west with it. `scripts/validate_asset.py` still
 reports no failures or warnings.
 
+**Vent housings on `LOD2`, painted steel and the night tint, checked before
+against after** (2026-11-22), the folder snapshotted into
+`review/older_audit_2026_11_22/fix_stale_three/rivitalo_two_storey/before/`
+first: tier pairs at the consumer's 66, 147 and 294 m, front, corner and
+rear, noon and night (`compare/pairs_lod*_lod*.png`), and `review_asset.py`
+`LOD0` front and oblique at 20 and 35 m under noon and reversed sun
+(`compare/lod0/`). At 147 m the housings now stand on both tiers; the pixels
+changed by more than 24/255 fell from 167/80/257 to 93/37/159 (front, corner,
+rear at noon), the rest being the openings going flush. At 294 m they rose
+from 38/28/38 to 55/33/68 as the housings go there instead, at half the
+size. The dielectric roof and gutter read slightly lighter and less glossy
+at `LOD0` (mean 1.3/255 at most); albedo, normal and emission PNGs are
+unchanged. `scripts/validate_asset.py`: 0 FAIL, the one WARN being
+`source.dirty` before commit.
+
 **Pending, and not claimed.** These need the consumer and are recorded as open
 rather than assumed:
 
@@ -758,6 +803,13 @@ only sets them when a node tree is missing.
 
 ## Revision log
 
+- **2026-11-22 — vent housings on `LOD2`; painted steel dielectric.** `LOD2`
+  keeps the three ridge vent housings as plain boxes with a painted soot top
+  (`housing_form()`), 1448 to 1494 triangles. The ORM's painted roof steel,
+  gutter and sheet-metal cap went from metallic 0.25-0.35 to 0 (roughness
+  0.44/0.40/0.48 to 0.48/0.45/0.50); only `_orm.png` changed. The previews'
+  reference lit factor is now (1.0, 0.88, 0.72), not the old orange default.
+  Bounds, pivot, footprint and doors unchanged.
 - **2026-11-22 — re-exported on Blender 5.3.0.** The four tiers were
   re-exported from an unchanged build on the current toolchain. Triangle
   counts and bounds are unchanged. The exact boolean resolves a few points at

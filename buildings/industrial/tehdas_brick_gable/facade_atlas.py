@@ -602,6 +602,34 @@ def paint_lod3_bay(c):
         win = zw < WIN_H
         return s * PPM, np.where(win, WIN_Y0 + zw * PPM, BRICK_Y0 + z * PPM)
     _copy_down(c, LOD3_BAY, source)
+    paint_lod3_reveals(c)
+
+
+# LOD3's windows are flush quads, LOD2's ribbons are still recessed 0.2 m:
+# the region LOD3 paints them from carries the reveal's occlusion instead,
+# so the frames do not brighten at the switch. Shade and AO factors over the
+# whole opening, and in a ring the reveal's depth wide at the head and jambs.
+LOD3_REVEAL_OPEN = (0.72, 0.65)
+LOD3_REVEAL_RING = (0.60, 0.50)
+
+
+def paint_lod3_reveals(c):
+    """The reveal occlusion on both windows of LOD3_BAY (the region's only
+    use is LOD3: its merged bays, and its upper window under every ribbon4
+    left on its own there). Glass is repainted by glazing.rooms() later, so
+    this darkens the frames and the brick-free sill flashing, as the recess
+    does at LOD2's distance."""
+    x, y, w, h = LOD3_BAY
+    p = LOD3_BAY_PPM
+    d = REVEAL["ribbon4"] * p
+    for sill in (Z_SILL, Z_SILL_UP):
+        y0 = y + (sill - Z_SILL) * p
+        y1 = y0 + WIN_H * p
+        c.mul(x, x + w, y0, y1, LOD3_REVEAL_OPEN[0], ao=LOD3_REVEAL_OPEN[1])
+        f, ao = LOD3_REVEAL_RING
+        c.mul(x, x + w, y1 - d, y1, f, ao=ao)
+        c.mul(x, x + d, y0, y1 - d, f, ao=ao)
+        c.mul(x + w - d, x + w, y0, y1 - d, f, ao=ao)
 
 
 def paint_lod3_stair(c):

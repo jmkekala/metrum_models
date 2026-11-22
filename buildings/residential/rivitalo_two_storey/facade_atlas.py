@@ -189,14 +189,15 @@ ID_WALL, ID_TRIM, ID_SASH, ID_GLASS, ID_PLINTH, ID_METAL = 0, 1, 2, 3, 4, 5
 ID_ROOF, ID_DOOR, ID_ENTRY, ID_BAND, ID_CAP, ID_BLANK, ID_HANDLE = (
     6, 7, 8, 9, 10, 11, 12)
 ID_RENDER, ID_GATE = 13, 14
-# (roughness, metallic). Painted steel stays mostly dielectric — the paint is
-# what the light sees — but gets a little metallic so it separates from the
-# timber beside it.
+# (roughness, metallic). Painted steel -- the roof sheet, the gutter and its
+# drip caps, the housings' and copings' sheet -- is dielectric: the paint is
+# what the light sees. Its lower roughness is what separates it from the
+# timber beside it. Only the bare door handles are metal.
 SURFACE = {
     ID_WALL: (0.76, 0.0), ID_TRIM: (0.56, 0.0), ID_SASH: (0.50, 0.0),
-    ID_GLASS: (0.08, 0.0), ID_PLINTH: (0.90, 0.0), ID_METAL: (0.40, 0.30),
-    ID_ROOF: (0.44, 0.25), ID_DOOR: (0.52, 0.0), ID_ENTRY: (0.68, 0.0),
-    ID_BAND: (0.58, 0.0), ID_CAP: (0.48, 0.35), ID_BLANK: (0.95, 0.0),
+    ID_GLASS: (0.08, 0.0), ID_PLINTH: (0.90, 0.0), ID_METAL: (0.45, 0.0),
+    ID_ROOF: (0.48, 0.0), ID_DOOR: (0.52, 0.0), ID_ENTRY: (0.68, 0.0),
+    ID_BAND: (0.58, 0.0), ID_CAP: (0.50, 0.0), ID_BLANK: (0.95, 0.0),
     ID_HANDLE: (0.35, 0.80), ID_RENDER: (0.88, 0.0), ID_GATE: (0.72, 0.0),
 }
 
@@ -225,6 +226,10 @@ VARIANTS = {
             "door": (74, 82, 68), "entry": (96, 74, 56)},
 }
 DEFAULT_VARIANT = "yellow"
+# The reference lit factor for previews (linear RGB): a neutral warm white,
+# not window_emission's old orange default, which read as a fire. The
+# consumer owns the colour; the export's factor is zero.
+LIT_FACTOR = (1.0, 0.88, 0.72)
 # Opaque glass, calibrated darker than the catalog's first houses. Those are
 # small-windowed timber houses; this row is largely glazed, and at their pale
 # value the openings read as white panels in direct sun rather than as glass.

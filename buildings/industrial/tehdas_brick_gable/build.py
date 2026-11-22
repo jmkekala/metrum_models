@@ -25,9 +25,10 @@ At the east end the ground storey stops 3 m short of the gable and the upper
 storey runs on over four concrete pillars, sheltering the second entrance. At
 the west end the gable carries a sectional loading door and a personnel door,
 and the front wall a stair lit by one tall strip of glazing, with its own door
-under a canopy. Ladders climb from the ground to each wing's roof, and from the
-front wing's roof up the main wall past the eave, where a roof ladder carries
-on up the slope to the ridge. Vent pipes stand on both slopes.
+under a canopy. Ladders climb from the ground to each wing's roof, and at the
+back from the back wing's roof up the rear wall past the eave, where a roof
+ladder carries on up the rear slope to the ridge. Vent pipes stand on both
+slopes.
 
 Construction is a set of closed solids unioned with Blender's exact boolean:
 the main block's wall ring, the gable roof slab, each wing's wall ring and its
@@ -148,16 +149,18 @@ BACK_WING_WALLS = [
 ]
 
 # Ladders. Their shape is scripts/roof_safety.py's; the places are this
-# building's. Wall ladders stand off on brackets; the roof ladder's rails are
-# bedded into the sheet, as they were before the shared kit stood roof ladders
-# off on brackets.
-WALL_LADDER_X = 15.0        # the front wing's roof to the main eave, between
-                            # the upper windows at 12 and 18
+# building's. The roof kit is at the back, away from the entrances and the
+# street: from the back wing's deck up the rear wall past the eave
+# (RS.WallLadder), and on up the rear slope (RS.RoofLadder), which stands off
+# the sheet on brackets.
+WALL_LADDER_X = 15.0        # the back wing's roof to the main eave, between
+                            # the rear's upper windows at 12 and 18
 FW_LADDER_Y = -7.3          # ground to the front wing's roof
 BW_LADDER_Y = 15.4          # ground to the back wing's roof
 LADDER_TOP = RS.LADDER_TOP  # rails run on this far above what they reach
 LADDER_HANG = 0.15          # the wall ladder ends this far above the deck
-EAVE_CLEAR = RS.EAVE_CLEAR  # the wall ladder passes this far outside the eave
+WALL_BRACKETS = [0.55, 2.45]    # up the wall ladder's rails, under the soffit
+ROOF_LADDER_GAP = 0.45      # the roof ladder ends this far short of the ridge
 
 # Vent pipes on the slopes: (x, y, diameter, height above the sheet).
 VENTS = [(-15.0, -1.4, 0.30, 0.90), (-4.5, -1.1, 0.16, 0.50),
@@ -167,11 +170,20 @@ VENTS = [(-15.0, -1.4, 0.30, 0.90), (-4.5, -1.1, 0.16, 0.50),
 
 
 # ----------------------------------------------------------------- tiers
-def opening_mode(level):
-    """LOD0/1 cut every opening into its wall with brick reveals; LOD2/3 paint
-    the same rectangle flat. The 0.15-0.25 m reveals are under a pixel past
-    70 m, and the window rhythm is the painted rectangle's to keep."""
-    return "cut" if level < 2 else "flush"
+LOD2_CUT = ("ribbon4", "ribbon2")
+
+
+def opening_mode(level, kind):
+    """LOD0/1 cut every opening into its wall with brick reveals; LOD2 keeps
+    the ribbon windows' recesses (LOD2_CUT) and paints the doors and the
+    stair glazing flat; LOD3 paints every rectangle flat. At the consumer's
+    LOD1/LOD2 switch (about 170 m) the recessed glass, shaded by its head and
+    cheeks, is a dark band in every window, and painted flush it caught the
+    whole sky and lightened all 28 ribbons at once: the clearest pop on the
+    building. The doors are few and singular, and keep their colour."""
+    if level < 2 or (level == 2 and kind in LOD2_CUT):
+        return "cut"
+    return "flush"
 
 
 def lobby_kept(level):
@@ -294,7 +306,12 @@ def uv_window(fr, s0, z0):
     return lambda co: ((fr.s_of(co) - s0) * PPM, L.WIN_Y0 + (co.z - z0) * PPM)
 
 
-def uv_closing(fr, kind, s0, z0):
+def uv_closing(fr, kind, s0, z0, level=0):
+    if kind == "ribbon4" and bays_merged(level):
+        # LOD3: a ribbon left on its own samples the merged bay region's
+        # upper window, which carries the reveal's painted occlusion
+        return SB.uv_region(fr, L.REGION["lod3_bay"], s0, z0 - L.Z_STOREY,
+                            L.REGION_PPM["lod3_bay"])
     if kind.startswith("ribbon"):
         return uv_window(fr, s0, z0)
     return SB.uv_region(fr, L.REGION[kind], s0, z0, L.REGION_PPM.get(kind, PPM))
@@ -321,8 +338,8 @@ def build_opening(B, fr, kind, rect, level, u_off, depth):
     """
     s0, s1, z0, z1 = rect
     poly = SB.rect_poly(rect)
-    closing = uv_closing(fr, kind, s0, z0)
-    if opening_mode(level) == "flush" and not (kind == LOBBY and depth > 1.0
+    closing = uv_closing(fr, kind, s0, z0, level)
+    if opening_mode(level, kind) == "flush" and not (kind == LOBBY and depth > 1.0
                                                and lobby_kept(level)):
         B.face([fr.P(s, z) for s, z in poly], closing)
         return poly
@@ -641,6 +658,20 @@ def canopy(cx, w, proj):
 
 
 # ------------------------------------------------------------------ ladders
+# The roof kit on the rear eave. The wall ladder hangs on its brackets and
+# ends LADDER_HANG above the back wing's deck, above the coping, as such
+# ladders do: rails driven through the felt put long thin triangles across the
+# deck, whose crossings the weld then collapsed. The roof ladder runs from
+# the eave to ROOF_LADDER_GAP short of the ridge, above every vent on the
+# rear slope (check_layout()).
+REAR_EAVE = RS.Eave(*MAIN_WALLS["rear"], L.Z_EAVE, L.EAVE_OUT, roof_top(PE), L.TAN)
+KIT_S = Frame(*MAIN_WALLS["rear"]).s_at(WALL_LADDER_X)
+WALL_LADDER = RS.WallLadder(REAR_EAVE, KIT_S, foot=L.Z_DECK + LADDER_HANG,
+                            brackets=WALL_BRACKETS)
+ROOF_LADDER = RS.RoofLadder(REAR_EAVE, KIT_S, roof_top(PE) + (L.SLOPE_LEN - ROOF_LADDER_GAP)
+                            * math.sin(math.atan(L.TAN)))
+
+
 def ladders(level):
     mode = ladder_mode(level)
     if mode is None:
@@ -654,26 +685,9 @@ def ladders(level):
         out.append((RS.ladder((x, y, 0.0), (0, 0, 1), (0, 1, 0), (1, 0, 0),
                            zc + LADDER_TOP, 0.20, [1.0, 3.0] if keep else [], mode, paint),
                     "tmp_ladder_" + name))
-    # the front wing's roof up the main wall and past the eave
-    so = L.EAVE_OUT + EAVE_CLEAR
-    top = roof_top(PE) + LADDER_TOP
-    # It hangs on its brackets and ends LADDER_HANG above the deck, above the
-    # coping, as such ladders do: rails driven through the felt put long thin
-    # triangles across the deck, whose crossings the weld then collapsed.
-    z0 = L.Z_DECK + LADDER_HANG
-    out.append((RS.ladder((WALL_LADDER_X, -HY, z0), (0, 0, 1), (1, 0, 0),
-                       (0, -1, 0), top - z0, so, [0.55, 2.45] if keep else [], mode, paint),
-                "tmp_ladder_wall"))
-    # and on up the front slope to the ridge, bedded into the sheet
-    ang = math.atan(L.TAN)
-    up = (0.0, math.cos(ang), math.sin(ang))
-    nrm = (0.0, -math.sin(ang), math.cos(ang))
-    start = 0.25                                    # up the slope from the edge
-    foot = (WALL_LADDER_X, -PE + start * math.cos(ang), roof_top(PE) + start * math.sin(ang))
-    out.append((RS.ladder(foot, up, (1, 0, 0), nrm, L.SLOPE_LEN - start - 0.45,
-                       -0.03, [], mode, paint, rail_d=0.12),
-                "tmp_ladder_roof"))
-    return out
+    # the back wing's roof up the rear wall past the eave, and on up the rear
+    # slope: the shared kit, in its own modes
+    return out + RS.solids([WALL_LADDER, ROOF_LADDER], level, paint)
 
 
 # -------------------------------------------------------------------- vents
@@ -842,16 +856,27 @@ def check_layout():
         bad.append("the pillars crowd the porch wall")
     if PILLAR_TOP > L.Z_SILL_UP - 0.2:
         bad.append("the pillars run up into the upper windows")
-    # ladders: the wall ladder lands on the deck, clear of the parapet and of
-    # the windows; the wing ladders clear of their doors and windows
+    # ladders: the wall ladder lands on the back wing's deck, clear of the
+    # parapet, and stands on the rear wall clear of its corners, the windows
+    # above the deck and the downpipes (roof_safety.problems()); the wing
+    # ladders clear of their doors and windows
     half = RS.HALF
     lx0, lx1 = WALL_LADDER_X - half, WALL_LADDER_X + half
-    if lx0 < FW[0] + L.PARAPET + 0.2 or lx1 > FW[1] - L.PARAPET - 0.2:
-        bad.append("the wall ladder does not land on the front wing's deck")
-    for k, c, z in FRONT_ITEMS:
-        w = L.OPENINGS[k][0] / 2.0
-        if z > L.Z_COPE and c - w < lx1 + 0.2 and c + w > lx0 - 0.2:
-            bad.append("the wall ladder crosses the %s at %.2f" % (k, c))
+    if lx0 < BW[0] + L.PARAPET + 0.2 or lx1 > BW[1] - L.PARAPET - 0.2:
+        bad.append("the wall ladder does not land on the back wing's deck")
+    rear = Frame(*MAIN_WALLS["rear"])
+
+    def rear_span(what, a, b):
+        return (what, min(rear.s_at(a), rear.s_at(b)), max(rear.s_at(a), rear.s_at(b)))
+    kit_avoid = [rear_span(k, c - L.OPENINGS[k][0] / 2.0, c + L.OPENINGS[k][0] / 2.0)
+                 for k, c, z in REAR_ITEMS if z + L.OPENINGS[k][1] > L.Z_COPE]
+    kit_avoid += [rear_span("downpipe", c - DP.A, c + DP.A)
+                  for wall, c, kind in DOWNPIPE_SPOTS if wall == MAIN_WALLS["rear"]]
+    bad += RS.problems(WALL_LADDER, "the wall ladder", kit_avoid)
+    rear_vents = [v for v in VENTS if v[1] > 0]
+    top = max(roof_top(py - dia / 2.0) for px, py, dia, h in rear_vents)
+    if ROOF_LADDER.z_top < top:
+        bad.append("the roof ladder stops short of the rear slope's highest vent")
     for y, spec in ((FW_LADDER_Y, FRONT_WING_WALLS[2][3]), (BW_LADDER_Y, BACK_WING_WALLS[1][3])):
         for k, c, z in spec:
             w = L.OPENINGS[k][0] / 2.0
@@ -861,7 +886,7 @@ def check_layout():
     for px, py, dia, h in VENTS:
         if abs(py) < dia / 2.0 + 0.2 or abs(py) > HY - 1.0:
             bad.append("the vent at (%.1f, %.1f) is on the ridge or the eave" % (px, py))
-        if py < 0 and abs(px - WALL_LADDER_X) < RS.LADDER_W + dia:
+        if py > 0 and abs(px - WALL_LADDER_X) < RS.LADDER_W + dia:
             bad.append("the vent at (%.1f, %.1f) is on the roof ladder" % (px, py))
         if abs(px) > HX - 1.0:
             bad.append("the vent at (%.1f, %.1f) is over a gable" % (px, py))
@@ -878,6 +903,7 @@ def check_layout():
         if wall == MAIN_WALLS["front"]:
             avoid += [span("canopy", cx - w / 2.0, cx + w / 2.0)
                       for cx, w, _proj in CANOPIES]
+        if wall == MAIN_WALLS["rear"]:
             avoid.append(span("wall ladder", WALL_LADDER_X - half, WALL_LADDER_X + half))
         if kind == "eave":
             wing = FW if wall[0][1] < 0 else BW

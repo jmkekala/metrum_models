@@ -23,8 +23,8 @@ type, not a portrait of any one building.
   personnel door, and the front wall a stair lit by one tall strip of glazing,
   with its own glazed door under a canopy.
 - **Ladders:** from the ground to each wing's roof, on the wings' east faces;
-  from the front wing's roof up the main wall and past the eave; and a roof
-  ladder from there up the front slope to the ridge.
+  at the back, from the back wing's roof up the rear wall and past the eave;
+  and a roof ladder from there up the rear slope to the ridge.
 - **Vent pipes:** seven black steel pipes on both slopes near the ridge, in
   three sizes.
 - **Downpipes:** eight, in the gutter's colour. Three on each long wall step
@@ -125,12 +125,9 @@ About thirty closed solids unioned with Blender's exact boolean:
    solid built without a boolean. Two rails are boxes whose inner faces are
    holed for each rung, and whose rear faces are holed for each bracket. Each
    rung's four faces meet its holes on shared vertices; each bracket runs back
-   into the wall. The places are this building's; the shape, the rung and
-   bracket tiers and the sizes are the module's, which took them from here.
-   Unlike the module's own roof ladder, which stands off the sheet on
-   brackets, this one's rails stay bedded 3 cm into the sheet, as they were
-   built, and it keeps its galvanised steel patch rather than the gutter's
-   colour;
+   into the wall or down into the roof slab. The places are this building's;
+   the shape, the rung and bracket tiers and the sizes are the module's,
+   which took them from here. See Roof safety kit below;
 7. **seven vent pipes**, each with its foot a slice of the roof plane inside
    the slab;
 8. **eight downpipes** from the shared `scripts/downpipes.py`, each one closed
@@ -159,8 +156,10 @@ and vent positions, and `check_layout()`. That check fails the build if:
 - a wing comes within 0.3 m of the porch line, or its coping reaches the
   upper sills;
 - a canopy crowds the door head or the upper windows;
-- the wall ladder misses the deck or crosses a window, or a wing ladder
-  crosses a door or a window;
+- the wall ladder misses the back wing's deck, or `roof_safety.problems()`
+  finds it within 0.3 m of the rear wall's corners or within 0.2 m of an
+  upper window or a downpipe; a wing ladder crosses a door or a window;
+- the roof ladder stops short of the rear slope's highest vent;
 - a vent stands on the ridge, the eave, a gable or the roof ladder's line;
 - a downpipe's axis comes within 0.25 m of a corner or leaves less than
   0.2 m of wall between it and an opening, a canopy or the wall ladder (the
@@ -230,7 +229,33 @@ takes the gutter's colour in every variant and its half-round shading across
 each flat, and the gutter hangers painted a metre apart read as the pipe's
 clips. No new atlas region was needed.
 
-### The porch
+### Roof safety kit
+
+The 1:2.8 roof carries only plain vent pipes, which CLAUDE.md does not count
+as serviced items, so the kit is the brief's, not a requirement. It follows
+the contract's placing rules all the same:
+
+- **At the back**, away from the entrances and the street. A wall ladder
+  (`RS.WallLadder` on the rear eave) climbs from the back wing's felt deck,
+  hanging on its two brackets 0.15 m above it, up the rear wall at x = 15
+  between the upper windows at 12 and 18, passes 0.12 m outside the eave and
+  runs 1 m above the roof edge.
+- **A roof ladder** (`RS.RoofLadder`) carries on straight above it, from
+  0.25 m up the rear slope to 0.45 m short of the ridge, above every vent on
+  that slope. Its rails stand 8 cm off the sheet on six pairs of brackets
+  that run down into the slab.
+- **No walkway:** with nothing serviced on the roof there is nothing for
+  one to reach.
+- **The way up** is the back wing's own ladder, from the ground on its east
+  face. The front wing keeps its ladder to its deck.
+
+`check_layout()` runs `roof_safety.problems()` on the wall ladder against the
+rear wall's upper windows and downpipes. The kit sets none of the plan's
+extents: the back wing is 11 m deeper than the ladder's 0.63 m standoff.
+The ladders keep the galvanised `steel` patch (`RS.Paint(patch=...)`) rather
+than the gutter's colour, as all four did before; that is the brief's palette
+("galvanised ladders", Variant list).
+
 
 The upper storey's east 3 m stands on four 0.406 m concrete pillars, evenly
 spaced across the gable, and is open on three sides: front, back and east. It
@@ -246,20 +271,21 @@ Measured on the exported, triangulated GLBs by `scripts/validate_asset.py`:
 
 | Tier | Triangles | Ceiling | Status |
 | --- | --- | --- | --- |
-| `LOD0` | 3780 | 12,000 | under |
-| `LOD1` | 2692 | 4,000 | under |
-| `LOD2` | 1288 | 1,500 | under |
+| `LOD0` | 3836 | 12,000 | under |
+| `LOD1` | 2828 | 4,000 | under |
+| `LOD2` | 1488 | 1,500 | under |
 | `LOD3` | 488 | 500 | under |
 
 Where they go, by the atlas area each triangle samples:
 
 - **`LOD0`:**
-  - The **ladders take 1696**, just over half. Every rung is a closed box
-    meeting two holed rail faces, about 20 triangles each, and there are 67
-    of them:
+  - The **ladders take about 1750**, just under half. Every rung is a closed
+    box meeting two holed rail faces, about 20 triangles each, and there are
+    67 of them:
     - 16 each on the two wing ladders;
     - 14 on the wall ladder;
-    - 21 on the roof ladder.
+    - 21 on the roof ladder, whose twelve brackets into the slab add about
+      240 more than its bedded rails' cuts in the sheet did.
 
     That is within Geometry and Construction's quarter-of-the-ceiling trim
     allowance (3000), and the ladders were an explicit part of the brief.
@@ -267,17 +293,21 @@ Where they go, by the atlas area each triangle samples:
   - The downpipes about 600, with the splits their tops make in the soffits.
   - The roof 184 (the vents cut it), the vent pipes 161, and everything else
     about 400.
-- **`LOD1`** keeps every other rung (ladders 996), cuts the vents to six
-  sides and the downpipes to four (about 300). The openings and their reveals
-  are unchanged.
-- **`LOD2`** paints every opening flat except the entrance lobby. It keeps
-  every fourth rung and the four larger vents as four-sided stacks, and the
-  downpipes as straight square pipes with no swan-neck or shoe (about 160).
-  The three 0.16 m vents go, and so do the ladders' brackets
-  (`brackets_kept()`). The brackets are 4 cm bars, and each cost about twenty
-  triangles in its box, its rail hole and its cut in the wall. Their 250
-  triangles pay for the downpipes, so the tier went down, from 1380 to
-  1288.
+- **`LOD1`** keeps every other rung (ladders about 1130, the roof ladder's
+  brackets included), cuts the vents to six sides and the downpipes to four
+  (about 300). The openings and their reveals are unchanged.
+- **`LOD2`** keeps the 28 ribbon windows recessed in their 0.2 m brick
+  reveals (`opening_mode()`, `LOD2_CUT`), about 8 triangles each over a flush
+  quad, 232 in all; the doors, the stair glazing and the loading door are
+  painted flat, the entrance lobby stays a recess. It keeps every fourth
+  rung and the four larger vents as four-sided stacks, and the downpipes as
+  straight square pipes with no swan-neck or shoe (about 160). The three
+  0.16 m vents go, and so do the ladders' brackets (`brackets_kept()`). The
+  brackets are 4 cm bars, and each cost about twenty triangles in its box,
+  its rail hole and its cut in the wall. Without them the roof ladder stands
+  clear of the sheet and cuts nothing, 32 fewer than the bedded rails did.
+  The tier is 12 under its ceiling, which is why the 0.16 m vents stay off
+  it (LOD review).
 - **`LOD3`** drops the ladders, the downpipes and all but the two 0.5 m
   exhausts, and makes three simplifications:
   - **The wings become plain boxes** (`wing_box()`): brick, then the fascia's
@@ -290,15 +320,20 @@ Where they go, by the atlas area each triangle samples:
     - the stair's door and glazing, over `LOD3_STAIR`.
 
     Both are quarter-density regions copied down from the bands and regions
-    they stand for. Eight pairs at about 8 triangles each.
+    they stand for. Eight pairs at about 8 triangles each. The ribbon windows
+    left on their own (the upper ones over the front wing and the porch, the
+    gables', the wings' 4 m ones) sample `LOD3_BAY`'s upper window instead
+    of the window band, so they carry the reveal occlusion painted there
+    (Texture set); the two 2 m ribbons keep the band.
   - **Both canopies stay** on every tier.
 
 The first `LOD3` dropped the canopies and every vent and was still 524, over
 its ceiling. Boxing the wings brought it under, to 492. Merging the eight
 stacked pairs then paid for keeping both exhausts and both canopies, at 488.
 
-What fixes the floor of the later tiers is the openings: 37 at `LOD2`, 29 at
-`LOD3`, each a flush quad at about 8 triangles in its wall.
+What fixes the floor of the later tiers is the openings: 37 at `LOD2`, 28 of
+them recessed, and 29 at `LOD3`, each a flush quad at about 8 triangles in
+its wall.
 
 Against comparable catalog assets:
 
@@ -307,9 +342,9 @@ Against comparable catalog assets:
 - **This building's walls and openings** alone are about 1,500 at `LOD0`,
   less than the terraces, because its openings are plain brick reveals with
   no casings, sills or surrounds modelled.
-- **The rest is the ladders.** That is also why `LOD2` sits closer to its
-  ceiling than the other catalog assets do: every fourth rung is still 18
-  rungs.
+- **The rest is the ladders.** `LOD2` sits closer to its ceiling than the
+  other catalog assets do: every fourth rung is still 18 rungs, and the
+  ribbons keep their reveals.
 
 ## LOD review
 
@@ -332,8 +367,8 @@ The downpipes' switches were rendered again with them in, in
 | Switch | Distance | Verdict |
 | --- | --- | --- |
 | `LOD0` → `LOD1` | 35 m | Indistinguishable at native size. Rung density halves, and the vents go from eight sides to six and the downpipes to four. |
-| `LOD1` → `LOD2` | 70 m | Indistinguishable at native size. The openings go flat, whose 0.15-0.25 m reveals are about 2 px of shadow at this distance. Rung density halves again and the ladders lose their brackets. The three 0.16 m vents go, under 2 px wide, and the downpipes straighten: the swan-neck's 0.3 m kick and the shoe are each about 2 px, and the pipes still read as light lines down the wall. |
-| `LOD2` → `LOD3` | 120 m | Three things go. The downpipes are the most visible: light lines about half a pixel wide on the darker brick. The ladders are faint half-pixel lines on the roof and one above the front eave. The two 0.3 m pipes are 2 x 6 px marks over the ridge in the front view. Side by side at native size each can be found, but none shows at a glance. Keeping the downpipes would cost about 70 triangles, and the tier has 12 to spare. The boxed wings and the merged bays could not be told from `LOD2`'s. |
+| `LOD1` → `LOD2` | 70 m | Indistinguishable at native size. The doors and the stair glazing go flat, whose 0.15-0.25 m reveals are about 2 px of shadow at this distance; the ribbon windows keep theirs (see below). Rung density halves again and the ladders lose their brackets. The three 0.16 m vents go, under 2 px wide, and the downpipes straighten: the swan-neck's 0.3 m kick and the shoe are each about 2 px, and the pipes still read as light lines down the wall. |
+| `LOD2` → `LOD3` | 120 m | The ribbon windows' recesses flatten (see below). Three things go. The downpipes are the most visible: light lines about half a pixel wide on the darker brick. The ladders are faint half-pixel lines on the roof and one above the rear eave. The two 0.3 m pipes are 2 x 6 px marks over the ridge in the front view. Side by side at native size each can be found, but none shows at a glance. Keeping the downpipes would cost about 70 triangles, and the tier has 12 to spare. The boxed wings and the merged bays could not be told from `LOD2`'s. |
 | `LOD3` alone | 200 m | Silhouette, roofline, both wings, the porch on its pillars, the window rhythm, the canopy and the stair strip all read. |
 
 Each switch was reworked once after a comparison showed something visibly
@@ -353,6 +388,21 @@ move the switch.
 
 These are the **authoring** review's distances, at the review camera above:
 a starting point for a consumer's switch distances, not a measurement.
+
+### At the consumer's screen-size switches
+
+The consumer switches by screen size, measured here at **1920 x 1080 and a
+75 degree vertical FOV**: adjacent tiers at 1.8, 4 and 8 times the largest
+bounds dimension (42.6 m), so **77, 170 and 341 m** from the centre of
+`LOD0`'s bounds. Front (0 round, 10 up), corner (45, 25) and rear (160, 20),
+noon and night with the reference emission on; renders and before/after pair
+sheets in `review/older_audit_2026_11_22/fix_stale_three/tehdas_brick_gable/`.
+
+| Switch | Distance | What changes |
+| --- | --- | --- |
+| `LOD0` → `LOD1` | 77 m | Nothing seen: rung density halves, vents and downpipes lose sides. |
+| `LOD1` → `LOD2` | 170 m | Nothing seen. Until 2026-11-22 the ribbons went flush here, and all 28 lightened at once as the glass lost its reveal's shade, the building's clearest pop; they now keep their recesses on `LOD2`. The three 0.16 m vents still go, under a pixel wide (0.7 px) and two tall: not found in the pair at native size. Rungs halve and the brackets go. |
+| `LOD2` → `LOD3` | 341 m | The ribbons' recess flattens to a painted quad. The painted reveal occlusion keeps their tone close; up close a faint lightening of the frames remains, and at night the lit panes grow by the reveal's width on oblique views. The downpipes, the ladders and the boxed wings' parapets go, each about a pixel. Left as is: `LOD3` is 12 under its ceiling. |
 **Pending:** runtime acceptance in a representative consumer scene. That
 needs visible instance counts per tier, hardware, resolution, FOV, shadow
 settings and frame times.
@@ -363,14 +413,15 @@ Sampled hidden-surface test (`scripts/validate_asset.py`, 40 rays per face):
 
 | Tier | Hidden | Where |
 | --- | --- | --- |
-| `LOD0` | 76 / 3780 (2.0 %) | ladder rungs and downpipe backs, below |
-| `LOD1` | 48 / 2692 (1.8 %) | the same, fewer rungs |
-| `LOD2` | 27 / 1288 (2.1 %) | the same |
+| `LOD0` | 85 / 3836 (2.2 %) | ladder rungs and downpipe backs, below |
+| `LOD1` | 75 / 2828 (2.7 %) | the same, fewer rungs |
+| `LOD2` | 19 / 1488 (1.3 %) | the same |
 | `LOD3` | 0 / 488 | - |
 
 Every candidate was located and inspected by face, and none is buried:
 
-- **The roof ladder's rung undersides**, 3 cm above the sheet.
+- **The roof ladder's rung undersides and rails' backs**, 8-11 cm above the
+  sheet.
 - **The wall ladders' rung backs**, facing a wall 0.2-0.6 m away.
 - **The hung rail's bottom end.**
 - **The downpipes' backs**, facing the brick 3 cm away. Every sampled ray
@@ -410,6 +461,8 @@ with more than two faces, 0 loose vertices or edges**.
   0.45 m short of the ridge. CLAUDE.md's roof safety rule asks for a walkway
   only to serviced items, and the slopes carry only plain vent pipes, so the
   wall and roof ladders are the whole kit here.
+- **The ladders are galvanised**, the `steel` patch, not the gutter's colour
+  the shared kit takes by default (Roof safety kit).
 - **Every ribbon window is two fixed lights between two casements**,
   identical on every wall. The upper floor carries no variation between
   rooms.
@@ -497,7 +550,17 @@ deviations:
 | loading door | 40 | a plain sectional door, 4 x 3.75 m |
 | felt deck | 10 | flat membrane seen from above |
 | `LOD3` wing lids | 8 | seen past 120 m only |
-| `LOD3` window bay and stair column | 16 | seen past 120 m only; a mip-like copy of the bands and regions they stand for |
+| `LOD3` window bay and stair column | 16 | seen past 120 m only; a mip-like copy of the bands and regions they stand for. Every 4 m ribbon on `LOD3` samples the bay; the two 2 m ones keep the window band. |
+
+### LOD3's reveal occlusion
+
+`LOD2` keeps the ribbon windows recessed and `LOD3` paints them flush, so
+`LOD3_BAY` carries the recess's occlusion instead (`paint_lod3_reveals()`):
+shade 0.72 and AO 0.65 over each of its two windows, and shade 0.60 and AO
+0.50 in a ring the reveal's 0.2 m wide at the head and both jambs. It is
+non-directional occlusion, the same in any sun, and it reaches the frames
+only: `glazing.rooms()` repaints the glass after it. No
+other region and no other tier changed; the emission map is identical.
 | vent pipe sides | 64 up, 170-520 round | each of a pipe's faces takes the whole 32 px width |
 
 ### Relief
@@ -620,6 +683,10 @@ galvanised ladders and black pipes are fixed. Four sits inside the 3-6 band.
   with the sun at 0.12, tinted (0.48, 0.62, 1.0).
 - **Light spill:** the light on the ground in the night row is Cycles' bounce
   in the preview scene and is **simulated**; spill is the consumer's.
+- **Across the tiers:** night pairs at the consumer's switches (LOD review)
+  show the same windows lit on every tier. On `LOD2` the recessed panes are
+  partly hidden by their cheeks on oblique views, so at the `LOD3` switch
+  the lit panes grow by the reveal's width there.
 - **Pending in the consumer:** off/on behaviour on the reimported tiers,
   oblique and distant filtering, and LOD switches under emission.
 
@@ -721,6 +788,18 @@ Completed in this repository:
   0.00 / 255 in every view). `scripts/validate_asset.py` still reports no
   failures or warnings.
 
+- The 2026-11-22 fix (Revision log), from a snapshot in
+  `review/older_audit_2026_11_22/fix_stale_three/tehdas_brick_gable/before/`:
+  tier pairs at the consumer's 77, 170 and 341 m, front, corner and rear,
+  noon and night, before and after (`compare/pairs_lod*_lod*.png`), and
+  `review_asset.py` `LOD0` front and oblique at 20 and 35 m under noon and
+  reversed sun (`compare/lod0/`). The `LOD1`/`LOD2` pair went from 469-572
+  pixels changed by more than 24/255 (front and corner, noon) to 35-36;
+  `LOD2`/`LOD3` rose from 6-10 to 10-92, the windows' recess now flattening
+  there at half the screen size. The `LOD0` views differ only where the
+  ladders moved (mean 0.2/255). `scripts/validate_asset.py`: 0 FAIL, the one
+  WARN being `source.dirty` before commit.
+
 Pending, outside this repository:
 
 - Consumer import, LOD switching and runtime emission control.
@@ -746,6 +825,15 @@ Pending, outside this repository:
 
 ## Revision log
 
+- **2026-11-22 — roof kit at the back; ribbon reveals on `LOD2`.** The wall
+  and roof ladders moved from the front to the rear eave over the back wing,
+  rebuilt with `roof_safety.WallLadder` and `RoofLadder`, the roof ladder now
+  standing off the sheet on brackets; `check_layout()` runs
+  `roof_safety.problems()` on it. `LOD2` keeps the ribbon windows' reveals,
+  and `LOD3`'s windows sample `LOD3_BAY`, which now carries painted reveal
+  occlusion (only that region and its padding changed in the PNGs). Tiers
+  3780/2692/1288/488 to 3836/2828/1488/488; bounds, pivot, footprint and
+  doors unchanged.
 - **2026-11-22 — re-exported on Blender 5.3.0.** The four tiers were
   re-exported from an unchanged build on the current toolchain. Geometry, UVs,
   triangle counts and bounds are unchanged; `LOD0` and `LOD1` list the same
