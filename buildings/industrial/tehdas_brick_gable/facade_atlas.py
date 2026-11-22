@@ -687,9 +687,7 @@ def paint_patches(c):
         "pipe": (ID_PIPE, 1.0, 0.95),
         "felt": (ID_FELT, 1.0, 1.0),
     }
-    for name, (mid, sh, ao) in spec.items():
-        x, y, w, h = PATCHES[name]
-        c.paint(x - 2, x + w + 2, y - 2, y + h + 2, mid, sh, ao, height=0.0)
+    atlas.paint_patches(c, PATCHES, spec)
 
 
 # ------------------------------------------------------------------ checks
@@ -703,20 +701,7 @@ def check_regions():
              "lod3_bw_deck": LOD3_BW_DECK, "lod3_bay": LOD3_BAY,
              "lod3_stair": LOD3_STAIR}
     rects.update(PATCHES)
-    bands_top = FLASH_Y0 + FLASH_H + PAD
-    names = sorted(rects)
-    problems = []
-    for i, a in enumerate(names):
-        ax, ay, aw, ah = rects[a]
-        if ax - 2 < 0 or ay - 2 < 0 or ax + aw + 2 > ATLAS or ay + ah + 2 > ATLAS:
-            problems.append("%s runs off the atlas" % a)
-        if ay - 4 < bands_top:
-            problems.append("%s overlaps the tiling bands" % a)
-        for b in names[i + 1:]:
-            bx, by, bw, bh = rects[b]
-            if (ax - 4 < bx + bw and bx - 4 < ax + aw
-                    and ay - 4 < by + bh and by - 4 < ay + ah):
-                problems.append("%s and %s overlap" % (a, b))
+    problems = atlas.region_problems(rects, ATLAS, bands_top=FLASH_Y0 + FLASH_H + PAD)
     for rect, wing in ((LOD3_FW_DECK, FRONT_WING), (LOD3_BW_DECK, BACK_WING)):
         w = (wing[1] - wing[0]) * LOD3_PPM
         h = (wing[3] - wing[2] + WING_BURY) * LOD3_PPM

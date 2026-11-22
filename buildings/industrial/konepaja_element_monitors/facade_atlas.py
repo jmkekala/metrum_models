@@ -1013,9 +1013,7 @@ def paint_patches(c):
         "door_reveal": (ID_SDOOR, 0.9, 0.85), "duct": (ID_GALV, 0.92, 0.95),
         "stack": (ID_STACK, 1.0, 1.0),
     }
-    for name, (mid, sh, ao) in spec.items():
-        x, y, w, h = PATCHES[name]
-        c.paint(x - 2, x + w + 2, y - 2, y + h + 2, mid, sh, ao, height=0.0)
+    atlas.paint_patches(c, PATCHES, spec)
 
 
 # ------------------------------------------------------------------ checks
@@ -1027,19 +1025,8 @@ def check_regions():
              "fan_t": FAN_T, "dome": DOME, "truck": TRUCK, "stack": STACK,
              "strip_l": STRIP_L, "ahu_e": AHU_E, "service": SERVICE, "ahu_s": AHU_S,
              "letters": LETTERS}
-    rects.update(PATCHES)
-    problems = []
-    names = sorted(rects)
-    for i, a in enumerate(names):
-        ax, ay, aw, ah = rects[a]
-        if ax - 2 < 0 or ay - 2 < 0 or ax + aw + 2 > ATLAS or ay + ah + 2 > ATLAS:
-            problems.append("%s runs off the atlas" % a)
-        if ay - 4 < UNI_Y - 4:
-            problems.append("%s overlaps the tiling bands" % a)
-        for b in names[i + 1:]:
-            bx, by, bw, bh = rects[b]
-            if ax - 4 < bx + bw and bx - 4 < ax + aw and ay - 4 < by + bh and by - 4 < ay + ah:
-                problems.append("%s and %s overlap" % (a, b))
+    rects.update({"patch_" + k: r for k, r in PATCHES.items()})   # "stack" is both
+    problems = atlas.region_problems(rects, ATLAS, bands_top=UNI_Y, band_gap=0)
     if AGG_H != m(Z_EAVE):
         problems.append("the AGG band is not the hall's wall to the fascia")
     if OFF_PX != m(OB_H):

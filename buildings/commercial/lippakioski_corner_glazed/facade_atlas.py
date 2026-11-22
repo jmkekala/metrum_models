@@ -46,6 +46,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "scripts"))
 import atlas  # noqa: E402
 import glazing  # noqa: E402
+import lettering  # noqa: E402
 import weathering  # noqa: E402
 
 ASSET = "lippakioski_corner_glazed"
@@ -264,53 +265,6 @@ def in_rounded(X, Y, x0, y0, x1, y1, r):
         corner = ((X - cx) * sx > 0) & ((Y - cy) * sy > 0)
         inside &= ~corner | (np.hypot(X - cx, Y - cy) <= r[key])
     return inside
-
-
-def _arc(cx, cy, rx, ry, a0, a1, n=16):
-    a = np.radians(np.linspace(a0, a1, n + 1))
-    return list(zip(cx + rx * np.cos(a), cy + ry * np.sin(a)))
-
-
-# The four capitals the signs need, as stroked centrelines on a unit em
-# (y = 0 baseline, y = 1 cap line; the advance first). Drawn here rather than
-# read from a font, so the bake has no external dependency.
-GLYPHS = {
-    "K": (0.62, [[(0.00, 1.00), (0.00, 0.00)],
-                 [(0.60, 1.00), (0.02, 0.44), (0.62, 0.00)]]),
-    "I": (0.00, [[(0.00, 0.00), (0.00, 1.00)]]),
-    "O": (0.78, [_arc(0.39, 0.50, 0.39, 0.50, 0, 360, 36)]),
-    "S": (0.60, [_arc(0.30, 0.75, 0.28, 0.25, 25, 270, 14)
-                 + _arc(0.30, 0.25, 0.30, 0.25, 90, -150, 14)]),
-}
-
-
-def _step(prev, tracking, ratio):
-    return 0.0 if prev is None else GLYPHS[prev][0] + tracking + ratio
-
-
-def text_width(word, cap, tracking, weight):
-    ratio = weight / float(cap)
-    w = sum(_step(word[i - 1], tracking, ratio) for i in range(1, len(word)))
-    return (w + GLYPHS[word[-1]][0]) * cap
-
-
-def text(c, word, x, y, cap, weight, mid, tracking, height=None):
-    """Set *word* with its baseline at y and its left stem at x."""
-    cx, prev, ratio = float(x), None, weight / float(cap)
-    for ch in word:
-        cx += _step(prev, tracking, ratio) * cap
-        for poly in GLYPHS[ch][1]:
-            for (ax, ay), (bx, by) in zip(poly, poly[1:]):
-                c.stroke((cx + ax * cap, y + ay * cap), (cx + bx * cap, y + by * cap),
-                         weight, mid, 1.0, 1.0, height=height)
-        prev = ch
-
-
-def centred_text(c, word, rect, cap, weight, mid, tracking, height=None):
-    x, y, w, h = rect
-    wide = text_width(word, cap, tracking, weight)
-    text(c, word, x + (w - wide) / 2.0, y + (h - cap) / 2.0, cap, weight, mid,
-         tracking, height)
 
 
 def _frame(c, x0, y0, x1, y1, t, mid, ao=0.86, h=FRAME_H, sides="lrtb"):
@@ -656,7 +610,8 @@ SIGN_FRAME = 0.02        # the galvanised frame round the face, metres
 
 def paint_sign(c):
     """The sign board's face: a slim galvanised frame round it and KIOSKI in
-    the sheet's own stroked capitals, wide-set, a short rule either side.
+    the catalog's stroked capitals (scripts/lettering.py), wide-set, a short
+    rule either side.
     SIGN_STYLE "dark": warm-white lit letters on a graphite face; "cream": a
     lit cream opal face with graphite letters. Generic: the building type in
     Finnish, in no chain's colours or letterforms."""
@@ -671,8 +626,9 @@ def paint_sign(c):
     c.mul(x + e, x + w - e, y + h - e - 1.2, y + h - e, 0.9, ao=0.85)   # the frame's lip
     # the glyphs are centrelines: the stroke adds half its weight above and below
     cap, weight = (SIGN_CAP - SIGN_WEIGHT) * SIGN_PPM, SIGN_WEIGHT * SIGN_PPM
-    centred_text(c, "KIOSKI", SIGN, cap, weight, ink, SIGN_TRACKING, height=0.004)
-    wide = text_width("KIOSKI", cap, SIGN_TRACKING, weight)
+    lettering.centred_text(c, "KIOSKI", SIGN, cap, weight, ink, SIGN_TRACKING, shade=1.0,
+                           ao=1.0, height=0.004)
+    wide = lettering.text_width("KIOSKI", cap, SIGN_TRACKING, weight)
     ym = y + h / 2.0
     for side in (-1, 1):
         a = x + w / 2.0 + side * (wide / 2.0 + 0.16 * SIGN_PPM)
@@ -705,9 +661,7 @@ def paint_patches(c):
         "light": (ID_LIGHT, 1.0, 1.0),
         "fitting": (ID_FITTING, 1.0, 0.95),
     }
-    for name, (mid, sh, ao) in spec.items():
-        x, y, w, h = PATCHES[name]
-        c.paint(x - 2, x + w + 2, y - 2, y + h + 2, mid, sh, ao, height=0.0)
+    atlas.paint_patches(c, PATCHES, spec)
 
 
 # ================================================================ checks
@@ -715,20 +669,7 @@ def check_regions():
     """Fail the bake if two regions overlap, meet the bands, or run off."""
     rects = dict(REGIONS)
     rects.update(PATCHES)
-    bands_top = FASCIA_Y0 + FASCIA_H + PAD
-    names = sorted(rects)
-    problems = []
-    for i, a in enumerate(names):
-        ax, ay, aw, ah = rects[a]
-        if ax - 2 < 0 or ay - 2 < 0 or ax + aw + 2 > ATLAS or ay + ah + 2 > ATLAS:
-            problems.append("%s runs off the atlas" % a)
-        if ay - 4 < bands_top:
-            problems.append("%s overlaps the tiling bands" % a)
-        for b in names[i + 1:]:
-            bx, by, bw, bh = rects[b]
-            if (ax - 4 < bx + bw and bx - 4 < ax + aw
-                    and ay - 4 < by + bh and by - 4 < ay + ah):
-                problems.append("%s and %s overlap" % (a, b))
+    problems = atlas.region_problems(rects, ATLAS, bands_top=FASCIA_Y0 + FASCIA_H + PAD)
     if FASCIA_Y0 - PAD < WALL_Y0 + WALL_H + PAD + 2:
         problems.append("the fascia band meets the wall band")
     if problems:

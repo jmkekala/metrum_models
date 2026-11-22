@@ -157,18 +157,14 @@ def check_regions():
     """Fail if two unique regions overlap, bleed included, or one leaves the
     atlas. The unique row is packed by hand, so a region added at the end is
     exactly where a collision would happen unnoticed."""
-    rects = [(k, x0, y0) + item_size_px(k) for k, (x0, y0) in ITEM_ORIGIN.items()]
-    rects += [("chimney",) + CHIMNEY, ("corner",) + CORNER]
-    rects += [(k,) + r for k, r in PATCHES.items()]
-    for i, (a, ax, ay, aw, ah) in enumerate(rects):
-        if ax - 2 < 0 or ay - 2 < 0 or ax + aw + 2 > ATLAS or ay + ah + 2 > ATLAS:
-            raise ValueError("region %s leaves the atlas" % a)
-        for b, bx, by, bw, bh in rects[i + 1:]:
-            if ax - 2 < bx + bw + 2 and bx - 2 < ax + aw + 2 and \
-                    ay - 2 < by + bh + 2 and by - 2 < ay + ah + 2:
-                raise ValueError("regions %s and %s overlap" % (a, b))
-        if ay + ah + 2 > DECK_Y0 - 2:
-            raise ValueError("region %s runs into the deck strip" % a)
+    rects = {k: (x0, y0) + item_size_px(k) for k, (x0, y0) in ITEM_ORIGIN.items()}
+    rects.update({"chimney": CHIMNEY, "corner": CORNER})
+    rects.update({"patch_" + k: r for k, r in PATCHES.items()})
+    problems = atlas.region_problems(rects, ATLAS)
+    problems += ["%s runs into the deck strip" % a for a, (ax, ay, aw, ah) in sorted(rects.items())
+                 if ay + ah + 2 > DECK_Y0 - 2]
+    if problems:
+        raise ValueError("atlas layout: " + "; ".join(problems))
 
 
 def item_size_px(kind):
@@ -533,9 +529,7 @@ def paint_patches(c):
             # soot inside the flue: blank darkened to about sRGB 34, and
             # occluded, as a narrow shaft is whatever the sun does
             "flue": (ID_BLANK, 0.45, 0.35)}
-    for name, (x0, y0, w, h) in PATCHES.items():
-        mid, sh, ao = spec[name]
-        c.paint(x0 - 2, x0 + w + 2, y0 - 2, y0 + h + 2, mid, sh, ao, height=0.0)
+    atlas.paint_patches(c, PATCHES, spec)
 
 
 def paint_deck(c):

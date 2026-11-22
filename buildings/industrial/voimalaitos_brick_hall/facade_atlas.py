@@ -1293,9 +1293,7 @@ def paint_patches(c):
         "lining": (ID_GALV, 0.80, 0.85),
         "dark": (ID_DARK, 1.0, 0.8),
     }
-    for name, (mid, sh, ao) in spec.items():
-        x, y, w, h = PATCHES[name]
-        c.paint(x - 2, x + w + 2, y - 2, y + h + 2, mid, sh, ao, height=0.0)
+    atlas.paint_patches(c, PATCHES, spec)
 
 
 # ------------------------------------------------------------------ checks
@@ -1314,20 +1312,7 @@ def check_regions():
              "inlet": INLET, "stack_l": STACK_L, "cope_dust": COPE_DUST}
     rects.update({"elev_" + k: v for k, v in ELEV.items()})
     rects.update(PATCHES)
-    bands_top = PIPE_Y0 + PIPE_H + PAD
-    names = sorted(rects)
-    problems = []
-    for i, a in enumerate(names):
-        ax, ay, aw, ah = rects[a]
-        if ax - 2 < 0 or ay - 2 < 0 or ax + aw + 2 > ATLAS or ay + ah + 2 > ATLAS:
-            problems.append("%s runs off the atlas" % a)
-        if ay - 4 < bands_top:
-            problems.append("%s overlaps the tiling bands" % a)
-        for b in names[i + 1:]:
-            bx, by, bw, bh = rects[b]
-            if (ax - 4 < bx + bw and bx - 4 < ax + aw
-                    and ay - 4 < by + bh and by - 4 < ay + ah):
-                problems.append("%s and %s overlap" % (a, b))
+    problems = atlas.region_problems(rects, ATLAS, bands_top=PIPE_Y0 + PIPE_H + PAD)
     W, H = win_size(REGION_COLS, REGION_ROWS)
     if (WINDOW[2], WINDOW[3]) != (m(W), m(H)):
         problems.append("the window region is not %s x %s m" % (W, H))

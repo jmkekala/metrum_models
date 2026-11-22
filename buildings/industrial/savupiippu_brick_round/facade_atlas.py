@@ -633,9 +633,7 @@ def paint_patches(c):
             "conc": (ID_CONC, 0.92, 0.9), "under": (ID_HEADC, 0.55, 0.6),
             "rim": (ID_SOOT, 1.25, 0.8), "steel": (ID_STEEL, 1.0, 1.0),
             "deck": (ID_DECK, 1.0, 0.9), "copper": (ID_COPPER, 0.9, 1.0)}
-    for name, (mid, sh, ao) in spec.items():
-        x, y, w, h = PATCHES[name]
-        c.paint(x - 2, x + w + 2, y - 2, y + h + 2, mid, sh, ao, height=0.0)
+    atlas.paint_patches(c, PATCHES, spec)
 
 
 # ------------------------------------------------------------------ checks

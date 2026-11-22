@@ -33,9 +33,9 @@ bands. atlas.pad() fills every sample no region claims from the nearest
 region's own edge.
 
 Rasterising is scripts/atlas.py's: a canvas supersampled SS x SS per pixel
-with a height channel the normal map is derived from. The lettering and the
-light box's scissors are stroked here from centreline glyphs; no font file is
-read.
+with a height channel the normal map is derived from. The lettering is set in
+the catalog's stroked alphabet (scripts/lettering.py) and the light box's
+scissors are stroked here; no font file is read.
 
 Density is 64 texels/metre on every wall, opening and fitting, 96 on the
 light box face, 32 on the roof deck (notes.md records both).
@@ -60,6 +60,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "scripts"))
 import atlas  # noqa: E402
 import glazing  # noqa: E402
+import lettering  # noqa: E402
 import weathering  # noqa: E402
 
 ASSET = "kampaamo_tile_corner"
@@ -770,57 +771,9 @@ def paint_sign(c):
           u0=m(SIGN_SPAN[0]) - PAD, v0=m(SIGN_Z[0]) - PAD)
     cap, weight = m(LETTER_CAP), m(0.10)
     tracking = 0.20
-    tw = text_width(SIGN_TEXT, cap, tracking, weight)
-    text(c, SIGN_TEXT, x + (w - tw) / 2.0, y + m(LETTER_BASE - SIGN_Z[0]), cap,
-         weight, ID_LETTER, tracking, height=LETTER_H)
-
-
-def text(c, word, x, y, cap, weight, mid, tracking=0.16, height=None):
-    """Set *word* with its baseline at y and its left edge at x, in the
-    stroked centreline letterforms of GLYPHS. No font file is read."""
-    cx, prev, ratio = float(x), None, weight / float(cap)
-    for ch in word:
-        cx += _step(prev, ch, tracking, ratio) * cap
-        for poly in GLYPHS[ch][1]:
-            for (ax, ay), (bx, by) in zip(poly, poly[1:]):
-                c.stroke((cx + ax * cap, y + ay * cap), (cx + bx * cap, y + by * cap),
-                         weight, mid=mid, shade=1.0, ao=1.0, height=height)
-        prev = ch
-    return cx + GLYPHS[prev][0] * cap - x if prev else 0.0
-
-
-def _arc(cx, cy, rx, ry, a0, a1, n=16):
-    a = np.radians(np.linspace(a0, a1, n + 1))
-    return list(zip(cx + rx * np.cos(a), cy + ry * np.sin(a)))
-
-
-# A plain block sans, drawn as stroked centrelines on a unit em: y = 0 the
-# baseline, y = 1 the cap line, the advance first. Only the sign's letters.
-GLYPHS = {
-    "A": (0.70, [[(0.00, 0.00), (0.35, 1.00), (0.70, 0.00)],
-                 [(0.12, 0.33), (0.58, 0.33)]]),
-    "K": (0.62, [[(0.00, 0.00), (0.00, 1.00)],
-                 [(0.62, 1.00), (0.00, 0.40)],
-                 [(0.20, 0.59), (0.64, 0.00)]]),
-    "M": (0.84, [[(0.00, 0.00), (0.00, 1.00), (0.42, 0.34), (0.84, 1.00),
-                  (0.84, 0.00)]]),
-    "O": (0.82, [_arc(0.41, 0.50, 0.41, 0.50, 0, 360, 36)]),
-    "P": (0.62, [[(0.00, 0.00), (0.00, 1.00), (0.32, 1.00)]
-                 + _arc(0.32, 0.75, 0.30, 0.25, 90, -90, 12)
-                 + [(0.00, 0.50)]]),
-}
-
-
-def _step(prev, ch, tracking, ratio):
-    if prev is None:
-        return 0.0
-    return GLYPHS[prev][0] + tracking + ratio
-
-
-def text_width(word, cap, tracking=0.16, weight=0.0):
-    ratio = weight / float(cap)
-    w = sum(_step(word[i - 1], word[i], tracking, ratio) for i in range(1, len(word)))
-    return (w + GLYPHS[word[-1]][0]) * cap
+    tw = lettering.text_width(SIGN_TEXT, cap, tracking, weight)
+    lettering.text(c, SIGN_TEXT, x + (w - tw) / 2.0, y + m(LETTER_BASE - SIGN_Z[0]), cap,
+                   weight, ID_LETTER, tracking, shade=1.0, ao=1.0, height=LETTER_H)
 
 
 def paint_awning(c):
@@ -938,29 +891,15 @@ def paint_patches(c):
             "fabric_under": (ID_AWN_W, 0.70, 0.66), "awn_cheek": (ID_AWN_W, 0.90, 0.88),
             "box_side": (ID_METAL, 0.92, 0.9), "felt": (ID_FELT, 0.9, 0.9),
             "galv": (ID_GALV, 0.95, 0.92)}
-    for name, (mid, sh, ao) in spec.items():
-        x, y, w, h = PATCHES[name]
-        c.paint(x, x + w, y, y + h, mid=mid, shade=sh, ao=ao, height=0.0)
+    atlas.paint_patches(c, PATCHES, spec, bleed=0)
 
 
 # ------------------------------------------------------------------ checks
 def check_regions():
     """Fail the bake if two regions overlap, collide with the bands, or run
     off the sheet, gutters included."""
-    bands_top = UPST_Y0 + UPST_H + PAD
-    names = sorted(REGIONS)
-    problems = []
-    for i, a in enumerate(names):
-        ax, ay, aw, ah = REGIONS[a]
-        if ax - PAD < 0 or ay - PAD < 0 or ax + aw + PAD > ATLAS or ay + ah + PAD > ATLAS:
-            problems.append("%s has no room for its gutter" % a)
-        if ay - PAD < bands_top:
-            problems.append("%s overlaps the tiling bands" % a)
-        for b in names[i + 1:]:
-            bx, by, bw, bh = REGIONS[b]
-            if (ax - 2 * PAD < bx + bw and bx - 2 * PAD < ax + aw
-                    and ay - 2 * PAD < by + bh and by - 2 * PAD < ay + ah):
-                problems.append("%s and %s are closer than two gutters" % (a, b))
+    problems = atlas.region_problems(REGIONS, ATLAS, edge=PAD, gap=2 * PAD,
+                                     bands_top=UPST_Y0 + UPST_H + PAD, band_gap=PAD)
     prev = 0
     for y0, h in ((WALL_Y0, WALL_H), (COP_Y0, COP_H), (UPST_Y0, UPST_H)):
         if y0 - PAD < prev:

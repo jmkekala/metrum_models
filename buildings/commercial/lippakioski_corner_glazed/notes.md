@@ -33,8 +33,8 @@ colour or trade dress.
   Finnish), wide-set between two short rules, in a slim galvanised frame on
   two short posts over the canopy's front edge, so a gap shows between the
   board and the flashing. Warm-white lit letters on a graphite face. The
-  letters are drawn as stroked centrelines in `facade_atlas.py`, not from a
-  font. The side fascia carries no sign.
+  letters are the catalog's stroked-centreline alphabet,
+  `scripts/lettering.py`, not a font. The side fascia carries no sign.
 - **Dressing, all under the canopy:** a wall-fixed newspaper and magazine
   rack on the serving side, two poster cases (abstract blocks, no text) on
   the blank left wall, a wall-fixed bench along the left wall, and a litter
@@ -725,6 +725,15 @@ Pending, outside this repository:
 - Textures: CPython 3.14.10, numpy 2.5.5, scipy 1.18.1, Pillow 13.0.0.
 
 ## Revision log
+
+- **2026-11-22, shared lettering.** KIOSKI is set in `scripts/lettering.py`,
+  the catalog's one alphabet, instead of this file's own glyphs. Only the K
+  differs: 0.64 em wide instead of 0.62, its arm and leg reaching 0.02 em
+  further. Same cap height, weight, tracking and centring. The albedos,
+  ORM, normal map and emission changed round the two K's and the rules
+  only; the GLBs are byte-identical. Before/after renders at 20 and 35 m,
+  noon and night, in
+  `review/atlas_refactor_2026_11_22/renders/lippakioski_corner_glazed/compare/`.
 
 - **2026-11-22, polishing round.** Downlights modelled as drums (r 0.13 m,
   `LOD0`/`LOD1`), lit and checked at eye level. Sign rebuilt as a 2.8 x

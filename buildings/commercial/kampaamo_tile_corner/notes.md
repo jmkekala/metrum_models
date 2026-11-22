@@ -291,9 +291,9 @@ The validator's sampled hidden-surface test passes on every tier:
 
 ## Known simplifications
 
-- **Letters:** the lettering is painted in the band's own region, with
-  0.04 m of relief in the height channel. It is not individual letter
-  geometry.
+- **Letters:** the lettering is painted in the band's own region, in the
+  catalog's stroked alphabet (`scripts/lettering.py`), with 0.04 m of
+  relief in the height channel. It is not individual letter geometry.
 - **Kept flat in the texture:**
   - the tile joints;
   - the shopfront mullions and transoms;
@@ -633,6 +633,15 @@ sidecar alone, from a committed tree.
 
 ## Revision log
 
+- **2026-11-22:** shared lettering. KAMPAAMO is set in
+  `scripts/lettering.py`, the catalog's one alphabet, instead of this
+  file's own glyphs: K the two-stroke form (arm and leg meeting on the
+  stem), A's bar on its diagonals at 0.30 em, M 0.86 em with its vertex at
+  0.30, O 0.78 em, P the catalog's bowl. Same cap height, weight, tracking
+  and centring. The albedos, ORM, normal map and emission changed inside the
+  lettered band region only; the GLBs are byte-identical. Before/after
+  renders at 20 and 35 m, noon and night, in
+  `review/atlas_refactor_2026_11_22/renders/kampaamo_tile_corner/compare/`.
 - **2026-11-22:** polish. Each display window has its own atlas region
   (`DISPLAY2_R`, row C) and room; plants smaller, muted and of four kinds,
   thinned in the curve; bottles and venetian blinds added. Tile changed

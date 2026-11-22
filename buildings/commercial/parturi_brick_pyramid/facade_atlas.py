@@ -52,7 +52,9 @@ import numpy as np
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "scripts"))
 import atlas  # noqa: E402
+import brickwork  # noqa: E402
 import glazing  # noqa: E402
+import lettering  # noqa: E402
 import weathering  # noqa: E402
 
 ASSET = "parturi_brick_pyramid"
@@ -65,13 +67,13 @@ EAVE_OUT = 0.453125         # 29 px; the eave's projection on all four sides
 TAN = 0.40                  # rise per metre, all four slopes: 21.8 degrees
 
 # --------------------------------------------------------------- brickwork
-COURSE = 0.078125          # one course, bed joint included: 5 px
-BRICK_L = 0.25              # one stretcher, perpend included: 16 px
+COURSE = brickwork.COURSE   # one course, bed joint included: 5 px
+BRICK_L = brickwork.BRICK_L     # one stretcher, perpend included: 16 px
 COURSE_PX = COURSE * PPM
 BRICK_PX = BRICK_L * PPM
 BOND_PERIOD = int(round(ATLAS / BRICK_PX))   # 64 stretchers across the atlas
-JOINT_PX = 1.0              # a 15.6 mm joint, as the catalog's brick
-BRICK_FACE = 0.006          # the brick face proud of the recessed joint
+JOINT_PX = brickwork.JOINT  # a 15.6 mm joint, as the catalog's brick
+BRICK_FACE = brickwork.BRICK_FACE   # the brick face proud of the recessed joint
 
 
 def course(n):
@@ -293,69 +295,11 @@ def m(v):
     return v * PPM
 
 
-def text(c, word, x, y, cap, weight, mid, tracking=0.14, shade=1.0, ao=None,
-         height=None):
-    """Set *word* with its baseline at y and its left edge at x, as stroked
-    centrelines from GLYPHS at *cap* pixels per em. No font file is read, so
-    the artwork carries no third party's licence."""
-    cx, prev, ratio = float(x), None, weight / float(cap)
-    for ch in word:
-        cx += _step(prev, ch, tracking, ratio) * cap
-        for poly in GLYPHS[ch][1]:
-            for (ax, ay), (bx, by) in zip(poly, poly[1:]):
-                c.stroke((cx + ax * cap, y + ay * cap), (cx + bx * cap, y + by * cap),
-                         weight, mid, shade, ao, height=height)
-        prev = ch
-    return cx + GLYPHS[prev][0] * cap - x if prev else 0.0
-
-
-def _arc(cx, cy, rx, ry, a0, a1, n=16):
-    a = np.radians(np.linspace(a0, a1, n + 1))
-    return list(zip(cx + rx * np.cos(a), cy + ry * np.sin(a)))
-
-
-# A plain geometric sans, stroked centrelines on a unit em: y = 0 the
-# baseline, y = 1 the cap line, the advance first. Only P A R T U I, 1, 4.
-GLYPHS = {
-    "P": (0.62, [[(0.00, 0.00), (0.00, 1.00), (0.30, 1.00)]
-                 + _arc(0.30, 0.755, 0.32, 0.245, 90, -90, 10)
-                 + [(0.00, 0.51)]]),
-    "A": (0.70, [[(0.00, 0.00), (0.35, 1.00), (0.70, 0.00)],
-                 [(0.105, 0.30), (0.595, 0.30)]]),
-    "R": (0.64, [[(0.00, 0.00), (0.00, 1.00), (0.30, 1.00)]
-                 + _arc(0.30, 0.755, 0.32, 0.245, 90, -90, 10)
-                 + [(0.00, 0.51)],
-                 [(0.28, 0.51), (0.64, 0.00)]]),
-    "T": (0.68, [[(0.00, 1.00), (0.68, 1.00)], [(0.34, 1.00), (0.34, 0.00)]]),
-    "U": (0.66, [[(0.00, 1.00), (0.00, 0.24)]
-                 + _arc(0.33, 0.24, 0.33, 0.24, 180, 360, 12)
-                 + [(0.66, 1.00)]]),
-    "I": (0.00, [[(0.00, 0.00), (0.00, 1.00)]]),
-    # the house number's two figures
-    "1": (0.40, [[(0.06, 0.78), (0.36, 1.00), (0.36, 0.00)]]),
-    "4": (0.66, [[(0.50, 0.00), (0.50, 1.00), (0.00, 0.30), (0.66, 0.30)]]),
-}
-
-
-def _step(prev, ch, tracking, ratio):
-    if prev is None:
-        return 0.0
-    return GLYPHS[prev][0] + tracking + ratio
-
-
-def text_width(word, cap, tracking=0.14, weight=0.0):
-    """Centreline extent of *word*; the ink is *weight* wider."""
-    if not word:
-        return 0.0
-    ratio = weight / float(cap)
-    w = sum(_step(word[i - 1], word[i], tracking, ratio) for i in range(1, len(word)))
-    return (w + GLYPHS[word[-1]][0]) * cap
-
-
 # ------------------------------------------------------------------- brick
 def bond(c, x0, x1, y0, y1, y_ref, x_ref=0.0, plinth_rows=None):
-    """Stretcher bond over a rect: courses counted up from row *y_ref* (the
-    ground), stretchers from column *x_ref*. Joints are ID_MORTAR, recessed;
+    """Stretcher bond over a rect, laid by scripts/brickwork.py's bond():
+    courses counted up from row *y_ref* (the ground), stretchers from column
+    *x_ref*. Joints are ID_MORTAR, recessed;
     each brick's tone is hashed from its index modulo the atlas's
     BOND_PERIOD stretchers, so a band's bond and colour both wrap exactly.
     Courses under *plinth_rows* rows are the dark plinth brick."""
@@ -363,14 +307,9 @@ def bond(c, x0, x1, y0, y1, y_ref, x_ref=0.0, plinth_rows=None):
     if Y.size == 0:
         return
     yy = Y - y_ref
-    r = np.floor(yy / COURSE_PX).astype(np.int64)
-    off = (r % 2) * BRICK_PX * 0.5
-    xb = X - x_ref - off
-    b = np.floor(xb / BRICK_PX).astype(np.int64)
-    bed = (yy - r * COURSE_PX) < JOINT_PX
-    perp = (xb - b * BRICK_PX) < JOINT_PX
+    r, bi, bed, perp = brickwork.bond(Y, X - x_ref, y_ref, COURSE_PX, BRICK_PX, BOND_PERIOD,
+                                      JOINT_PX)
     joint = bed | perp
-    bi = b % BOND_PERIOD
     tone = 0.88 + 0.22 * atlas.hash_unit(bi, r % 4096, 17)
     # a few darker, harder-fired bricks, as in any buff brickwork
     tone = np.where(atlas.hash_unit(bi, r % 4096, 29) > 0.93, tone * 0.86, tone)
@@ -721,8 +660,7 @@ def paint_fittings(c):
     _frame(c, NUMBER, 1.6, ID_SIGN_RIM, 1.0, 0.9, 0.004)
     _frame(c, (x + 3.0, y + 3.0, w - 6.0, h - 6.0), 0.9, ID_SIGN_W)
     cap, weight = 0.14 * k, 3.4
-    wide = text_width("14", cap, 0.18, weight)
-    text(c, "14", x + (w - wide) / 2.0, y + (h - cap) / 2.0, cap, weight, ID_SIGN_W, 0.18)
+    lettering.centred_text(c, "14", NUMBER, cap, weight, ID_SIGN_W, 0.18, shade=1.0)
     # the opening-hours board: a brown frame round a white sheet with a blue
     # heading bar and rows of day-and-hour marks, no legible text
     x, y, w, h = HOURS
@@ -821,8 +759,9 @@ def paint_sign_box(c):
     _frame(c, (x + 3.0 * q, y + 3.0 * q, w - 6.0 * q, h - 6.0 * q), 1.0 * q, ID_SIGN_INK)
     cap, weight, tr = 14.0 * q, 3.8 * q, 0.10
     word = "PARTURI"
-    wide = text_width(word, cap, tr, weight)
-    text(c, word, x + (w - wide) / 2.0, y + h - 8.5 * q - cap, cap, weight, ID_SIGN_INK, tr)
+    wide = lettering.text_width(word, cap, tr, weight)
+    lettering.text(c, word, x + (w - wide) / 2.0, y + h - 8.5 * q - cap, cap, weight,
+                   ID_SIGN_INK, tr, shade=1.0)
     u0, u1, v0, v1 = PICTO_BOX
     room_w, room_h = w - 10.0 * q, h - cap - 25.0 * q
     s = min(room_w / (u1 - u0), room_h / (v1 - v0))
@@ -844,14 +783,14 @@ def paint_sign_band(c):
         c.lift(xx - 0.5, xx + 0.5, y, y + h, -PANEL_H)
     cap, weight, tr = 22.0, 4.6, 0.20
     word = "PARTURI"
-    wide = text_width(word, cap, tr, weight)
+    wide = lettering.text_width(word, cap, tr, weight)
     sc = x + m(LETTERS_S - SIGN_BAND_S[0])
     base = y + (vis - cap) / 2.0 + 0.5
     # a soft shadow ring under each letter first, then the letters
-    text(c, word, sc - wide / 2.0 + 0.6, base - 0.8, cap, weight + 1.6, None, tr,
-         shade=0.78, ao=0.82)
-    text(c, word, sc - wide / 2.0, base, cap, weight, ID_LETTER, tr, shade=1.0, ao=1.0,
-         height=LETTER_H)
+    lettering.text(c, word, sc - wide / 2.0 + 0.6, base - 0.8, cap, weight + 1.6, None, tr,
+                   shade=0.78, ao=0.82)
+    lettering.text(c, word, sc - wide / 2.0, base, cap, weight, ID_LETTER, tr, shade=1.0,
+                   ao=1.0, height=LETTER_H)
 
 
 LETTERS_S = 6.6875          # the band's word, centred over the two windows
@@ -876,9 +815,7 @@ def paint_patches(c):
         "opal": (ID_SIGN_W, 1.0, 1.0),
         "lamp_body": (ID_FRAME, 0.90, 0.85),
     }
-    for name, (mid, sh, ao) in spec.items():
-        x, y, w, h = PATCHES[name]
-        c.paint(x - 2, x + w + 2, y - 2, y + h + 2, mid, sh, ao, height=0.0)
+    atlas.paint_patches(c, PATCHES, spec)
 
 
 # ------------------------------------------------------------------ checks
@@ -898,20 +835,7 @@ def check_regions():
                   "sign_box": SIGN_BOX, "sign_band": SIGN_BAND, "lamp_front": LAMP_FRONT,
                   "lamp_side": LAMP_SIDE, "number": NUMBER, "hours": HOURS})
     rects.update(PATCHES)
-    bands_top = SOF_Y0 + SOF_H + PAD
-    names = sorted(rects)
-    problems = []
-    for i, a in enumerate(names):
-        ax, ay, aw, ah = rects[a]
-        if ax - 2 < 0 or ay - 2 < 0 or ax + aw + 2 > ATLAS or ay + ah + 2 > ATLAS:
-            problems.append("%s runs off the atlas" % a)
-        if ay - 2 < bands_top:
-            problems.append("%s overlaps the tiling bands" % a)
-        for b in names[i + 1:]:
-            bx, by, bw, bh = rects[b]
-            if (ax - 4 < bx + bw and bx - 4 < ax + aw
-                    and ay - 4 < by + bh and by - 4 < ay + ah):
-                problems.append("%s and %s overlap" % (a, b))
+    problems = atlas.region_problems(rects, ATLAS, bands_top=SOF_Y0 + SOF_H + PAD, band_gap=2)
     if ROOF_Y0 + ROOF_H + PAD > FASC_Y0 - PAD:
         problems.append("the roof band runs into the fascia band")
     if BRICK_Y0 + BRICK_H + PAD > ROOF_Y0 - PAD:

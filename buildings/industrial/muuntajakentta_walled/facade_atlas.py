@@ -1070,9 +1070,7 @@ def paint_patches(c):
         "felt": (ID_FELT, 1.0, 1.0), "pad_top": (ID_CONC, 0.96, 1.0),
         "head": (ID_HEAD, 0.94, 1.0),
     }
-    for name, (mid, sh, ao) in spec.items():
-        x, y, w, h = PATCHES[name]
-        c.paint(x - 2, x + w + 2, y - 2, y + h + 2, mid, sh, ao, height=0.0)
+    atlas.paint_patches(c, PATCHES, spec)
 
 
 # ------------------------------------------------------------------ checks
@@ -1097,19 +1095,7 @@ def check_regions():
     """Fail the bake if two unique regions overlap, collide with the bands,
     run off the sheet, or are too small for what maps onto them."""
     rects = regions()
-    names = sorted(rects)
-    problems = []
-    for i, a in enumerate(names):
-        ax, ay, aw, ah = rects[a]
-        if ax - 2 < 0 or ay - 2 < 0 or ax + aw + 2 > ATLAS or ay + ah + 2 > ATLAS:
-            problems.append("%s runs off the atlas" % a)
-        if ay - 4 < BAND_IDS_ROWS["FENCE"][1]:
-            problems.append("%s overlaps the tiling bands" % a)
-        for b in names[i + 1:]:
-            bx, by, bw, bh = rects[b]
-            if (ax - 4 < bx + bw and bx - 4 < ax + aw
-                    and ay - 4 < by + bh and by - 4 < ay + ah):
-                problems.append("%s and %s overlap" % (a, b))
+    problems = atlas.region_problems(rects, ATLAS, bands_top=BAND_IDS_ROWS["FENCE"][1])
     need = {"tank": (TANK[0], TANK_Z[1] - PLINTH[2]),
             "rad": (RAD_X, RAD_Z[1] - RAD_Z[0]), "rad_end": (RAD_D, RAD_Z[1] - RAD_Z[0]),
             "tank_top": TANK, "fascia": (HX1 - HX0, Z_TOP - Z_WALL),

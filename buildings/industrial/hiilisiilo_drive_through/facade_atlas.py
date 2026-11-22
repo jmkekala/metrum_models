@@ -766,9 +766,7 @@ def paint_patches(c):
             "gal_under": (ID_STEEL, 0.70, 0.65), "coping": (ID_CONC, 1.02, 1.0),
             "felt": (ID_FELT, 1.0, 1.0), "slab_under": (ID_CONC, 0.75, 0.75),
             "steel": (ID_STEEL, 1.0, 1.0)}
-    for name, (x0, y0, w, h) in PATCHES.items():
-        mid, sh, ao = spec[name]
-        c.paint(x0 - 2, x0 + w + 2, y0 - 2, y0 + h + 2, mid, sh, ao, height=0.0)
+    atlas.paint_patches(c, PATCHES, spec)
 
 
 def weather(c):

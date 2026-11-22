@@ -564,23 +564,19 @@ def paint_patches(c):
             "reveal": (ID_SURR, 0.92, 0.75), "blank": (ID_BLANK, 1.0, 0.5),
             "barge": (ID_METAL, 1.0, 1.0), "steel": (ID_DOOR, 1.0, 1.0),
             "interior": (ID_DARK, 1.0, 0.45), "rope": (ID_GUTTER, 0.72, 0.9)}
-    for name, (x0, y0, w, h) in PATCHES.items():
-        mid, sh, ao = spec[name]
-        c.paint(x0 - 2, x0 + w + 2, y0 - 2, y0 + h + 2, mid, sh, ao, height=0.0)
+    atlas.paint_patches(c, PATCHES, spec)
 
 
 def check_regions():
-    """Fail on unique regions that overlap or leave the atlas."""
-    rects = [(k,) + ITEM_ORIGIN[k] + item_size_px(k) for k in OPENINGS]
-    rects += [(k,) + r for k, r in PATCHES.items()]
-    rects.append(("bay",) + BAY_ORIGIN + (m(BAY_W), m(BAY_H)))
-    rects.append(("card",) + CARD_ORIGIN + (2 * SHEAVE_R * CARD_PPM,) * 2)
-    for i, (n, x, y, w, h) in enumerate(rects):
-        if x < 2 or y < UNI_Y0 or x + w > ATLAS - 2 or y + h > ATLAS - 2:
-            raise ValueError("region %s leaves the atlas" % n)
-        for n2, x2, y2, w2, h2 in rects[i + 1:]:
-            if x < x2 + w2 + 4 and x2 < x + w + 4 and y < y2 + h2 + 4 and y2 < y + h + 4:
-                raise ValueError("regions %s and %s are within 4 px" % (n, n2))
+    """Fail on unique regions that overlap, leave the atlas or start below
+    the unique row."""
+    rects = {k: ITEM_ORIGIN[k] + item_size_px(k) for k in OPENINGS}
+    rects.update({"patch_" + k: r for k, r in PATCHES.items()})   # "rope" is both
+    rects["bay"] = BAY_ORIGIN + (m(BAY_W), m(BAY_H))
+    rects["card"] = CARD_ORIGIN + (2 * SHEAVE_R * CARD_PPM,) * 2
+    problems = atlas.region_problems(rects, ATLAS, bands_top=UNI_Y0, band_gap=0)
+    if problems:
+        raise ValueError("atlas layout: " + "; ".join(problems))
 
 
 def weather(c):

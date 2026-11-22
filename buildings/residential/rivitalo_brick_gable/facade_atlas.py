@@ -596,9 +596,7 @@ def paint_patches(c):
             # soot inside the vents' flues: blank darkened to about sRGB 34,
             # and occluded, as a narrow shaft is whatever the sun does
             "flue": (ID_BLANK, 0.45, 0.35)}
-    for name, (x0, y0, w, h) in PATCHES.items():
-        mid, sh, ao = spec[name]
-        c.paint(x0 - 2, x0 + w + 2, y0 - 2, y0 + h + 2, mid, sh, ao, height=0.0)
+    atlas.paint_patches(c, PATCHES, spec)
 
 
 # ---------------------------------------------------- LOD3 painted bays
@@ -666,17 +664,7 @@ def check_regions():
     rects["lod3_front"] = LOD3_FRONT
     rects["lod3_rear"] = LOD3_REAR
     rects.update(PATCHES)
-    names = sorted(rects)
-    problems = []
-    for i, a in enumerate(names):
-        ax, ay, aw, ah = rects[a]
-        if ax - 2 < 0 or ay - 2 < 0 or ax + aw + 2 > ATLAS or ay + ah + 2 > ATLAS:
-            problems.append("%s runs off the atlas" % a)
-        for b in names[i + 1:]:
-            bx, by, bw, bh = rects[b]
-            if (ax - 4 < bx + bw and bx - 4 < ax + aw
-                    and ay - 4 < by + bh and by - 4 < ay + ah):
-                problems.append("%s and %s overlap" % (a, b))
+    problems = atlas.region_problems(rects, ATLAS)
     if problems:
         raise ValueError("atlas layout: " + "; ".join(problems))
 

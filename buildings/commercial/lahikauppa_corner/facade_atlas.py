@@ -50,6 +50,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
 import atlas  # noqa: E402
 import brickwork  # noqa: E402
 import glazing  # noqa: E402
+import lettering  # noqa: E402
 import weathering  # noqa: E402
 
 ASSET = "lahikauppa_corner"
@@ -231,65 +232,9 @@ def m(v):
     return v * PPM
 
 
-def text(c, word, x, y, cap, weight, mid, tracking=0.14, shade=1.0, ao=None,
-         clip=None, join=()):
-    """Set *word* with its baseline at y and its left edge at x.
-
-    The letterforms are stroked centrelines from GLYPHS, drawn at *cap*
-    pixels per em. Everything on this sheet is generated, this included:
-    no font file is read, so the bake has no external dependency and the
-    artwork carries no third party's licence. The canvas is supersampled, so
-    the strokes come out anti-aliased without a separate coverage pass.
-    """
-    cx, prev, ratio = float(x), None, weight / float(cap)
-    for ch in word:
-        cx += _step(prev, ch, tracking, ratio, join) * cap
-        for poly in GLYPHS[ch][1]:
-            for (ax, ay), (bx, by) in zip(poly, poly[1:]):
-                c.stroke((cx + ax * cap, y + ay * cap), (cx + bx * cap, y + by * cap),
-                         weight, mid, shade, ao, clip)
-        prev = ch
-    return cx + GLYPHS[prev][0] * cap - x if prev else 0.0
-
-
-def _arc(cx, cy, rx, ry, a0, a1, n=16):
-    """Points along an elliptical arc, in glyph space."""
-    a = np.radians(np.linspace(a0, a1, n + 1))
-    return list(zip(cx + rx * np.cos(a), cy + ry * np.sin(a)))
-
-
-# A geometric sans, drawn as stroked centrelines on a unit em: y = 0 is the
-# baseline, y = 1 the cap line, and the advance is the first item. Only the
-# letters the sign needs exist, which is the whole point of drawing them here
-# rather than shipping a font: METRUM first, then the two MARKET adds.
-GLYPHS = {
-    " ": (0.34, []),
-    "M": (0.86, [[(0.00, 0.00), (0.00, 1.00), (0.43, 0.30), (0.86, 1.00),
-                  (0.86, 0.00)]]),
-    "E": (0.60, [[(0.60, 1.00), (0.00, 1.00), (0.00, 0.00), (0.60, 0.00)],
-                 [(0.00, 0.50), (0.48, 0.50)]]),
-    "T": (0.68, [[(0.00, 1.00), (0.68, 1.00)], [(0.34, 1.00), (0.34, 0.00)]]),
-    "R": (0.64, [[(0.00, 0.00), (0.00, 1.00), (0.30, 1.00)]
-                 + _arc(0.30, 0.755, 0.32, 0.245, 90, -90, 10)
-                 + [(0.00, 0.51)],
-                 [(0.28, 0.51), (0.64, 0.00)]]),
-    "U": (0.66, [[(0.00, 1.00), (0.00, 0.24)]
-                 + _arc(0.33, 0.24, 0.33, 0.24, 180, 360, 12)
-                 + [(0.66, 1.00)]]),
-    # The crossbar sits where the diagonals actually are at y = 0.30, so the
-    # three strokes meet instead of the bar overshooting into white space.
-    "A": (0.70, [[(0.00, 0.00), (0.35, 1.00), (0.70, 0.00)],
-                 [(0.105, 0.30), (0.595, 0.30)]]),
-    # Arm and leg are one polyline through a vertex on the stem: at any weight
-    # this sheet uses, 0.02 em is inside the stem's own half-width, so the
-    # junction closes without a separate joining stroke.
-    "K": (0.64, [[(0.00, 1.00), (0.00, 0.00)],
-                 [(0.62, 1.00), (0.02, 0.44), (0.64, 0.00)]]),
-}
-
-
-# The wordmark is a connected logotype: these pairs are set with no gap at all,
-# so the stroke one letter ends on is the stroke the next one starts from.
+# The wordmark is set in the catalog's stroked alphabet (scripts/lettering.py)
+# as a connected logotype: these pairs are set with no gap at all, so the
+# stroke one letter ends on is the stroke the next one starts from.
 #
 #   M|E and U|M share a full-height stem. Left to ordinary tracking those two
 #   verticals land a third of a stroke apart and fuse into one bar of twice the
@@ -310,34 +255,6 @@ GLYPHS = {
 # -- and a ligature drawn there, at that scale and at 0.40 of letterspacing,
 # reads as two letters that have collided rather than as a joined logotype.
 JOIN = {("M", "E"), ("E", "T"), ("T", "R"), ("U", "M")}
-
-
-def _step(prev, ch, tracking, ratio, join=()):
-    """How far the pen moves before setting *ch*, in em.
-
-    *tracking* is the gap between one letter's **ink** and the next's, not
-    between their centrelines. The glyphs are stroked, so each one's ink
-    overruns its box by half a stroke at both ends, and spacing measured on
-    centrelines therefore tightens as the weight goes up. In METRUM that closed
-    the gaps between the E's arm, the T's bar and the R's shoulder -- three
-    horizontals all sitting on the cap line -- until they fused into one
-    continuous bar across the top of the word. Adding the stroke-to-cap *ratio*
-    back in makes the gap mean what it says at any weight.
-    """
-    if prev is None:
-        return 0.0
-    if (prev, ch) in join:
-        return GLYPHS[prev][0]
-    return GLYPHS[prev][0] + tracking + ratio
-
-
-def text_width(word, cap, tracking=0.14, weight=0.0, join=()):
-    if not word:
-        return 0.0
-    ratio = weight / float(cap)
-    w = sum(_step(word[i - 1], word[i], tracking, ratio, join)
-            for i in range(1, len(word)))
-    return (w + GLYPHS[word[-1]][0]) * cap
 
 
 # ------------------------------------------------------------------- bands
@@ -520,19 +437,20 @@ def _draw_sign(c, x, y, w, h):
     bs, bx, by = 68, x + 13, y + 19
     c.rounded_rect(bx, by, bs, bs, 16, ID_SIGN_M, 1.0, 1.0)
     cap = 38
-    text(c, "M", bx + (bs - GLYPHS["M"][0] * cap) / 2.0, by + (bs - cap) / 2.0,
-         cap, 6.2, ID_SIGN, 0.0, 1.0)
+    lettering.text(c, "M", bx + (bs - lettering.GLYPHS["M"][0] * cap) / 2.0,
+                   by + (bs - cap) / 2.0, cap, 6.2, ID_SIGN, 0.0, shade=1.0)
 
     tx = x + 96
-    wide = text(c, "METRUM", tx, y + 52, 40, 6.8, ID_SIGN_M, 0.14, join=JOIN)
+    wide = lettering.text(c, "METRUM", tx, y + 52, 40, 6.8, ID_SIGN_M, 0.14, shade=1.0,
+                          join=JOIN)
     c.paint(tx - 3, tx + wide + 3, y + 44, y + 46, ID_SIGN_M, 0.92, 0.96)
     # the shop type is centred on the name above it, not ranged left with it:
     # a short letterspaced line hung off the left edge of a much longer one
     # reads as a stray rather than as part of the lockup
     sub_cap, sub_w = 16, 2.8
-    narrow = text_width("MARKET", sub_cap, 0.40, sub_w)
-    text(c, "MARKET", tx + (wide - narrow) / 2.0, y + 20, sub_cap, sub_w,
-         ID_SIGN_M, 0.40)
+    narrow = lettering.text_width("MARKET", sub_cap, 0.40, sub_w)
+    lettering.text(c, "MARKET", tx + (wide - narrow) / 2.0, y + 20, sub_cap, sub_w,
+                   ID_SIGN_M, 0.40, shade=1.0)
 
 
 def paint_placard(c):
@@ -682,9 +600,7 @@ def paint_patches(c):
         "wall_top": (ID_BLANK, 1.0, 1.0),
         "plinth_top": (ID_PLINTH, 0.88, 0.84),
     }
-    for name, (mid, sh, ao) in spec.items():
-        x, y, w, h = PATCHES[name]
-        c.paint(x - 2, x + w + 2, y - 2, y + h + 2, mid, sh, ao, height=0.0)
+    atlas.paint_patches(c, PATCHES, spec)
 
 
 # ------------------------------------------------------------------ checks
@@ -698,20 +614,7 @@ def check_regions():
              "ahu_side": AHU_SIDE, "ahu_top": AHU_TOP, "cowl": COWL,
              "pipe": PIPE}
     rects.update(PATCHES)
-    bands_top = SOF_Y0 + SOF_H + PAD
-    names = sorted(rects)
-    problems = []
-    for i, a in enumerate(names):
-        ax, ay, aw, ah = rects[a]
-        if ax - 2 < 0 or ay - 2 < 0 or ax + aw + 2 > ATLAS or ay + ah + 2 > ATLAS:
-            problems.append("%s runs off the atlas" % a)
-        if ay - 4 < bands_top:
-            problems.append("%s overlaps the tiling bands" % a)
-        for b in names[i + 1:]:
-            bx, by, bw, bh = rects[b]
-            if (ax - 4 < bx + bw and bx - 4 < ax + aw
-                    and ay - 4 < by + bh and by - 4 < ay + ah):
-                problems.append("%s and %s overlap" % (a, b))
+    problems = atlas.region_problems(rects, ATLAS, bands_top=SOF_Y0 + SOF_H + PAD)
     if problems:
         raise ValueError("atlas layout: " + "; ".join(problems))
 

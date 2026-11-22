@@ -24,6 +24,10 @@ Four channels are painted, all at sample resolution:
             onto. Only micro-relief: a recess the mesh already models is not
             repeated here
 
+Beside the canvas it keeps the layout bookkeeping every generator shares:
+region_problems() for a check_regions(), paint_patches() for the flat cells,
+and pad_periodic() for a band that wraps in V.
+
 Importing needs numpy alone, so build.py can import an atlas's layout inside a
 Blender whose Python has no scipy; scipy is imported by the functions that
 resolve maps, which run in the standalone texture export.
@@ -221,6 +225,61 @@ class Canvas:
             if stray:
                 raise ValueError("%s band rows %d..%d contain ids %s"
                                  % (name, r0, r1, sorted(stray)))
+
+
+# ================================================================== layout
+# The bookkeeping every generator's layout shares: the region check its
+# check_regions() builds on, the flat patch cells and the periodic gutter of
+# a band that wraps in V. The layout itself (rects, bands, palette) stays
+# with the asset.
+def region_problems(rects, size, edge=2, gap=4, bands_top=None, band_gap=4):
+    """What is wrong with a sheet's unique regions, as messages (none: sound).
+
+    rects: name -> (x, y, w, h) in pixels, on a *size* square sheet. Each
+    region keeps *edge* px of gutter inside the sheet, starts *band_gap* px
+    or more above row *bands_top* (where the tiling bands end; None skips
+    the test), and stays *gap* px or more from every other region, so two
+    neighbours' gutters (or bleeds) never meet. Names are checked in sorted
+    order; the caller adds its own checks and raises.
+    """
+    names = sorted(rects)
+    problems = []
+    for i, a in enumerate(names):
+        ax, ay, aw, ah = rects[a]
+        if ax - edge < 0 or ay - edge < 0 or ax + aw + edge > size or ay + ah + edge > size:
+            problems.append("%s runs off the atlas" % a)
+        if bands_top is not None and ay - band_gap < bands_top:
+            problems.append("%s overlaps the tiling bands" % a)
+        for b in names[i + 1:]:
+            bx, by, bw, bh = rects[b]
+            if (ax - gap < bx + bw and bx - gap < ax + aw
+                    and ay - gap < by + bh and by - gap < ay + ah):
+                problems.append("%s and %s overlap" % (a, b))
+    return problems
+
+
+def paint_patches(c, patches, spec, bleed=2):
+    """Flat cells for faces that take one colour: each name in *spec*, an
+    (id, shade, ao) at height 0, over its (x, y, w, h) in *patches* and
+    *bleed* px beyond it, in *spec*'s order."""
+    for name, (mid, shade, ao) in spec.items():
+        x, y, w, h = patches[name]
+        c.paint(x - bleed, x + w + bleed, y - bleed, y + h + bleed, mid, shade, ao, height=0.0)
+
+
+def pad_periodic(c, y0, h, n):
+    """Carry a band that repeats vertically (rows y0 .. y0 + h) into *n* rows
+    of gutter at each end from its *other* end, because that is the artwork a
+    sample straddling the wrap line should find. Every channel and every
+    weathering field goes; call it after weathering and before pad(), which
+    then fills everything else from the nearest edge. y0 and h are whole
+    pixels."""
+    s = c.ss
+    a, b = int(round(y0 * s)), int(round((y0 + h) * s))
+    fields = tuple(c.weather.f.values()) if c.weather is not None else ()
+    for arr in (c.mid, c.shade, c.ao, c.height) + fields:
+        arr[a - n * s:a] = arr[b - n * s:b]
+        arr[b:b + n * s] = arr[a:a + n * s]
 
 
 # ================================================================== noise

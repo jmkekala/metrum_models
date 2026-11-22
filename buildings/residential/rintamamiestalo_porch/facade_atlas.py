@@ -470,9 +470,7 @@ def paint_patches(c):
             # soot inside the flue: blank darkened to about sRGB 34, and
             # occluded, as a narrow shaft is whatever the sun does
             "flue": (ID_BLANK, 0.45, 0.35)}
-    for name, (x0, y0, w, h) in PATCHES.items():
-        mid, sh, ao = spec[name]
-        c.paint(x0 - 2, x0 + w + 2, y0 - 2, y0 + h + 2, mid, sh, ao, height=0.0)
+    atlas.paint_patches(c, PATCHES, spec)
 
 
 def weather(c):

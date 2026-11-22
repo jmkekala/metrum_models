@@ -565,9 +565,7 @@ def paint_opening(c, kind):
 def paint_patches(c):
     spec = {"header": (ID_TRIM, 0.96, 1.0), "soffit": (ID_SHEET, 0.86, 0.85),
             "reveal": (ID_TRIM, 0.72, 0.6), "blank": (ID_BLANK, 1.0, 0.5)}
-    for name, (x0, y0, w, h) in PATCHES.items():
-        mid, sh, ao = spec[name]
-        c.paint(x0 - 2, x0 + w + 2, y0 - 2, y0 + h + 2, mid, sh, ao, height=0.0)
+    atlas.paint_patches(c, PATCHES, spec)
 
 
 def weather(c):

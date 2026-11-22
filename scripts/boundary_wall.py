@@ -244,17 +244,12 @@ def check_layout(piece):
         p.append("the hinge post overruns its region")
     if m(2 * HGCAP) > CAPTOP_R[2] or m(2 * HGCAP) > CAPTOP_R[3]:
         p.append("a cap's top overruns its region")
+    # the unique rows lie between the pier band and the top strip
     rects = dict(PATCHES, leaf=GATE_R, post=POST_R, captop=CAPTOP_R)
-    names = sorted(rects)
-    for i, a in enumerate(names):
-        ax, ay, aw, ah = rects[a]
-        if ax < PAD or ax + aw > ATLAS - PAD or ay + ah > BAND_ROWS["TOP"][0] - PAD \
-                or ay < BAND_ROWS["PIER"][1] + PAD:
-            p.append("%s leaves the unique rows" % a)
-        for b in names[i + 1:]:
-            bx, by, bw, bh = rects[b]
-            if ax - 4 < bx + bw and bx - 4 < ax + aw and ay - 4 < by + bh and by - 4 < ay + ah:
-                p.append("%s and %s overlap" % (a, b))
+    p += atlas.region_problems(rects, ATLAS, edge=PAD, bands_top=BAND_ROWS["PIER"][1],
+                               band_gap=PAD)
+    p += ["%s runs into the top strip" % a for a, (_, ay, _, ah) in sorted(rects.items())
+          if ay + ah > BAND_ROWS["TOP"][0] - PAD]
     return p
 
 
@@ -387,9 +382,7 @@ def paint_captop(c):
 def paint_patches(c):
     spec = {"blank": (ID_BLANK, 1.0, 1.0), "soffit": (ID_CONC, 0.78, 0.75),
             "paint": (ID_PAINT, 0.94, 0.95), "conc": (ID_CONC, 0.92, 0.92)}
-    for name, (mid, sh, ao) in spec.items():
-        x, y, w, h = PATCHES[name]
-        c.paint(x - 2, x + w + 2, y - 2, y + h + 2, mid, sh, ao, height=0.0)
+    atlas.paint_patches(c, PATCHES, spec)
 
 
 def weather(c):

@@ -49,6 +49,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "scripts"))
 import atlas  # noqa: E402
 import glazing  # noqa: E402
+import lettering  # noqa: E402
 import weathering  # noqa: E402
 
 ASSET = "liikekeskus_pharmacy"
@@ -320,85 +321,6 @@ def m(v):
     return v * PPM
 
 
-def text(c, word, x, y, cap, weight, mid, tracking=0.16, shade=None, ao=None,
-         clip=None):
-    """Set *word* with its baseline at y and its left edge at x.
-
-    The letterforms are stroked centrelines from GLYPHS, drawn at *cap*
-    pixels per em. Everything on this sheet is generated, this included:
-    no font file is read, so the bake has no external dependency and the
-    artwork carries no third party's licence. The canvas is supersampled, so
-    the strokes come out anti-aliased without a separate coverage pass.
-    """
-    cx, prev, ratio = float(x), None, weight / float(cap)
-    for ch in word:
-        cx += _step(prev, ch, tracking, ratio) * cap
-        for poly in GLYPHS[ch][1]:
-            for (ax, ay), (bx, by) in zip(poly, poly[1:]):
-                c.stroke((cx + ax * cap, y + ay * cap), (cx + bx * cap, y + by * cap),
-                         weight, mid, shade, ao, clip)
-        prev = ch
-    return cx + GLYPHS[prev][0] * cap - x if prev else 0.0
-
-
-def _arc(cx, cy, rx, ry, a0, a1, n=16):
-    """Points along an elliptical arc, in glyph space."""
-    a = np.radians(np.linspace(a0, a1, n + 1))
-    return list(zip(cx + rx * np.cos(a), cy + ry * np.sin(a)))
-
-
-# A geometric sans, drawn as stroked centrelines on a unit em: y = 0 is the
-# baseline, y = 1 the cap line, and the advance is the first item. Only the
-# letters the sign board needs exist, which is the point of drawing them here
-# rather than shipping a font: APTEEKKI. Every glyph's ink runs from x = 0 to
-# its advance, so spacing and centring measured on the boxes hold on the ink;
-# the I is a lone stem at x = 0 and so has no advance.
-GLYPHS = {
-    " ": (0.34, []),
-    "A": (0.70, [[(0.00, 0.00), (0.35, 1.00), (0.70, 0.00)],
-                 [(0.105, 0.30), (0.595, 0.30)]]),
-    # Arms from the stem; the middle one shorter, as in any geometric sans.
-    "E": (0.56, [[(0.56, 1.00), (0.00, 1.00), (0.00, 0.00), (0.56, 0.00)],
-                 [(0.00, 0.50), (0.48, 0.50)]]),
-    "I": (0.00, [[(0.00, 0.00), (0.00, 1.00)]]),
-    # Upper arm from the cap line into the stem a little under half height;
-    # the leg leaves the arm, not the stem, so the joint stays open at weight.
-    "K": (0.62, [[(0.00, 0.00), (0.00, 1.00)],
-                 [(0.62, 1.00), (0.00, 0.40)],
-                 [(0.20, 0.59), (0.62, 0.00)]]),
-    # Stem, upper bowl and waist in one polyline: the bowl closes on the stem
-    # just above half height.
-    "P": (0.62, [[(0.00, 0.00), (0.00, 1.00), (0.30, 1.00)]
-                 + _arc(0.30, 0.755, 0.32, 0.245, 90, -90, 10)
-                 + [(0.00, 0.51)]]),
-    "T": (0.62, [[(0.00, 1.00), (0.62, 1.00)], [(0.31, 1.00), (0.31, 0.00)]]),
-}
-
-
-def _step(prev, ch, tracking, ratio):
-    """How far the pen moves before setting *ch*, in em.
-
-    *tracking* is the gap between one letter's **ink** and the next's, not
-    between their centrelines. The glyphs are stroked, so each one's ink
-    overruns its box by half a stroke at both ends, and spacing measured on
-    centrelines therefore tightens as the weight goes up. Adding the
-    stroke-to-cap *ratio* back in makes the gap mean what it says at any
-    weight.
-    """
-    if prev is None:
-        return 0.0
-    return GLYPHS[prev][0] + tracking + ratio
-
-
-def text_width(word, cap, tracking=0.16, weight=0.0):
-    if not word:
-        return 0.0
-    ratio = weight / float(cap)
-    w = sum(_step(word[i - 1], word[i], tracking, ratio)
-            for i in range(1, len(word)))
-    return (w + GLYPHS[word[-1]][0]) * cap
-
-
 # ------------------------------------------------------------------- bands
 def _blocks(width, rs, lo, hi):
     """Block boundaries across *width* pixels that sum to it exactly, so the
@@ -497,18 +419,6 @@ def paint_soffit(c):
     sy, sx, Y, _ = c.field(0, ATLAS, y0 + SOF_FASCIA, y0 + SOF_H)
     f = 0.70 + 0.30 * np.minimum(1.0, (Y - (y0 + SOF_FASCIA)) / m(0.9))
     c.ao[sy, sx] = np.minimum(c.ao[sy, sx], f)
-
-
-def pad_periodic(c, y0, h, n=PAD):
-    """Carry a band that repeats vertically into its gutter from its *other*
-    end, because that is the artwork a sample straddling the wrap line should
-    find. atlas.pad() then fills everything else from the nearest edge."""
-    s = c.ss
-    a, b = int(round(y0 * s)), int(round((y0 + h) * s))
-    fields = tuple(c.weather.f.values()) if c.weather is not None else ()
-    for arr in (c.mid, c.shade, c.ao, c.height) + fields:
-        arr[a - n * s:a] = arr[b - n * s:b]
-        arr[b:b + n * s] = arr[a:a + n * s]
 
 
 # ----------------------------------------------------------------- regions
@@ -699,7 +609,7 @@ def _mark(c, cx, cy, r, mid):
     c.stroke((cx - 0.98 * r, cy), (cx + 0.98 * r, cy), bar, mid=mid)
     c.stroke((cx, cy - 0.98 * r), (cx, cy + 0.98 * r), bar, mid=mid)
     for a0 in (0, 90, 180, 270):
-        pts = _arc(cx, cy, 0.86 * r, 0.86 * r, a0 + 28, a0 + 62, 8)
+        pts = lettering.arc(cx, cy, 0.86 * r, 0.86 * r, a0 + 28, a0 + 62, 8)
         for p, q in zip(pts, pts[1:]):
             c.stroke(p, q, 0.16 * r, mid=mid)
 
@@ -713,8 +623,9 @@ FASCIA_TEXT = {"left": "APTEEKKI", "right": ""}
 def paint_fascia(c, key):
     """One of the shop's two lit sign boards, 9.0 x 0.75 m.
 
-    A green field with white out of it, the word set in this sheet's own
-    letterforms and centred on its board. The face is a flat printed diffuser.
+    A green field with white out of it, the word set in the catalog's stroked
+    capitals (scripts/lettering.py) and centred on its board. The face is a
+    flat printed diffuser.
     """
     word = FASCIA_TEXT[key]
     x0, y0, w, h = FASCIA[key]
@@ -725,10 +636,9 @@ def paint_fascia(c, key):
         _mark(c, x0 + w / 2.0, y0 + h / 2.0, 0.34 * h, ink)
         return
     cap, weight = 30.0, 5.3
-    # text_width measures centrelines; stroked letters overrun them by half a
-    # stroke at each end, so the word is centred on its ink, not its pen path.
-    tw = text_width(word, cap, weight=weight)
-    text(c, word, x0 + (w - tw) / 2.0, y0 + (h - cap) / 2.0, cap, weight, ink)
+    # stroked letters overrun their pen path by half a stroke at each end
+    # alike, so centring the path centres the ink
+    lettering.centred_text(c, word, FASCIA[key], cap, weight, ink, 0.16)
 
 
 def paint_logo(c):
@@ -747,9 +657,7 @@ def paint_patches(c):
     spec = {"blank": (ID_BLANK, 1.0, 1.0),
             "sign_side": (ID_SIGN_G, 0.92, 0.90),
             "steel": (ID_STEEL, 0.94, 0.90)}
-    for name, (mid, sh, ao) in spec.items():
-        x, y, w, h = PATCHES[name]
-        c.paint(x, x + w, y, y + h, mid=mid, shade=sh, ao=ao, height=0.0)
+    atlas.paint_patches(c, PATCHES, spec, bleed=0)
 
 
 # ------------------------------------------------------------------ checks
@@ -765,21 +673,8 @@ REGIONS.update(PATCHES)
 def check_regions():
     """Fail the bake if two regions overlap, collide with the bands, or run
     off the sheet -- including the gutter each of them needs."""
-    bands_top = SOF_Y0 + SOF_H + PAD
-    names = sorted(REGIONS)
-    problems = []
-    for i, a in enumerate(names):
-        ax, ay, aw, ah = REGIONS[a]
-        if (ax - PAD < 0 or ay - PAD < 0 or ax + aw + PAD > ATLAS
-                or ay + ah + PAD > ATLAS):
-            problems.append("%s has no room for its gutter" % a)
-        if ay - PAD < bands_top:
-            problems.append("%s overlaps the tiling bands" % a)
-        for b in names[i + 1:]:
-            bx, by, bw, bh = REGIONS[b]
-            if (ax - PAD < bx + bw and bx - PAD < ax + aw
-                    and ay - PAD < by + bh and by - PAD < ay + ah):
-                problems.append("%s and %s overlap" % (a, b))
+    problems = atlas.region_problems(REGIONS, ATLAS, edge=PAD, gap=PAD,
+                                     bands_top=SOF_Y0 + SOF_H + PAD, band_gap=PAD)
     for y0, h in ((STONE_Y0, STONE_H), (SHOP_Y0, SHOP_H), (SOF_Y0, SOF_H)):
         if y0 - PAD < 0:
             problems.append("band at %d has no gutter below it" % y0)
@@ -870,7 +765,7 @@ def paint(ss=atlas.SS):
     c.shade[sheeted] *= 1.0 + 0.014 * grain[sheeted] + 0.02 * soft[sheeted]
 
     weather(c)
-    pad_periodic(c, STONE_Y0, STONE_H)
+    atlas.pad_periodic(c, STONE_Y0, STONE_H, PAD)
     c.pad()
     return c
 

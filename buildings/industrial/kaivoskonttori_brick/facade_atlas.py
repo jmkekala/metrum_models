@@ -463,9 +463,7 @@ def paint_patches(c):
         "barge": (ID_FLASH, 0.92, 0.94),
         "pipe": (ID_PIPE, 1.0, 0.95),
     }
-    for name, (mid, sh, ao) in spec.items():
-        x, y, w, h = PATCHES[name]
-        c.paint(x - 2, x + w + 2, y - 2, y + h + 2, mid, sh, ao, height=0.0)
+    atlas.paint_patches(c, PATCHES, spec)
 
 
 # ------------------------------------------------------------------ checks
@@ -481,20 +479,7 @@ def check_regions():
     rects = {"entrance": ENTRANCE, "service_door": SERVICE_DOOR, "win": WIN,
              "high": HIGH, "conc": CONC, "vent": VENT, "pipe_top": PIPE_TOP}
     rects.update(PATCHES)
-    bands_top = CANE_Y0 + CANE_H + PAD
-    names = sorted(rects)
-    problems = []
-    for i, a in enumerate(names):
-        ax, ay, aw, ah = rects[a]
-        if ax - 2 < 0 or ay - 2 < 0 or ax + aw + 2 > ATLAS or ay + ah + 2 > ATLAS:
-            problems.append("%s runs off the atlas" % a)
-        if ay - 4 < bands_top:
-            problems.append("%s overlaps the tiling bands" % a)
-        for b in names[i + 1:]:
-            bx, by, bw, bh = rects[b]
-            if (ax - 4 < bx + bw and bx - 4 < ax + aw
-                    and ay - 4 < by + bh and by - 4 < ay + ah):
-                problems.append("%s and %s overlap" % (a, b))
+    problems = atlas.region_problems(rects, ATLAS, bands_top=CANE_Y0 + CANE_H + PAD)
     for kind, (w, h) in OPENINGS.items():
         rw, rh = region_size_m(kind)
         top = SURROUND_TOP if kind == "entrance" else 0.0
