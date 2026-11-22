@@ -3,7 +3,7 @@
   "version": 1,
   "name": "kampaamo_tile_corner",
   "path": "buildings/commercial/kampaamo_tile_corner",
-  "source": {"commit": "c25995de21663b387bb349432d264a6b73a84c85", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "40f8c20fc3b54f9d967844a789f3ea8d21f1cf34", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-5.0625, 0.0, -5.2], "max": [5.0625, 5.125, 5.2]},
   "footprint": [
