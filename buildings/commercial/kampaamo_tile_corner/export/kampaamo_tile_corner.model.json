@@ -1,0 +1,53 @@
+{
+  "schema": "metrum-model-facts",
+  "version": 1,
+  "name": "kampaamo_tile_corner",
+  "path": "buildings/commercial/kampaamo_tile_corner",
+  "source": {"commit": "44fbec4ae74d89cb4fb63557a8ca3141c5182019", "dirty": true, "blender": "5.3.0"},
+  "license": "CC-BY-4.0",
+  "bounds": {"min": [-5.0625, 0.0, -5.2], "max": [5.0625, 5.125, 5.2]},
+  "footprint": [
+    [-5.0, -4.7],
+    [5.0, -4.7],
+    [5.0, 1.8],
+    [4.4, 1.8],
+    [4.3635, 2.1707],
+    [4.2554, 2.5271],
+    [4.0798, 2.8556],
+    [3.8435, 3.1435],
+    [3.5556, 3.3798],
+    [3.2271, 3.5554],
+    [2.8707, 3.6635],
+    [2.5, 3.7],
+    [2.5, 4.3],
+    [-5.0, 4.3]
+  ],
+  "storeys": [
+    {"floor_y_m": 0.0, "area_m2": 86.57}
+  ],
+  "dwellings": 0,
+  "doors": [
+    {"id": "salon", "kind": "entrance", "position": [1.75, 0.0, 4.3], "facing": [0.0, 0.0, 1.0], "width_m": 0.94, "height_m": 2.1, "main": true},
+    {"id": "staff", "kind": "service", "position": [-2.0, 0.0, -4.7], "facing": [0.0, 0.0, -1.0], "width_m": 0.9, "height_m": 2.1, "main": false}
+  ],
+  "lods": [
+    {"file": "kampaamo_tile_corner_lod0.glb", "triangles": 1038, "sha256": "fe60c6a449b9df385e33c4ae41e487627a7ea676e05f7dede115e2ef0f7277a6"},
+    {"file": "kampaamo_tile_corner_lod1.glb", "triangles": 836, "sha256": "5f0beb444c1f5731309358c9833137fbaae6a4f6ae2fe7670234df518a42a4f2"},
+    {"file": "kampaamo_tile_corner_lod2.glb", "triangles": 472, "sha256": "7cb70b98f582c1fdfd61d93502d161cffdba501e5950415d63b779113b9a504a"},
+    {"file": "kampaamo_tile_corner_lod3.glb", "triangles": 248, "sha256": "bd01f19c944b058fbfe10f3a9b313b5221c705ad879f08355d26d7d74bcdcd30"}
+  ],
+  "textures": {
+    "orm": {"file": "kampaamo_tile_corner_orm.png", "sha256": "d2b99c6c112dc9b046ae821087826176657df1feffbfe80a860109077389c954"},
+    "normal": {"file": "kampaamo_tile_corner_normal.png", "sha256": "2a44449d90bd08027c924fadc2a62cc5b25d09885265172cc8e0d6d8e751c371"},
+    "emission": {"file": "kampaamo_tile_corner_emission.png", "sha256": "871e02d6a24b1c67a7e28deb10c2f915439fec9ce967017be7b9e3ec3c3f8429"}
+  },
+  "variants": [
+    {"id": "teal_tile", "albedo": "kampaamo_tile_corner_albedo_teal_tile.png", "sha256": "6344ec69422691b04ab087aea169da8ee2ad3ca4ac5b4b8e99ac7c648d2d740e"},
+    {"id": "rose_tile", "albedo": "kampaamo_tile_corner_albedo_rose_tile.png", "sha256": "79048bab08ebf5a20dee3a551a69949e6df6bcd912ddb6c2616510296aef8fc7"},
+    {"id": "blue_tile", "albedo": "kampaamo_tile_corner_albedo_blue_tile.png", "sha256": "4a17a331b0040afb4c5d2cc8f1e575545b4292bad792bccb964bbbeddd79700e"},
+    {"id": "brown_tile", "albedo": "kampaamo_tile_corner_albedo_brown_tile.png", "sha256": "8b585b0c1417fdea60a93849655b7ffc292c341a76700f812a834c8d746b1e51"}
+  ],
+  "default_variant": "teal_tile",
+  "preview": {"file": "../preview.png", "sha256": "6f64166d4b5c324ad34a564fe9d9270abdbd66cc8436f0c450007ad39e3922f1"},
+  "hero": false
+}
