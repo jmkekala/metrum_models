@@ -18,7 +18,7 @@ A late-1980s suburban barber's pavilion: one storey of buff facing brick,
 sides, so steep and short-ridged it reads as a pyramid. It stands at the back
 of a 20 x 20 m lot with the forecourt in front.
 
-The street elevation (-Y) carries the shop: an entrance lobby set 0.9 m into
+The street elevation (-Y) carries the shop: an entrance lobby set 0.88 m into
 the brick, left of centre, its glazed screen (the door leaf and a sidelight
 under a transom light) at the back, and two windows to its right, all under
 soldier courses on one head line. A brown sheet band under the eave carries
@@ -88,17 +88,25 @@ SLOPE_K = math.sqrt(1.0 + L.TAN * L.TAN)     # slope length per metre of plan
 # the right and s runs along it from p0. items are (kind, s at the centre);
 # every kind sits at its own fixed heights (facade_atlas.ITEMS). u is the
 # wall's offset into the tiling brick band, so the bond does not repeat in
-# step from wall to wall.
+# step from wall to wall. Every u, and every item's sides, fall on a half
+# stretcher, so each course ends on a whole or a half brick; the u's
+# alternate by a half stretcher at each corner, so the course that ends on
+# a whole brick on one face ends on a half on the other, as a stretcher
+# bond's quoin does (check_layout()).
 WALLS = [
     dict(name="front", p0=(-HX, -HY), p1=(HX, -HY), u=0.0,
-         items=[("screen", 2.1), ("window", 5.3), ("window", 8.1)]),
-    dict(name="east", p0=(HX, -HY), p1=(HX, HY), u=3.1,
-         items=[("side_window", 2.4), ("small_window", 5.6)]),
-    dict(name="rear", p0=(HX, HY), p1=(-HX, HY), u=6.3,
-         items=[("small_window", 2.3), ("service_door", 7.0)]),
-    dict(name="west", p0=(-HX, HY), p1=(-HX, -HY), u=9.7,
-         items=[("meter", 2.0), ("small_window", 3.5), ("louvre", 5.0)]),
+         items=[("screen", 2.125), ("window", 5.25), ("window", 8.125)]),
+    dict(name="east", p0=(HX, -HY), p1=(HX, HY), u=3.125,
+         items=[("side_window", 2.4375), ("small_window", 5.5625)]),
+    dict(name="rear", p0=(HX, HY), p1=(-HX, HY), u=6.25,
+         items=[("small_window", 2.3125), ("service_door", 7.0)]),
+    dict(name="west", p0=(-HX, HY), p1=(-HX, -HY), u=9.625,
+         items=[("meter", 2.0625), ("small_window", 3.5625), ("louvre", 5.0)]),
 ]
+# the lobby cheeks' offset into the brick band, past the wall's own u: the
+# left cheek's, and the right's CHEEK_U[1] on; each turns its corner a half
+# stretcher out of step with the front, like the building's corners
+CHEEK_U = (1.375, 2.0)
 WALL = {w["name"]: w for w in WALLS}
 
 # The projecting light box, on the pier right of the lobby: its face is
@@ -171,7 +179,7 @@ ROOF_LADDER = RS.RoofLadder(EAVE_REAR, KIT_S, EAVE_REAR.roof_z(ROOF_TOP_OUT))
 def item_mode(kind, level):
     """Openings: recessed with their reveals to LOD1, painted flush from LOD2,
     where a 0.12 m reveal is a fraction of a pixel. The entrance lobby is
-    massing, 0.9 m deep and 2.2 m wide, and stays cut through LOD2; LOD3
+    massing, 0.88 m deep and 2.25 m wide, and stays cut through LOD2; LOD3
     paints it on the wall. The meter cupboard and the louvre are flush on
     every tier."""
     if kind in ("meter", "louvre"):
@@ -403,8 +411,8 @@ def build_item(B, fr, wall, kind, s, level):
     if ot > zt + EPS:                                   # the soldier course
         B.face([fr.P(l, zt), fr.P(r, zt), fr.P(r, ot), fr.P(l, ot)], fn)
     if kind == "screen":
-        u0 = wall["u"] + 1.3
-        side = (uv_cheek(fr, u0), uv_cheek(fr, u0 + 2.0))
+        u0 = wall["u"] + CHEEK_U[0]
+        side = (uv_cheek(fr, u0), uv_cheek(fr, u0 + CHEEK_U[1]))
         head, sill = uv_lobby_soffit(fr, d), uv_patch("blank")
     else:
         side = (uv_patch("reveal"), uv_patch("reveal"))
@@ -1026,6 +1034,45 @@ def check_layout():
         bad.append("no transom light over the entrance leaf")
     if not 2.0 <= L.SERVICE_LEAF[1] <= 2.4:
         bad.append("the service leaf is %.3f m, outside 2.0-2.4" % L.SERVICE_LEAF[1])
+    if L.SERVICE_LEAF[1] > L.Z_SERVICE_HEAD - 0.03 or \
+            L.SERVICE_LEAF[0] > L.ITEMS["service_door"]["w"] - 0.06 + EPS:
+        bad.append("the service leaf does not fit inside its frame")
+    # the brickwork: every height the walls share with the coursing on a
+    # course line; every corner, opening side and lobby cheek on a whole or
+    # half stretcher; corners and cheeks turning a half stretcher out of step
+    half = L.BRICK_L / 2.0
+
+    def on(v, step):
+        return abs(v / step - round(v / step)) < 1e-6
+    for what, z in (("plinth", L.Z_PLINTH), ("sign band", L.Z_BAND0),
+                    ("wall top", L.Z_TOP)):
+        if not on(z, L.COURSE):
+            bad.append("the %s at %.4f m is off the coursing" % (what, z))
+    for kind, it in L.ITEMS.items():
+        if not all(on(z, L.COURSE) for z in L.item_box(kind) + (it["z0"], it["z1"])):
+            bad.append("the %s's heights are off the coursing" % kind)
+        if not on(it["w"], half):
+            bad.append("the %s is not a whole number of half stretchers wide" % kind)
+    for spec in WALLS:
+        for kind, s in spec["items"]:
+            (l, r, _b, _t), _ = item_rect(kind, s)
+            if not (on(spec["u"] + l, half) and on(spec["u"] + r, half)):
+                bad.append("%s: the %s cuts the bond off a half stretcher"
+                           % (spec["name"], kind))
+    for a, b in zip(WALLS, WALLS[1:] + WALLS[:1]):
+        end = a["u"] + Frame(a["p0"], a["p1"]).L
+        if not (on(b["u"], half) and on(end - b["u"] - half, L.BRICK_L)):
+            bad.append("the %s/%s corner does not turn the bond" % (a["name"], b["name"]))
+    (sl, sr, _b, _t), _ = item_rect("screen", dict(WALL["front"]["items"])["screen"])
+    for edge, cu in ((sl, CHEEK_U[0]), (sr, CHEEK_U[0] + CHEEK_U[1])):
+        if not on(edge - cu - half, L.BRICK_L):
+            bad.append("a lobby cheek does not turn the bond at the lobby's mouth")
+    if not (on(L.ATLAS, L.BRICK_PX) and on(L.BRICK_PX, 1.0) and on(L.COURSE_PX, 1.0)
+            and on(L.BRICK_H, L.COURSE_PX)):
+        bad.append("the brick band does not tile on whole pixels")
+    wins = [s for k, s in WALL["front"]["items"] if k == "window"]
+    if abs(sum(wins) / len(wins) - L.LETTERS_S) > EPS:
+        bad.append("the band's letters are not centred over the two windows")
     for kind in ("window", "side_window", "small_window"):
         z0 = L.ITEMS[kind]["z0"]
         if not 0.8 <= z0 <= 1.4:
@@ -1143,7 +1190,7 @@ def facts():
     in the build frame. The footprint is the wall ring at ground level; the
     entrance lobby is a recess in the front wall and leaves the outline
     straight, so the entrance stands on the front wall plane, at the leaf's
-    centre, though the leaf itself is 0.9 m back in the lobby. One storey,
+    centre, though the leaf itself is 0.88 m back in the lobby. One storey,
     the ring's area less the lobby's; no dwellings."""
     ring = [w["p0"] for w in WALLS]
     area = abs(sum(a[0] * b[1] - b[0] * a[1]

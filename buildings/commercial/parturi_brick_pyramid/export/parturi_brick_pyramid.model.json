@@ -3,7 +3,7 @@
   "version": 1,
   "name": "parturi_brick_pyramid",
   "path": "buildings/commercial/parturi_brick_pyramid",
-  "source": {"commit": "96a288f588165190e9cc26e7f2334084cea3368b", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "cb888915b3a8721b5713a0bb29b7319978043fa5", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-5.4531, 0.0, -4.7415], "max": [5.4531, 5.9538, 4.7415]},
   "footprint": [
@@ -21,23 +21,23 @@
     {"id": "staff", "kind": "service", "position": [-2.0, 0.0, -4.1084], "facing": [0.0, 0.0, -1.0], "width_m": 0.94, "height_m": 2.0555, "main": false}
   ],
   "lods": [
-    {"file": "parturi_brick_pyramid_lod0.glb", "triangles": 1986, "sha256": "d95315e3005b22efd99b11d6ee7bd3d3a30315c834e7cfba8919dc483df80505"},
-    {"file": "parturi_brick_pyramid_lod1.glb", "triangles": 1646, "sha256": "7173fc436c6df8f1a64a06f9140c1b16a8cbe77675cc156ecd5fc59059f68ae7"},
-    {"file": "parturi_brick_pyramid_lod2.glb", "triangles": 500, "sha256": "ad1f8d5f6df0c8610b3d61dd1c1ffd5a753c9e3ae4acfb0117f0bd5fbb72dc6a"},
-    {"file": "parturi_brick_pyramid_lod3.glb", "triangles": 238, "sha256": "2c3edd8b605b970de536ee0945273c0371f753d649dc3ac24a5a76eb446eb56f"}
+    {"file": "parturi_brick_pyramid_lod0.glb", "triangles": 1982, "sha256": "d0acb89c0a06c01f10e23128dc11414b8fe5f364d736b05762d0f5df269e9ead"},
+    {"file": "parturi_brick_pyramid_lod1.glb", "triangles": 1642, "sha256": "05877f5b7ef65b41515f63176fea2df2a33ec8a8c6fe2ce0c10f8c824a835e6f"},
+    {"file": "parturi_brick_pyramid_lod2.glb", "triangles": 496, "sha256": "7936a4eb62e46664ed9d98ac6915c8e730e4bbeeabf228f75e59f768ed9f2412"},
+    {"file": "parturi_brick_pyramid_lod3.glb", "triangles": 236, "sha256": "ed505a1f7acc53b1b57016026b23a6d727d3741bc0c10d9f6354ef08cd348db2"}
   ],
   "textures": {
-    "orm": {"file": "parturi_brick_pyramid_orm.png", "sha256": "e2bdcff7fd7fc23eb00c02a3c0f1869e4662bfdf2fc5f7ad98d63d975aec5abf"},
-    "normal": {"file": "parturi_brick_pyramid_normal.png", "sha256": "67554c531a024393144dced94c4610b0b47903b4d27df7268735ed1c8f3e59ec"},
-    "emission": {"file": "parturi_brick_pyramid_emission.png", "sha256": "88567c3857748ee14fbb84ebea3a1ab6a39ef3c4dfcb44ed4a90ff9211f1d809"}
+    "orm": {"file": "parturi_brick_pyramid_orm.png", "sha256": "07b283b0691ec270b092628fbdbc59566d546fe75e6a8e3e52f7eca3aa6fab98"},
+    "normal": {"file": "parturi_brick_pyramid_normal.png", "sha256": "b5f1b6fe17a87c18a054c995a1b60ce97a4d6c4bc601dbeb884db590399ce01e"},
+    "emission": {"file": "parturi_brick_pyramid_emission.png", "sha256": "cdc0af760f92e8176ac30476e172e15a57a53962a1f20af2ca2ca9a92797fd29"}
   },
   "variants": [
-    {"id": "yellow_brick", "albedo": "parturi_brick_pyramid_albedo_yellow_brick.png", "sha256": "454ce593803054dfe11119f37918672509963a5bde988ab97cf62111629b8103"},
-    {"id": "red_brick", "albedo": "parturi_brick_pyramid_albedo_red_brick.png", "sha256": "5b90c7df5c394a3a34d0d5ec1c4f8ad77a15465b3e11b06c50ba55f5142138e9"},
-    {"id": "brown_brick", "albedo": "parturi_brick_pyramid_albedo_brown_brick.png", "sha256": "275775402e8e73680d6ad38777b32bb12c31dabbe67c866bb26183cacc7bf75e"},
-    {"id": "white_brick", "albedo": "parturi_brick_pyramid_albedo_white_brick.png", "sha256": "8674aae5868c2b23b56277129dceffeab7a9ead0d0a55558d4d1ef3d0ef3316f"}
+    {"id": "yellow_brick", "albedo": "parturi_brick_pyramid_albedo_yellow_brick.png", "sha256": "f699d52fc0fdf3fe9e5274c53364215abde992e8091c7ab2fa80e77c996dda8f"},
+    {"id": "red_brick", "albedo": "parturi_brick_pyramid_albedo_red_brick.png", "sha256": "e557900ce85ce6a786a25eff55583420067ac7dba5df7e1074f676db29b257ec"},
+    {"id": "brown_brick", "albedo": "parturi_brick_pyramid_albedo_brown_brick.png", "sha256": "75f887987cbb4edcec42a86aa88feececebf0d4d1fa303ec3f7558f55d96a96c"},
+    {"id": "white_brick", "albedo": "parturi_brick_pyramid_albedo_white_brick.png", "sha256": "0f2b9b53073c8454986ceca0785f652dcd95b6d65b78df7cf410192280f75af6"}
   ],
   "default_variant": "yellow_brick",
-  "preview": {"file": "../preview.png", "sha256": "5bbddffd52b10b6d55e9cf0483c00dbe1dc350f975de9cf05aaa24adb8dc9dff"},
+  "preview": {"file": "../preview.png", "sha256": "e66992a094ff150cda1388ff48607944f8f51bb855abb70f0e01bb187232122f"},
   "hero": false
 }

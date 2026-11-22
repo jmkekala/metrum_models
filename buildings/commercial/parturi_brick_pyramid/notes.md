@@ -13,8 +13,8 @@ the roof, the entrance lobby and the projecting sign carry its identity.
 
 The public side faces `-Y`:
 
-- an **entrance lobby** (the Finnish windbreak) set 0.9 m into the brick left
-  of centre, 2.2 m wide, with brick cheeks, a boarded soffit and a soldier
+- an **entrance lobby** (the Finnish windbreak) set 0.88 m into the brick
+  left of centre, 2.25 m wide, with brick cheeks, a boarded soffit and a soldier
   lintel; at its back a brown glazed screen: one door leaf under a transom
   light and a sidelight with a kick panel;
 - two windows to its right, each one big light under a top light, on the
@@ -56,7 +56,7 @@ wide margins.
 
 ## Footprint
 
-- Walls: **10.0 x 8.0 m** rectangle, less the entrance lobby's 2.2 x 0.9 m
+- Walls: **10.0 x 8.0 m** rectangle, less the entrance lobby's 2.25 x 0.88 m
   recess in the front wall; floor area 78.02 m².
 - Plan bounds: **10.906 x 9.483 m**. Along X the eave (0.453 m each side)
   sets them; along Y the light box at the front (its outer edge 0.85 m off the
@@ -69,33 +69,39 @@ wide margins.
 ## Story height
 
 One storey. The level soffit meets the wall at **3.3125 m** (the eave
-height); the sign band runs 2.75–3.3125 m on the front. Every wall height is
-on a brick course line of the 85.9 mm coursing except the openings' common
-head (2.363 m, half a course down so the soldier course above it ends on
-course line 31).
+height); the sign band runs 2.734–3.3125 m on the front. Every wall height
+the brick shares is a line of the catalog's 78.125 mm coursing: plinth top
+0.391 m (course 5), sheet sills 0.781 m and window sills 0.859 m (10, 11),
+small sills 1.25 m (16), the service door's head 2.109 m (27), the common
+head 2.344 m (30), soldier tops 2.344 and 2.578 m (30, 33), the band's foot
+2.734 m (35), the wall top in the roof 3.4375 m (44); the meter cupboard
+0.547–1.641 m (7–21) and the louvre 2.109–2.422 m (27–31). The eave alone is
+off it, 2 cm over course line 42, under the soffit.
 
 ## Door leaf height
 
 - **Entrance:** one glazed aluminium leaf **0.95 m wide (stiles included) x
   2.10 m**, at grade with a threshold strip and no step. The transom bar is
   drawn at 2.10 m across the whole screen, with a **transom light** above it
-  to the head frame at 2.363 m. The leaf stands 0.9 m back in the lobby; its
-  facts threshold is on the front wall plane (Export).
-- **Service door (rear):** brown steel leaf **0.94 x 2.055 m** in a 30 mm
-  steel frame, frame head 2.105 m, soldier course over it to 2.406 m.
-- Against the brick: the entrance leaf is about 24.5 courses tall.
+  to the head frame at 2.344 m. The leaf stands 0.88 m back in the lobby;
+  its facts threshold is on the front wall plane (Export).
+- **Service door (rear):** brown steel leaf **0.94 x 2.055 m** (2.0555 in
+  the sidecar) in a 30 mm steel frame filling a 1.0 m opening, frame head
+  2.109 m, soldier course over it to 2.344 m, the windows' head line.
+- Against the brick: the entrance leaf is about 27 courses tall (26.9).
 
 ## Window sills
 
 | Window | Wall | Width | Sill | Head | Notes |
 | --- | --- | --- | --- | --- | --- |
-| front (x2) | front | 1.8 m | **0.859 m** | 2.363 m | top light over the 2.10 m transom bar; sheet sill 0.773–0.859 m |
-| side | east | 1.4 m | 0.859 m | 2.363 m | two lights below the transom bar, top light |
-| small (x3) | east, rear, west | 0.9 m | **1.289 m** | 2.363 m | one opening light |
+| front (x2) | front | 1.75 m | **0.859 m** | 2.344 m | top light over the 2.10 m transom bar; sheet sill 0.781–0.859 m |
+| side | east | 1.375 m | 0.859 m | 2.344 m | two lights below the transom bar, top light |
+| small (x3) | east, rear, west | 0.875 m | **1.25 m** | 2.344 m | one opening light |
 
 All heads are on the entrance's head line; the transom bars on the door's
-2.10 m leaf head. The highest sill, 1.289 m, is under the 1.4 m chest-high
-line; the occupied floor is the ground.
+2.10 m leaf head. The highest sill, 1.25 m, is under the 1.4 m chest-high
+line; the occupied floor is the ground. Widths are whole or half
+stretchers (Texture set).
 
 ## Eave overhang
 
@@ -110,7 +116,7 @@ Closed solids unioned with Blender's exact boolean
 (`asset_build.union(..., snap=asset_build.SNAP)`), welded at 0.1 mm:
 
 1. **the body:** the four walls walked counter-clockwise, each split into
-   cells (brick to the band's foot at 2.75 m; above it brick, or on the front
+   cells (brick to the band's foot at 2.734 m; above it brick, or on the front
    between s 0.2 and 9.8 m the sign band's artwork); each cell holed for its
    openings, or notched at its foot for the lobby and the service door; every
    cell corner on a neighbour's edge put on that edge, so the cells meet
@@ -128,7 +134,7 @@ Closed solids unioned with Blender's exact boolean
    to LOD1 four modelled louvre blades and a cap plate 55 mm thick
    oversailing the front 60 mm and the sides 30 mm, its front edge a drip
    (`hood_mode()`);
-6. **the sign band** (LOD0/LOD1): 9.6 x 0.56 m, 0.10 m proud of the brick,
+6. **the sign band** (LOD0/LOD1): 9.6 x 0.58 m, 0.10 m proud of the brick,
    its back in the wall and its top in the roof slab;
 7. **the light box:** 0.70 x 0.70 x 0.15 m at x = -1.2 m, z 2.25–2.95 m,
    0.15–0.85 m off the wall (clear of the band), on two 40 mm arms let into
@@ -141,7 +147,7 @@ Closed solids unioned with Blender's exact boolean
 
 Openings: LOD0/LOD1 recess the glass and doors 0.12 m (brick reveals, sheet
 sill) with the sheet sill and the soldier course flush on the wall; the lobby
-is a 0.9 m recess through LOD2; LOD2 paints the windows and the service door
+is a 0.88 m recess through LOD2; LOD2 paints the windows and the service door
 flush; LOD3 paints the lobby flush too (`item_mode()`). Ground-standing
 openings get no floor of their own; the body's floor cap closes them.
 
@@ -220,10 +226,10 @@ Measured on the exported GLBs by `scripts/validate_asset.py`:
 
 | Tier | Triangles | Ceiling | Status |
 | --- | --- | --- | --- |
-| `LOD0` | 1,986 | 12,000 | far under |
-| `LOD1` | 1,646 | 4,000 | far under |
-| `LOD2` | 500 | 1,500 | under |
-| `LOD3` | 238 | 500 | under |
+| `LOD0` | 1,982 | 12,000 | far under |
+| `LOD1` | 1,642 | 4,000 | far under |
+| `LOD2` | 496 | 1,500 | under |
+| `LOD3` | 236 | 500 | under |
 
 Where they go at LOD0: the roof kit and the two bent downpipes (about 600
 together, mostly the ladders' rung holes and the pipes' bends), the body's
@@ -239,7 +245,7 @@ sign band, the light box and arms, the canopy and the vent.
   and one light-box arm go; windows and the service door paint flush; kit
   to every fourth rung without brackets; downpipes straight; coplanar
   boolean splits dissolved.
-- `LOD2` → `LOD3` (−262): the lobby paints flush, the canopy, the housing's
+- `LOD2` → `LOD3` (−260): the lobby paints flush, the canopy, the housing's
   lid, the front lamp, the house number and the kit go (the wall ladder's
   bare rails stay), downpipes 3-sided.
 
@@ -255,7 +261,8 @@ Authoring review with `scripts/review_asset.py`: perspective, **1920 x 1080**,
 visible front wall, noon sun, emission off; tiers 0–3 at **35, 70 and 120 m**,
 front and oblique; and the oblique at 35 and 120 m by night with emission on.
 Renders in `review/small_shops_2026_11_22/parturi_brick_pyramid_polish/`
-(`after_lod/`, `after_night_lod/`; not committed). Intended switches: the
+(`after_lod/`, `after_night_lod/`; not committed); by day repeated after the
+re-coursing in `parturi_brick_pyramid_recourse/after_lod/`. Intended switches: the
 catalog's 35 / 70 / 120 m.
 
 | Switch | Distance | Verdict |
@@ -283,8 +290,8 @@ time nor VRAM.
 Welded manifold check, all four tiers: **0 boundary edges, 0 edges with more
 than two faces, 0 loose vertices or edges**.
 
-Sampled hidden-surface test (40 rays per face): `LOD0` 51/1,986 (2.6 %),
-`LOD1` 42/1,646, `LOD2` 5/500, `LOD3` 8/238. Inspected by position: on
+Sampled hidden-surface test (40 rays per face): `LOD0` 51/1,982 (2.6 %),
+`LOD1` 42/1,642, `LOD2` 5/496, `LOD3` 8/236. Inspected by position: on
 LOD0–LOD2 they are the **roof ladder's rails and rungs' undersides**, 80 mm
 over the sheet (x ±0.22 m on the rear slope, z 4.6–4.9 m), and the light
 box's arms in its 0.15 m gap (the count did not grow with the louvre
@@ -339,9 +346,9 @@ Four bands run the full width and tile in U:
 | soffit | 482–511 | stained boards, V out from the wall, vent gap at the wall |
 
 Regions above them at 64 px/m: the lobby screen with its soldier lintel
-(141 x 171 px), the front window, side window and small window (each with
+(144 x 165 px), the front window, side window and small window (each with
 sheet sill and soldier course), the service door, the meter cupboard, the
-louvre, the sign band (614 x 44), and a row of 16 px patches; the light box
+louvre, the sign band (614 x 45), and a row of 16 px patches; the light box
 face is 112 x 112 px at **160 px/m**. At **128 px/m**, in the row over the
 sign band: the housing's two side widths (128 x 122 and 102 x 122 px) and the
 hood's front (115 x 83), where the louvres' 75 mm blades and 25 mm slots need
@@ -352,23 +359,35 @@ opening-hours board).
 
 ### The brick
 
-True size: a **285.7 x 85.9 mm module**, joints included (56 stretchers
-across the 16 m band, 18.29 px; a course 5.5 px), 12 mm (0.75 px) recessed
-joints in their own mortar colour, stretcher bond, each brick's tone hashed
-from its index so the band wraps exactly; a few harder-fired darker bricks.
-The plinth brick is the same module and bond; its joints are pointed in a
-darker mortar (`PLINTH_JOINT`, 0.62 of the walling mortar's shade), as at the
-foot of a wall: pale joints round dark bricks drew a coarse white grid that
-made the plinth bricks read larger than the walling. Soldier courses are
-bricks on end, 3.5 courses tall, a shade darker so they read as lintels.
+The catalog's module: **250 x 78.125 mm, joints included** (`BRICK_L`,
+`COURSE`): a 16 px stretcher, 64 across the 16 m band, and a 5 px course,
+so every brick and joint sits on whole pixels and the bond wraps exactly at
+the atlas edge. 15.6 mm (1 px) recessed joints in their own mortar colour,
+brick faces 6 mm proud (`BRICK_FACE`), as `lahikauppa_corner` and
+`kaivoskonttori_brick`; stretcher bond, each brick's tone hashed from its
+index modulo the 64 stretchers; a few harder-fired darker bricks. The
+plinth brick is the same module and bond, five courses (0.391 m); its
+joints are pointed in a darker mortar (`PLINTH_JOINT`, 0.62 of the walling
+mortar's shade), as at the foot of a wall: pale joints round dark bricks
+drew a coarse white grid that made the plinth bricks read larger than the
+walling. Soldier courses are bricks on end, 3 courses (15 px) tall, a whole
+number of soldiers across each opening (the perpends take the odd fraction
+of a pixel, so neither end is a cut brick), a shade darker so they read as
+lintels.
+
+Every opening's sides, every corner and both lobby cheeks fall on a whole
+or half stretcher of the bond, so each course ends on a whole or a half
+brick; the walls' band offsets (`u` 0, 3.125, 6.25 and 9.625 m) and the
+cheeks' (`CHEEK_U`) turn each corner a half stretcher out of step, so a
+course ending on a whole brick on one face ends on a half on the other.
+`check_layout()` asserts all of it, and that every brick height is a course
+line.
 
 Measured against `buildings/commercial/lahikauppa_corner` with identical
-`review_asset.py` settings (front, noon, 20 and 35 m): both atlases are
-64 px/m and render equally sharp. That asset's brick is a smaller module,
-250 x 78 mm with 15.6 mm joints darkened in the brick's own colour; this one
-keeps the 285 x 86 mm module of the Finnish 285 x 85 mm brick, so its
-courses are about 10 % taller. Neither is corrected to the other: this
-module is the Finnish standard brick's and stays.
+`review_asset.py` settings (front, noon, LOD0, 20 and 35 m; crops
+auto-contrasted, since that wall stands in its canopy's shade): the same
+course pitch and stretcher length, about 4.5 x 14.5 px a brick at 20 m, and
+equally sharp.
 
 ### Lettering and pictogram
 
@@ -394,7 +413,7 @@ module is the Finnish standard brick's and stays.
 
 64 px/m on walls, openings and the sign band. Deviations: roof 64 along the
 eave x 48 up the slope; light box 160 px/m; soffit 64 out from the wall but
-the lobby soffit compressed 2x across its 0.9 m depth; the housing's sides,
+the lobby soffit compressed 2x across its 0.88 m depth; the housing's sides,
 the hood's front and the fittings 128 px/m (louvre blades and slots, the
 lamps' frames and the number's figures need the texels; each surface is
 under 1 m², so the sharper patch does not show beside the 64 px/m walls at
@@ -431,14 +450,14 @@ number and the opening-hours sheet stay clean.
 ## Glazing treatment
 
 - Measured by `scripts/validate_asset.py`, all four variants: glass mean
-  **sRGB 59**, linear **0.040**, **0.26–0.27x** the trim; darker than the
+  **sRGB 57**, linear **0.037**, **0.25–0.26x** the trim; darker than the
   brown frames round it.
 - Roughness **0.08** (`glazing.ROUGHNESS`), metallic 0.
 - Panes painted by `glazing.rooms()` on the finished albedo. The two front
   windows' big lights then get **vertical blinds** in the albedo (89 mm slats
   mixed 42 % toward a pale grey-beige, `blinds()`): part of the room, not a
   reflection, and absent from the emission. They lift the measured mean from
-  the catalog's usual ~52 to 59, still inside the band.
+  the catalog's usual ~52 to 57, still inside the band.
 - No sky gradient or reflection baked.
 
 ## Variant list
@@ -464,7 +483,7 @@ doors move a little with each brick; the plinth stays dark brown; the signs
   lobby screen (leaf, sidelight, transom light), the front windows, the side
   window, the three small windows, the meter cupboard's reading window.
 - **Luminous fixtures in their own colours**, which the validator reports
-  as 16,242 coloured fixture pixels:
+  as 16,337 coloured fixture pixels:
   - the light box: its opal face warm white (255, 228, 170), its letters and
     mark deep blue (52, 84, 200); its rim black;
   - the band's cut letters, cream (255, 214, 140); the brown field black;
@@ -521,7 +540,7 @@ the outline straight), one storey of 78.02 m² (the rectangle less the lobby),
 
 - `barber`: entrance, **main**, 0.95 x 2.10 m, threshold at x -3.465, y -4.0,
   z 0 in the build frame: on the **front wall plane**, at the leaf's centre,
-  although the leaf itself stands 0.9 m back at the lobby's rear;
+  although the leaf itself stands 0.88 m back at the lobby's rear;
 - `staff`: service, rear wall at x -2.0, 0.94 x 2.055 m.
 
 Rebuild:
@@ -560,7 +579,16 @@ Completed in this repository:
     the plinth's darker joints; brick scale checked against
     `lahikauppa_corner` at 20 and 35 m (Texture set); LOD pairs at 35, 70 and
     120 m, night tiers at 35 and 120 m, mip 3 and mip 4 stress renders
-    repeated after the atlas layout change.
+    repeated after the atlas layout change;
+  - re-coursing pass (`review/small_shops_2026_11_22/parturi_brick_pyramid_recourse/`):
+    before/after with `review_compare.py` at front and oblique 20, 35 and
+    70 m by day, LOD0 and LOD1; working views at LOD0 and LOD2; brick scale
+    against `lahikauppa_corner` at 20 and 35 m (Texture set); LOD pairs by
+    day at 35, 70 and 120 m; mip 3 at 75 m (front, grazing on LOD1, oblique
+    on LOD2): the brick band reads as an even buff field over the dark
+    plinth line, no leaks. Night tiers and mip 4 not repeated: the emission
+    mask moved only with the regions, and the band's mip 4 is a flat field
+    either way.
 - GLB material bindings and image sources.
 - Manifold and hidden-surface checks, all tiers; candidates explained.
 - Glazing against the Style Direction band, all four variants.
@@ -588,6 +616,20 @@ Pending, outside this repository:
 
 ## Revision log
 
+- **2026-11-22, re-coursing:** the brick moved from its own 285.7 x 85.9 mm
+  module to the catalog's 250 x 78.125 mm (16 px stretcher, 5 px course,
+  1 px joints). Heights re-snapped: plinth 0.430 → 0.391 m, sheet sills
+  0.773 → 0.781, window sills 0.859 (unchanged, now course 11), small sills
+  1.289 → 1.25, common head 2.363 → 2.344, soldier 0.301 → 0.234 tall
+  (tops 2.664 → 2.578), service frame head 2.105 → 2.109 and its soldier top
+  2.406 → 2.344, band foot 2.75 → 2.734, meter 0.55–1.65 → 0.547–1.641,
+  louvre 2.15–2.45 → 2.109–2.422; wall top 3.4375 and eave 3.3125 kept.
+  Openings set on whole or half stretchers: windows 1.8 → 1.75, side 1.4 →
+  1.375, small 0.9 → 0.875, service opening 1.06 → 1.0, meter 0.6 → 0.625,
+  lobby 2.2 x 0.9 → 2.25 x 0.88 m (same floor area), centres moved by up to
+  6 cm, the band's word with the windows' midpoint (6.7 → 6.6875). Triangles
+  1,986 / 1,646 / 500 / 238 → 1,982 / 1,642 / 496 / 236; plan bounds, pivot,
+  height, footprint, storeys and both doors unchanged.
 - **2026-11-22, polish:** the light box's comb-and-scissors redrawn bold and
   given most of the face, PARTURI rebalanced over it (box size unchanged);
   the ridge housing given modelled louvre blades, a flashing skirt and a

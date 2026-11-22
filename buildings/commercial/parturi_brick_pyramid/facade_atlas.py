@@ -29,11 +29,14 @@ front hood's louvred face and the small fittings (wall lamp, house number,
 opening-hours board). A row of flat 16 px patches serves faces that take one
 colour. atlas.pad() fills every sample no region claims.
 
-The brick is drawn at its true size: a 285 x 85 mm module, joints included
-(56 stretchers across the 16 m atlas, 5.5 px a course), so a 2.1 m door leaf
-stands 24 or 25 courses tall, as it would on site. Every height the walls
-share with the coursing -- plinth, sills, heads, soldier courses, the sign
-band -- falls on a course line.
+The brick is the catalog's module: 250 x 78.125 mm, joints included (a
+16 px stretcher, 64 across the 16 m atlas, and a 5 px course), so its bricks
+match every other brick building and sit on whole pixels; a 2.1 m door leaf
+stands about 27 courses tall. Every height the walls share with the
+coursing -- plinth, sills, heads, soldier courses, the sign band, the meter
+cupboard and the louvre, the wall top -- falls on a course line, and every
+opening's sides and every corner on a whole or half stretcher of the bond
+(build.py's check_layout()).
 
 Rasterising is scripts/atlas.py's (numpy, scipy; Pillow to save);
 weathering is scripts/weathering.py's at the catalog's moderate level, and
@@ -62,11 +65,12 @@ EAVE_OUT = 0.453125         # 29 px; the eave's projection on all four sides
 TAN = 0.40                  # rise per metre, all four slopes: 21.8 degrees
 
 # --------------------------------------------------------------- brickwork
-COURSE_PX = 5.5             # one course, bed joint included: 85.9 mm
-COURSE = COURSE_PX / PPM
-BRICK_PX = ATLAS / 56.0     # one stretcher, perpend included: 285.7 mm
-BRICK_L = BRICK_PX / PPM
-JOINT_PX = 0.75             # a 12 mm joint
+COURSE = 0.078125          # one course, bed joint included: 5 px
+BRICK_L = 0.25              # one stretcher, perpend included: 16 px
+COURSE_PX = COURSE * PPM
+BRICK_PX = BRICK_L * PPM
+BOND_PERIOD = int(round(ATLAS / BRICK_PX))   # 64 stretchers across the atlas
+JOINT_PX = 1.0              # a 15.6 mm joint, as the catalog's brick
 BRICK_FACE = 0.006          # the brick face proud of the recessed joint
 
 
@@ -76,38 +80,41 @@ def course(n):
 
 
 # ------------------------------------------------------------ vertical layout
-Z_PLINTH = course(5)        # 0.430 m of dark plinth brick
-Z_SILL_BOARD = course(9)    # the front windows' sheet sill, 0.773 .. 0.859
-Z_SILL = course(10)         # the front and side windows' sill: 0.859 m
-Z_SMALL_BOARD = course(14)
-Z_SMALL_SILL = course(15)   # the small windows' sill: 1.289 m
+Z_PLINTH = course(5)        # 0.391 m of dark plinth brick
+Z_SILL = course(11)         # the front and side windows' sill: 0.859 m
+Z_SMALL_SILL = course(16)   # the small windows' sill: 1.25 m
 Z_LEAF = 2.1                # the entrance leaf's head and every transom bar
-Z_HEAD = course(27.5)       # 2.363 m: the head of every opening but one
-Z_SERVICE_HEAD = course(24.5)   # 2.105 m: the service door's frame head
-SOLDIER = course(3.5)       # 0.301 m: the soldier course over each opening
-Z_SOLDIER = Z_HEAD + SOLDIER    # 2.664 m, on course line 31
-Z_BAND0 = course(32)        # 2.75 m: the foot of the brown sign band
+Z_HEAD = course(30)         # 2.344 m: the head of every opening but one
+Z_SERVICE_HEAD = course(27)     # 2.109 m: the service door's frame head
+SOLDIER = course(3)         # 0.234 m: the soldier course over each opening
+Z_SOLDIER = Z_HEAD + SOLDIER    # 2.578 m, on course line 33
+Z_BAND0 = course(35)        # 2.734 m: the foot of the brown sign band
 Z_EAVE = 3.3125             # 212 px; the level soffit meets the wall here
-Z_TOP = course(40)          # 3.4375 m: the walls run into the roof to here
+Z_TOP = course(44)          # 3.4375 m: the walls run into the roof to here
 FASC_M = 0.25               # the fascia's depth
 Z_FT = Z_EAVE + FASC_M      # 3.5625 m: the roof's top at the fascia
 SLOPE_LEN = (HY + EAVE_OUT) * math.sqrt(1.0 + TAN * TAN)   # fascia to ridge
 Z_RIDGE = Z_FT + (HY + EAVE_OUT) * TAN                     # 5.34 m
-SERVICE_LEAF = (0.94, Z_SERVICE_HEAD - 0.05)   # the service door's clear leaf
+# The service door's clear leaf: 0.94 m between its 30 mm frame's jambs, and
+# 2.0555 m, the height the facts sidecar has stated since the first build
+# (the frame head and the gap over the leaf take the rest of the opening).
+SERVICE_LEAF = (0.94, 2.0555)
 
 # ------------------------------------------------------------------ openings
 # kind -> width, opening bottom, opening top, the strip under it (a sheet
-# sill), the strip over it (the soldier course), reveal depth, style.
+# sill), the strip over it (the soldier course), reveal depth, style. Widths
+# are whole or half stretchers and heights course lines; the lobby is
+# 2.25 x 0.88 m, the 1.98 m² of floor the 2.2 x 0.9 m lobby before it took.
 ITEMS = {
-    "screen": dict(w=2.2, z0=0.0, z1=Z_HEAD, cb=0.0, ct=SOLDIER, depth=0.90),
-    "window": dict(w=1.8, z0=Z_SILL, z1=Z_HEAD, cb=COURSE, ct=SOLDIER, depth=0.12),
-    "side_window": dict(w=1.4, z0=Z_SILL, z1=Z_HEAD, cb=COURSE, ct=SOLDIER, depth=0.12),
-    "small_window": dict(w=0.9, z0=Z_SMALL_SILL, z1=Z_HEAD, cb=COURSE, ct=SOLDIER,
+    "screen": dict(w=2.25, z0=0.0, z1=Z_HEAD, cb=0.0, ct=SOLDIER, depth=0.88),
+    "window": dict(w=1.75, z0=Z_SILL, z1=Z_HEAD, cb=COURSE, ct=SOLDIER, depth=0.12),
+    "side_window": dict(w=1.375, z0=Z_SILL, z1=Z_HEAD, cb=COURSE, ct=SOLDIER, depth=0.12),
+    "small_window": dict(w=0.875, z0=Z_SMALL_SILL, z1=Z_HEAD, cb=COURSE, ct=SOLDIER,
                          depth=0.12),
-    "service_door": dict(w=1.06, z0=0.0, z1=Z_SERVICE_HEAD, cb=0.0, ct=SOLDIER,
+    "service_door": dict(w=1.0, z0=0.0, z1=Z_SERVICE_HEAD, cb=0.0, ct=SOLDIER,
                          depth=0.12),
-    "meter": dict(w=0.6, z0=0.55, z1=1.65, cb=0.0, ct=0.0, depth=0.0),
-    "louvre": dict(w=0.5, z0=2.15, z1=2.45, cb=0.0, ct=0.0, depth=0.0),
+    "meter": dict(w=0.625, z0=course(7), z1=course(21), cb=0.0, ct=0.0, depth=0.0),
+    "louvre": dict(w=0.5, z0=course(27), z1=course(31), cb=0.0, ct=0.0, depth=0.0),
 }
 SCREEN_FRAME = 0.06         # the lobby screen's frame and mullion
 DOOR_LEAF_W = 0.95          # the entrance leaf, stiles included
@@ -151,12 +158,12 @@ def _region(x, y, kind):
 
 ITEM_REGION = {
     "screen": _region(4, 516, "screen"),
-    "window": _region(150, 516, "window"),
-    "side_window": _region(270, 516, "side_window"),
-    "small_window": _region(364, 516, "small_window"),
-    "service_door": _region(426, 516, "service_door"),
-    "meter": _region(500, 516, "meter"),
-    "louvre": _region(544, 516, "louvre"),
+    "window": _region(152, 516, "window"),
+    "side_window": _region(268, 516, "side_window"),
+    "small_window": _region(360, 516, "small_window"),
+    "service_door": _region(420, 516, "service_door"),
+    "meter": _region(488, 516, "meter"),
+    "louvre": _region(532, 516, "louvre"),
 }
 # The ventilation housing on the ridge, a sheet-steel box: louvred sides
 # (sawtooth blades, modelled to LOD1, painted on every tier), a flashing
@@ -349,9 +356,9 @@ def text_width(word, cap, tracking=0.14, weight=0.0):
 def bond(c, x0, x1, y0, y1, y_ref, x_ref=0.0, plinth_rows=None):
     """Stretcher bond over a rect: courses counted up from row *y_ref* (the
     ground), stretchers from column *x_ref*. Joints are ID_MORTAR, recessed;
-    each brick's tone is hashed from its index modulo the atlas's 56
-    stretchers, so a band's bond and colour both wrap exactly. Courses under
-    *plinth_rows* rows are the dark plinth brick."""
+    each brick's tone is hashed from its index modulo the atlas's
+    BOND_PERIOD stretchers, so a band's bond and colour both wrap exactly.
+    Courses under *plinth_rows* rows are the dark plinth brick."""
     sy, sx, Y, X = c.field(x0, x1, y0, y1)
     if Y.size == 0:
         return
@@ -363,7 +370,7 @@ def bond(c, x0, x1, y0, y1, y_ref, x_ref=0.0, plinth_rows=None):
     bed = (yy - r * COURSE_PX) < JOINT_PX
     perp = (xb - b * BRICK_PX) < JOINT_PX
     joint = bed | perp
-    bi = b % 56
+    bi = b % BOND_PERIOD
     tone = 0.88 + 0.22 * atlas.hash_unit(bi, r % 4096, 17)
     # a few darker, harder-fired bricks, as in any buff brickwork
     tone = np.where(atlas.hash_unit(bi, r % 4096, 29) > 0.93, tone * 0.86, tone)
@@ -384,13 +391,16 @@ PLINTH_JOINT = 0.62         # the plinth's mortar, as a shade of the walling's
 
 
 def soldier(c, x0, x1, y0, y1):
-    """A soldier course: bricks on end, one course wide, from column x0;
-    bed joints along its foot and its head."""
+    """A soldier course: bricks on end, about one course wide, a whole number
+    of them from x0 to x1 so neither end is a cut brick (the perpends take
+    the odd fraction of a pixel, as a bricklayer's joints would); bed joints
+    along its foot and its head."""
     sy, sx, Y, X = c.field(x0, x1, y0, y1)
     if Y.size == 0:
         return
-    k = np.floor((X - x0) / COURSE_PX).astype(np.int64)
-    perp = (X - x0 - k * COURSE_PX) < JOINT_PX
+    pitch = (x1 - x0) / max(1, round((x1 - x0) / COURSE_PX))
+    k = np.floor((X - x0) / pitch).astype(np.int64)
+    perp = (X - x0 - k * pitch) < JOINT_PX
     bed = ((Y - y0) < JOINT_PX) | ((y1 - Y) < JOINT_PX * 0.5)
     joint = perp | bed
     # a shade under the walling: soldiers show their ends' harder skin, and
@@ -548,7 +558,7 @@ def paint_window(c, kind):
 
 
 def paint_screen(c):
-    """The lobby's glazed screen, set 0.9 m back: the entrance leaf on the
+    """The lobby's glazed screen, set 0.88 m back: the entrance leaf on the
     left, a sidelight with a kick panel on the right, a transom bar across
     both at the leaf's 2.1 m head and a transom light above; brown aluminium
     throughout. The soldier course over the lobby's mouth is in the region's
@@ -844,7 +854,7 @@ def paint_sign_band(c):
          height=LETTER_H)
 
 
-LETTERS_S = 6.7             # the band's word, centred over the two windows
+LETTERS_S = 6.6875          # the band's word, centred over the two windows
 
 
 def paint_patches(c):
