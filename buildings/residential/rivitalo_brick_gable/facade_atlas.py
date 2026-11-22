@@ -348,20 +348,18 @@ def paint_brick(c):
     repeats at the atlas wrap and across the storey handover rather than
     shifting by part of a brick. Per-brick tone is hashed from the brick's
     position modulo those periods, so the same is true of the colour variation.
-    The band has no mortar id: a joint is the brick's colour darkened, and
-    recessed, the brick faces standing BRICK_FACE proud of it.
+    One brick id and no mortar id: a joint is the brick's colour darkened
+    to 0.80, and recessed, the brick faces standing BRICK_FACE proud of it.
+    The tone is a quiet ±5.5 % per brick (seed 3), repeating every 40
+    courses; the courses count from the band's foot, y0, with the gutter
+    rows below it painted as the course under it.
     """
     y0, h = BRICK_Y0, BRICK_H
     cp, bl = m(COURSE), m(brickwork.BRICK_L)
     assert ATLAS % int(bl) == 0 and int(m(Z_STOREY - Z_FLOOR)) % int(2 * cp) == 0
-    c.paint(0, ATLAS, y0 - 2, y0 + h + 4, ID_BRICK, 1.0, 1.0)
-    sy, sx, Y, X = c.field(0, ATLAS, y0 - 2, y0 + h + 4)
-    course, brick, bed, perp = brickwork.bond(Y, X, y0, cp, bl, int(ATLAS / bl))
-    shade = 1.0 + 0.11 * (atlas.hash_unit(3, course % 40, brick) - 0.5)
-    joint = bed | perp
-    c.shade[sy, sx] = np.where(joint, 0.80, shade)
-    c.ao[sy, sx] = np.where(joint, 0.80, 1.0)
-    c.height[sy, sx] = np.where(joint, 0.0, BRICK_FACE)
+    brickwork.paint(c, 0, ATLAS, y0 - 2, y0 + h + 4, (ID_BRICK, None, None),
+                    tone_courses=40, seed=3, y_ref=y0, tone=(0.945, 0.11),
+                    joint_shade=0.80)
 
 
 def paint_vboard(c):

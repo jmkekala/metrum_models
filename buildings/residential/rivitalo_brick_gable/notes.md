@@ -487,10 +487,12 @@ Eight unique 1024² images in total, one normal map among them.
   painted elevation.
 - **The siding and brick bands are one storey tall and are sampled from each
   storey's own foot.** 3.125 m is 25 lap boards and 40 brick courses exactly.
-  The brick is the catalog's module, laid by `scripts/brickwork.py`'s
-  `bond()` (0.25 m stretcher on a 0.078125 m course, 16 x 5 px); the band
-  keeps its own tone (±5.5 % per brick, seed 3, repeating every 40 courses)
-  and has no mortar id, its joints the brick darkened to 0.80. The bond
+  The brick is the catalog's module, painted by `scripts/brickwork.py`'s
+  `paint()` (0.25 m stretcher on a 0.078125 m course, 16 x 5 px), courses
+  counted from the band's foot (`y_ref`); the band takes a quieter tone than
+  the painter's default (`tone=(0.945, 0.11)`: ±5.5 % per brick, seed 3,
+  repeating every 40 courses) and has one brick id and no mortar id, its
+  joints the brick darkened to 0.80 (`joint_shade=0.80`). The bond
   and per-brick tone repeat on 2 courses and 64
   bricks, both of which divide the band, so a wall hands over from the ground
   storey's run to the upper storey's at 3.4375 m without a part course and
@@ -801,11 +803,18 @@ Recorded as a known-good marker, not a requirement. Blender 5.2 flags
 `Material.use_nodes` and `World.use_nodes` as going away in 6.0, so `build.py`
 only sets them when a node tree is missing.
 
-- **CPython 3.14.7 with numpy 2.5.3, scipy 1.18.1 and Pillow 12.3.0** for the
+- **CPython 3.14.10 with numpy 2.5.5, scipy 1.18.1 and Pillow 13.0.0** for the
   texture export.
 
 ## Revision log
 
+- **2026-11-22 — brick through the shared painter.** The brick band is
+  painted by `scripts/brickwork.py`'s `paint()` with its new options
+  (`y_ref`, no mortar id, `tone`, `joint_shade`) instead of `bond()` plus
+  the band's own toning. Same bond, joints, relief, ORM and normal map
+  (byte-identical); the painter hashes a brick's tone from its position in
+  another order, so the per-brick tones reshuffled within the same ±5.5 %
+  spread (albedo band mean within 0.03 of 255). Triangle counts unchanged.
 - **2026-11-22 — shared brick bond.** The brick band is laid by
   `scripts/brickwork.py`'s `bond()`; same module, joints and relief, only the
   per-brick tone of alternate courses reshuffled. Triangle counts unchanged.

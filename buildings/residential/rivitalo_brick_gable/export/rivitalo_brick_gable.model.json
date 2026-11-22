@@ -3,7 +3,7 @@
   "version": 1,
   "name": "rivitalo_brick_gable",
   "path": "buildings/residential/rivitalo_brick_gable",
-  "source": {"commit": "8774a1c69a8fada230ec83d9d8084f650a46d256", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "365c6aab32e26f11973d37129dbfe00ffe765080", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-15.69, 0.0, -7.72], "max": [15.69, 8.8475, 7.72]},
   "footprint": [
@@ -59,13 +59,13 @@
     "emission": {"file": "rivitalo_brick_gable_emission.png", "sha256": "8ff4d614dd0c4fcfc2cca4ec150340f5f0efca6a1940483e100c48f5b3a73700"}
   },
   "variants": [
-    {"id": "brown", "albedo": "rivitalo_brick_gable_albedo_brown.png", "sha256": "e8342f8a03765668544c6c097ca18cf9a423d0e44193c55d3a1883b390a5da45"},
-    {"id": "red", "albedo": "rivitalo_brick_gable_albedo_red.png", "sha256": "3d6f166d7cf9903256a48304bf3edd8e322816ce4e05316ce87aa19608d4a0a5"},
-    {"id": "ochre", "albedo": "rivitalo_brick_gable_albedo_ochre.png", "sha256": "c2db604d2f790a1dad8f3d32bf76f126c2bb1883e86be6db097a1c09dab0fa1f"},
-    {"id": "grey", "albedo": "rivitalo_brick_gable_albedo_grey.png", "sha256": "b2ba97edb50ef4c5840827e449027eb3023dcf6e4ce7d0c302883e0bc739ad0a"},
-    {"id": "green", "albedo": "rivitalo_brick_gable_albedo_green.png", "sha256": "7453901f162ff1b5dece6bcca721cd8ba6cc494b7e18856479f89280e03dab24"}
+    {"id": "brown", "albedo": "rivitalo_brick_gable_albedo_brown.png", "sha256": "0776b86fd40d4052ce2fdc3903c1f363275c98e469951f5451a17b71ce3ffdb5"},
+    {"id": "red", "albedo": "rivitalo_brick_gable_albedo_red.png", "sha256": "81f2cab48eb963ce0e7b21cd63a199fe14ea6b380f9b1344a28234e7b4cc9aed"},
+    {"id": "ochre", "albedo": "rivitalo_brick_gable_albedo_ochre.png", "sha256": "4f778f27b36465a58b34ffae86f1dfb968fdcdedf5c9e47a6d036599ed2a3050"},
+    {"id": "grey", "albedo": "rivitalo_brick_gable_albedo_grey.png", "sha256": "ee0af9b5b39d3f3ad2c5ab024d6730842e0c3cf09f12308664929b21ad9314c8"},
+    {"id": "green", "albedo": "rivitalo_brick_gable_albedo_green.png", "sha256": "fdb7c5e1d68382150145d5589fc5fee7f6f606a649c1b766ae86739a75b09904"}
   ],
   "default_variant": "brown",
-  "preview": {"file": "../preview.png", "sha256": "80381823b2c7177514f12c0612cd5be8b79a0e6334d955ff315be81415ddfb07"},
+  "preview": {"file": "../preview.png", "sha256": "c3f8d2be0691c0275e6773c029be2e0379290be7df6cae258e2bfc7ecad8d4ec"},
   "hero": false
 }

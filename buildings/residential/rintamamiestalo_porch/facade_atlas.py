@@ -442,18 +442,17 @@ def paint_door(c, x0, x1, y0, y1, style):
 def paint_chimney(c):
     """The stack's brick, in the catalog's module and bond (scripts/
     brickwork.py), under a sheet cap with soot below it. The region is
-    top-anchored, so the courses are counted down from the cap: the course
-    under it is whole, and the cut course lands at the region's foot, inside
-    the roof. Its rows below that stay mortar."""
+    top-anchored, so the courses are counted down from the cap (y_ref): the
+    course under it is whole, and the cut course lands at the region's foot,
+    inside the roof. One brick id; the tone repeats over the stack's 24
+    whole courses. The stack is seen close, so its bricks' arrises are
+    rounded (3 mm)."""
     x0, y0, w, h = CHIMNEY
     top = y0 + h
     cap = top - m(CHIMNEY_CAP)
-    c.paint(x0 - 2, x0 + w + 2, y0 - 2, y0 + h + 2, ID_MORTAR, 1.0, height=0.0)
-    course = m(brickwork.COURSE)
-    foot = cap - course * np.floor((cap - (y0 - 2)) / course)
     # up to the cap only: the joints' AO would show through it
-    brickwork.paint(c, x0 - 2, x0 + w + 2, foot, cap, (ID_BRICK, ID_BRICK, ID_MORTAR),
-                    tone_courses=32, seed=5)
+    brickwork.paint(c, x0 - 2, x0 + w + 2, y0 - 2, cap, (ID_BRICK, None, ID_MORTAR),
+                    tone_courses=24, seed=5, y_ref=cap, arris=0.003)
     c.mul(x0 - 2, x0 + w + 2, top - m(0.55), cap, 0.78)               # soot
     c.paint(x0 - 2, x0 + w + 2, cap, top + 2, ID_CAP, 1.0, height=0.020)
     c.paint(x0 - 2, x0 + w + 2, cap, cap + 1, ID_CAP, 0.8, 0.7)

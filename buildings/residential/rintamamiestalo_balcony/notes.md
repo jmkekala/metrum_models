@@ -522,11 +522,16 @@ The rest is shared with the siblings:
   lines and floors the open flue on every tier.
 - **The chimney brick is the catalog's**, painted by `scripts/brickwork.py`'s
   `paint()`: 0.25 m stretchers on a 0.078125 m course (16 x 5 px), recessed
-  joints, a hashed ±10 % tone per brick (seed 5; one brick id, so no darker
-  bricks). The region is top-anchored, so the courses are counted down from
-  the 0.12 m cap and the course under it is whole; the cut course lands at the
-  region's foot, inside the roof. At mip 3 the 5 px course beats against the
-  8 px footprint as faint horizontal banding, as on every catalog brick.
+  joints, a hashed ±10 % tone per brick (seed 5, repeating over the stack's
+  24 whole courses; one brick id, no darker id, so no darker bricks). The
+  region is top-anchored, so the courses count from the 0.12 m cap
+  (`y_ref=cap`) and the course under it is whole; the cut course lands at
+  the region's foot, inside the roof, painted as brick. The brick edges are
+  rounded (`arris=0.003`: the face rounds down 3 mm over 1 px, a quarter
+  round, in the height channel), which reads the stack as separate bricks at
+  20 m; at mip 3 it is indistinguishable from square edges. At mip 3 the 5 px
+  course beats against the 8 px footprint as faint horizontal banding, as on
+  every catalog brick.
 
 **Two walls read their siding from outside the usual rows:**
 
@@ -873,11 +878,18 @@ Pending, and outside this repository:
 
 These are recorded as a known-good marker, not a requirement.
 
-- **CPython 3.14.7 with numpy 2.5.3, scipy 1.18.1 and Pillow 12.3.0** for the
+- **CPython 3.14.10 with numpy 2.5.5, scipy 1.18.1 and Pillow 13.0.0** for the
   texture export.
 
 ## Revision log
 
+- **2026-11-22 — rounded chimney brick.** The chimney's `brickwork.paint()`
+  call counts its courses from the cap with the painter's `y_ref` instead of
+  computing the foot itself (same bond and tones; the cut course at the
+  region's foot, inside the roof, is now brick, not mortar) and turns on its
+  3 mm rounded arris (Texture set). Albedo, ORM and normal map changed in the
+  chimney region and its gutter only. No geometry changed; triangle counts
+  unchanged.
 - **2026-11-22 — catalog brick on the chimney.** The chimney's private brick
   loop (0.0625 m course, bevelled bricks) gave way to `scripts/brickwork.py`'s
   `paint()` on the catalog's 0.078125 m course (Texture set). No geometry
