@@ -180,10 +180,12 @@ LADDER_S = 1.2
 
 # ----------------------------------------------------------------- tiers
 def opening_mode(level):
-    """LOD0/1 cut every opening into its wall with brick reveals; LOD2/3 paint
-    the same rectangle flat. The 0.15-0.2 m reveals are under two pixels past
-    70 m, and the window rhythm is the painted lights' to keep."""
-    return "cut" if level < 2 else "flush"
+    """LOD0-2 cut every opening into its wall with brick reveals; LOD3 paints
+    the same rectangle flat. The consumer switches by screen size, about 60 m
+    to LOD2 for this 15 m building: flattened there, the ribbons' white frames
+    read wider and brighter and the lit bands grew at night. At about 119 m,
+    LOD3's switch, the reveal shadow is a pixel or less."""
+    return "cut" if level < 3 else "flush"
 
 
 def vent_sides(level, dia):
@@ -205,10 +207,11 @@ def mast_sides(level):
 
 
 def mast_parts(level):
-    """(dipole, stays) per tier: the stays, 2.5 cm bars, to 70 m; the
-    1.3 m dipole, which gives the mast its aerial's outline, to 120 m. The
-    whip stays on every tier: it sets the height."""
-    return (level < 3, level < 2)
+    """(dipole, stays) per tier: the 1.3 m dipole, which gives the mast its
+    aerial's outline, and the stays, 2.5 cm bars, through LOD2: the stays'
+    two diagonals visibly went at LOD2's screen-size switch (about 60 m).
+    The whip stays on every tier: it sets the height."""
+    return (level < 3, level < 3)
 
 
 def clock_sides(level):
@@ -662,13 +665,20 @@ CAGE = RS.Cage(WALL_LADDER) if WALL_LADDER.length > RS.CAGE_LADDER else None
 KIT = [WALL_LADDER] + ([CAGE] if CAGE else [])
 
 
+# The handrails through LOD2: dropped at LOD2 (handrails.MODES), they
+# visibly went from the entrance flight at the consumer's screen-size switch,
+# about 60 m for this building. They are already the lean form, the cheapest
+# the script builds.
+HANDRAIL_MODES = (True, True, True, False)
+
+
 def kit(level):
     """The ladder and its cage, roof_safety's MODES and CAGE_MODES
     unchanged, with extents: LOD3 keeps the bare rails and the cage's back
-    strap, which set the plan's west extent; and the handrails, handrails'
-    MODES unchanged."""
+    strap, which set the plan's west extent; and the handrails, lean, kept
+    one tier past handrails.MODES (HANDRAIL_MODES)."""
     return (RS.solids(KIT, level, PAINT, extents=True)
-            + HR.solids(HANDRAILS, level, PAINT))
+            + HR.solids(HANDRAILS, level, PAINT, modes=HANDRAIL_MODES))
 
 
 # ================================================================ assembly

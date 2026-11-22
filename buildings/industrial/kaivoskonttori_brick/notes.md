@@ -95,8 +95,8 @@ top is 0.18 m below the eave soffit's outer edge.
 Closed solids unioned with Blender's exact boolean (`asset_build.union`):
 
 1. **the shell**: four wall regions walked counter-clockwise, each opening
-   built into its region as reveals round a closing plane (cut tiers) or a
-   flat quad (flush tiers), and the ring capped by a floor on the ground and
+   built into its region as reveals round a closing plane (cut tiers,
+   `LOD0`-`LOD2`) or a flat quad (the flush tier, `LOD3`), and the ring capped by a floor on the ground and
    a lid split at the two gable apexes, so it is a solid of the building's
    whole volume;
 2. **the gable roof**: one chevron-section slab extruded along the ridge, so
@@ -136,10 +136,10 @@ fails the build if:
 ### The entrance
 
 The entrance region in the atlas holds the rendered surround and the door
-together. At `LOD0`/`LOD1` the surround is a U of render on the wall face
+together. At `LOD0`-`LOD2` the surround is a U of render on the wall face
 round the opening, the wall's hole is the surround's outline with the
 opening's foot corners on it, and the reveals are render, the threshold a
-concrete sill. At `LOD2`/`LOD3` the whole surround is one quad. The canopy's
+concrete sill. At `LOD3` the whole surround is one quad. The canopy's
 underside cuts the surround 6 cm below its top, so the two read as one
 piece.
 
@@ -165,37 +165,48 @@ Measured on the exported GLBs by `scripts/validate_asset.py`:
 | --- | --- | --- | --- | --- | --- |
 | `LOD0` | 896 | 12,000 | 468 | 324 | 104 |
 | `LOD1` | 712 | 4,000 | 468 | 164 | 80 |
-| `LOD2` | 376 | 1,500 | 256 | 64 | 56 |
+| `LOD2` | 516 | 1,500 | 396 | 64 | 56 |
 | `LOD3` | 324 | 500 | 256 | 52 | 16 |
 
 Shell = walls, openings, roof, canopy and steps; the split was measured by
-rebuilding each tier without the pipes and then without the vents. The
+rebuilding each tier without the pipes and then without the vents (`LOD2`'s
+shell as its total less the unchanged pipes and vents). The
 `LOD0` count is in line with the catalog's single-storey buildings (about
 1,000). Over a third of it is the four bent eight-sided downpipes. `LOD0` to
-`LOD1` changes only the pipes and vents; `LOD2` flattens the openings, which
-is most of the shell's saving. `LOD3` differs from `LOD2` only in pipes and
-vents: the shell is already 22 flat quads in four walls, a roof slab, the
-canopy and the steps, and nothing in it can go without changing the
-silhouette or the window rhythm.
+`LOD1` changes only the pipes and vents; `LOD2` keeps the recessed openings
+(the limited dissolve takes the shell from 468 to 396) and saves on the
+pipes and vents; `LOD3` flattens the openings, which is most of its saving:
+the shell is then 22 flat quads in four walls, a roof slab, the canopy and
+the steps, and nothing in it can go without changing the silhouette or the
+window rhythm.
 
 ## LOD review
 
-- **Switches:** `LOD0` under 35 m, `LOD1` 35-70 m, `LOD2` 70-120 m, `LOD3`
-  beyond; no overrides.
-- **Camera:** `scripts/review_asset.py`, perspective, 50 degree vertical FOV,
-  1920 x 1080, distance along the view direction to the front wall.
-- **Pairs compared:** `LOD0`/`LOD1` at 30 and 40 m (front, oblique, noon);
-  `LOD1`/`LOD2` at 65 and 75 m (front, oblique, noon and reversed sun);
-  `LOD2`/`LOD3` at 115 and 125 m (front, oblique, aerial, noon).
-- **Results:**
-  - `LOD0`/`LOD1`: indistinguishable at 30-40 m.
-  - `LOD1`/`LOD2`: the flattened reveals lose their 0.15-0.2 m shadow line,
-    about 2 px at 70 m. The frames and glass keep the rhythm, and the canopy
-    and steps keep the entrance.
-  - The two 0.16 m vents first went at `LOD2`, and at 65 m they visibly
-    vanished from over the ridge. They now stay four-sided through `LOD2`.
-  - `LOD2`/`LOD3`: at 120 m only the two small vents go (about 1.5 px wide).
-    The 0.25 m exhaust (2.4 px) stays, so the ridge line still breaks.
+- **Switches, the consumer's screen-size measure** (1080p, 75 degree
+  vertical FOV; about 1.8, 4 and 8 times the 16.6 m largest bounds
+  dimension): `LOD1` from about **30 m**, `LOD2` from about **66 m**, `LOD3`
+  from about **133 m**. The distance table's 35 / 70 / 120 m are close to
+  these; no overrides.
+- **Camera:** perspective, 1920 x 1080, 75 degree vertical FOV, distance
+  from the camera to the centre of `LOD0`'s bounds; each pair face-on
+  (10 degrees up), oblique (45 round, 25 up) and from eye level (30 round,
+  1.7 m) at noon, and oblique at night with the reference emission on.
+  Before/after pair sheets of this revision are in
+  `review/older_audit_2026_11_22/fix_industrial_a1/kaivoskonttori_brick/`
+  (local, git-ignored).
+- **Results** (mean |difference| per view, of 255):
+  - `LOD0`/`LOD1` at 30 m: indistinguishable (0.06-0.12); only the pipes'
+    and vents' side counts change.
+  - `LOD1`/`LOD2` at 66 m: unchanged but for the pipes and vents
+    (0.06-0.09). Flattening the openings here, as `LOD2` once did,
+    brightened the frames and glass and grew the lit windows at night
+    (0.7-1.2, 300-600 pixels changing by more than 24), so `LOD2` keeps the
+    recesses.
+  - `LOD2`/`LOD3` at 133 m: the openings flatten and the two small vents
+    (about 1.5 px wide) go (0.42-0.67, 70-150 pixels over 24). The reveal
+    shadow is about a pixel there, the frames read a touch lighter and the
+    lit panes a touch larger; side by side at that size the change is
+    marginal. The 0.25 m exhaust stays, so the ridge line still breaks.
 - **The entrance at 40 m:** the light surround, canopy and steps are the only
   light marks on the front's ground storey and read as the way in from the
   front and the oblique, on every tier.
@@ -227,7 +238,7 @@ roof slab and on the ground, and the union removes them.
   bracket every metre.
 - The rendered surround is flush, its arrises painted in the normal map.
 - No eaves on the gables other than the 0.3 m rake.
-- Windows and doors are flat at `LOD2`/`LOD3`.
+- Windows and doors are flat at `LOD3`.
 - The vent pipes have no flashing collars at the sheet.
 
 ## Texture set
@@ -250,6 +261,11 @@ roof slab and on the ground, and the union removes them.
 - **Relief** for the normal map: brick 6 mm, frames 30 mm, sashes 45 mm,
   seams 25 mm, gutter 70 mm half-round, snow-guard rails 35 mm, render
   surround 12 mm, door panel 46 mm. Glass flat.
+- **ORM** (roughness, metallic from `SURFACE`): painted or coated steel is
+  dielectric, metallic 0: the roof sheet and snow guard (0.46), the fascia
+  and barge flashing (0.48), the black vent pipes (0.55), the frames and
+  doors. Only bare metal is metallic: the galvanised gutter (0.36, 0.70),
+  the kick plates (0.38, 0.75) and the handles (0.30, 0.85).
 - **Weathering** at the moderate level through `scripts/weathering.py`:
   plinth soil, splash-back and salt bloom on the height band, roof runs and
   chalking, gutter dirt, sill dirt on the bottom rails, door feet and
@@ -351,16 +367,23 @@ blender --background source.blend --python build.py     # tiers, GLBs, preview, 
 
 Completed in this repository:
 
-- `scripts/validate_asset.py`: 0 FAIL. One WARN: `source.dirty` on the
-  sidecar, built from an uncommitted tree.
+- `scripts/validate_asset.py`: 0 FAIL, 0 WARN, 9 MANUAL with the sidecar
+  written from a committed tree (a build from an uncommitted one gives the
+  one WARN, `source.dirty`, until `build.py -- facts` rewrites it).
 - `check_layout()`, `check_regions()` and `check_bands()` pass on every
   build.
 - **Views inspected** at `LOD0`: the six pre-export views (orthographic
   front, rear, east, west and top, and a raised aerial off the front-east
   corner), plus a rear aerial and eye views at the entrance, at the service
   door and along the front.
-- LOD pairs at 30/40, 65/75 and 115/125 m (LOD review). The vents' tiers
-  were reworked once after the comparison.
+- LOD pairs at the consumer's screen-size switches, 30, 66 and 133 m, at a
+  75 degree FOV (LOD review). The vents' tiers were reworked once after an
+  earlier comparison, and `LOD2` keeps the recessed openings since this
+  one.
+- The roof's ORM change compared before/after with `scripts/review_asset.py`
+  (`LOD0`, front and oblique at 20 and 35 m, noon and reversed sun,
+  `scripts/review_compare.py`): the roof, fascia and vent pipes lose their
+  metallic sheen in sun and read as painted sheet; nothing else changed.
 - Mip 3 and mip 4 stress renders (Texture set).
 - Glazing measured against the band in all three colours.
 - GLB bindings traced on all four tiers (Export).
@@ -386,3 +409,11 @@ Pending, outside this repository:
   `scripts/validate_asset.py`.
 - **CPython 3.14.10 with numpy 2.5.5, scipy 1.18.1 and Pillow 13.0.0** for
   the texture bake.
+
+## Revision log
+
+- **2026-11-22:** audit fixes: painted roof, fascia, snow guard and vent
+  pipes made dielectric in the ORM (metallic 0); `LOD2` keeps the recessed
+  openings (376 -> 516 triangles), so the flattening moves from the
+  consumer's 66 m switch to its 133 m one; LOD review redone at the
+  consumer's screen-size switches; stale validator note corrected.

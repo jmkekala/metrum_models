@@ -112,11 +112,21 @@ VENTS = [(2.0, 1.6, 0.30, 0.90), (-1.9, -2.4, 0.16, 0.55)]
 
 
 # ----------------------------------------------------------------- tiers
-def opening_mode(level):
-    """LOD0/1 cut every opening into its wall with brick reveals; LOD2/3 paint
-    the same rectangle flat. The 0.15-0.25 m reveals are under two pixels past
-    70 m, and the window rhythm is the painted rectangle's to keep."""
-    return "cut" if level < 2 else "flush"
+# Openings LOD3 keeps recessed: the two louvres and the machinery door, whose
+# deep shade is their whole reading; flush, the louvres turned light patches
+# high in the gables at the 97 m switch.
+LOD3_CUT = ("slot", "bigdoor")
+
+
+def opening_mode(level, kind):
+    """LOD0-2 cut every opening into its wall with brick reveals; LOD3 paints
+    the windows and the entrance screen flat and keeps LOD3_CUT recessed. The
+    consumer switches by screen size, about 48 m to LOD2 for this 12 m hall:
+    flattened there, the frames and glass brightened, the gable louvre turned
+    from a dark recess into a light patch and the lit windows grew at night.
+    At about 97 m, LOD3's switch, a window's 0.2 m reveal shadow is about a
+    pixel and a half."""
+    return "cut" if level < 3 or kind in LOD3_CUT else "flush"
 
 
 def vent_sides(level, dia):
@@ -192,7 +202,7 @@ def build_opening(B, fr, kind, rect, level, u_off, shift=0.0):
     s0, s1, z0, z1 = rect
     poly = rect_poly(rect)
     closing = SB.uv_region(fr, L.REGION[kind], s0, z0, PPM)
-    if opening_mode(level) == "flush":
+    if opening_mode(level, kind) == "flush":
         B.face([fr.P(s, z) for s, z in poly], closing)
         return poly
     cheeks = [uv_patch("sill") if k == 0 else

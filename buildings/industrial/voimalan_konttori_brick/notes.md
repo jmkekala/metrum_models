@@ -130,7 +130,8 @@ Closed solids unioned with Blender's exact boolean (`asset_build.union`):
 
 1. **the shell**: four wall regions walked counter-clockwise, ground to
    7.25 m, each opening built into its region as reveals round a closing
-   plane (cut tiers) or flat quads (flush tiers), the ring capped by a
+   plane (cut tiers, `LOD0`-`LOD2`) or flat quads (the flush tier, `LOD3`),
+   the ring capped by a
    floor on the ground and, at the top, the parapet's 0.25 m thick top, its
    inner faces down to the deck, and the deck at 7.0 m, so it is a solid of
    the building's whole volume with the roof sunk in it;
@@ -223,10 +224,10 @@ ground storey.
 ### The entrance
 
 The entrance region in the atlas holds the cast surround and the doors
-together. At `LOD0`/`LOD1` the surround is a U of concrete on the wall face
+together. At `LOD0`-`LOD2` the surround is a U of concrete on the wall face
 round the opening, the wall's hole is the surround's outline with the
 opening's foot corners on it, and the reveals are concrete, the threshold
-a grey sill. At `LOD2`/`LOD3` the whole surround is one quad. The canopy's
+a grey sill. At `LOD3` the whole surround is one quad. The canopy's
 underside cuts the surround 6 cm below its top, so the two read as one
 piece, and the canopy's soffit and the lower 0.25 m of its fascia line up
 with the painted first-floor band, so it reads as the slab carried out over
@@ -261,8 +262,9 @@ lighting).
 
 Three risers of 0.156 m to a landing 1.2 m (front) or 1.0 m (rear) deep,
 two 0.3 m treads below it. Three risers, so a handrail on each flight, on
-the right going up (`scripts/handrails.py`, lean, `MODES` unchanged: `LOD0`
-and `LOD1`). The rails take the coping's galvanised colour (`PIPE_STRIP`,
+the right going up (`scripts/handrails.py`, lean, the cheapest form the
+script builds), kept one tier past its `MODES`, on `LOD0`-`LOD2`: dropped at
+`LOD2` they visibly went from the entrance flight at the consumer's switch. The rails take the coping's galvanised colour (`PIPE_STRIP`,
 the middle rows of the coping's top). The steps stay on every tier.
 
 ### Roof plant and the ladder
@@ -294,7 +296,9 @@ directional aerial that read as thin clutter, and was kept over removing it
 because, rendered, the box's roofline with only the housing and the vents
 read as any office; the mast says control room. The tube and the whip set
 the building's height, so they stay on every tier (the tube eight, six,
-four and four sided); the dipole stays to `LOD2`, the stays to `LOD1`.
+four and four sided); the dipole and the stays to `LOD2` (the stays' two
+diagonals visibly went at the consumer's `LOD2` switch when they stopped at
+`LOD1`).
 
 ### Rainwater
 
@@ -311,7 +315,7 @@ Measured on the exported GLBs by `scripts/validate_asset.py`:
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `LOD0` | 1644 | 12,000 | 724 | 542 | 120 | 192 | 66 |
 | `LOD1` | 1386 | 4,000 | 724 | 314 | 120 | 162 | 66 |
-| `LOD2` | 656 | 1,500 | 376 | 152 | 0 | 94 | 34 |
+| `LOD2` | 944 | 1,500 | ~520 | 152 | 120 | ~118 | 34 |
 | `LOD3` | 456 | 500 | 376 | 24 | 0 | 56 | 0 |
 
 Shell = walls with their 16 openings and 48 lights, the parapet, deck,
@@ -322,32 +326,45 @@ a simple box, so the count is low for two storeys (the catalog's
 two-storey terraces sit at 3,000-4,500). The lean kit brought the ladder,
 cage and rails from 1720 of 2640 `LOD0` triangles to 662 of 1644, and from
 1232 to 434 at `LOD1`, 430 to 152 at `LOD2`, with the same parts in the
-same places. `LOD2` flattens the openings and drops the rails, the mast's
-stays and the lamp; `LOD3` keeps the ladder's bare rails and strap, the
-mast's tube and whip, the larger vent, and drops the clock and the
-dipole.
+same places. `LOD2` keeps the recessed openings, the rails and the mast's
+stays (the limited dissolve takes its shell from 724 to about 520) and
+drops the lamp; `LOD3` flattens the openings, drops the rails, the stays,
+the clock and the dipole, and keeps the ladder's bare rails and strap, the
+mast's tube and whip and the larger vent. `LOD2`'s shell with the mast and
+vents is 638, its total less the kit's own solids and the clock; the split
+between them is estimated, the mast and vents as before plus the stays'
+two 12-triangle bars.
 
 ## LOD review
 
-- **Switches:** `LOD0` under 35 m, `LOD1` 35-70 m, `LOD2` 70-120 m, `LOD3`
-  beyond; no overrides.
-- **Camera:** `scripts/review_asset.py`, perspective, 50 degree vertical FOV,
-  1920 x 1080 projection rendered at 1280 x 720 (16 samples), distance
-  along the view direction to the front wall.
-- **Pairs compared:** `LOD0`/`LOD1` at 30 and 40 m, `LOD1`/`LOD2` at 65 and
-  75 m, `LOD2`/`LOD3` at 115 and 125 m, front and oblique, noon; the six
-  views at `LOD0`.
-- **Results:**
-  - `LOD0`/`LOD1`: indistinguishable at 30-40 m; only the rungs, hoops,
-    the mast's and the vents' side counts change.
-  - `LOD1`/`LOD2`: the flattened reveals lose their 0.15-0.2 m shadow line,
-    about 2 px at 70 m, the handrails, the mast's stays and the lamp go.
-    The white frames, mullions and the ribbon's transom line, the slab
-    band, the coping line, the canopy, fin and clock keep the bands' rhythm
-    and the entrance; the mast keeps its tube, dipole and whip.
-  - `LOD2`/`LOD3`: at 120 m the ladder's rungs, the clock (3 px), the
-    dipole and the small vent go; the box, the coping line, the housing,
-    the mast's tube and the bands are unchanged.
+- **Switches, the consumer's screen-size measure** (1080p, 75 degree
+  vertical FOV; about 1.8, 4 and 8 times the 14.9 m largest bounds
+  dimension): `LOD1` from about **27 m**, `LOD2` from about **60 m**, `LOD3`
+  from about **119 m**. The tiers are judged at these.
+- **Camera:** perspective, 1920 x 1080, 75 degree vertical FOV, distance
+  from the camera to the centre of `LOD0`'s bounds; each pair face-on
+  (10 degrees up), oblique (45 round, 25 up) and from eye level (30 round,
+  1.7 m) at noon, and oblique at night with the reference emission on; the
+  six views at `LOD0`. Before/after pair sheets of this revision are in
+  `review/older_audit_2026_11_22/fix_industrial_a1/voimalan_konttori_brick/`
+  (local, git-ignored).
+- **Results** (mean |difference| per view, of 255):
+  - `LOD0`/`LOD1` at 27 m: indistinguishable (0.00-0.06); only the rungs,
+    hoops, the mast's and the vents' side counts change.
+  - `LOD1`/`LOD2` at 60 m: unchanged but for the lamp, the rungs and the
+    mast's sides (0.01-0.12). When `LOD2` flattened the openings and
+    dropped the handrails and the mast's stays, this was a clear pop
+    (1.9-2.2, 1,200-2,100 pixels changing by more than 24): the ribbons'
+    white frames read wider and brighter, the rails and stays vanished and
+    the lit bands grew at night. `LOD2` now keeps the recesses, the lean
+    rails and the stays.
+  - `LOD2`/`LOD3` at 119 m: the openings flatten, and the handrails, the
+    stays, the dipole, the clock (about 4 px) and the small vent go
+    (1.0-1.3, 200-420 pixels over 24): the ribbons' frames read a little
+    lighter and the lit bands a frame's width taller. Left: `LOD3` is
+    44 triangles under its 500 ceiling and cannot afford the bands'
+    recesses; the box, the coping line, the housing, the mast's tube and
+    whip and the bands' rhythm are unchanged.
 - **The entrance at 40 m:** the light surround, the canopy, the fin and the
   steps are the only light mark on the front and read as the way in from
   the front and the oblique, on every tier.
@@ -370,7 +387,8 @@ or duplicate surfaces. Hidden-surface test:
   Exterior surface in narrow gaps, not buried faces; the share rose with
   the lean kit's separate solids, whose faces the union no longer removes.
 - **`LOD1`:** 49 of 1386 (3.5%), the same.
-- **`LOD2`:** 8 of 656, the coping's lip.
+- **`LOD2`:** 33 of 944 (3.5%), 0.0 m2 vertical: the coping's lip and the
+  handrails' lean gaps, as `LOD1`.
 - **`LOD3`:** 24 of 456 (5.3%), 2.1 m2 vertical: the coping's lip, and the
   wall-facing sides of the ladder's bare rails and the cage's strap,
   0.17-0.8 m off the wall, which the rays from them all meet the wall.
@@ -388,7 +406,7 @@ parapet's top inside the coping, and the union removes them.
   are painted on their faces.
 - The first-floor slab band and the plinth's formwork joints are painted
   flush; the cast surround is flush, its arrises in the normal map.
-- Windows and doors are flat at `LOD2`/`LOD3`.
+- Windows and doors are flat at `LOD3`.
 - The housing's louvres are painted; it has no duct. The mast has no feed
   cable and no insulators; its stays are 2.5 cm bars, two rather than three.
 - The clock's hands and hour marks are painted on a flat dial; the lamp's
@@ -562,8 +580,9 @@ blender --background source.blend --python build.py     # tiers, GLBs, preview, 
 
 Completed in this repository:
 
-- `scripts/validate_asset.py`: 0 FAIL. One WARN: `source.dirty` on the
-  sidecar, built from an uncommitted tree.
+- `scripts/validate_asset.py`: 0 FAIL, 0 WARN, 9 MANUAL with the sidecar
+  written from a committed tree (a build from an uncommitted one gives the
+  one WARN, `source.dirty`, until `build.py -- facts` rewrites it).
 - `check_layout()`, `check_regions()` and `check_bands()` pass on every
   build.
 - **Views inspected** at `LOD0`: the six pre-export views (orthographic
@@ -578,6 +597,10 @@ Completed in this repository:
   in `brown_brick`), compared with `scripts/review_compare.py` on renders
   padded to a common canvas, since the bounds changed. The three canopy
   forms were compared from the catalog camera (Construction).
+- LOD pairs at the consumer's screen-size switches, 27, 60 and 119 m at a
+  75 degree FOV, day and night (LOD review), before and after this
+  revision's `LOD2` change; `LOD0` front and oblique at 20 and 35 m are
+  unchanged by it (`scripts/review_compare.py`).
 - Glazing measured against the band in all three colours.
 - The three variants distinct in `variants.png`; the plant's shared red
   and brown brick constants unchanged.
@@ -614,6 +637,10 @@ Pending, outside this repository:
 
 ## Revision log
 
+- **2026-11-22:** audit fix: `LOD2` keeps the recessed openings, the lean
+  handrails and the mast's stays (656 -> 944 triangles), so the window
+  bands no longer pop at the consumer's 60 m switch; LOD review redone at
+  the consumer's screen-size switches; stale validator note corrected.
 - **2026-11-21:** mip review of this revision recorded (Texture set,
   Review status); no asset change.
 - **2026-11-21:** polish pass: the upper ribbon raised to a 6.5 m head at

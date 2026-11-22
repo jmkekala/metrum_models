@@ -136,10 +136,12 @@ VENTS = [(-6.0, 1.5, 0.25, 0.85), (-4.4, 1.8, 0.16, 0.60),
 
 # ----------------------------------------------------------------- tiers
 def opening_mode(level):
-    """LOD0/1 cut every opening into its wall with brick reveals; LOD2/3 paint
-    the same rectangle flat. The 0.15-0.2 m reveals are under two pixels past
-    70 m, and the window rhythm is the painted rectangle's to keep."""
-    return "cut" if level < 2 else "flush"
+    """LOD0-2 cut every opening into its wall with brick reveals; LOD3 paints
+    the same rectangle flat. The consumer switches by screen size, about 66 m
+    to LOD2 for this 16.6 m building: flattened there, the frames and glass
+    brightened and the lit windows grew at night. At about 133 m, LOD3's
+    switch, the reveal shadow is a pixel or less."""
+    return "cut" if level < 3 else "flush"
 
 
 def vent_sides(level, dia):

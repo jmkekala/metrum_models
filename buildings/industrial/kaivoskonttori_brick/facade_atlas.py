@@ -148,15 +148,17 @@ ID_CONC, ID_DOOR, ID_RENDER, ID_STEEL, ID_PIPE = 10, 11, 12, 13, 14
 ID_SOFFIT, ID_GUTTER, ID_HANDLE, ID_DARK, ID_SEAL = 15, 16, 17, 18, 19
 ID_SILL, ID_ENTRY = 20, 21
 
-# (roughness, metallic). The roof, fascia and snow guard are painted sheet,
-# mostly dielectric; the gutter is bare galvanised steel.
+# (roughness, metallic). The roof, fascia, snow guard and the black vent
+# pipes are painted or coated steel, so dielectric: the paint is what the
+# light sees. Only the bare galvanised gutter, the kick plates and the
+# handles are metal.
 SURFACE = {
     ID_BLANK: (0.95, 0.0), ID_PLINTH: (0.92, 0.0), ID_BRICK: (0.84, 0.0),
     ID_BRICK2: (0.82, 0.0), ID_MORTAR: (0.94, 0.0), ID_FRAME: (0.48, 0.0),
-    ID_GLASS: (glazing.ROUGHNESS, 0.0), ID_ROOF: (0.46, 0.25),
-    ID_FLASH: (0.48, 0.20), ID_SNOW: (0.44, 0.30), ID_CONC: (0.90, 0.0),
+    ID_GLASS: (glazing.ROUGHNESS, 0.0), ID_ROOF: (0.46, 0.0),
+    ID_FLASH: (0.48, 0.0), ID_SNOW: (0.46, 0.0), ID_CONC: (0.90, 0.0),
     ID_DOOR: (0.50, 0.0), ID_RENDER: (0.90, 0.0), ID_STEEL: (0.38, 0.75),
-    ID_PIPE: (0.55, 0.20), ID_SOFFIT: (0.74, 0.0), ID_GUTTER: (0.36, 0.70),
+    ID_PIPE: (0.55, 0.0), ID_SOFFIT: (0.74, 0.0), ID_GUTTER: (0.36, 0.70),
     ID_HANDLE: (0.30, 0.85), ID_DARK: (0.96, 0.0), ID_SEAL: (0.90, 0.0),
     ID_SILL: (0.86, 0.0), ID_ENTRY: (0.44, 0.0),
 }

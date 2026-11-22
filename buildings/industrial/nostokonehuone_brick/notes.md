@@ -145,7 +145,7 @@ The parameters every tier derives from live in `facade_atlas.py`:
 
 ### Openings
 
-At `LOD0`/`LOD1` each opening is cut into the brick with four cheeks and a
+At `LOD0`-`LOD2` each opening is cut into the brick with four cheeks and a
 closing plane set back 0.20 m (windows, entrance screen), 0.25 m (machinery
 door) or 0.15 m (louvres):
 
@@ -155,7 +155,12 @@ door) or 0.15 m (louvres):
 - A head under the lintel band is the band's concrete.
 - Doors have no threshold cheek; the floor cap covers the recess.
 
-At `LOD2`/`LOD3` each opening is the same rectangle, flush.
+At `LOD3` the windows and the entrance screen are the same rectangles,
+flush; the two louvres and the machinery door stay recessed, since their
+deep shade is how they read. `LOD2` keeps every recess: flattened there, at
+the consumer's screen-size switch (about 48 m), the frames and glass
+brightened, the gable louvre turned from a dark recess into a light patch
+and the machinery door lightened (LOD review).
 
 ### Roof joins
 
@@ -187,8 +192,8 @@ so CLAUDE.md requires no roof safety kit.
 | --- | --- | --- |
 | `LOD0` | 540 | 12,000 |
 | `LOD1` | 444 | 4,000 |
-| `LOD2` | 216 | 1,500 |
-| `LOD3` | 208 | 500 |
+| `LOD2` | 328 | 1,500 |
+| `LOD3` | 232 | 500 |
 
 The building is one box with a gable roof and thirteen openings, so the counts
 are low and are not padded. They sit beside the catalog's houses and under the
@@ -201,39 +206,53 @@ At `LOD0` the triangles go to:
 - the two 8-sided downpipes with their bends, about 150;
 - the two 8-sided vents and the roof slab, the rest.
 
-`LOD1` saves on the pipes' and vents' sides. `LOD2` flattens the openings,
-which halves the count again. `LOD3` keeps everything `LOD2` has; only the
-downpipes go to three sides. A further cut would have to remove the downpipes
-or the last vent. Both are light marks still seen past 120 m, and the tier is
-well under its ceiling, so they stay.
+`LOD1` saves on the pipes' and vents' sides. `LOD2` keeps every recessed
+opening, drops the 0.16 m vent and goes to four-sided pipes; the limited
+dissolve recovers the boolean's coplanar splits. `LOD3` flattens the eleven
+windows and the entrance screen, which is most of its 96-triangle saving,
+and takes the downpipes to three sides; it keeps the louvres and the
+machinery door recessed. A further cut would have to remove the downpipes,
+the last vent or those three recesses: the pipes and vent are light marks
+still seen past 120 m, and the recesses popped when flattened (LOD review),
+so they stay, well under the ceiling.
 
 ## LOD review
 
-Review camera: `scripts/review_asset.py`, perspective, 50° vertical FOV,
-1920×1080, distance along the view direction to the centre of the facing
-wall. Views were front, oblique (40° azimuth, 30° up) and aerial (40°, 45°).
+**Switches, the consumer's screen-size measure** (1080p, 75° vertical FOV;
+about 1.8, 4 and 8 times the 12.1 m largest bounds dimension): `LOD1` from
+about **22 m**, `LOD2` from about **48 m**, `LOD3` from about **97 m**, far
+nearer than the distance table's 35 / 70 / 120 m. The tiers are judged at
+these.
 
-| Switch | Intended distance | Renders |
-| --- | --- | --- |
-| `LOD0` → `LOD1` | ~35 m | 30 m and 40 m, `LOD0`/`LOD1`, noon and reverse sun |
-| `LOD1` → `LOD2` | ~70 m | 65 m and 75 m, `LOD0`/`LOD1`/`LOD2`, noon and reverse |
-| `LOD2` → `LOD3` | ~120 m | 115 m and 125 m, `LOD0`/`LOD2`/`LOD3`, noon and dusk |
+Camera: perspective, 1920×1080, 75° vertical FOV, distance from the camera
+to the centre of `LOD0`'s bounds; each pair face-on (10° up), oblique (45°
+round, 25° up) and from eye level (30° round, 1.7 m) at noon, and oblique
+at night with the reference emission on. Before/after pair sheets of this
+revision are in
+`review/older_audit_2026_11_22/fix_industrial_a1/nostokonehuone_brick/`
+(local, git-ignored).
 
-No distance overrides.
+Results (mean |difference| per view, of 255):
 
-- **35 m.** `LOD1` is indistinguishable from `LOD0`. The pipes' and vents'
-  fewer sides are under a pixel's difference.
-- **70 m.** Flattening the openings loses the reveal shadow, about 1.5 px.
-  The steel frames then read a little lighter at `LOD2`. The window rhythm,
-  the lintel band, the machinery door, both louvres and the roofline are
-  unchanged under both sun directions. The 0.16 m vent (under two pixels)
-  goes at this switch and is not missed.
-- **120 m.** `LOD2` and `LOD3` are the same shape, and no transition is
-  visible.
+- **22 m.** `LOD1` is indistinguishable from `LOD0` (0.03-0.06). The pipes'
+  and vents' fewer sides are under a pixel's difference.
+- **48 m.** `LOD1`/`LOD2` match (0.07-0.14); the 0.16 m vent (under two
+  pixels) goes and is not missed. When `LOD2` flattened all thirteen
+  openings, this was the group's strongest pop (2.0-2.8, 1,600-2,300
+  pixels changing by more than 24): frames and glass brightened, the gable
+  louvre turned from a dark recess into a light patch, the machinery door
+  lightened and the lit windows grew at night. `LOD2` now keeps every
+  recess.
+- **97 m.** `LOD3` flattens the windows and the entrance screen (0.8-1.3,
+  160-430 pixels over 24): their steel frames read a little lighter and the
+  lit panes a frame's width larger, a reveal shadow of about a pixel and a
+  half going. Flattening the louvres and the machinery door here too still
+  turned the front louvre light (1.1-1.6), so those three stay recessed.
+  The window change is left: keeping those recesses as well would make
+  `LOD3` no reduction on `LOD2`.
 
 The windows' dark glass and light frames, the concrete band and plinth, and
-the dark roof hold on every tier. The working renders are in
-`review/mine_2026_11_20/nostokonehuone_brick/` (local, git-ignored).
+the dark roof hold on every tier.
 
 These are authoring comparisons. Consumer switching, filtering and
 performance are pending.
@@ -284,6 +303,11 @@ That is six unique 1024² PNGs.
 measure sRGB 130/133/133 in every variant. That is the galvanised steel of the
 farm buildings (`ID_GUTTER`, 134/137/137, roughness 0.48, metallic 0.60). The
 snow guard is the same steel.
+
+ORM: only that bare galvanised steel and the handles (0.35, 0.80) are
+metallic. Painted or coated steel is dielectric, metallic 0: the roof sheet
+(roughness 0.48), the fascia and barge flashing (0.46), the black vent pipes
+(0.55), the window steel (0.44) and the doors (0.52).
 
 Two window regions (`window`, `window_b`) are alternated along each wall, so
 neighbours show different rooms behind the glass. The bands have 6–8 px
@@ -412,7 +436,9 @@ and snow guard are the same in every variant.
   sheet only.
 - **Day cycle.** The day cycle (morning, noon, dusk, and night with emission
   on) was rendered on the reimported `LOD0`. The lit pattern was compared
-  across tiers at 115–125 m dusk.
+  across tiers at night at the consumer's switches (LOD review): it matches
+  through `LOD2`; at `LOD3` the flush windows' lit panes read a frame's
+  width larger.
 - **Pending in the consumer:** material control, night exposure, spill and
   LOD switching at night.
 
@@ -473,7 +499,8 @@ lights off.
 
 Checked here, in Blender:
 
-- `scripts/validate_asset.py`: 0 FAIL.
+- `scripts/validate_asset.py`: 0 FAIL, 0 WARN, 9 MANUAL with the sidecar
+  written from a committed tree.
   - All four tiers have uri-only external images, one opaque material slot,
     welded manifold topology and 0 hidden triangles.
   - The pivot is at ground level and centred.
@@ -481,9 +508,9 @@ Checked here, in Blender:
     scale 1.
   - Six 1024² RGB PNGs; normal vectors are unit length and face out.
   - The glass measures in band and darker than the trim.
-  - The facts sidecar is consistent.
-  - The one warning is `source.dirty` in the sidecar, expected until the
-    asset is committed and the sidecar regenerated with `build.py -- facts`.
+  - The facts sidecar is consistent. A build from an uncommitted tree gives
+    one WARN, `source.dirty`, until `build.py -- facts` rewrites the sidecar
+    from a committed one.
 - No zero-area triangles on any tier, checked in the scene.
 - `check_layout()` and `check_regions()` pass: openings clear of corners and
   each other, the band and the rake; downpipes clear of corners and
@@ -495,8 +522,13 @@ Checked here, in Blender:
 - Window proportions, door scale against the 2.125 m leaf, brick coursing
   scale, the gutter reading as a gutter, and glass darker than its frames,
   all checked in those views.
-- The tier comparisons at the three switches, the mip 4 stress renders and
-  the day cycle, recorded under LOD review and Texture set.
+- The tier comparisons at the consumer's three screen-size switches (22, 48
+  and 97 m at 75°), the mip 4 stress renders and the day cycle, recorded
+  under LOD review and Texture set.
+- The ORM change compared before/after with `scripts/review_asset.py`
+  (`LOD0`, front and oblique at 20 and 35 m, noon and reversed sun,
+  `scripts/review_compare.py`): the roof, fascia and vent pipes lose their
+  metallic sheen and read as painted sheet; nothing else changed.
 - The variant sheet (`variants.png`): day and night for all three colours.
 
 Pending, and outside this repository:
@@ -515,3 +547,13 @@ Pending, and outside this repository:
   the texture export.
 
 These are recorded as known-good markers, not requirements.
+
+## Revision log
+
+- **2026-11-22:** audit fixes: painted roof, fascia, barge flashing and vent
+  pipes made dielectric in the ORM (metallic 0); `LOD2` keeps all thirteen
+  recessed openings (216 -> 328 triangles), and `LOD3` keeps the louvres
+  and the machinery door recessed (208 -> 232), so the flattening pop at
+  the consumer's 48 m switch is gone and `LOD3` is a real reduction; LOD
+  review redone at the consumer's screen-size switches; stale validator
+  note corrected.

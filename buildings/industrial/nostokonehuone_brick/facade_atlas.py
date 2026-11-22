@@ -136,15 +136,17 @@ ID_FRAME, ID_GLASS, ID_ROOF, ID_FLASH, ID_CONC = 5, 6, 7, 8, 9
 ID_DOOR, ID_GUTTER, ID_HANDLE, ID_DARK, ID_PIPE = 10, 11, 12, 13, 14
 ID_SOFFIT, ID_SEAL = 15, 16
 
-# (roughness, metallic). Painted steel stays mostly dielectric -- the paint is
-# what the light sees. The gutter, downpipes and snow guard are galvanised.
+# (roughness, metallic). Painted or coated steel is dielectric -- the paint is
+# what the light sees: the roof sheet, the fascia and barge flashing, the
+# frames, the doors and the black vent pipes. The gutter, downpipes and snow
+# guard are bare galvanised steel, and metal.
 SURFACE = {
     ID_BLANK: (0.95, 0.0), ID_PLINTH: (0.90, 0.0), ID_BRICK: (0.84, 0.0),
     ID_BRICK2: (0.82, 0.0), ID_MORTAR: (0.94, 0.0), ID_FRAME: (0.44, 0.0),
-    ID_GLASS: (glazing.ROUGHNESS, 0.0), ID_ROOF: (0.48, 0.30),
-    ID_FLASH: (0.46, 0.25), ID_CONC: (0.90, 0.0), ID_DOOR: (0.52, 0.0),
+    ID_GLASS: (glazing.ROUGHNESS, 0.0), ID_ROOF: (0.48, 0.0),
+    ID_FLASH: (0.46, 0.0), ID_CONC: (0.90, 0.0), ID_DOOR: (0.52, 0.0),
     ID_GUTTER: (0.48, 0.60), ID_HANDLE: (0.35, 0.80), ID_DARK: (0.96, 0.0),
-    ID_PIPE: (0.55, 0.20), ID_SOFFIT: (0.74, 0.0), ID_SEAL: (0.90, 0.0),
+    ID_PIPE: (0.55, 0.0), ID_SOFFIT: (0.74, 0.0), ID_SEAL: (0.90, 0.0),
 }
 
 # ---------------------------------------------------------------- palettes
