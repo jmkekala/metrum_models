@@ -585,3 +585,15 @@ Pending, outside this repository:
   and `scripts/validate_asset.py`.
 - **CPython 3.14 with numpy 2.5.5, scipy 1.18.1 and Pillow 13.0.0** for the
   texture bake.
+
+## Revision log
+
+- **2026-11-22 — re-exported on the current toolchain.** The four tiers were
+  re-exported from an unchanged build. Since the union took over the 0.1 mm
+  snap (`asset_build.union(..., snap=asset_build.SNAP)`), UVs are computed
+  from each vertex's exact position before the snap rather than from its
+  snapped one, so about a fifth of the UVs moved by at most 0.0035 atlas
+  pixels; the fascia band's start is now at u = 0 exactly rather than
+  -0.003 px. Geometry, triangle counts and bounds are unchanged.
+  `source.blend`, `preview.png`, `variants.png` and the facts sidecar were
+  rewritten; the textures were not rebaked.

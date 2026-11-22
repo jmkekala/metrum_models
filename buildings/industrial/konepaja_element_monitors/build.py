@@ -43,14 +43,14 @@ roof_safety's lean kit, separate solids appended after the weld.
 Every number the mesh and the atlas share is imported from facade_atlas.py.
 """
 
+import functools
 import importlib
 import math
 import os
 import sys
 
 import bmesh
-import bpy
-from mathutils import Euler, Vector, geometry
+from mathutils import Vector
 
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -64,15 +64,17 @@ EXPORT_DIR = os.path.join(HERE, "export")
 sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "scripts"))
 import asset_build  # noqa: E402
 import model_facts  # noqa: E402
-from asset_build import bounds as _bounds, to_object, union  # noqa: E402
+from asset_build import to_object, union  # noqa: E402
 import roof_safety as RS  # noqa: E402
+import shell_build as SB  # noqa: E402
+from shell_build import Frame  # noqa: E402
 
 asset_build.check_toolchain()
 BUILD = asset_build.Asset(ASSET, HERE, L.VARIANTS, L.DEFAULT_VARIANT,
                           tint=L.LIT_FACTOR)
 get_material, export_all = BUILD.material, BUILD.export_all
-_show_only, preview_studio = BUILD.show_only, BUILD.preview_studio
 render_preview, render_variants = BUILD.render_preview, BUILD.render_variants
+Builder = functools.partial(SB.Builder, L.ATLAS)
 
 PPM = L.PPM
 EPS = 1e-6
@@ -137,136 +139,16 @@ def landing_kept(level):
     return level < 3
 
 
-# ============================================================== mesh builder
-class Builder:
-    """One closed solid under construction, with UVs set as faces are made.
-
-    Vertices are shared through a position cache, so faces that meet along an
-    edge meet on the same vertices. That only works if every vertex lying on
-    an edge is a corner of both faces -- which is why the wall regions carry
-    the openings' and the zones' breakpoints explicitly.
-    """
-
-    def __init__(self):
-        self.bm = bmesh.new()
-        self.uv = self.bm.loops.layers.uv.new("UVMap")
-        self.cache = {}
-
-    def v(self, co):
-        key = (round(co[0], 4), round(co[1], 4), round(co[2], 4))
-        vert = self.cache.get(key)
-        if vert is None:
-            vert = self.bm.verts.new(co)
-            self.cache[key] = vert
-        return vert
-
-    def face(self, cos, uvfn):
-        verts = []
-        for co in cos:
-            vv = self.v(co)
-            if not verts or verts[-1] is not vv:
-                verts.append(vv)
-        if len(verts) > 2 and verts[0] is verts[-1]:
-            verts.pop()
-        if len(verts) < 3:
-            return None
-        o = verts[0].co
-        pts = [(v.co.x - o.x, v.co.y - o.y, v.co.z - o.z) for v in verts]
-        nx = ny = nz = 0.0
-        for i in range(len(pts)):
-            (ax, ay, az), (bx, by, bz) = pts[i], pts[(i + 1) % len(pts)]
-            nx += ay * bz - az * by
-            ny += az * bx - ax * bz
-            nz += ax * by - ay * bx
-        if nx * nx + ny * ny + nz * nz < 1e-18:
-            return None
-        try:
-            f = self.bm.faces.new(verts)
-        except ValueError:
-            return None
-        for loop in f.loops:
-            u, w = uvfn(loop.vert.co)
-            loop[self.uv].uv = (u / L.ATLAS, w / L.ATLAS)
-        return f
-
-
-class Frame:
-    """A wall plane: s runs along the wall from p0, z is world height, and out
-    runs away from the wall on the side the outward normal points."""
-
-    def __init__(self, p0, p1):
-        self.p0 = Vector((p0[0], p0[1], 0.0))
-        d = Vector((p1[0] - p0[0], p1[1] - p0[1], 0.0))
-        self.L = d.length
-        self.t = d / self.L
-        self.n = Vector((self.t.y, -self.t.x, 0.0))
-
-    def P(self, s, z, out=0.0):
-        q = self.p0 + self.t * s + self.n * out
-        return (q.x, q.y, z)
-
-    def s_of(self, co):
-        return (co.x - self.p0.x) * self.t.x + (co.y - self.p0.y) * self.t.y
-
-    def out_of(self, co):
-        return (co.x - self.p0.x) * self.n.x + (co.y - self.p0.y) * self.n.y
-
-
-def _flip_slivers(pts, tris):
-    """Replace zero-area triangles by flipping their long edge: collinear
-    breakpoints on a region's outline leave the triangulator free to join
-    three of them into a triangle of no area."""
-    tris = [list(t) for t in tris]
-
-    def area2(t):
-        (ax, ay), (bx, by), (cx, cy) = (pts[i] for i in t)
-        return (bx - ax) * (cy - ay) - (by - ay) * (cx - ax)
-
-    for _ in range(4 * len(tris) + 8):
-        bad = next((i for i, t in enumerate(tris) if abs(area2(t)) < 1e-10), None)
-        if bad is None:
-            return tris
-        t = tris[bad]
-        pairs = [(t[0], t[1], t[2]), (t[1], t[2], t[0]), (t[2], t[0], t[1])]
-        e0, e1, mid = max(pairs, key=lambda p: (pts[p[0]][0] - pts[p[1]][0]) ** 2 +
-                          (pts[p[0]][1] - pts[p[1]][1]) ** 2)
-        for j, u in enumerate(tris):
-            if j == bad or e0 not in u or e1 not in u:
-                continue
-            k = next(k for k in range(3) if {u[k], u[(k + 1) % 3]} == {e0, e1})
-            x, y, d = u[k], u[(k + 1) % 3], u[(k + 2) % 3]
-            tris[bad], tris[j] = [x, mid, d], [mid, y, d]
-            break
-        else:
-            raise ValueError("zero-area triangle with no neighbour to flip against")
-    raise ValueError("sliver repair did not converge")
-
-
+# ============================================================== mesh kit
 def fill_planar(B, loops, to3d, uvfn):
-    """Triangulate a planar region -- an outline and any holes, in 2D -- and
-    add it, each 2D point placed by *to3d*."""
-    loops = [_dedupe(lp) for lp in loops]
-    flat = [p for loop in loops for p in loop]
-    tris = geometry.tessellate_polygon(
-        [[Vector((a, b, 0.0)) for a, b in loop] for loop in loops])
-    for i, j, k in _flip_slivers(flat, tris):
-        B.face([to3d(*flat[i]), to3d(*flat[j]), to3d(*flat[k])], uvfn)
-
-
-def _dedupe(pts):
-    out = []
-    for p in pts:
-        if not out or abs(out[-1][0] - p[0]) > 1e-7 or abs(out[-1][1] - p[1]) > 1e-7:
-            out.append(p)
-    if len(out) > 1 and abs(out[0][0] - out[-1][0]) < 1e-7 and abs(out[0][1] - out[-1][1]) < 1e-7:
-        out.pop()
-    return out
+    """shell_build.fill_planar() on the loops with consecutive repeated
+    points dropped first (to 1e-7), as _zone_polys() can repeat a breakpoint
+    where an opening meets a region's end."""
+    SB.fill_planar(B, [SB.dedupe(lp, 1e-7) for lp in loops], to3d, uvfn)
 
 
 def _patch(name):
-    x, y, w, h = L.PATCHES[name]
-    c = (x + w / 2.0, y + h / 2.0)
-    return lambda co: c
+    return SB.uv_patch(L.PATCHES[name])
 
 
 # ============================================================== openings
@@ -291,10 +173,8 @@ class Opening:
 
 
 def _region_cell(rect, s_origin, z_origin, ppm=PPM):
-    x, y, _w, _h = rect
-
     def make(fr, slo, shi, zlo, zhi):
-        return lambda co: (x + (fr.s_of(co) - s_origin) * ppm, y + (co.z - z_origin) * ppm)
+        return SB.uv_region(fr, rect, s_origin, z_origin, ppm)
     return make
 
 
@@ -664,16 +544,9 @@ def strip_ring():
 
 # ============================================================== rooflights
 def box(x0, x1, y0, y1, z0, z1, sides, top, bottom):
-    """A closed box; *sides* is one mapping or four, south/east/north/west."""
-    B = Builder()
-    rr = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
-    fns = sides if isinstance(sides, (list, tuple)) else [sides] * 4
-    for k in range(4):
-        (ax, ay), (bx, by) = rr[k], rr[(k + 1) % 4]
-        B.face([(ax, ay, z0), (bx, by, z0), (bx, by, z1), (ax, ay, z1)], fns[k])
-    B.face([(x, y, z1) for x, y in rr], top)
-    B.face([(x, y, z0) for x, y in reversed(rr)], bottom)
-    return B
+    """A closed box in its own Builder (shell_build.box()); *sides* is one
+    mapping or four, south/east/north/west."""
+    return SB.box(Builder(), x0, x1, y0, y1, z0, z1, sides, top, bottom)
 
 
 def monitor(mx, level):
@@ -1002,10 +875,6 @@ def east_side_clear(obj, level):
 
 
 # ================================================================== checks
-def _overlap(a, b, gap=0.0):
-    return a[0] < b[1] + gap and b[0] < a[1] + gap and a[2] < b[3] + gap and b[2] < a[3] + gap
-
-
 def check_layout():
     """Numbers that have to agree before any geometry is worth looking at."""
     bad = []
@@ -1022,7 +891,7 @@ def check_layout():
                         bad.append("%s: %s's edge lies on a zone line" % (w.name, k))
         for i, a in enumerate(rects):
             for b in rects[i + 1:]:
-                if _overlap(a[1:], b[1:], 0.3):
+                if SB.overlap(a[1:], b[1:], 0.3):
                     bad.append("%s: the %s and the %s are within 0.3 m" % (w.name, a[0], b[0]))
     # storeys, doors and sills: the human scale
     if not 3.0 <= L.O_FLOOR2 - L.O_FLOOR <= 3.3:
@@ -1137,55 +1006,17 @@ def facts():
 
 # ================================================================ previews
 def render_views(out_dir, level=0, res=(1400, 1000), night=False):
-    """The six working views CLAUDE.md asks for before export: four
-    orthographic elevations, a plan from above, and a raised three-quarter
-    aerial off the front corner; plus an aerial off the rear corner, eye
-    views at the entrance, along the truck lane and at the truck door.
-    Working views only -- not committed."""
-    preview_studio()
-    _show_only(level)
-    scn = bpy.context.scene
-    saved = (scn.camera, scn.render.resolution_x, scn.render.resolution_y)
-    scn.render.resolution_x, scn.render.resolution_y = res
-    centre, radius = _bounds(bpy.data.objects["{}_LOD{}".format(ASSET, level)])
-    cam = bpy.data.objects.get("_view_cam")
-    if cam is None:
-        cam = bpy.data.objects.new("_view_cam", bpy.data.cameras.new("_view_cam"))
-        scn.collection.objects.link(cam)
-    scn.camera = cam
-    cam.data.clip_end = 1000.0
-    views = {
-        "front": ((0, -1, 0), (90, 0, 0)), "rear": ((0, 1, 0), (90, 0, 180)),
-        "east": ((1, 0, 0), (90, 0, 90)), "west": ((-1, 0, 0), (90, 0, -90)),
-        "top": ((0, 0, 1), (0, 0, 0)),
-    }
-    written = []
-    for name, (d, rot) in views.items():
-        cam.data.type = 'ORTHO'
-        cam.data.ortho_scale = radius * 2.1
-        cam.rotation_euler = Euler([math.radians(a) for a in rot], 'XYZ')
-        cam.location = centre + Vector(d) * 60.0
-        scn.render.filepath = os.path.join(out_dir, "L%d_%s.png" % (level, name))
-        bpy.ops.render.render(write_still=True)
-        written.append(scn.render.filepath)
-    off = Vector(BUILD.pivot) if BUILD.pivot else Vector()
-    persp = [("aerial", centre, Vector((1.0, -1.0, math.sqrt(2.0))), 2.6),
-             ("aerial_rear", centre, Vector((-1.0, 1.0, math.sqrt(2.0))), 2.6),
-             ("eye_entrance", Vector(((L.E_X0 + L.E_X1) / 2.0, -HY, 2.5)) - off,
-              Vector((0.5, -1.0, 0.08)), 0.45),
-             ("eye_lane", Vector((HX, YH, 2.5)) - off, Vector((0.35, -1.0, 0.05)), 0.75),
-             ("eye_truck", Vector((HX, YH + TRUCK_S, 2.0)) - off,
-              Vector((1.0, -0.25, 0.08)), 0.45)]
-    for name, target, d, k in persp:
-        cam.data.type = 'PERSP'
-        cam.data.lens = 35.0
-        cam.location = target + d.normalized() * radius * k
-        cam.rotation_euler = (target - cam.location).to_track_quat('-Z', 'Y').to_euler()
-        scn.render.filepath = os.path.join(out_dir, "L%d_%s.png" % (level, name))
-        bpy.ops.render.render(write_still=True)
-        written.append(scn.render.filepath)
-    scn.camera, scn.render.resolution_x, scn.render.resolution_y = saved
-    return written
+    """The six working views (shell_build.render_views()), plus an aerial
+    off the rear corner, eye views at the entrance, along the truck lane and
+    at the truck door. Working views only -- not committed."""
+    r2 = math.sqrt(2.0)
+    return SB.render_views(BUILD, out_dir, level, res, distance=60.0, views=(
+        SB.orbit("aerial", (1.0, -1.0, r2), 2.6),
+        SB.orbit("aerial_rear", (-1.0, 1.0, r2), 2.6),
+        SB.orbit("eye_entrance", (0.5, -1.0, 0.08), 0.45,
+                 target=((L.E_X0 + L.E_X1) / 2.0, -HY, 2.5)),
+        SB.orbit("eye_lane", (0.35, -1.0, 0.05), 0.75, target=(HX, YH, 2.5)),
+        SB.orbit("eye_truck", (1.0, -0.25, 0.08), 0.45, target=(HX, YH + TRUCK_S, 2.0))))
 
 
 if __name__ == "__main__":

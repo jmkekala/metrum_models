@@ -742,7 +742,9 @@ rather than assumed:
 
 ## Tooling versions
 
-- **Blender 5.2.2 LTS.**
+- **Blender 5.3.0** (hash `02f0899d78e3`, built 2026-11-11) for the current
+  export; `source.blend` is saved by 5.3.0. The asset was built and reviewed
+  on Blender 5.2.2 LTS.
 - **Blender Lab "MCP" extension v1.0.3** (`lab_blender_org/mcp`, requires
   Blender ≥ 5.1). Not used for this asset: it was built and rendered in
   background processes.
@@ -755,6 +757,16 @@ only sets them when a node tree is missing.
   texture export.
 
 ## Revision log
+
+- **2026-11-22 — re-exported on Blender 5.3.0.** The four tiers were
+  re-exported from an unchanged build on the current toolchain. Triangle
+  counts and bounds are unchanged. The exact boolean resolves a few points at
+  the foot of the walls up to 0.1 mm differently, so `LOD0` and `LOD1`
+  triangulate some zero-width slivers along the yard walls' joints otherwise:
+  `LOD0` exports 8954 vertices instead of 8956, `LOD1` 5286 instead of 5284;
+  the welded mesh stays closed and manifold. `source.blend`, `preview.png`,
+  `variants.png` and the facts sidecar were rewritten; the textures were not
+  rebaked.
 
 - **2026-10-01 — hollow ridge vents.** Each vent housing is now an open
   stack, a rim round a flue sunk 0.80 m to a soot floor, and stands 0.95 m

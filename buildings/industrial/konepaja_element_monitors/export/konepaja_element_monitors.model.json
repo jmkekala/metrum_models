@@ -3,7 +3,7 @@
   "version": 1,
   "name": "konepaja_element_monitors",
   "path": "buildings/industrial/konepaja_element_monitors",
-  "source": {"commit": "6e3973f9979a5b41e6289f64a0061325cd1f3621", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "2664e9ea3b527c2bca4fe0e9510a3ef4327b3734", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-16.4838, 0.0, -12.7969], "max": [16.4838, 15.25, 12.7969]},
   "footprint": [
@@ -24,10 +24,10 @@
     {"id": "stores", "kind": "service", "position": [8.39, 0.0, 11.2969], "facing": [0.0, 0.0, 1.0], "width_m": 0.9375, "height_m": 2.125, "main": false}
   ],
   "lods": [
-    {"file": "konepaja_element_monitors_lod0.glb", "triangles": 2428, "sha256": "64cbe8d737da2efc75f8609dec4335881787c067f87f632bc953e1f814d65bb3"},
-    {"file": "konepaja_element_monitors_lod1.glb", "triangles": 2002, "sha256": "0275d0fe4ee405187c3aa300ab1080a81cf2498950f7959daa843aa1bd88a0e3"},
-    {"file": "konepaja_element_monitors_lod2.glb", "triangles": 850, "sha256": "8de1494e95b6fed548e5ea356bcece14cbc455ce0a9f0e75e2b81f0b3b6d9d40"},
-    {"file": "konepaja_element_monitors_lod3.glb", "triangles": 486, "sha256": "0768893dda95052ac3a8df6915513e88bf4db4e85d3325afc8a134628c229409"}
+    {"file": "konepaja_element_monitors_lod0.glb", "triangles": 2428, "sha256": "44750f0ef63d3b18fd36d6b197f3b35063ec5b328b278177ee893d69e9d49637"},
+    {"file": "konepaja_element_monitors_lod1.glb", "triangles": 2002, "sha256": "02c07540a1445ee96ca774e5a0485bc98f3d7dd22d3cf0527bd9b9d6b1d51c32"},
+    {"file": "konepaja_element_monitors_lod2.glb", "triangles": 850, "sha256": "4e0a038d0ed4b6e18e9c31e03aae29c4fc6c2b6f403ac81f8d706f5ba52a0b5f"},
+    {"file": "konepaja_element_monitors_lod3.glb", "triangles": 486, "sha256": "ac3c43212b010bc838105675c3dff8728d264a40bef531ebac5c7febc92b379c"}
   ],
   "textures": {
     "orm": {"file": "konepaja_element_monitors_orm.png", "sha256": "c3fa0d1e2b499be12ae73bf8726bccf75cbc6f96aa15b9f52da9aa1fbf37c7fe"},
@@ -40,6 +40,6 @@
     {"id": "red_aggregate", "albedo": "konepaja_element_monitors_albedo_red_aggregate.png", "sha256": "32fab5c6321f085ce07eb63bfb59b42915445faf4f1b3a36c6dcce2affb40e48"}
   ],
   "default_variant": "grey_aggregate",
-  "preview": {"file": "../preview.png", "sha256": "7c9d1a3ec51f11146bdf87b953d8521cdff852b4db3036275d4886e60691ec55"},
+  "preview": {"file": "../preview.png", "sha256": "d7c7d393a6ccf447412055288af00a93ec0931cde024564cfa9fa6af0ea81ca5"},
   "hero": false
 }

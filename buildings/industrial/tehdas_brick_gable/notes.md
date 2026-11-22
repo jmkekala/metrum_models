@@ -729,10 +729,11 @@ Pending, outside this repository:
 
 ## Tooling versions
 
-- **Blender 5.2.2 LTS** (hash `d13f752e3b9c`, built 2026-09-22), recorded as a
-  known-good diagnostic, not a pin. `build.py` asserts the 5.2 floor and the
-  presence of every glTF exporter flag it sets. `source.blend` is saved by
-  5.2.2.
+- **Blender 5.3.0** (hash `02f0899d78e3`, built 2026-11-11) for the current
+  export, recorded as a known-good diagnostic, not a pin. `build.py` asserts
+  the 5.3 floor and the presence of every glTF exporter flag it sets.
+  `source.blend` is saved by 5.3.0. The asset was built and reviewed on
+  Blender 5.2.2 LTS (hash `d13f752e3b9c`).
 - **Blender MCP addon: not used for this asset.** It was built and reviewed
   headless:
   - `blender --background` with `build.py`'s `render_views()`;
@@ -742,3 +743,13 @@ Pending, outside this repository:
   Every render was inspected and fed back into the massing and the atlas.
 - **CPython 3.14.7 with numpy 2.5.3, scipy 1.18.1 and Pillow 12.3.0** for the
   texture bake: `python3 facade_atlas.py export`.
+
+## Revision log
+
+- **2026-11-22 — re-exported on Blender 5.3.0.** The four tiers were
+  re-exported from an unchanged build on the current toolchain. Geometry, UVs,
+  triangle counts and bounds are unchanged; `LOD0` and `LOD1` list the same
+  vertices and triangles in another order, and every tier is 1488 bytes
+  larger in the image placeholder buffer views. `source.blend`, `preview.png`,
+  `variants.png` and the facts sidecar were rewritten; the textures were not
+  rebaked.

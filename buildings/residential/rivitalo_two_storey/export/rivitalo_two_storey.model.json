@@ -3,7 +3,7 @@
   "version": 1,
   "name": "rivitalo_two_storey",
   "path": "buildings/residential/rivitalo_two_storey",
-  "source": {"commit": "2dbe474483bc446451ecf6106283b03f45b59394", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "2664e9ea3b527c2bca4fe0e9510a3ef4327b3734", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-18.39, 0.0, -7.5625], "max": [18.39, 8.4625, 7.5625]},
   "footprint": [
@@ -62,10 +62,10 @@
     {"id": "store_6", "kind": "store", "position": [17.04, 0.35, 7.3125], "facing": [0.0, 0.0, 1.0], "width_m": 0.85, "height_m": 1.95, "main": false}
   ],
   "lods": [
-    {"file": "rivitalo_two_storey_lod0.glb", "triangles": 6592, "sha256": "709f3187793ddf21f1ede490957b9319819cff48f72e51df2ca31e4e9f81d20e"},
-    {"file": "rivitalo_two_storey_lod1.glb", "triangles": 3806, "sha256": "069df7e108819857815daee058c12a3d8acb469aabce02dcc3769f5aa25db861"},
-    {"file": "rivitalo_two_storey_lod2.glb", "triangles": 1448, "sha256": "4174177587b80e84c75005b3a03377e1842e4a264a40ba3ba5cf9be7a326a2ab"},
-    {"file": "rivitalo_two_storey_lod3.glb", "triangles": 494, "sha256": "b5d6210a334fa205de013bf1968575f73d8def4692e0f0ecff51f3fd36744c1c"}
+    {"file": "rivitalo_two_storey_lod0.glb", "triangles": 6592, "sha256": "dd54a8623d335f83870a74544aca289cd81a7ddafecd2ed06b31b8baa02d070e"},
+    {"file": "rivitalo_two_storey_lod1.glb", "triangles": 3806, "sha256": "fa775ca71506d30184daeda8e48ad00f74d27d54fda481ba2d3e259b0ce7bfe8"},
+    {"file": "rivitalo_two_storey_lod2.glb", "triangles": 1448, "sha256": "4571b38ee85f3f86bf4422eaba85e50e1f34d18c7bc50e6ae9763740e1b84ac6"},
+    {"file": "rivitalo_two_storey_lod3.glb", "triangles": 494, "sha256": "2f9d7d583714b3aa974de4fb3bf941d8d7935142421f0bb0b8744bc643ebda8f"}
   ],
   "textures": {
     "orm": {"file": "rivitalo_two_storey_orm.png", "sha256": "d9eb7d277bcfe5d321c48d7ecf7eb14b49c29a767e650058d6d4e973c42df6d6"},
@@ -80,6 +80,6 @@
     {"id": "red", "albedo": "rivitalo_two_storey_albedo_red.png", "sha256": "f6c43e0ad35eb80b4aee71d454b4dbda30c67f73ab778e767cf7b2b9a1adc89f"}
   ],
   "default_variant": "yellow",
-  "preview": {"file": "../preview.png", "sha256": "2414f5f2fea52cef5ea8b1b0399444213c2cb38b6e23e226ef66944e1bb07c6b"},
+  "preview": {"file": "../preview.png", "sha256": "bb2306cbfc15b36ccfcb3ba32e3e6cca3687f8247bc5e764fadc69f9bbcf3d6d"},
   "hero": false
 }

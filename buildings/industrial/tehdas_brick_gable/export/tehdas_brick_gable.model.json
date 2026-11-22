@@ -3,7 +3,7 @@
   "version": 1,
   "name": "tehdas_brick_gable",
   "path": "buildings/industrial/tehdas_brick_gable",
-  "source": {"commit": "2dbe474483bc446451ecf6106283b03f45b59394", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "2664e9ea3b527c2bca4fe0e9510a3ef4327b3734", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-21.3, 0.0, -14.125], "max": [21.3, 10.042, 14.125]},
   "footprint": [
@@ -36,10 +36,10 @@
     {"id": "back_wing", "kind": "service", "position": [17.4, 0.0, -5.2], "facing": [1.0, 0.0, 0.0], "width_m": 1.0, "height_m": 2.125, "main": false}
   ],
   "lods": [
-    {"file": "tehdas_brick_gable_lod0.glb", "triangles": 3780, "sha256": "e1bcedbf7fa976ca3317a7ff6d0f33151e586ef9d70bc9bb5e5bcb812ab0ad43"},
-    {"file": "tehdas_brick_gable_lod1.glb", "triangles": 2692, "sha256": "074fd13a5815925a4fd541b123f1478b66d7745f0fc75a6d7ab8a2155e7dd208"},
-    {"file": "tehdas_brick_gable_lod2.glb", "triangles": 1288, "sha256": "f5e1664c79896aad0555979e0fda7a757e2df3849f33683f4bab94df09d78c4e"},
-    {"file": "tehdas_brick_gable_lod3.glb", "triangles": 488, "sha256": "3dd7b0a2af2b853a84b1864c973706cd3ddf2c3ce43abdc1126d2bd8372d14a3"}
+    {"file": "tehdas_brick_gable_lod0.glb", "triangles": 3780, "sha256": "6d3edefd6df791eace19b560e46b62dad0dca115eeed49d8a6603b4a96354730"},
+    {"file": "tehdas_brick_gable_lod1.glb", "triangles": 2692, "sha256": "67dadb2012bac1b5c830bcaf21b50e771bc795def111954847e80f996fb9dabd"},
+    {"file": "tehdas_brick_gable_lod2.glb", "triangles": 1288, "sha256": "5844a0548e4e89119b9aae759e518222d034db5006b6f3353e71d7e856d99f84"},
+    {"file": "tehdas_brick_gable_lod3.glb", "triangles": 488, "sha256": "63f0b20f81331696fe6d7c9053ce8389f7798882908dc8d25fbf668b8044a150"}
   ],
   "textures": {
     "orm": {"file": "tehdas_brick_gable_orm.png", "sha256": "962c97859bbb152ba25e64ee640f5119d988935c2fec3ea91ec33632ba4646e4"},
@@ -53,6 +53,6 @@
     {"id": "grey_brick", "albedo": "tehdas_brick_gable_albedo_grey_brick.png", "sha256": "0da0311c2558d84ae3e626fb47c714f8d0fcef4ec8edb6036b12468d3333076f"}
   ],
   "default_variant": "red_brick",
-  "preview": {"file": "../preview.png", "sha256": "5c98d2522e209509f582c7b21bdd836c6404f9897954f8a2e981c7489886227f"},
+  "preview": {"file": "../preview.png", "sha256": "8a0bb9c717a83d685563a9741353b665c1ceb72c0bc479b1486a2bb4c5d75f24"},
   "hero": false
 }
