@@ -757,14 +757,16 @@ The validator's hidden-surface test reports:
 | --- | --- |
 | `LOD0` | 205 (4.9 %) |
 | `LOD1` | 99 (3.0 %) |
-| `LOD2` | 47 (4.1 %) |
+| `LOD2` | 18 (1.6 %) |
 | `LOD3` | 0 |
 
 The candidates are exterior surfaces the rays cannot reach:
 
 - the copings' 0.05 m inner drips over the decks, the largest of them
-  (12 of `LOD2`'s 47, which keeps the sunk decks; the rest there are the
-  bare rails' and the cages' back straps' faces toward the walls);
+  (12 of `LOD2`'s 18, which keeps the sunk decks; the two ladders' bare
+  rails and the cages' back straps there add none, being closed prisms
+  wound outward; an earlier export had one rail of each ladder and both
+  straps inside out, 29 more candidates);
 - the ladder rails' backs, 0.17 m off the walls;
 - the lean kit's small faces between the rails and the walls: the rungs'
   and brackets' undersides and the hoops' inner ridges, each a closed solid
@@ -1330,8 +1332,9 @@ Checked here, in Blender:
   - All four tiers have uri-only external images, one opaque material slot,
     and welded manifold topology.
   - Their hidden-surface candidates are only the exterior faces listed under
-    Interior geometry (205, 99, 47 and 0 triangles; `LOD2`'s listed by
-    normal and height, `hidden_list.py` in the audit-fix folder).
+    Interior geometry (205, 99, 18 and 0 triangles; `LOD2`'s listed by
+    normal and height, `hidden_list.py` in the audit-fix folder, before the
+    kit's far rails and straps were turned outward).
   - The pivot is at ground level and centred.
   - Every tier binds emission on UV0, default off, and the normal map at
     scale 1.
@@ -1464,6 +1467,10 @@ These are recorded as known-good markers, not requirements.
 
 ## Revision log
 
+- **2026-11-23**: `LOD2`'s bare rails and the cages' back straps wound
+  outward: `scripts/roof_safety.py` built one of each ladder's mirrored
+  rails, and each strap in the eave's left-handed axes, inside out. Same
+  triangles and vertices; `LOD2`'s hidden-surface candidates 47 -> 18.
 - **2026-11-22**: Audit fix for the consumer's 128 m `LOD1`/`LOD2` pop.
   `LOD2`'s openings sample new 12 px/m regions (`LO`), each window and
   door whole with its recess's occlusion painted in, one quad each; the

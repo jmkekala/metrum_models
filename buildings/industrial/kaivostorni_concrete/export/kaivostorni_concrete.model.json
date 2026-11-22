@@ -3,7 +3,7 @@
   "version": 1,
   "name": "kaivostorni_concrete",
   "path": "buildings/industrial/kaivostorni_concrete",
-  "source": {"commit": "a700517823f982b8b19930405d20ce058299e39b", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "4552f759bcf8beb73335020471cbf928e55f7026", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-5.95, 0.0, -3.8477], "max": [5.95, 21.9428, 3.8477]},
   "footprint": [
@@ -28,7 +28,7 @@
     {"file": "kaivostorni_concrete_lod0.glb", "triangles": 3602, "sha256": "e4890991c8a91316a9acdc841fca86c95c3a4c996f354b97a7c372537fdc7d79"},
     {"file": "kaivostorni_concrete_lod1.glb", "triangles": 2294, "sha256": "a28d318f5b660bc5941891d182d22daf5f14cc39eccbc900e2ca8085dec2e61f"},
     {"file": "kaivostorni_concrete_lod2.glb", "triangles": 1342, "sha256": "00a9829c803b3f6a1cb1fa3c3f50395008cf1a6375715eeca9ed2bc6b5574153"},
-    {"file": "kaivostorni_concrete_lod3.glb", "triangles": 458, "sha256": "55e7d53164e0dfb76a1728989e0baa8955fcd4dadd93446de8ed05f7fb4f7a1c"}
+    {"file": "kaivostorni_concrete_lod3.glb", "triangles": 458, "sha256": "71c09c557d8ed1c022f7e3c51726264be6ac6274ef8db042289650dfc510cb24"}
   ],
   "textures": {
     "orm": {"file": "kaivostorni_concrete_orm.png", "sha256": "0d815c8427d6e78d83950781f9da2b95d96c1f51d68d72eadd0f22745d3671e5"},
@@ -40,6 +40,6 @@
     {"id": "ochre_render", "albedo": "kaivostorni_concrete_albedo_ochre_render.png", "sha256": "432cfed9fe1d5fdc1020f449a733447b7b1ab38235ad664aeae5699a4adb27ba"}
   ],
   "default_variant": "grey_concrete",
-  "preview": {"file": "../preview.png", "sha256": "770023710bbd589d2b4b0a2b899d3f2e69d519e6db25bc79b92a46d0c10bb61d"},
+  "preview": {"file": "../preview.png", "sha256": "e6f5f934c1539d08070484a27479d0916e98258895967ab6a24ee8f36c6d4633"},
   "hero": false
 }

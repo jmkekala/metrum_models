@@ -275,15 +275,15 @@ The validator's sampled hidden-surface test passes on every tier:
 | `LOD0` | 71 / 1,168 | 6.1 % | 0.0 m² |
 | `LOD1` | 43 / 912 | 4.7 % | 0.0 m² |
 | `LOD2` | 28 / 494 | 5.7 % | 0.0 m² |
-| `LOD3` | 8 / 258 | 3.1 % | 0.9 m² |
+| `LOD3` | 0 / 258 | 0.0 % | 0.0 m² |
 
 - On `LOD0`–`LOD2` the candidates are horizontal. They are the coping's
   0.0625 m drip underside at z 4.03 along its inner edge, over the felt
   upturn. It is a real exterior surface, visible only from the roof deck,
   and is kept.
-- The `LOD3` candidates at (3.2, 4.9, 1.7–3.4) are the inner faces of the
-  ladder's two bare rails, which face each other across the ladder. They
-  are kept because the rails set the extents.
+- `LOD3` has none. The ladder's two bare rails, kept because they set the
+  extents, are closed prisms wound outward; the 8 candidates an earlier
+  export showed there were one rail's faces, built inside out.
 - There are no buried partitions. The parapet's top inside the coping, the
   wall band above the coping's drip, the column's foot inside its shoe, and
   the buried backs of the column, awnings, canopies, rods, light box and roof plant are removed by the
@@ -633,6 +633,10 @@ sidecar alone, from a committed tree.
 
 ## Revision log
 
+- **2026-11-23:** `LOD3`'s second bare rail turned outward:
+  `scripts/roof_safety.py` built the ladder's mirrored rails with one
+  winding, so one was inside out. Same triangles and vertices; hidden-surface
+  candidates on `LOD3` 8 -> 0.
 - **2026-11-22:** shared lettering. KAMPAAMO is set in
   `scripts/lettering.py`, the catalog's one alphabet, instead of this
   file's own glyphs: K the two-stroke form (arm and leg meeting on the

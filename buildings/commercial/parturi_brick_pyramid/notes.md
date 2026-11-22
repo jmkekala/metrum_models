@@ -219,10 +219,8 @@ back (z 5.04 m). The roof ladder reaches the housing, so there is no walkway.
 rear window, the service door and the canopy. Tiers follow `RS.MODES`: every
 rung, every other rung, every fourth without brackets, then no kit; the wall
 ladder sets the rear plan bound, so LOD3 keeps its bare rails (16 triangles,
-appended after the weld, `extents=True`). `roof_safety` builds those bare
-rails as two mirrored prisms with the same winding, so one came out inside
-out and `append()` recalculates nothing; `kit()` now recalculates their
-normals before the append.
+appended after the weld, `extents=True`), both wound outward by
+`roof_safety`, which turns the mirrored one.
 
 ## Per-tier triangle counts
 
@@ -347,9 +345,9 @@ hidden_list.py`, not committed):
 
 All exterior surface; nothing buried, so nothing was removed. The former
 LOD3 count of 8 was one of the wall ladder's bare rails **inside out**
-(roof_safety builds the two mirrored rails with one winding and appends
-them unrecalculated): all eight of its triangles faced into it. `kit()` now
-gives them outward normals and none of them is a candidate now. The union of closed solids leaves one
+(roof_safety built the two mirrored rails with one winding and appends
+them unrecalculated): all eight of its triangles faced into it. The script
+now winds both outward and none of them is a candidate. The union of closed solids leaves one
 volume's boundary, so there are no partitions or duplicate surfaces; the
 body's lid and the roof's underside inside the wall line are removed by it.
 The body's floor at z = 0 is kept as the closed shell's bottom.
@@ -679,6 +677,10 @@ Pending, outside this repository:
 
 ## Revision log
 
+- **2026-11-23, kit normals from the shared script:**
+  `scripts/roof_safety.py` now builds the mirrored bare rail outward
+  itself, so `kit()` no longer recalculates their normals. Every export
+  byte-identical.
 - **2026-11-22, far tiers for the consumer's switches:** judged at the
   consumer's screen-size switches (20 / 44 / 87 m), LOD2 now keeps the
   window and service-door reveals, the hip and ridge flashings, the

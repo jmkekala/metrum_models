@@ -782,15 +782,9 @@ def canopy():
 def kit(level, extents=False):
     """The roof safety kit's solids for this tier. The wall ladder sets the
     rear of the plan bounds, so the tier that drops the kit keeps its bare
-    rails (extents=True), appended after the weld. roof_safety builds those
-    bare rails as two mirrored three-sided prisms with the same winding, so
-    one of them comes out inside out, and append() recalculates nothing:
-    they get outward normals here."""
+    rails (extents=True), appended after the weld."""
     if extents:
-        pieces = RS.solids([WALL_LADDER], level, PAINT, extents=True)
-        for M, _name in pieces:
-            bmesh.ops.recalc_face_normals(M.bm, faces=M.bm.faces[:])
-        return pieces
+        return RS.solids([WALL_LADDER], level, PAINT, extents=True)
     return RS.solids([WALL_LADDER, ROOF_LADDER], level, PAINT)
 
 

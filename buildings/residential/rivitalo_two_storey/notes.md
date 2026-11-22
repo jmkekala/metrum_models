@@ -372,13 +372,14 @@ Measured with `scripts/validate_asset.py` on the exports:
 | --- | --- | --- |
 | `LOD0` | 66 of 6592 | 1.0 % |
 | `LOD1` | 49 of 3806 | 1.3 % |
-| `LOD2` | 28 of 1494 | 1.9 % |
-| `LOD3` | 8 of 494 | 1.6 % |
+| `LOD2` | 20 of 1494 | 1.3 % |
+| `LOD3` | 0 of 494 | 0.0 % |
 
-The roof ladder's rung undersides, a few centimetres over the sheet, and on
-`LOD2` and `LOD3` the backs of the gable ladder's bare rails, facing the
-gable, add the new candidates; all are exterior surface seen at a grazing
-angle. The vertical remainder, 1.4-5.1 m² a tier, is the downpipes' backs, facing
+The roof ladder's rung undersides, a few centimetres over the sheet, add the
+new candidates; they are exterior surface seen at a grazing angle. The gable
+ladder's bare rails on `LOD2` and `LOD3` add none, being closed prisms wound
+outward (an earlier export had one of them inside out, 8 candidates on each
+of those tiers). The vertical remainder, 1.7-3.7 m² a tier on `LOD0`-`LOD2`, is the downpipes' backs, facing
 the boarding 3 cm away: every sampled ray from them heads for the wall and
 meets it, though they are exterior surface seen at a grazing angle. The
 rest sits where each
@@ -803,6 +804,11 @@ only sets them when a node tree is missing.
 
 ## Revision log
 
+- **2026-11-23 — bare rails wound outward.** `scripts/roof_safety.py`
+  built the gable ladder's mirrored bare rails with one winding, so one was
+  inside out on `LOD2` and `LOD3`; it is turned at the source. Same
+  triangles and vertices; hidden-surface candidates 28 -> 20 on `LOD2`,
+  8 -> 0 on `LOD3`.
 - **2026-11-22 — vent housings on `LOD2`; painted steel dielectric.** `LOD2`
   keeps the three ridge vent housings as plain boxes with a painted soot top
   (`housing_form()`), 1448 to 1494 triangles. The ORM's painted roof steel,

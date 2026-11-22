@@ -3,7 +3,7 @@
   "version": 1,
   "name": "liikekeskus_pharmacy",
   "path": "buildings/commercial/liikekeskus_pharmacy",
-  "source": {"commit": "1854f39bb5189710ceba593b6e4965f2215eca86", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "4552f759bcf8beb73335020471cbf928e55f7026", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-12.99, 0.0, -9.24], "max": [12.99, 11.925, 9.24]},
   "footprint": [
@@ -24,7 +24,7 @@
     {"file": "liikekeskus_pharmacy_lod0.glb", "triangles": 4002, "sha256": "87c5e8014dcc8a26153f84e06a8afbaf6e71914ba36f004849e3a960f3e36d76"},
     {"file": "liikekeskus_pharmacy_lod1.glb", "triangles": 1972, "sha256": "888a26a7fe0090752c80da28cd3ad93fd32ca143dcdf1e0b879b226b590f28e4"},
     {"file": "liikekeskus_pharmacy_lod2.glb", "triangles": 796, "sha256": "2c2e57da174bd7f529cf9d75977b8eca9b83371e4976a19b59773a2cbdaef86f"},
-    {"file": "liikekeskus_pharmacy_lod3.glb", "triangles": 484, "sha256": "f84ae06cf5b7f261ab0b27063c1d255827ad1d8941fec43c178af5c2f10d9c84"}
+    {"file": "liikekeskus_pharmacy_lod3.glb", "triangles": 484, "sha256": "46f7e0e9ac2786fae79e2af02d808deedf0f9185e8b09ec353214e7d5bf12c1d"}
   ],
   "textures": {
     "orm": {"file": "liikekeskus_pharmacy_orm.png", "sha256": "05fb9bf1c5d01334c104db0ee6bfa4a1ebc33999ed462089a784606b58048cc3"},
@@ -38,6 +38,6 @@
     {"id": "brown_stone", "albedo": "liikekeskus_pharmacy_albedo_brown_stone.png", "sha256": "0e9bf0e2e59e6a7616d1e2475b396d520b58eb21bc7d193297b4f7908296ee15"}
   ],
   "default_variant": "grey_stone",
-  "preview": {"file": "../preview.png", "sha256": "e7cbba5eecc76953cb450928e56f1a316091d5db076fa2f5314ea9e002cd0569"},
+  "preview": {"file": "../preview.png", "sha256": "080dd82075d2c02baad9529260e093fbb6fec7b0e64a9b7709f4a1c53d316062"},
   "hero": false
 }

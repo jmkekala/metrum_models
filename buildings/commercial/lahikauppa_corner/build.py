@@ -188,15 +188,8 @@ KIT = [WALL_LADDER]
 
 def kit(level):
     """The wall ladder, roof_safety's MODES unchanged, with extents: it stands
-    furthest out at the back, so LOD3 keeps its bare rails.
-
-    roof_safety builds those bare rails as two mirrored three-sided prisms
-    with the same winding, so one of them comes out inside out, and append()
-    recalculates nothing; every piece gets outward normals here."""
-    pieces = RS.solids(KIT, level, KIT_PAINT, extents=True)
-    for M, _name in pieces:
-        bmesh.ops.recalc_face_normals(M.bm, faces=M.bm.faces[:])
-    return pieces
+    furthest out at the back, so LOD3 keeps its bare rails."""
+    return RS.solids(KIT, level, KIT_PAINT, extents=True)
 
 
 def item_mode(level):

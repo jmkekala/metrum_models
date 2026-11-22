@@ -273,10 +273,9 @@ needs a fixed wall ladder up to it (CLAUDE.md, roof safety equipment). It is
   ladder is the building's rearmost point, so `RS.solids(..., extents=True)`
   keeps those rails on every tier and every tier keeps `LOD0`'s plan bounds and
   pivot.
-- **Normals:** `roof_safety` builds the bare rails as two mirrored prisms with
-  the same winding, so one comes out inside out, and `append()` recalculates
-  nothing. `build.py`'s `kit()` recalculates every kit piece's normals before
-  the append; recorded here because the shared script still has the defect.
+- **Normals:** every kit piece comes from `roof_safety` wound outward, the
+  `LOD3` bare rails included (the script turns the mirrored one), so
+  `kit()` appends them as built; `append()` recalculates nothing.
 
 ## Per-tier triangle counts
 
@@ -938,6 +937,9 @@ Pending, and outside this repository:
 
 ## Revision log
 
+- **2026-11-23 — kit normals from the shared script.** `scripts/roof_safety.py`
+  now builds the mirrored bare rail outward itself, so `kit()` no longer
+  recalculates the pieces' normals. Every export byte-identical.
 - **2026-11-22 — audit fixes: wall ladder, seamed skirt, column on LOD3.** A
   lean `roof_safety` wall ladder on the rear wall (x = -9 m) up to the roof
   plant, kit normals recalculated before the append (Construction, The wall

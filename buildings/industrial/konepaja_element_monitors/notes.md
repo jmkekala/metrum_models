@@ -344,9 +344,10 @@ or duplicate surfaces. Hidden-surface test:
   the deck or the body. Exterior surface in narrow gaps, not buried faces.
 - **`LOD1`:** 26 of 2130 (1.2%), the same.
 - **`LOD2`:** 6 of 1484 (0.4%).
-- **`LOD3`:** 17 of 486 (3.5%), 2.7 m2 vertical: the wall-facing sides of
-  the ladder's bare rails and the cage's strap, which every ray from them
-  meets the wall. Exterior, seen from the side.
+- **`LOD3`:** 2 of 486 (0.4%), 0.5 m2 vertical, at the same points as
+  `LOD2`'s largest. The ladder's bare rails and the cage's strap add none:
+  they are closed prisms wound outward (an earlier export had one rail and
+  the strap inside out, 16 candidates).
 
 A first build left the office's east wall and the strip's west end both in
 place, a 62 m2 double wall at x = -2.667 m flagged by the test: the two
@@ -638,6 +639,10 @@ Pending, outside this repository:
 
 ## Revision log
 
+- **2026-11-23 — far kit wound outward.** `scripts/roof_safety.py` built
+  one of the mirrored bare rails, and the cage's back strap in the eave's
+  left-handed axes, inside out; `LOD3`'s are turned outward. Same triangles
+  and vertices; `LOD3`'s hidden-surface candidates 17 -> 2.
 - **2026-11-22 — the domes, the reveals and the monitors' lights to
   `LOD2`.** `LOD1` and `LOD2` keep the domes' pyramids, `LOD1` the guys;
   `LOD2` keeps every recess but the hall's band windows (`band_cut()`) and

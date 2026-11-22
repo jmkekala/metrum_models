@@ -3,7 +3,7 @@
   "version": 1,
   "name": "konepaja_element_monitors",
   "path": "buildings/industrial/konepaja_element_monitors",
-  "source": {"commit": "a828f11675e7263b565b532182cf59633efb3e14", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "4552f759bcf8beb73335020471cbf928e55f7026", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-16.4838, 0.0, -12.7969], "max": [16.4838, 15.25, 12.7969]},
   "footprint": [
@@ -27,7 +27,7 @@
     {"file": "konepaja_element_monitors_lod0.glb", "triangles": 2428, "sha256": "44750f0ef63d3b18fd36d6b197f3b35063ec5b328b278177ee893d69e9d49637"},
     {"file": "konepaja_element_monitors_lod1.glb", "triangles": 2130, "sha256": "dfbdac6c20d6421e8ff68678e01aa9400e2dc8e4dfec479cf48e81640fac792b"},
     {"file": "konepaja_element_monitors_lod2.glb", "triangles": 1484, "sha256": "79307bb8ce405bdca57f7b04e79179963c9db3f95483c97fde5f732606b77223"},
-    {"file": "konepaja_element_monitors_lod3.glb", "triangles": 486, "sha256": "ac3c43212b010bc838105675c3dff8728d264a40bef531ebac5c7febc92b379c"}
+    {"file": "konepaja_element_monitors_lod3.glb", "triangles": 486, "sha256": "412412226ff1a7cc95b0dc0efe85b1221e0ae10a7b83d2c91efe0d13b18a4a55"}
   ],
   "textures": {
     "orm": {"file": "konepaja_element_monitors_orm.png", "sha256": "be03392463b010e89d61d9bb75db83f33b37764111bf8b29335fce7210c624dc"},
@@ -40,6 +40,6 @@
     {"id": "red_aggregate", "albedo": "konepaja_element_monitors_albedo_red_aggregate.png", "sha256": "32fab5c6321f085ce07eb63bfb59b42915445faf4f1b3a36c6dcce2affb40e48"}
   ],
   "default_variant": "grey_aggregate",
-  "preview": {"file": "../preview.png", "sha256": "bc4ef9095973f954d0eb1e9dd4da31a9480add49a855366541029be6ab601b71"},
+  "preview": {"file": "../preview.png", "sha256": "36b842a22e1f754edb51beed26430deb9d9461e705c0462d24cb3a6365c659b7"},
   "hero": false
 }

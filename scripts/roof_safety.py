@@ -276,6 +276,29 @@ class Mesh:
                                 (vm + d.dot(side) * p.ppm * k) / p.atlas)
 
 
+def _outward(M, faces):
+    """Turn *faces*, one closed solid just added to *M*, outward if they
+    enclose a negative volume. A solid laid out in a fixed order on the
+    caller's axes comes out inside out wherever those axes are left-handed,
+    as an eave's (along, out, up) are, or where its section is mirrored, as
+    a ladder's two rails are. Reversing keeps every vertex, loop start and
+    UV, so the solid is the one a later recalc_face_normals() would have
+    made: the union's operands, recalculated by to_object(), are unchanged,
+    and what append() takes needs no recalculating."""
+    faces = [f for f in faces if f is not None]
+    if not faces:
+        return M
+    o = faces[0].verts[0].co.copy()
+    vol = 0.0
+    for f in faces:
+        cos = [l.vert.co - o for l in f.loops]
+        for b, c in zip(cos[1:], cos[2:]):
+            vol += cos[0].dot(b.cross(c))
+    if vol < 0.0:
+        bmesh.ops.reverse_faces(M.bm, faces=faces)
+    return M
+
+
 def _flip_slivers(pts, tris):
     """Replace zero-area triangles by flipping their long edge: rung holes
     share their depth, so the triangulator may join three collinear corners."""
@@ -363,7 +386,8 @@ def _fill_columns(M, loops, to3d, along, frame):
 
 def box(M, origin, ax, ay, az, xr, yr, zr):
     """A box on axes *ax*, *ay*, *az* from *origin*, spanning *xr*, *yr*,
-    *zr* along them; each face mapped along its longer side."""
+    *zr* along them; each face mapped along its longer side, and wound
+    outward whichever way the axes turn (an eave's are left-handed)."""
     o, ax, ay, az = Vector(origin), Vector(ax), Vector(ay), Vector(az)
 
     def P(i, j, k):
@@ -371,14 +395,15 @@ def box(M, origin, ax, ay, az, xr, yr, zr):
 
     ext = [(xr[1] - xr[0], ax), (yr[1] - yr[0], ay), (zr[1] - zr[0], az)]
     longest = max(ext, key=lambda e: e[0])[1]
+    faces = []
     for f in ([(0, 0, 0), (0, 1, 0), (1, 1, 0), (1, 0, 0)],
               [(0, 0, 1), (1, 0, 1), (1, 1, 1), (0, 1, 1)],
               [(0, 0, 0), (1, 0, 0), (1, 0, 1), (0, 0, 1)],
               [(0, 1, 0), (0, 1, 1), (1, 1, 1), (1, 1, 0)],
               [(0, 0, 0), (0, 0, 1), (0, 1, 1), (0, 1, 0)],
               [(1, 0, 0), (1, 1, 0), (1, 1, 1), (1, 0, 1)]):
-        M.face([P(*c) for c in f], longest)
-    return M
+        faces.append(M.face([P(*c) for c in f], longest))
+    return _outward(M, faces)
 
 
 # =============================================================== ladder
@@ -408,16 +433,19 @@ def ladder(foot, up, across, out, length, standoff, brackets, mode, paint,
     if mode is None and not brackets:
         # bare rails, each a three-sided prism in its box: its back face
         # full width and its front edge on the box's front, so the ladder
-        # keeps its extents at 16 triangles for the pair
+        # keeps its extents at 16 triangles for the pair. The two sections
+        # mirror each other, so one rail's faces wind inward as laid out;
+        # _outward() turns that one, keeping its vertices, UVs and order.
         for side in (-1, 1):
             a_out = side * (LADDER_W / 2.0 + RAIL_W / 2.0)
             a_in = side * (LADDER_W / 2.0 - RAIL_W / 2.0)
             am = side * LADDER_W / 2.0
             tri = [(a_out, standoff), (a_in, standoff), (am, standoff + rail_d)]
-            for (pa, pc), (qa, qc) in zip(tri, tri[1:] + tri[:1]):
-                M.face([P(pa, b0, pc), P(qa, b0, qc), P(qa, b1, qc), P(pa, b1, pc)], up)
-            M.face([P(a, b0, c) for a, c in reversed(tri)], up)
-            M.face([P(a, b1, c) for a, c in tri], up)
+            faces = [M.face([P(pa, b0, pc), P(qa, b0, qc), P(qa, b1, qc), P(pa, b1, pc)], up)
+                     for (pa, pc), (qa, qc) in zip(tri, tri[1:] + tri[:1])]
+            faces.append(M.face([P(a, b0, c) for a, c in reversed(tri)], up))
+            faces.append(M.face([P(a, b1, c) for a, c in tri], up))
+            _outward(M, faces)
         return M
     c0, c1 = standoff, standoff + rail_d
     cm = (c0 + c1) / 2.0
@@ -724,7 +752,8 @@ class Cage:
     def strap(self, angle, paint, tri=False):
         """A vertical strap on the hoops' outsides at *angle* round the arc;
         *tri*, a three-sided prism within it whose outer edge keeps its
-        extent."""
+        extent. Its section is laid out in the eave's left-handed (along,
+        out) plane, so _outward() turns it."""
         a = math.radians(angle)
         rad, tan = Vector((math.cos(a), math.sin(a))), Vector((-math.sin(a), math.cos(a)))
         c = Vector((0.0, self.o)) + rad * CAGE_R
@@ -734,8 +763,9 @@ class Cage:
         if tri:
             sec = [c + tan * w, c - tan * w, c + rad * STRAP_T]
         z0, z1 = self.hoops[0] - STRAP_END, self.hoops[-1] + STRAP_END
-        return _prism(Mesh(paint), [self.point(*p, z0) for p in sec],
-                      [self.point(*p, z1) for p in sec], (0, 0, 1))
+        M = _prism(Mesh(paint), [self.point(*p, z0) for p in sec],
+                   [self.point(*p, z1) for p in sec], (0, 0, 1))
+        return _outward(M, M.bm.faces[:])
 
     def lean_hoop(self, z, M):
         """hoop()'s lean twin, added to *M*: the same centre line and outer
@@ -914,8 +944,10 @@ def append(obj, pieces, check=False):
     of the building, so there is nothing to join, and in the mesh before a
     build's weld and dissolve they changed what those greedy passes merged
     elsewhere, for eight more triangles on a tier with none to spare. The
-    lean kit goes in this way on every tier. *check* raises if a piece
-    meets the mesh or another piece (clashes())."""
+    lean kit goes in this way on every tier. append() recalculates no
+    normals: every solid this module hands it (bare rails, the back strap,
+    a walkway's plank, the lean parts) is wound outward as it is built.
+    *check* raises if a piece meets the mesh or another piece (clashes())."""
     if check:
         bad = clashes(obj, pieces)
         if bad:

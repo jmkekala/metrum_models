@@ -347,17 +347,18 @@ taken here.
 
 `scripts/validate_asset.py`'s sampled test reports 307 of 4,002 triangles
 hidden at `LOD0` (7.7 %, 0.1 m2 of it vertical), 66 of 1,972 at `LOD1`
-(3.3 %), 26 of 796 at `LOD2` (3.3 %) and 41 of 484 at `LOD3` (8.5 %, 4.3 m2
+(3.3 %), 26 of 796 at `LOD2` (3.3 %) and 9 of 484 at `LOD3` (1.9 %, 0.0 m2
 vertical). Before the roof kit the shell alone gave 1, 1, 0 and 1, slivers the
 exact boolean leaves where a gable panel's raking head meets the rake and in
 the rear gable's coursing, each under a centimetre across. The rest are the
 kit's own exterior faces, located by the coordinates the validator prints:
 the roof ladders' and walkways' undersides and rung-hole cheeks 5 - 8 cm over
 the shingles, which the fixed ray fan mostly sends into the sheet or the
-ladder itself, and at `LOD3` the ridge plank's side facing the crest 0.15 m
-away (the validator's largest candidates there) and the bare rails' backs,
-the wall ladder's facing the wall 1 m away under the eave. All are surface of the outside, seen from the
-low oblique views of the kit; none is buried. They are inspection candidates,
+ladder itself; at `LOD3` the largest are at the same points as `LOD2`'s.
+The bare rails and the ridge plank `LOD3` appends add none: they are closed
+solids wound outward. (An earlier export had one rail of each ladder and
+the plank inside out, 32 of its 41 candidates then.) All are surface of the
+outside, seen from the low oblique views of the kit; none is buried. They are inspection candidates,
 not proof either way; no buried partition was found. The wall ring is a
 single closed solid capped with a floor and a two-plane lid, so there is no
 interior to bury anything in.
@@ -889,6 +890,12 @@ files, not newer ones. The `.glb` and PNG exports are unaffected.
 
 ## Revision log
 
+- **2026-11-23 — far kit wound outward.** `scripts/roof_safety.py` built
+  the mirrored bare rails with one winding and a walkway plank in the
+  eave's left-handed axes, so on `LOD3` one rail of each of the three
+  ladders and the ridge plank were inside out; they are turned outward at
+  the source. Same triangles and vertices; `LOD3`'s hidden-surface
+  candidates 41 -> 9.
 - **2026-11-22 — gutters, downpipes and the roof safety kit (audit fix).**
   A half-round gutter is painted across the top of each eave fascia; the
   rake boards and the ridge crest's sides now take the fascia rows under it

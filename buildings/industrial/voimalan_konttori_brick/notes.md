@@ -389,10 +389,10 @@ or duplicate surfaces. Hidden-surface test:
 - **`LOD1`:** 49 of 1386 (3.5%), the same.
 - **`LOD2`:** 33 of 944 (3.5%), 0.0 m2 vertical: the coping's lip and the
   handrails' lean gaps, as `LOD1`.
-- **`LOD3`:** 24 of 456 (5.3%), 2.1 m2 vertical: the coping's lip, and the
-  wall-facing sides of the ladder's bare rails and the cage's strap,
-  0.17-0.8 m off the wall, which the rays from them all meet the wall.
-  Exterior, seen from the side.
+- **`LOD3`:** 8 of 456 (1.8%), 0.0 m2 vertical: the coping's lip. The
+  ladder's bare rails and the cage's strap add none: they are closed prisms
+  wound outward (an earlier export had one rail and the strap inside out,
+  16 candidates).
 
 Kept closure faces: none visible. The floor cap is on the ground and the
 parapet's top inside the coping, and the union removes them.
@@ -637,6 +637,10 @@ Pending, outside this repository:
 
 ## Revision log
 
+- **2026-11-23:** `LOD3`'s bare rails and the cage's back strap wound
+  outward: `scripts/roof_safety.py` built one of the mirrored rails, and the
+  strap in the eave's left-handed axes, inside out. Same triangles and
+  vertices; `LOD3`'s hidden-surface candidates 24 -> 8.
 - **2026-11-22:** audit fix: `LOD2` keeps the recessed openings, the lean
   handrails and the mast's stays (656 -> 944 triangles), so the window
   bands no longer pop at the consumer's 60 m switch; LOD review redone at

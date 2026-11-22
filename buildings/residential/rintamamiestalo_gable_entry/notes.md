@@ -502,7 +502,7 @@ Measured with `scripts/validate_asset.py` on the exports:
 | `LOD0` | 77 of 2572 | 3.0 % |
 | `LOD1` | 64 of 2008 | 3.2 % |
 | `LOD2` | 36 of 912 | 3.9 % |
-| `LOD3` | 8 of 488 | 1.6 % |
+| `LOD3` | 0 of 488 | 0.0 % |
 
 On `LOD2` the lean handrails add most of the new candidates: the rails'
 undersides over the treads and the landing post's faces toward the wall,
@@ -514,13 +514,14 @@ underside over its posts, all exterior surface seen at a grazing angle.
 
 The handrails add a handful more on `LOD0` and `LOD1`: the rails' undersides
 over the treads, and the back landing's post's face towards the wall, 2.75 cm
-off the siding. The vertical area, 0.2, 0.3, 0.2 and 1.3 m² on the four tiers,
-is that post, the downpipes' backs, facing the siding 3 cm away, and on `LOD3`
-mostly the backs of the wall ladder's bare rails, facing the west wall. Every
+off the siding. The vertical area, 0.2, 0.3 and 0.2 m² on `LOD0`–`LOD2`,
+is that post and the downpipes' backs, facing the siding 3 cm away. Every
 sampled ray from them heads for the wall and meets it, though they are
 exterior surface seen at a grazing angle. The rest are slivers where a long
 wall's top meets the rake soffit at the eave line, the same class the siblings
-keep. The earlier build had none, and the difference is the wall regions
+keep. `LOD3` has none: the wall ladder's bare rails it keeps are closed
+prisms wound outward (an earlier export had one of them inside out, its 8
+candidates then). The earlier build had none, and the difference is the wall regions
 retriangulating after the gable's two attic windows became one. No wall stands
 inside the house, by construction. The open chimney flue is not a candidate:
 its lining and floor see the sky up the shaft.
@@ -1000,6 +1001,10 @@ These are recorded as a known-good marker, not a requirement.
 
 ## Revision log
 
+- **2026-11-23 — bare rails wound outward.** `scripts/roof_safety.py`
+  built the wall ladder's mirrored bare rails with one winding, so one was
+  inside out on `LOD3`; it is turned at the source. Same triangles and
+  vertices; `LOD3`'s hidden-surface candidates 8 -> 0.
 - **2026-11-22 — audit fixes: far-tier openings, lean handrails, painted
   steel, night tint.** In the family module `scripts/rintamamiestalo.py`:
   the cellar lights and gable vents stay to `LOD3` as flush quads, and this

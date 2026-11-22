@@ -436,17 +436,18 @@ Measured with `scripts/validate_asset.py` on the exports:
 | --- | --- | --- |
 | `LOD0` | 130 of 5652 | 2.3 % |
 | `LOD1` | 107 of 3686 | 2.9 % |
-| `LOD2` | 78 of 1496 | 5.2 % |
-| `LOD3` | 28 of 492 | 5.7 % |
+| `LOD2` | 70 of 1496 | 4.7 % |
+| `LOD3` | 20 of 492 | 4.1 % |
 
 **All but the downpipes' backs are the inside of a balcony, and none is a
 buried partition.** The backs face the brick or a post 3 cm away, and every
 sampled ray from them heads for it and meets it: 6-11 triangles a tier,
 exterior surface seen at a grazing angle. The roof ladder's rung undersides,
-a few centimetres over the sheet, and on `LOD2` and `LOD3` the backs of the
-gable ladder's bare rails, facing the gable, are the same case; so, on
-`LOD2`, are the lean posts' backs, 1.5 mm off the balcony's edge, and the
-faces of the ridge vents' flues. The faces were listed and grouped by
+a few centimetres over the sheet, are the same case; so, on `LOD2`, are the
+lean posts' backs, 1.5 mm off the balcony's edge, and the faces of the ridge
+vents' flues. The gable ladder's bare rails on `LOD2` and `LOD3` add none,
+being closed prisms wound outward (an earlier export had one of them inside
+out, 8 more candidates on each of those tiers). The faces were listed and grouped by
 normal: the balcony decks (z 3.50, y 4.00–5.62), the parapets' inner faces (y
 5.62, z 3.50–4.54) and the screens' inner faces (x on the party lines). All are
 exterior boundary, the same case CLAUDE.md makes for recessed glass.
@@ -895,6 +896,11 @@ only sets them when a node tree is missing.
 
 ## Revision log
 
+- **2026-11-23 — bare rails wound outward.** `scripts/roof_safety.py`
+  built the gable ladder's mirrored bare rails with one winding, so one was
+  inside out on `LOD2` and `LOD3`; it is turned at the source. Same
+  triangles and vertices; hidden-surface candidates 78 -> 70 on `LOD2`,
+  28 -> 20 on `LOD3`.
 - **2026-11-22 — audit fixes: small parts through `LOD2`, matched `LOD3`
   night windows, painted steel, night tint.** `LOD2` keeps the ridge vents,
   the front doors' recess, the entrance steps, the walkway and the posts

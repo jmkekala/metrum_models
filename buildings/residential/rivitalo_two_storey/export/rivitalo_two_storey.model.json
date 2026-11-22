@@ -3,7 +3,7 @@
   "version": 1,
   "name": "rivitalo_two_storey",
   "path": "buildings/residential/rivitalo_two_storey",
-  "source": {"commit": "400ce70ef5f2a345bd87d4339eedcefcb07547f2", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "4552f759bcf8beb73335020471cbf928e55f7026", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-18.39, 0.0, -7.5625], "max": [18.39, 8.4625, 7.5625]},
   "footprint": [
@@ -64,8 +64,8 @@
   "lods": [
     {"file": "rivitalo_two_storey_lod0.glb", "triangles": 6592, "sha256": "dd54a8623d335f83870a74544aca289cd81a7ddafecd2ed06b31b8baa02d070e"},
     {"file": "rivitalo_two_storey_lod1.glb", "triangles": 3806, "sha256": "fa775ca71506d30184daeda8e48ad00f74d27d54fda481ba2d3e259b0ce7bfe8"},
-    {"file": "rivitalo_two_storey_lod2.glb", "triangles": 1494, "sha256": "9b5a91c8fc6e9873af0dbaf58a1364a1fd4bfba041e1fc436ea4b1c31bbdbbef"},
-    {"file": "rivitalo_two_storey_lod3.glb", "triangles": 494, "sha256": "2f9d7d583714b3aa974de4fb3bf941d8d7935142421f0bb0b8744bc643ebda8f"}
+    {"file": "rivitalo_two_storey_lod2.glb", "triangles": 1494, "sha256": "0d00369b586bc24cca121ee2d3e82b5ad499ee0e1877c33392e0a34ee67bba53"},
+    {"file": "rivitalo_two_storey_lod3.glb", "triangles": 494, "sha256": "157db7147576e243752b1df64a1e75b45446e3b74d716d9c4dc19b54c2c601b1"}
   ],
   "textures": {
     "orm": {"file": "rivitalo_two_storey_orm.png", "sha256": "2dd835072b6f365cec50db69510c1497eee48767666c415700f66dfe1df6efd1"},
@@ -80,6 +80,6 @@
     {"id": "red", "albedo": "rivitalo_two_storey_albedo_red.png", "sha256": "f6c43e0ad35eb80b4aee71d454b4dbda30c67f73ab778e767cf7b2b9a1adc89f"}
   ],
   "default_variant": "yellow",
-  "preview": {"file": "../preview.png", "sha256": "c0456d2e0ac043600b5bca1f139a55f58b079d8b99f762c3e0858ad53b9418b9"},
+  "preview": {"file": "../preview.png", "sha256": "eb1a15b29ae4252a5f00c4265d10d74dcef647d94fab0145ba151d5c101f7fe5"},
   "hero": false
 }

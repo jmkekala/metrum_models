@@ -506,10 +506,12 @@ Measured with `scripts/validate_asset.py` on the exports:
 | `LOD0` | 368 of 3,602 | 10.2 % | 6.0 m² |
 | `LOD1` | 208 of 2,294 | 9.1 % | 5.8 m² |
 | `LOD2` | 112 of 1,342 | 8.3 % | 5.7 m² |
-| `LOD3` | 18 of 458 | 3.9 % | 6.5 m² |
+| `LOD3` | 2 of 458 | 0.4 % | 0.4 m² |
 
 Of these, the ladder and cage's (counted by region): 122 on `LOD0`, 41 on
-`LOD1`, none on `LOD2`, 16 on `LOD3`.
+`LOD1`, none on `LOD2` or `LOD3`. `LOD3`'s bare rails and back strap are
+closed prisms wound outward; an earlier export had one rail and the strap
+inside out, the 16 candidates it showed there.
 
 The candidates are exterior surface the 40 sampled rays rarely escape:
 
@@ -528,9 +530,8 @@ The candidates are exterior surface the 40 sampled rays rarely escape:
   On `LOD1`, 40 rung-cap triangles; the tetrahedral brackets there and
   rungs on `LOD2` have no caps.
 - As before the sheaves: base wall slivers behind the back downpipe's lower
-  run, a sliver where the east gable's top meets the rake soffit, and at
-  `LOD3` the wall-facing sides of the ladder's bare rails and of the cage's
-  back strap.
+  run, and a sliver where the east gable's top meets the
+  rake soffit.
 
 No wall stands inside the building, by construction; the bay's recess is
 part of the tower's closed shell, and the welded export is manifold on
@@ -814,6 +815,10 @@ Recorded as known-good markers, not requirements.
 
 ## Revision log
 
+- **2026-11-23:** `LOD3`'s bare rails and back strap wound outward:
+  `scripts/roof_safety.py` built one of the mirrored rails, and the strap
+  in the eave's left-handed axes, inside out. Same triangles and vertices;
+  `LOD3`'s hidden-surface candidates 18 -> 2.
 - **2026-11-22:** audit fixes. The board-marked concrete repainted with
   sparse broad rain streaks and broad board tones (it read as woven fabric,
   the ochre as plywood); `LOD2`'s sheaves spoked at 12 sides without axles
