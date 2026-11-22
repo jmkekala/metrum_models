@@ -3,7 +3,7 @@
   "version": 1,
   "name": "navetta_board_gable",
   "path": "buildings/agricultural/navetta_board_gable",
-  "source": {"commit": "a700517823f982b8b19930405d20ce058299e39b", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "51372936a060d47afae0e335b074dcc31aa68991", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-8.35, 0.0, -6.3], "max": [8.35, 6.7106, 6.3]},
   "footprint": [
