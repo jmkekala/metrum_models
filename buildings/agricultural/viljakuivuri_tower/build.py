@@ -23,7 +23,9 @@ Construction is a set of closed solids unioned with Blender's exact boolean:
 the tower body, the lean-to body, the two roof slabs, the bin's wall, its
 cone, its fill collar, the spout, the flue and the three downpipes
 (scripts/downpipes.py), which hang from the gutter painted on the eave
-fascias; the tower's east one spills onto the lean-to's roof. The lean-to
+fascias; the tower's east one spills onto the lean-to's roof, and the roof
+safety kit's roof ladder and walkway to the flue (scripts/roof_safety.py),
+whose wall ladder is the lean kit, appended after the weld. The lean-to
 stands against the
 tower with its inner wall on the tower's east wall plane, and the union
 removes the two coincident walls. The result is the boundary of one empty
@@ -57,12 +59,14 @@ sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "scripts"))
 import asset_build  # noqa: E402
 import downpipes as DP  # noqa: E402
 import model_facts  # noqa: E402
+import roof_safety as RS  # noqa: E402
 import shell_build as SB  # noqa: E402
 from asset_build import to_object, union  # noqa: E402
 from shell_build import InwardFrame as Frame, fill_region, rect_poly  # noqa: E402
 
 asset_build.check_toolchain()
-BUILD = asset_build.Asset(ASSET, HERE, L.VARIANTS, L.DEFAULT_VARIANT)
+BUILD = asset_build.Asset(ASSET, HERE, L.VARIANTS, L.DEFAULT_VARIANT,
+                          tint=L.LIT_FACTOR)
 Builder = functools.partial(SB.Builder, L.ATLAS)
 PPM = L.PPM
 EPS = 1e-6
@@ -209,6 +213,33 @@ DOWNPIPES = [
              lt_roof_top(TX + DP.GAP) + ON_ROOF - DP.FOOT),
 ]
 
+# Roof safety kit (scripts/roof_safety.py): the sweep's way to the furnace
+# flue on the lean-to's 15 degree roof, at the back, away from the street
+# and the catalog view. The lean-to's eave wall faces +X, where a ladder
+# passing outside its eave would stand 0.18 m past the fascia and widen the
+# plan bounds, moving the pivot; so the wall ladder stands on the lean-to's
+# blank rear (rake) wall instead, next to its low corner, passing outside the
+# rake, where it stays inside the bounds the bin sets. It is the lean kit,
+# appended after the weld. The roof ladder runs up the slope from the eave
+# just inside the rake beside it, and a level walkway along the slope, just
+# downslope of the flue, takes the sweep from its top across the flue's
+# width.
+KIT_WALL_S = 0.60                              # lt_rear, s = LX1 - x: x = 5.80
+RAKE_EAVE = RS.Eave(*LT_WALLS["lt_rear"][:2],
+                    lt_roof_top(LX1 - KIT_WALL_S + RS.HALF) - ROOF_T, LT_RAKE_OV,
+                    lt_roof_top(LX1 - KIT_WALL_S - RS.HALF), 0.0)
+WALL_LADDER = RS.WallLadder(RAKE_EAVE, KIT_WALL_S, lean=True)
+LT_EAVE = RS.Eave(*LT_WALLS["lt_east"][:2], Z_LT_EAVE, LT_EAVE_OV,
+                  lt_roof_top(LX1 + LT_EAVE_OV), LT_TAN)
+KIT_ROOF_S = 2 * LY + LT_RAKE_OV - 0.10 - RS.HALF     # lt_east, s = y + LY
+# The walkway's downslope edge, its upslope edge 0.20 m below the flue
+WALK_OUT = FLUE_XY[0] + FLUE_R + 0.20 + RS.WALK_W - LX1
+ROOF_KIT = [
+    RS.RoofLadder(LT_EAVE, KIT_ROOF_S, LT_EAVE.roof_z(WALK_OUT)),
+    RS.Walkway(LT_EAVE, FLUE_XY[1] + LY - FLUE_R - 0.15, KIT_ROOF_S + RS.HALF, WALK_OUT),
+]
+KIT_PAINT = RS.Paint(L.ATLAS, strip=L.PIPE_STRIP)
+
 
 def top_fn(profile, length):
     """The wall's top edge as z(s), and the s of its interior kinks."""
@@ -230,12 +261,14 @@ def top_fn(profile, length):
 def item_mode(kind, level):
     """How an opening is built at each tier.
 
-    ring  - LOD0: the casing is a ring of faces on the wall, the opening inside
-            it recessed with reveals and closed by its glass, leaf or louvre.
-    cut   - LOD1: one recess the size of the casing, casing painted on it.
+    ring  - LOD0/1: the casing is a ring of faces on the wall, the opening
+            inside it recessed with reveals and closed by its glass, leaf or
+            louvre. LOD1 keeps it: a casing-sized recess there put the white
+            casings' top and one side in the recess's shadow at the LOD0
+            switch and gave them back at the LOD2 one.
     flush - LOD2/3: the casing rect as a flat quad in the wall.
     """
-    return ("ring", "cut", "flush", "flush")[level]
+    return ("ring", "ring", "flush", "flush")[level]
 
 
 # ------------------------------------------------------------ UV mappings
@@ -405,15 +438,15 @@ def leanto_body(level):
 
 
 # ================================================================== roofs
-ROOF_RPM = L.ROOF_H / L.ROOF_SLOPE_LEN           # atlas px per metre up a slope
-
-
-def slab(section, kinds, axis, a0, a1, slope_v):
+def slab(section, kinds, axis, a0, a1, slope_v, region):
     """A roof slab: a closed *section* (across, z) extruded along *axis*
     from a0 to a1. *kinds* names each section edge: slope, fascia, soffit or
-    end (a barge). *slope_v(across)* is the distance up the slope from the
-    eave edge, for the roof band's V."""
+    end (a barge). The slopes sample roof *region* at true scale, U along
+    the slab from a0 and V *slope_v(across)*, the distance up the slope from
+    the eave edge."""
     B = Builder()
+    rx0, ry0 = region[:2]
+    rpm = L.ROOF_PPM
 
     def W(a, p, z):
         return (a, p, z) if axis == "x" else (p, a, z)
@@ -425,7 +458,7 @@ def slab(section, kinds, axis, a0, a1, slope_v):
         return co.y if axis == "x" else co.x
 
     def slope_uv(co):
-        return ((along(co) + 16.0) * PPM, L.ROOF_Y0 + slope_v(across(co)) * ROOF_RPM)
+        return (rx0 + (along(co) - a0) * rpm, ry0 + slope_v(across(co)) * rpm)
 
     def fascia_uv(z_bot):
         return lambda co: ((along(co) + 16.0) * PPM, L.FASC_Y0 + (co.z - z_bot) * PPM)
@@ -460,7 +493,7 @@ def tower_roof():
     kinds = ("fascia", "slope", "slope", "fascia", "soffit", "soffit")
     slope_f = math.sqrt(1.0 + T_TAN * T_TAN)
     return slab(sec, kinds, "y", -TY - T_RAKE_OV, TY + T_RAKE_OV,
-                lambda p: (pe - abs(p)) * slope_f)
+                lambda p: (pe - abs(p)) * slope_f, L.ROOF_T)
 
 
 def leanto_roof():
@@ -478,7 +511,7 @@ def leanto_roof():
     kinds = ("end", "slope", "fascia", "soffit")
     slope_f = math.sqrt(1.0 + LT_TAN * LT_TAN)
     return slab(sec, kinds, "y", -LY - LT_RAKE_OV, LY + LT_RAKE_OV,
-                lambda x: (xo - x) * slope_f)
+                lambda x: (xo - x) * slope_f, L.ROOF_L)
 
 
 # ============================================================ round parts
@@ -601,6 +634,7 @@ def build_lod(level):
     ]
     parts += [to_object(B, name) for B, name in
               DP.solids(DOWNPIPES, *DP.MODES[level], L.PIPE_STRIP, L.ATLAS)]
+    parts += [to_object(B, name) for B, name in RS.solids(ROOF_KIT, level, KIT_PAINT)]
     obj = union(base, parts)
     obj.name = "{}_LOD{}".format(ASSET, level)
     obj.data.name = obj.name + "_mesh"
@@ -616,6 +650,9 @@ def build_lod(level):
             delimit={'UV', 'MATERIAL'})
     bm.to_mesh(obj.data)
     bm.free()
+    # the lean wall ladder, clear of everything, after the weld; none on the
+    # tier that drops the kit (it stands inside the bin's bounds)
+    RS.append(obj, RS.solids([WALL_LADDER], level, KIT_PAINT), check=True)
     return obj
 
 
@@ -661,8 +698,19 @@ def check_layout():
     if abs(lt_slope - L.ROOF_SLOPE_LEN) > 1e-3:
         problems.append("lean-to slope is %.4f m, the atlas assumes %.4f"
                         % (lt_slope, L.ROOF_SLOPE_LEN))
-    if (TX + T_EAVE_OV) * math.sqrt(1.0 + T_TAN ** 2) > L.ROOF_SLOPE_LEN:
-        problems.append("the tower's slope is longer than the roof band")
+    t_slope = (TX + T_EAVE_OV) * math.sqrt(1.0 + T_TAN ** 2)
+    if abs(t_slope - L.T_SLOPE_LEN) > 1e-3:
+        problems.append("tower slope is %.4f m, the atlas assumes %.4f"
+                        % (t_slope, L.T_SLOPE_LEN))
+    for name, length, atlas_len in (("tower", 2 * (TY + T_RAKE_OV), L.T_ROOF_LEN),
+                                    ("lean-to", 2 * (LY + LT_RAKE_OV), L.L_ROOF_LEN)):
+        if abs(length - atlas_len) > 1e-6:
+            problems.append("the %s's slab is %.2f m long, its roof region %.2f"
+                            % (name, length, atlas_len))
+    if L.ROOF_T[1] + L.ROOF_T[3] + 4 > L.ROOF_L[1] or \
+            L.ROOF_L[1] + L.ROOF_L[3] + 2 > L.ATLAS or \
+            max(r[0] + r[2] for r in (L.ROOF_T, L.ROOF_L)) + 2 > L.ATLAS:
+        problems.append("the roof regions overlap each other or leave the atlas")
     # the bin: clear of the lean-to's rake and the tower, its eave over the
     # lean-to's roof
     if BY - BIN_R < LY + LT_RAKE_OV + 0.20:
@@ -701,6 +749,30 @@ def check_layout():
         foot = pipe.point(0.0, DP.OUT, 0.0)
         if math.hypot(foot.x - BX, foot.y - BY) < BIN_EAVE_R + DP.A + 0.3:
             problems.append("the %s downpipe is within 0.3 m of the bin" % w)
+    # the roof safety kit: the wall ladder clear of the rear wall's corners
+    # and inside the plan bounds the bin sets, clear of the bin; the roof
+    # ladder inside the rake and clear of the lean-to's downpipe; the walkway
+    # below the flue, across its width
+    problems += RS.problems(WALL_LADDER, "the wall ladder", [])
+    rail_y = LY + WALL_LADDER.standoff + RS.RAIL_D
+    if rail_y > BY + BIN_EAVE_R - EPS:
+        problems.append("the wall ladder stands outside the bin's +Y bound")
+    for x in (LX1 - KIT_WALL_S - RS.HALF, LX1 - KIT_WALL_S + RS.HALF):
+        if math.hypot(x - BX, rail_y - BY) < BIN_EAVE_R + 0.3:
+            problems.append("the wall ladder is within 0.3 m of the bin")
+    if KIT_ROOF_S + RS.HALF > 2 * LY + LT_RAKE_OV - 0.05:
+        problems.append("the roof ladder runs off the lean-to's rake")
+    lt_pipe = DOWNPIPES[1]
+    if KIT_ROOF_S - RS.HALF < lt_pipe.s + DP.A + RS.CLEAR:
+        problems.append("the roof ladder crowds the lean-to's downpipe")
+    walk = ROOF_KIT[1]
+    fs = FLUE_XY[1] + LY
+    if walk.s0 > fs - FLUE_R or walk.s1 < fs + FLUE_R:
+        problems.append("the walkway does not run the flue's width")
+    if LX1 + walk.out_hi < FLUE_XY[0] + FLUE_R + 0.1:
+        problems.append("the walkway runs into the flue")
+    if LX1 + walk.out_hi < TX + 0.3:
+        problems.append("the walkway reaches the tower wall")
     # the east pipe spills onto the lean-to's slope: over the roof, clear of
     # its rakes, and its foot just above the sheet at every tier's path
     east = DOWNPIPES[2]

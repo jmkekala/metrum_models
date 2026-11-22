@@ -34,8 +34,7 @@ the post's foot, nothing in between.
 The roof sheds its water to the rear, so the rear eave carries the gutter,
 painted on its fascia, and a downpipe stands at each end of the rear wall
 (scripts/downpipes.py), unioned like the rest. The snow guard above that
-eave is painted on the roof's lowest strip, which maps onto its own rows of
-the atlas (facade_atlas.py).
+eave is painted on the roof's own atlas region (facade_atlas.py).
 
 The shed has no glazing and so no emission map (CLAUDE.md, Output Contract);
 BUILD below is asset_build.Asset with night_lit=False.
@@ -198,10 +197,10 @@ def keeps_post(level):
 
 
 def keeps_header(level):
-    """The header sets the bays' opening height and frames them in white; it
-    goes at LOD3, where its 0.29 m face is under three pixels and the roof's
-    own fascia line carries the top of the opening."""
-    return level < 3
+    """The header sets the bays' opening height and frames them in white.
+    Every tier keeps it: dropped at LOD3, the white line over the open bays
+    vanished at the 90 m switch, and the 12 triangles it costs are cheap."""
+    return True
 
 
 # ============================================================== wall frames
@@ -246,17 +245,19 @@ def uv_patch(name):
     return SB.uv_patch(L.PATCHES[name])
 
 
-ROOF_RPM = L.ROOF_H / L.ROOF_SLOPE_LEN           # atlas rows per metre up the slope
-
-
 def uv_roof(co):
-    """Profiled sheet: U along the ridge-less length, V up the slope from the
-    low (rear) edge."""
-    return ((co.x + 16.0) * PPM, L.ROOF_Y0 + (L.Y_REAR - co.y) * L.SLOPE_F * ROOF_RPM)
+    """Profiled sheet, the ROOF region at true scale: U plan x from the rake
+    edge, V up the slope from the low (rear) edge."""
+    x0, y0 = L.ROOF[:2]
+    return (x0 + (co.x + L.ROOF_LEN / 2.0) * L.ROOF_PPM,
+            y0 + (L.Y_REAR - co.y) * L.SLOPE_F * L.ROOF_PPM)
 
 
 def uv_ceiling(co):
-    return ((co.x + 16.0) * PPM, L.CEIL_Y0 + (co.y - L.Y_FRONT) * L.CEIL_RPM)
+    """The underside, the CEIL region: U plan x, V plan depth from the front."""
+    x0, y0 = L.CEIL[:2]
+    return (x0 + (co.x + L.ROOF_LEN / 2.0) * L.ROOF_PPM,
+            y0 + (co.y - L.Y_FRONT) * L.CEIL_RPM)
 
 
 def uv_fascia_x(co):
@@ -267,13 +268,6 @@ def uv_fascia_x(co):
 def uv_fascia_rear(co):
     """The rear (low) edge, where the gutter is: its own rows, U along x."""
     return ((co.x + 16.0) * PPM, L.FASC_R_Y0 + (co.z - z_under(co.y)) * PPM)
-
-
-def uv_eave(co):
-    """The roof's lowest strip, carrying the snow guard: V up the slope from
-    the low edge at EAVE_RPM, continuing the rear fascia's rows past its top."""
-    return ((co.x + 16.0) * PPM,
-            L.EAVE_ROOF_Y0 + (L.Y_REAR - co.y) * L.SLOPE_F * L.EAVE_RPM)
 
 
 def uv_fascia_y(co):
@@ -384,9 +378,8 @@ def roof_slab():
     Once unioned, the part of the underside over the closed bay and the walls
     is inside the wall ring and disappears.
 
-    The top is two strips across y: the roof's lowest EAVE_STRIP_LEN up the
-    slope, with the snow guard, maps onto the rear eave band, the rest onto
-    the ROOF band. The rake edges carry that breakpoint.
+    The top is one face on the ROOF region, the snow guard painted near its
+    foot.
 
     The breakpoints sit SOFFIT_IN inside the end walls' outer faces, not on
     them: an underside edge lying in a wall's plane left the exact boolean a
@@ -406,11 +399,8 @@ def roof_slab():
         a, b = xs[i], xs[i + 1]
         fn = uv_ceiling if i == 1 else uv_patch("soffit")
         B.face([(a, y0, zu(y0)), (a, y1, zu(y1)), (b, y1, zu(y1)), (b, y0, zu(y0))], fn)
-    ys = y1 - L.EAVE_STRIP_LEN / L.SLOPE_F
-    B.face([(-xr, y0, zu(y0) + t), (xr, y0, zu(y0) + t), (xr, ys, zu(ys) + t),
-            (-xr, ys, zu(ys) + t)], uv_roof)
-    B.face([(-xr, ys, zu(ys) + t), (xr, ys, zu(ys) + t), (xr, y1, zu(y1) + t),
-            (-xr, y1, zu(y1) + t)], uv_eave)
+    B.face([(-xr, y0, zu(y0) + t), (xr, y0, zu(y0) + t), (xr, y1, zu(y1) + t),
+            (-xr, y1, zu(y1) + t)], uv_roof)
     # front edge, walked +x along the bottom, back along the top
     B.face([(x, y0, zu(y0)) for x in xs] + [(xr, y0, zu(y0) + t), (-xr, y0, zu(y0) + t)],
            uv_fascia_x)
@@ -418,7 +408,7 @@ def roof_slab():
            + [(-xr, y1, zu(y1) + t), (xr, y1, zu(y1) + t)], uv_fascia_rear)
     for x, ya, yb in ((-xr, y1, y0), (xr, y0, y1)):
         B.face([(x, ya, zu(ya)), (x, yb, zu(yb)), (x, yb, zu(yb) + t),
-                (x, ys, zu(ys) + t), (x, ya, zu(ya) + t)], uv_fascia_y)
+                (x, ya, zu(ya) + t)], uv_fascia_y)
     return B
 
 
@@ -534,8 +524,8 @@ def check_layout():
         problems.append("the end wall's face and the post strip differ in width")
     # downpipes: clear of the rear wall's corners (it has no openings), their
     # tops inside the slab, their shoes under the eave so no tier's extents
-    # move; the snow guard inside its strip, and the strip on the roof and
-    # on the atlas
+    # move; the snow guard on the roof, and the roof and ceiling regions on
+    # the atlas, clear of each other and of the bands
     for pipe in DOWNPIPES:
         name = "the rear downpipe at s %.2f" % pipe.s
         problems += DP.problems(pipe, name, [])
@@ -544,12 +534,18 @@ def check_layout():
     if shoe_reach() > L.REAR_OV - 0.002:
         problems.append("the downpipes' shoes reach %.3f m off the wall, past the "
                         "%.2f m rear eave" % (shoe_reach(), L.REAR_OV))
-    if not 0.0 < L.SNOW_S < L.EAVE_STRIP_LEN - 5.0 / L.EAVE_RPM:
-        problems.append("the snow guard is not inside the eave strip")
-    if L.Y_REAR - L.EAVE_STRIP_LEN / L.SLOPE_F <= L.Y_FRONT:
-        problems.append("the eave strip is longer than the roof")
-    if L.EAVE_ROOF_Y0 + L.EAVE_STRIP_LEN * L.EAVE_RPM > L.ATLAS:
-        problems.append("the eave strip runs off the atlas")
+    if not 0.0 < L.SNOW_S < L.ROOF_SLOPE_LEN - 0.5:
+        problems.append("the snow guard is not on the roof")
+    if abs(2.0 * (HX + L.RAKE_OV) - L.ROOF_LEN) > 1e-6:
+        problems.append("the slab's length differs from the roof regions'")
+    rx, ry, rw, rh = L.ROOF
+    cx, cy, cw, ch = L.CEIL
+    if rx + rw + 2 > cx - 2 or cx + cw + 2 > L.ATLAS:
+        problems.append("the roof and ceiling regions overlap or leave the atlas")
+    if max(ry + rh, cy + ch) + 2 > L.INT_Y0 - 2 or min(ry, cy) - 2 < 272:
+        problems.append("the roof or ceiling region runs into S1 or INT")
+    if L.UNI_Y0 + L.Z_WALL_MAX * PPM + 2 > L.FASC_R_Y0 - 2:
+        problems.append("the unique regions run into the rear fascia band")
     return problems
 
 

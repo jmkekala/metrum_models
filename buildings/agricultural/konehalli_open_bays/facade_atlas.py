@@ -15,29 +15,30 @@ the painting runs when paint() is called. Rasterising is scripts/atlas.py's.
 The shed has no glazing, so there is no emission map: see notes.md, Night
 lighting.
 
-The atlas is a trim sheet. The full-width bands tile in U:
+The atlas is a trim sheet. The full-width bands tile in U; the roof's top
+and its underside are regions of their own:
 
     y    0 ..  272   S1       outer walls, z 0 .. 4.20: footing, board and batten
-    y  274 ..  374   ROOF     profiled sheet, V stretched up the slope
-    y  376 ..  396   FASCIA   the roof slab's edge: white board, sheet flashing
-    y  398 ..  498   CEIL     the roof's underside over the open bays, V = depth
+    y  274 ..  499   ROOF     x 2 .. 379: the roof's top, the whole slope at
+                              33 px/m both ways, the snow guard near its foot
+                     CEIL     x 382 .. 759: the roof's underside over the open
+                              bays, 33 px/m both ways, V = plan depth
     y  500 ..  712   INT      the bays' back wall: footing, bare boards, girts
-    y  716 ..  987   unique   bay side walls, both doors, post and corner
+    y  716 ..  984   unique   bay side walls, both doors, post and corner
                               strips, flat patches
-    y  988 .. 1024   EAVE_R   the rear (low) eave: its fascia with the gutter,
-                              then the roof's lowest 0.40 m with the snow guard
+    y  984 .. 1004   FASC_R   the rear (low) eave's fascia with the gutter
+    y 1004 .. 1024   FASCIA   the slab's front and rake edges: white board,
+                              sheet flashing
 
 The open bays are outside surface of the closed shell, seen in shade, so their
 boards are unpainted and their occlusion is painted: the back wall evenly
 dark, the side walls and the ceiling darkening with depth from the front.
 
 The roof sheds its water to the rear, so only the rear eave has a gutter, and
-the snow guard runs along the roof above it. The ROOF band's 14 px a metre up
-the slope would smear a rail two tubes thick, so the roof's lowest strip maps
-onto EAVE_R instead, at 40 px a metre, directly above the rear fascia: the two
-faces meet along the roof's edge and so do their rows. The strip is the ROOF
-band's own rows resampled (paint, weather and all) with the rail on top, so
-the seam where the slab's top face changes band does not show.
+the snow guard runs along the roof above it. The roof and the ceiling are the
+two largest surfaces, seen from raised views and through the open front; a
+full-width band each stretched them to 14 px a metre in V against 64 in U, so
+each is now one isotropic region at the most density the two fit at.
 """
 
 import os
@@ -64,7 +65,7 @@ TAN = (Z_EAVE_F - Z_EAVE_R) / (2.0 * HY)          # 1:6, about 9.5 degrees
 FRONT_OV, REAR_OV, RAKE_OV = 0.40, 0.20, 0.40
 ROOF_T = 0.25                # slab's vertical thickness = fascia height (16 px)
 WALL_INTO = 0.12             # walls run this far up into the slab
-Z_WALL_MAX = 4.20            # the S1 band and the side region reach this high
+Z_WALL_MAX = 4.15            # the side, post and corner regions reach this high
 
 
 def z_under(y):
@@ -88,11 +89,19 @@ REVEAL_DEPTH = {"door_pair": 0.15, "door": 0.12}
 
 # ------------------------------------------------------------ atlas bands
 S1_Y0 = 2.0                  # v of z = 0 on the outer walls
-ROOF_Y0, ROOF_H = 276.0, 96.0
-FASC_Y0 = 378.0              # v of the fascia's bottom edge
 FASC_H = ROOF_T * PPM        # 16 rows
-CEIL_Y0, CEIL_H = 400.0, 96.0
-CEIL_RPM = CEIL_H / (Y_REAR - Y_FRONT)            # rows per metre of plan depth
+# The roof's top and its underside, the bays' ceiling: one region each, side
+# by side, at ROOF_PPM pixels a metre both ways. U is plan x from the rake
+# edge (x = -ROOF_LEN / 2), so the ribs and rafters fall on whole multiples
+# of their spacing as before; the roof's V is up the slope from the low
+# (rear) edge, the ceiling's plan depth from the slab's front edge. At 64
+# px/m the two would need 850 rows; 33 px/m is the most at which they fit
+# between S1 and INT.
+ROOF_PPM = 33.0
+ROOF_LEN = 2.0 * (HX + RAKE_OV)                   # 11.3 m along x
+ROOF = (4.0, 276.0, ROOF_LEN * ROOF_PPM, ROOF_SLOPE_LEN * ROOF_PPM)
+CEIL = (384.0, 276.0, ROOF_LEN * ROOF_PPM, (Y_REAR - Y_FRONT) * ROOF_PPM)
+CEIL_RPM = ROOF_PPM                               # rows per metre of plan depth
 INT_Y0 = 502.0               # v of z = 0 on the bays' back wall
 INT_TOP = 3.25               # the back wall band reaches this high
 UNI_Y0 = 716.0
@@ -115,19 +124,20 @@ CORNER = (704.0, UNI_Y0, CW * PPM, Z_WALL_MAX * PPM)
 PATCHES = {name: (722.0 + 14.0 * i, UNI_Y0, 8.0, 8.0) for i, name in enumerate(
     ("header", "soffit", "reveal", "blank"))}
 
-# The rear eave band: the rear fascia (V = height over the slab's underside, as
-# FASCIA) with the gutter across its top, and from its top row on, the roof's
-# lowest EAVE_STRIP_LEN up the slope from the edge at EAVE_RPM rows a metre.
-FASC_R_Y0 = 990.0            # v of the rear fascia's bottom edge
-EAVE_ROOF_Y0 = FASC_R_Y0 + FASC_H                 # v of the roof's low edge
-EAVE_STRIP_LEN = 0.40        # metres of slope the strip covers
-EAVE_RPM = 40.0              # rows per metre up the slope (16 rows)
+# The two fascia bands, above the unique regions, V = height over the slab's
+# underside: the rear (low) edge's with the gutter across its top (FASC_R),
+# then the front and rake edges' (FASCIA).
+FASC_R_Y0 = 986.0            # v of the rear fascia's bottom edge
+FASC_R_TOP = FASC_R_Y0 + FASC_H                   # v of the roof's low edge
+FASC_Y0 = 1006.0             # v of the front fascia's bottom edge
 GUTTER_PX = 9.0              # the gutter's rows, under the fascia's top row
 # The downpipes' sides span the gutter's middle five rows (scripts/downpipes.py)
-PIPE_STRIP = (EAVE_ROOF_Y0 - 1 - GUTTER_PX / 2.0 - 2.5,
-              EAVE_ROOF_Y0 - 1 - GUTTER_PX / 2.0 + 2.5)
+PIPE_STRIP = (FASC_R_TOP - 1 - GUTTER_PX / 2.0 - 2.5,
+              FASC_R_TOP - 1 - GUTTER_PX / 2.0 + 2.5)
 SNOW_S = 0.20                # the snow guard's lower tube, up the slope from the
                              # edge: over the rear wall's line
+# Its two tubes, metres up the slope from SNOW_S: 50 and 37 mm.
+GUARD_TUBES = ((0.0, 0.050), (0.075, 0.1125))
 
 # Board-and-batten: battens over the board joints every 0.2 m. 12.8 px divides
 # the atlas width 80 times, so the bands still wrap.
@@ -151,24 +161,29 @@ ID_GUTTER = 9                # gutter, downpipes and snow guard: galvanised stee
 # rainwater goods and the snow guard are the farm buildings' one galvanised
 # steel, the same in every variant and on navetta_board_gable and
 # viljakuivuri_tower: sRGB (134, 137, 137), part metallic, dulled by its zinc
-# patina.
+# patina. The roof sheet's top and its folded flashings are coil-coated,
+# painted steel: dielectric, as on the farm's other two.
 SURFACE = {
     ID_WALL: (0.84, 0.0), ID_TRIM: (0.62, 0.0), ID_FOOT: (0.90, 0.0),
-    ID_ROOF: (0.50, 0.10), ID_DOOR: (0.80, 0.0), ID_INNER: (0.88, 0.0),
+    ID_ROOF: (0.50, 0.0), ID_DOOR: (0.80, 0.0), ID_INNER: (0.88, 0.0),
     ID_SHEET: (0.72, 0.15), ID_BLANK: (0.95, 0.0), ID_HW: (0.55, 0.60),
     ID_GUTTER: (0.48, 0.60),
 }
 
 # ---------------------------------------------------------------- palettes
-# Colour only: every variant is the same ids and shading. The doors take the
-# wall's colour, their frames and braces the trim's.
+# Colour only: every variant is the same ids and shading. The door leaves'
+# planks take the door colour, a shade darker than the wall, their frames and
+# braces the trim's. The farmstead's three buildings (this one,
+# navetta_board_gable, viljakuivuri_tower) share these numbers exactly, so
+# one variant name dresses the set; grey_weathered is unpainted boards gone
+# silver with weathered grey trim, lighter than the boards but no white.
 VARIANTS = {
-    "red_ochre": {"wall": (120, 50, 38), "trim": (222, 218, 206),
-                  "roof": (50, 52, 54)},
-    "grey_weathered": {"wall": (124, 120, 112), "trim": (190, 186, 176),
-                       "roof": (62, 64, 66)},
-    "yellow_ochre": {"wall": (184, 150, 88), "trim": (224, 220, 208),
-                     "roof": (74, 50, 44)},
+    "red_ochre": {"wall": (122, 52, 42), "trim": (221, 217, 205),
+                  "roof": (54, 56, 58), "door": (112, 48, 39)},
+    "grey_weathered": {"wall": (110, 106, 98), "trim": (150, 146, 137),
+                       "roof": (62, 62, 60), "door": (101, 98, 90)},
+    "yellow_ochre": {"wall": (184, 148, 86), "trim": (222, 218, 206),
+                     "roof": (75, 51, 45), "door": (169, 136, 79)},
 }
 DEFAULT_VARIANT = "red_ochre"
 FIXED = {
@@ -179,11 +194,9 @@ FIXED = {
 # Which ids each tiling band may contain.
 BAND_IDS = {
     "S1": ((0, 272), {ID_FOOT, ID_WALL}),
-    "ROOF": ((274, 374), {ID_ROOF}),
-    "FASCIA": ((376, 396), {ID_TRIM, ID_ROOF}),
-    "CEIL": ((398, 498), {ID_SHEET, ID_INNER}),
     "INT": ((500, 712), {ID_FOOT, ID_INNER}),
-    "EAVE_R": ((988, 1024), {ID_TRIM, ID_ROOF, ID_GUTTER}),
+    "FASC_R": ((FASC_R_Y0 - 2, FASC_R_TOP + 2), {ID_TRIM, ID_ROOF, ID_GUTTER}),
+    "FASCIA": ((FASC_Y0 - 2, ATLAS), {ID_TRIM, ID_ROOF}),
 }
 
 # ---------------------------------------------------------------- relief
@@ -261,25 +274,59 @@ def paint_s1(c):
     c.mul(0, ATLAS, ft, ft + 1.0, 0.86)
 
 
+def region_x(rect, X):
+    """Plan x of samples X in the ROOF or CEIL region."""
+    return (X - rect[0]) / ROOF_PPM - ROOF_LEN / 2.0
+
+
+def rail_bracket(x):
+    """The snow guard's brackets, every metre over the rafters."""
+    xm = np.mod(x, 1.0)
+    return (xm >= 0.009) & (xm < 0.040)
+
+
 def paint_roof(c):
-    """Profiled steel, ribs every 0.2 m down the slope, V stretched up it
-    (ROOF_H rows over ROOF_SLOPE_LEN). The ribs vary in U only, so they need
-    no correction for the stretch; the edge flashing along the high (front)
-    edge varies in V and is kept flat."""
-    y0, h = ROOF_Y0, ROOF_H
-    c.paint(0, ATLAS, y0 - 2, y0 + h + 2, ID_ROOF, 1.0, 1.0, height=0.0)
-    sy, sx, Y, X = c.field(0, ATLAS, y0 - 2, y0 + h + 2)
-    xm = X % BATTEN_PITCH
-    # trapezoid rib: 0.6 px slopes either side of a 2 px crown
-    up = np.clip(xm / 1.2, 0.0, 1.0)
-    down = np.clip((4.4 - xm) / 1.2, 0.0, 1.0)
-    rib = np.where(xm < 4.4, RIB_H * np.minimum(up, down), 0.0)
-    shade = np.where((xm >= 4.4) & (xm < 5.4), 0.92, 1.0)     # foot of a rib
-    ao = np.where((xm >= 4.4) & (xm < 5.4), 0.86, 1.0)
-    v = Y - y0
-    shade = np.where(v < 2.0, shade * 0.85, shade)              # low edge's drip
-    shade = np.where(v > h - 3.0, shade * 0.96, shade)          # edge flashing
-    c.height[sy, sx], c.shade[sy, sx], c.ao[sy, sx] = rib, shade, ao
+    """Profiled steel at ROOF_PPM both ways: ribs every 0.2 m down the slope,
+    the snow guard SNOW_S up from the low (rear) edge, over the rear wall's
+    line, and the folded flashing along the high (front) edge. The guard is
+    two round tubes on brackets every metre, as rintamamiestalo_porch paints
+    its own. Every height is scaled by ROOF_PPM / PPM, so the slopes the
+    normal map derives at PPM stay physical."""
+    x0, y0, w, h = ROOF
+    c.paint(x0 - 2, x0 + w + 2, y0 - 2, y0 + h + 2, ID_ROOF, 1.0, 1.0, height=0.0)
+    sy, sx, Y, X = c.field(x0 - 2, x0 + w + 2, y0 - 2, y0 + h + 2)
+    k = ROOF_PPM / PPM
+    xm = np.mod(region_x(ROOF, X), 0.20)
+    s = (Y - y0) / ROOF_PPM                               # metres up the slope
+    # trapezoid rib: 19 mm slopes either side of a 31 mm crown
+    up = np.clip(xm / 0.01875, 0.0, 1.0)
+    down = np.clip((0.06875 - xm) / 0.01875, 0.0, 1.0)
+    height = np.where(xm < 0.06875, RIB_H * k * np.minimum(up, down), 0.0)
+    foot = (xm >= 0.06875) & (xm < 0.084375)
+    shade = np.where(foot, 0.92, 1.0)                           # foot of a rib
+    ao = np.where(foot, 0.86, 1.0)
+    shade = np.where(s < 0.06, shade * 0.85, shade)             # low edge's drip
+    shade = np.where(s > ROOF_SLOPE_LEN - 0.10, shade * 0.96, shade)   # edge flashing
+    g = SNOW_S
+    rail = np.zeros(s.shape, bool)
+    for t0, t1 in GUARD_TUBES:
+        inside = (s >= g + t0) & (s < g + t1)
+        tube = SNOW_TUBE_H * k * np.sqrt(np.clip(
+            1.0 - (2.0 * (s - g - t0) / (t1 - t0) - 1.0) ** 2, 0, 1))
+        height = np.where(inside, tube, height)
+        shade = np.where(inside, 1.0, shade)
+        rail |= inside
+    lo, hi = g - 0.075, g + GUARD_TUBES[-1][1]
+    shade = np.where((s >= lo) & (s < g - 0.025), shade * 0.80, shade)   # under the tubes
+    gap = (s >= g + GUARD_TUBES[0][1]) & (s < g + GUARD_TUBES[1][0])
+    shade = np.where(gap, shade * 0.85, shade)                           # between them
+    ao = np.where((s >= lo) & (s < hi), np.minimum(ao, 0.85), ao)
+    bracket = rail_bracket(region_x(ROOF, X)) & (s >= lo) & (s < hi)
+    height = np.where(bracket, SNOW_BRACKET_H * k, height)
+    shade = np.where(bracket, 0.75, shade)
+    rail |= bracket
+    c.mid[sy, sx] = np.where(rail, ID_GUTTER, ID_ROOF)
+    c.height[sy, sx], c.shade[sy, sx], c.ao[sy, sx] = height, shade, ao
 
 
 def paint_fascia(c):
@@ -299,10 +346,11 @@ def paint_rear_fascia(c):
     """The rear (low) edge: the white fascia board with a half-round steel
     gutter hung across its top, under the sheet's drip edge, as in
     rintamamiestalo_porch. The band's top row is the roof's edge, where the
-    water leaves it, and the rows above it are the roof (paint_eave_roof)."""
+    water leaves it; the two rows over it continue the sheet's drip edge."""
     y0 = FASC_R_Y0
-    top = EAVE_ROOF_Y0
+    top = FASC_R_TOP
     c.paint(0, ATLAS, y0 - 2, top, ID_TRIM, 1.0, 1.0, height=0.0)
+    c.paint(0, ATLAS, top, top + 2, ID_ROOF, 0.80, height=0.0)
     c.bevel(0, ATLAS, y0, top - 1.0, CASING_H, 1.0, axes="y")
     c.mul(0, ATLAS, y0 - 2, y0 + 1, 0.86)                       # board's lower edge
     # half-round gutter: belly at the bottom, rolled lip at the top. Its roll
@@ -326,109 +374,44 @@ def paint_rear_fascia(c):
     c.height[sy, sx] = np.where(hang, c.height[sy, sx] + 0.004, c.height[sy, sx])
 
 
-def paint_eave_roof(c):
-    """The roof's lowest EAVE_STRIP_LEN, from the edge up, at EAVE_RPM rows a
-    metre, and the snow guard on it.
-
-    Every channel and weathering field is resampled from the ROOF band's rows
-    at the same slope distance, after the noise and the weather are in, so
-    the strip is the same sheet at a finer V and the slab's top face changes
-    band without a seam. Then the guard goes on top: two round tubes on
-    brackets every metre, as rintamamiestalo_porch paints its own at its
-    roof band's 41 px a metre. The band varies in V here, so the heights are
-    scaled by EAVE_RPM / PPM to keep the slope the normal map derives from
-    physical. Runs to the atlas's top row: nothing lies above it.
-    """
-    ss = c.ss
-    r0 = c._idx(EAVE_ROOF_Y0)
-    rows = np.arange(r0, ATLAS * ss)
-    Y = (rows + 0.5) / ss
-    s = (Y - EAVE_ROOF_Y0) / EAVE_RPM                      # metres up the slope
-    src = (ROOF_Y0 + s * (ROOF_H / ROOF_SLOPE_LEN)) * ss - 0.5
-    i0 = np.floor(src).astype(np.int64)
-    f = (src - i0).astype(np.float32)[:, None]
-    i1 = i0 + 1
-    near = np.where(f[:, 0] < 0.5, i0, i1)
-    c.mid[r0:] = c.mid[near]
-    for a in (c.shade, c.ao, c.height):
-        a[r0:] = a[i0] * (1.0 - f) + a[i1] * f
-    w = c.weather
-    for k in w.f:
-        w.f[k][r0:] = w.f[k][i0] * (1.0 - f) + w.f[k][i1] * f
-
-    rpm = EAVE_RPM
-    k = rpm / PPM
-    y0 = EAVE_ROOF_Y0
-    g = round(SNOW_S * rpm)
-    sy, sx, Y, X = c.field(0, ATLAS, y0, ATLAS)
-    v = Y - y0
-    mid, height = c.mid[sy, sx], c.height[sy, sx]
-    shade, ao = c.shade[sy, sx], c.ao[sy, sx]
-    rail = np.zeros(Y.shape, bool)
-    for t0, t1 in ((g, g + 2.0), (g + 3.0, g + 4.5)):
-        inside = (v >= t0) & (v < t1)
-        tube = SNOW_TUBE_H * k * np.sqrt(np.clip(
-            1.0 - (2.0 * (v - t0) / (t1 - t0) - 1.0) ** 2, 0, 1))
-        height = np.where(inside, tube, height)
-        shade = np.where(inside, 1.0, shade)
-        rail |= inside
-    shade = np.where((v >= g - 3) & (v < g - 1), shade * 0.80, shade)   # under the tubes
-    shade = np.where((v >= g + 2.0) & (v < g + 3.0), shade * 0.85, shade)  # between them
-    ao = np.where((v >= g - 3) & (v < g + 4.5), np.minimum(ao, 0.85), ao)
-    # brackets every metre, over the rafters (paint_ceiling)
-    xm = X % PPM
-    bracket = (xm >= 0.6) & (xm < 2.6) & (v >= g - 3) & (v < g + 4.5)
-    height = np.where(bracket, SNOW_BRACKET_H * k, height)
-    shade = np.where(bracket, 0.75, shade)
-    rail |= bracket
-    c.mid[sy, sx] = np.where(rail, ID_GUTTER, mid)
-    c.height[sy, sx], c.shade[sy, sx], c.ao[sy, sx] = height, shade, ao
-    # the rail's own weather replaces the sheet's: light dust, rust at the
-    # brackets, as on the farm's other two snow guards; debris held on the
-    # sheet just above it
-    for key in w.f:
-        w.f[key][sy, sx] = np.where(rail, 0.0, w.f[key][sy, sx])
-    w.add("D", 0, ATLAS, y0 + g - 3, y0 + g + 4.5,
-          lambda Y, X, nz: 0.06 + 0.08 * nz("blotch"), (ID_GUTTER,))
-    w.add("R", 0, ATLAS, y0 + g - 3, y0 + g + 4.5, lambda Y, X, nz: 0.15 * (
-        ((X % PPM) >= 0.6) & ((X % PPM) < 2.6)), (ID_GUTTER,))
-    w.add("D", 0, ATLAS, y0 + g + 4.5, y0 + g + 10.0, lambda Y, X, nz: 0.22
-          * nz("blotch") * (1.0 - (Y - y0 - g - 4.5) / 5.5), (ID_ROOF,))
-
-
 def paint_ceiling(c):
-    """The roof's underside, V = plan depth from the slab's front edge at
-    CEIL_RPM rows a metre. Bare sheet with its ribs, rafters every metre
-    across it (U), purlins under the sheet every 1.1 m (V). Light under the
-    front overhang, darkening into the bays, light again under the rear
-    overhang, which is outside the back wall."""
-    y0, h = CEIL_Y0, CEIL_H
-    c.paint(0, ATLAS, y0 - 2, y0 + h + 2, ID_SHEET, 1.0, 1.0, height=0.0)
-    sy, sx, Y, X = c.field(0, ATLAS, y0 - 2, y0 + h + 2)
+    """The roof's underside, its own region at ROOF_PPM both ways: U plan x,
+    V plan depth from the slab's front edge. Bare sheet with its ribs,
+    rafters every metre across it (U), purlins under the sheet every 1.1 m
+    (V). Light under the front overhang, darkening into the bays, light again
+    under the rear overhang, which is outside the back wall. Heights are
+    scaled by ROOF_PPM / PPM, as on the roof."""
+    x0, y0, w, h = CEIL
+    c.paint(x0 - 2, x0 + w + 2, y0 - 2, y0 + h + 2, ID_SHEET, 1.0, 1.0, height=0.0)
+    sy, sx, Y, X = c.field(x0 - 2, x0 + w + 2, y0 - 2, y0 + h + 2)
+    kh = ROOF_PPM / PPM
     y = Y_FRONT + (Y - y0) / CEIL_RPM                # plan y of each sample
-    xm = X % BATTEN_PITCH
-    height = np.where(xm < 4.4, -0.6 * RIB_H * np.minimum(
-        np.clip(xm / 1.2, 0, 1), np.clip((4.4 - xm) / 1.2, 0, 1)), 0.0)
+    x = region_x(CEIL, X)                            # plan x
+    xm = np.mod(x, 0.20)
+    height = np.where(xm < 0.06875, -0.6 * RIB_H * kh * np.minimum(
+        np.clip(xm / 0.01875, 0, 1), np.clip((0.06875 - xm) / 0.01875, 0, 1)), 0.0)
     # The ribs, purlins and rafters are kept low in tone: the ceiling slopes
     # down to the back, so the front elevation sees it face-on through the
     # opening, and at full contrast the grid they make read as glazing bars.
-    shade = np.where(xm < 4.4, 0.97, 1.0)
+    shade = np.where(xm < 0.06875, 0.97, 1.0)
     mid = np.full(Y.shape, ID_SHEET, np.uint8)
     # purlins, across the rafters just under the sheet
     purl = np.zeros(Y.shape, bool)
     for yp in (-3.25, -2.15, -1.05, 0.05, 1.15, 2.25, 3.10):
         purl |= np.abs(y - yp) < 0.05
     mid = np.where(purl, ID_INNER, mid)
-    height = np.where(purl, 0.5 * RAFTER_H, height)
+    height = np.where(purl, 0.5 * RAFTER_H * kh, height)
     shade = np.where(purl, 0.92, shade)
     # rafters every metre, a 50 mm face
-    rm = X % PPM
-    raf = rm < 3.2
+    rm = np.mod(x, 1.0)
+    raf = rm < 0.05
     mid = np.where(raf, ID_INNER, mid)
-    height = np.where(raf, RAFTER_H * np.clip(np.minimum(rm, 3.2 - rm) / 0.8, 0, 1), height)
+    height = np.where(raf, RAFTER_H * kh * np.clip(np.minimum(rm, 0.05 - rm) / 0.0125, 0, 1),
+                      height)
     shade = np.where(raf, 0.92, shade)
-    shade = np.where((rm >= 3.2) & (rm < 4.2), shade * 0.92, shade)  # beside a rafter
-    ao = np.where((rm >= 3.2) & (rm < 4.2) | (rm > PPM - 1.0), 0.80, 1.0)
+    beside = (rm >= 0.05) & (rm < 0.0656)
+    shade = np.where(beside, shade * 0.92, shade)                    # beside a rafter
+    ao = np.where(beside | (rm > 1.0 - 0.0156), 0.80, 1.0)
     # occlusion: depth into the bay from the front wall line. The ceiling
     # faces the floor, so it darkens sooner and further than the walls.
     d = y + HY
@@ -581,16 +564,29 @@ def weather(c):
     w.plinth(0, ATLAS, S1_Y0, S1_Y0 + m(Z_FOOT), (ID_FOOT,))
     w.splash(0, ATLAS, S1_Y0 + m(Z_FOOT), 272, (ID_WALL,))
     # roof: runs down the slope, dirt toward the low edge, chalk up the slope
-    w.roof(0, ATLAS, ROOF_Y0, ROOF_H, ROOF_SLOPE_LEN, (ID_ROOF,))
-    w.add("R", 0, ATLAS, ROOF_Y0 - 2, ROOF_Y0 + 3, lambda Y, X, nz: 0.12 * nz("speck"),
+    x0, y0, rw, rh = ROOF
+    xa, xb = x0 - 2, x0 + rw + 2
+    w.roof(xa, xb, y0, rh, ROOF_SLOPE_LEN, (ID_ROOF,))
+    w.add("R", xa, xb, y0 - 2, y0 + 0.15 * ROOF_PPM, lambda Y, X, nz: 0.12 * nz("speck"),
           (ID_ROOF,))
+    # the snow guard: light dust on it (with grime(), 0.06 + 0.08 blotch, as
+    # on the farm's other two), rust at its brackets; debris held on the
+    # sheet just above it
+    g = y0 + SNOW_S * ROOF_PPM
+    lo, hi = g - 0.075 * ROOF_PPM, g + GUARD_TUBES[-1][1] * ROOF_PPM
+    w.add("D", xa, xb, lo, hi, lambda Y, X, nz: 0.06 + 0.045 * nz("blotch"),
+          (ID_GUTTER,))
+    w.add("R", xa, xb, lo, hi, lambda Y, X, nz: 0.15 * rail_bracket(region_x(ROOF, X)),
+          (ID_GUTTER,))
+    w.add("D", xa, xb, hi, hi + 0.17 * ROOF_PPM, lambda Y, X, nz: 0.22 * nz("blotch")
+          * (1.0 - (Y - hi) / (0.17 * ROOF_PPM)), (ID_ROOF,))
     # fascia: runs down the board from the flashing
     w.runs(0, ATLAS, FASC_Y0 - 2, FASC_Y0 + FASC_H - 4, (ID_TRIM,), 0.18, fall=6.0,
            lo=0.4, hi=1.6)
     # rear fascia: runs down the board from the gutter; the gutter's dirty
     # belly and light runs down its face from the lip, the same treatment as
     # the farm's other two gutters
-    top = EAVE_ROOF_Y0
+    top = FASC_R_TOP
     g0 = top - 1 - GUTTER_PX
     w.add("D", 0, ATLAS, FASC_R_Y0 - 2, g0, 0.06, (ID_TRIM,))
     w.runs(0, ATLAS, FASC_R_Y0 - 2, g0, (ID_TRIM,), 0.22, fall=6.0, lo=0.4, hi=1.6)
@@ -604,7 +600,7 @@ def weather(c):
         w.add("D", x0, x1, yg - 2, yt, lambda Y, X, nz, yg=yg: 0.08 * nz("blotch")
               + 0.28 * np.exp(-np.clip((Y - yg) / PPM, 0, None) / 0.35),
               (ID_INNER, ID_FOOT, ID_TRIM))
-    w.add("D", 0, ATLAS, CEIL_Y0 - 2, CEIL_Y0 + CEIL_H + 2,
+    w.add("D", CEIL[0] - 2, CEIL[0] + CEIL[2] + 2, CEIL[1] - 2, CEIL[1] + CEIL[3] + 2,
           lambda Y, X, nz: 0.10 * nz("blotch"), (ID_SHEET, ID_INNER))
     # posts, corner boards and door feet: splashed like the walls
     for x0, y0, wd, _h in (POST, CORNER):
@@ -650,7 +646,6 @@ def paint(ss=atlas.SS):
     c.shade[concrete] *= 1.0 + 0.03 * pores[concrete]
     c.height[concrete] += 0.0006 * pores[concrete]
     weather(c)
-    paint_eave_roof(c)              # resamples the finished ROOF band
     c.check_bands(BAND_IDS)
     c.pad()
     return c
@@ -661,7 +656,8 @@ def lut(variant):
     t = np.zeros((256, 3), np.float32)
     for i, col in FIXED.items():
         t[i] = col
-    t[ID_WALL] = t[ID_DOOR] = pal["wall"]
+    t[ID_WALL] = pal["wall"]
+    t[ID_DOOR] = pal["door"]
     t[ID_TRIM] = pal["trim"]
     t[ID_ROOF] = pal["roof"]
     return t

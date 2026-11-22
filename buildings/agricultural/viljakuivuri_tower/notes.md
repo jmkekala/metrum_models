@@ -141,8 +141,9 @@ rakes and the bin's eave have none.
 
 ## Construction
 
-`build.py` builds up to twelve closed solids and unions them with Blender's
-exact boolean (`asset_build.union`):
+`build.py` builds up to fourteen closed solids (and the walkway's posts) and
+unions them with Blender's exact boolean (`asset_build.union`), then appends
+the roof safety kit's lean wall ladder after the weld:
 
 - the tower body;
 - the lean-to body;
@@ -153,7 +154,8 @@ exact boolean (`asset_build.union`):
 - the fill collar;
 - the spout;
 - the flue;
-- three downpipes (`scripts/downpipes.py`).
+- three downpipes (`scripts/downpipes.py`);
+- the roof safety kit's roof ladder and walkway (`scripts/roof_safety.py`).
 
 Wall rings rise 0.10 m into their slabs. The union trims them at the soffits,
 removes the lean-to's buried west wall and the tower's east wall behind it,
@@ -161,11 +163,12 @@ and cuts the spout's way through the tower's back wall. It joins the bin to
 the building through the spout and the collar, so each tier exports as one
 mesh and one closed shell.
 
-The method follows `rintamamiestalo_porch`:
+The mesh kit is the catalog's shared `scripts/shell_build.py`:
 
 - every vertex on a shared edge is a corner of both faces;
+- walls are polygons with holes (`fill_region()`), openings recessed with
+  `recess()`;
 - `close_solid()` caps a wall ring by walking its rim;
-- `_flip_slivers()` repairs zero-area triangles;
 - `Builder.face()` tests for zero area in double precision.
 
 Parameters the tiers derive from:
@@ -282,21 +285,47 @@ every pipe it hangs from the soffit only.
 Every roof slope carries a painted snow guard, as a Finnish metal roof does:
 two round tubes 0.5 m up the slope from the eave, on brackets on every
 second rib (0.5 m apart), in the gutter's galvanised steel (`ID_GUTTER`) as
-a matched system. It lives in the ROOF band, which admits `ID_GUTTER` beside
-the sheet and the top flashing. Every slope's V runs up from its own eave (`slab()`'s
-`slope_v`), so the one painted rail lands 0.5 m above the eave on the
-tower's two slopes and on the lean-to's. The lean-to's matters most: it is
+a matched system. It is painted in both roof regions (`ROOF_T`, `ROOF_L`),
+whose V runs up from each slope's own eave (`slab()`'s `slope_v`), so the
+rail lands 0.5 m above the eave on the tower's two slopes and on the
+lean-to's. The lean-to's matters most: it is
 the low roof beside the vehicle door, where the tractor and trailer stand.
 No geometry: `rintamamiestalo_porch` paints its snow guard the same way.
+
+### Roof safety kit
+
+The furnace flue through the lean-to's 15° roof (steeper than 1:8) is a
+sooted chimney, swept from the roof, so it is a serviced item and the roof
+carries the kit (`scripts/roof_safety.py`), at the back, away from the
+street and the catalog view. The tower's 30° roof carries nothing serviced.
+
+- **Wall ladder**, on the lean-to's blank rear (rake) wall, centred 0.60 m
+  from its low (east) corner (x 5.80 m), passing 0.12 m outside the 0.25 m
+  rake and running 1.0 m above the roof there (5.08 m long, no cage). The
+  lean-to's eave wall (+X) has a run, but a ladder passing outside its eave
+  would stand 0.18 m past the fascia, the plan's +X extent, and move the
+  bounds and the pivot; on the rear wall it stays inside the +Y bound the
+  bin sets (rails at y 2.53 m against the bin's 5.90 m), so bounds, pivot,
+  footprint and doors are unchanged. It is the lean kit
+  (`WallLadder(lean=True)`): separate solids that touch nothing, appended
+  after the weld with `RS.append(check=True)`.
+- **Roof ladder**, up the slope from the lean-to's eave just inside the rear
+  rake (s 4.10 m along the east eave, y 2.00 m), beside the wall ladder's
+  top, to the walkway: 2.9 m long, on brackets into the slab.
+- **Walkway**, a level plank along the slope from the roof ladder's top
+  across the flue's width (y −1.30 to 2.25 m), its upslope edge 0.20 m below
+  the flue (x 3.55 m), on posts into the slab.
+
+The kit takes the gutter's galvanised colour through `PIPE_STRIP`. Tiers
+follow `roof_safety.MODES`: every rung and the brackets at `LOD0`, every
+other rung at `LOD1`, every fourth rung without brackets or posts at
+`LOD2`, and no kit at `LOD3` (its rails under half a pixel past 98 m;
+`LOD3` keeps 490 of its 500 triangles as before, with every downpipe).
 
 ### What the catalog's shared kits do not apply to
 
 - **No handrails**, because both doors have their threshold one 0.10 m step
   above the ground.
-- **No roof safety kit.** The tower's 30° roof carries nothing serviced. The
-  lean-to's 15° roof carries the furnace flue, a plain steel pipe swept from
-  the furnace inside, not a serviced chimney. CLAUDE.md does not count a plain
-  pipe as a serviced item.
 
 ### check_layout()
 
@@ -308,8 +337,12 @@ No geometry: `rintamamiestalo_porch` paints its snow guard the same way.
 - the lean-to's walls outgrowing S1, or its rakes reaching the tower's face
   planes;
 - the tower's apex outgrowing W2's second repeat;
-- the lean-to's slope disagreeing with the roof band, or the tower's slope
-  being longer than it;
+- either slope's length or either slab's length disagreeing with its roof
+  region, or the two regions overlapping or leaving the atlas;
+- the wall ladder within `roof_safety.CORNER` of its wall's ends
+  (`RS.problems()`), outside the bin's +Y bound or within 0.3 m of the bin;
+  the roof ladder off the rake or crowding the lean-to's downpipe; the
+  walkway short of the flue's width, into the flue or near the tower wall;
 - the bin within 0.2 m of the lean-to's rake, its eave not above the lean-to,
   or the bin within 0.3 m of the tower;
 - the spout falling at under 35°, or leaving the back wall near a corner,
@@ -326,10 +359,10 @@ No geometry: `rintamamiestalo_porch` paints its snow guard the same way.
 
 | Tier | Triangles | Ceiling | What changes |
 | --- | --- | --- | --- |
-| `LOD0` | 1,192 | 12,000 | casing rings, reveals and closures on all eight openings; bin 16-sided, spout and flue 8-sided, collar 8; downpipes 8-sided with swan-neck and shoe |
-| `LOD1` | 916 | 4,000 | each opening one recess the size of its casing; bin 12, spout and flue 6; downpipes 4-sided, bent |
-| `LOD2` | 544 | 1,500 | openings flush; coplanar boolean splits dissolved; bin 8, spout and flue 4, collar 6; downpipes 4-sided, straight |
-| `LOD3` | 490 | 500 | as `LOD2`, bin a 6-sided prism, collar 4; downpipes 3-sided, straight |
+| `LOD0` | 1,836 | 12,000 | casing rings, reveals and closures on all eight openings; bin 16-sided, spout and flue 8-sided, collar 8; downpipes 8-sided with swan-neck and shoe; the roof safety kit with every rung, brackets and posts (644) |
+| `LOD1` | 1,460 | 4,000 | the same casing rings, reveals and closures as `LOD0`; bin 12, spout and flue 6; downpipes 4-sided, bent; the kit with every other rung (the rings and the kit add 544 together over the old casing-sized recesses) |
+| `LOD2` | 684 | 1,500 | openings flush; coplanar boolean splits dissolved; bin 8, spout and flue 4, collar 6; downpipes 4-sided, straight; the kit with every fourth rung, no brackets or posts (140) |
+| `LOD3` | 490 | 500 | as `LOD2`, bin a 6-sided prism, collar 4; downpipes 3-sided, straight; no kit |
 
 What the bin and the spout cost together (bin wall, cone, collar and spout),
 the flue, and the three downpipes (each pipe's faces and its hole in the
@@ -345,11 +378,16 @@ soffit, `DP.MODES`):
 The east pipe is 82 / 42 / 18 / 12 of those. No tier drops the downpipes:
 every tier keeps all three at the module's default `DP.MODES`, and `LOD3`
 stays under its ceiling with them (490 of 500). That leaves `LOD3` 10
-triangles of headroom; anything added later goes past it, and the first
-saving would be the east pipe at `LOD3`, where it is a one-pixel line.
+triangles of headroom, which the roof safety kit does not touch: `LOD3`
+drops it, as `roof_safety.MODES` does, and the kit stands inside the
+bounds, so no bare rails need to stay for the extents. Anything added to
+`LOD3` later goes past the ceiling; the first saving would be the east pipe,
+a one-pixel line there.
 
 The building itself is about 500 triangles at `LOD0` and about 250 at `LOD3`,
-before the downpipes.
+before the downpipes and the kit. The kit is most of the rise over the
+farm's other buildings: the unioned roof ladder's rungs and brackets cut
+the rails and the slab, and the walkway's posts the slab.
 
 **These counts are far under the ceilings, and that is correct, not something
 to pad.** The building is two boxes with two roofs and eight openings. The
@@ -362,6 +400,40 @@ seams the tiling band needs, so they stay. The tower's corner columns are
 split at the joints for the same reason.
 
 ## LOD review
+
+### The consumer's switches
+
+The consumer switches by screen size: adjacent tiers are judged at 1.8, 4 and
+8 times the largest bounds dimension (12.19 m, the height), so **22, 49 and
+98 m**, with its camera, 75° vertical FOV at 1920×1080, distance from the
+camera to the centre of `LOD0`'s bounds. Rendered on reimported GLBs (Cycles
+24 samples, AgX, the `review_asset.py` scene with the lens swapped): front,
+corner (45° round, 25° up), eye level and rear at noon, the corner at night
+with the reference emission on; each pair side by side with its difference,
+before and after the 2026-11-22 fixes with identical settings
+(`review/older_audit_2026_11_22/fix_agricultural/viljakuivuri_tower/sheets/`,
+local, git-ignored).
+
+- **22 m, `LOD0`/`LOD1`:** `LOD1` used to cut one casing-sized recess per
+  opening, so every white casing lost its top and one side to the recess's
+  shadow at this switch. `LOD1` now keeps `LOD0`'s casing ring on the wall
+  and recesses only the opening: the two tiers differ only in the round
+  parts' sides and the kit's rungs (mean difference over the front 1.64 →
+  0.19 / 255, eye level 1.61 → 0.21, night 0.28 → 0.03). Nothing pops.
+- **49 m, `LOD1`/`LOD2`:** the openings go flush. The casings no longer jump
+  back to full width (they are full width on both tiers); what changes is
+  the recess's shadow inside the casing, the head shadow over each pane and
+  the leaf's depth, CLAUDE.md's flat openings from `LOD2` (mean 1.85 → 1.42
+  front, 2.10 → 1.50 eye). The kit's rungs thin to every fourth. Left as is.
+- **98 m, `LOD2`/`LOD3`:** the bin's and collar's sides, the downpipes'
+  third side, and the roof safety kit, which `LOD3` drops: the walkway
+  plank, a one-pixel light line on the lean-to's roof at this distance, and
+  the ladders' rails, under half a pixel (mean 0.29 → 0.36 at the corner).
+  `LOD3` has 10 triangles of headroom, too few for the 12-triangle plank, so
+  that line goes; recorded rather than hidden.
+- At night the lit panes match across every pair.
+
+### Authoring review
 
 **Intended switches: 35 / 70 / 120 m**, the catalog defaults; no overrides.
 Distances were reviewed with `scripts/review_asset.py` on the exported tiers:
@@ -378,7 +450,7 @@ Renders are in `review/farm_2026_11_20/viljakuivuri_tower/lod/`.
   white-trimmed gable, a low lean-to, a pale cylinder with a bright cone, and
   the diagonal spout between them. That is a grain farm's dryer, and it holds
   on every tier. At 120 m the spout is a two-pixel line and still reads.
-- **Openings.** At 35 m `LOD1`'s recessed casings read as `LOD0`'s. At the
+- **Openings.** `LOD1` builds the openings as `LOD0` does. At the
   70 m switch the move from recessed to flush openings changes only the
   shadow inside the reveals. Every window, both doors and the louvre keep
   their place, size and contrast on every tier.
@@ -432,12 +504,19 @@ Measured with `scripts/validate_asset.py` on the exports:
 
 | Tier | Hidden triangles | Share | Vertical area |
 | --- | --- | --- | --- |
-| `LOD0` | 10 of 1,192 | 0.8 % | 0.2 m² |
-| `LOD1` | 8 of 916 | 0.9 % | 0.5 m² |
-| `LOD2` | 6 of 544 | 1.1 % | 0.6 m² |
+| `LOD0` | 67 of 1,836 | 3.6 % | 0.4 m² |
+| `LOD1` | 36 of 1,460 | 2.5 % | 0.5 m² |
+| `LOD2` | 11 of 684 | 1.6 % | 0.6 m² |
 | `LOD3` | 4 of 490 | 0.8 % | 0.9 m² |
 
 The candidates are exterior surface the 40 sampled rays rarely escape:
+
+- the lean wall ladder's closure faces, where the largest candidates now
+  sit and which account for the rise since the kit was added (+57 at
+  `LOD0`, +28 at `LOD1`, +5 at `LOD2`, not traced face by face): the end caps of its
+  rungs and brackets, which face a rail or the wall across the lean kit's
+  1.5 mm gap by design (`roof_safety.LEAN_GAP`), so no ray leaves them. They
+  are kept: each is the closing face of a separate solid;
 
 - the flue's soot lining and floor, which see the sky up a 0.24 m mouth;
 - slivers where the tower's eave-wall tops meet the soffits;
@@ -455,7 +534,7 @@ on every tier.
 ## Known simplifications
 
 - **No dryer machinery outside**: no elevator head on the roof, no
-  distributor, no fan housing, no ladder. One spout stands for the grain
+  distributor, no fan housing. The only ladders are the roof safety kit's. One spout stands for the grain
   handling, one louvre for the exhaust, one flue for the furnace.
 - **The bin has no ladder, roof hatch, aeration fan or unloading auger**, and
   stands on no slab. Its corrugation, ring and sheet seams and bolts are
@@ -466,9 +545,10 @@ on every tier.
 - **Board-and-batten, drip boards, casings, door frames and braces, drip
   caps and the profiled roof's ribs are texture**; none clears the 0.25 m
   relief threshold.
-- **The tower's ridge has no ridge cap.** The roof band's top rows carry the
-  flashing where the lean-to meets the tower wall; the tower's slopes sample
-  only the band's lower rows.
+- **The tower's ridge has no ridge cap.** Only the lean-to's roof region
+  carries a flashing along its top, where it meets the tower wall.
+- **The roof safety kit's walkway goes at `LOD3`**, with the rest of the
+  kit (LOD review).
 - **The gutters are texture**: a painted half-round with its roll in the
   height channel on the eave fascias, with no modelled outlet or end caps.
   The downpipes are modelled (Construction).
@@ -477,7 +557,7 @@ on every tier.
   outlet, and the water's way down the slope to the lean-to's gutter is not
   shown (Construction, Gutters and downpipes).
 - **The snow guards are texture**: tubes and brackets painted in the roof
-  band, with relief in the height channel.
+  regions, with relief in the height channel.
 - **Thresholds are a 0.10 m step**, with no ramp up to the tipping-pit door.
 - **Reveals are 0.15 m deep** (0.12 m at the louvre), a timber wall's, as in
   the rintamamiestalo houses.
@@ -503,11 +583,13 @@ and one emission mask shared by every tier and colour.
 | 312–576 | W2 | boards repeating every 256 rows, drip at each repeat's foot, gutters carrying the opposite ends |
 | 578–650 | BIN | one 1.00 m ring of corrugated wall, repeating every 64 rows, likewise |
 | 652–672 | FASCIA | white fascia board, a half-round galvanised gutter across its top 8 rows (661–669), hangers every 64 px; `PIPE_STRIP` = its middle five rows, 662.5–667.5 |
-| 674–774 | ROOF | profiled sheet, the galvanised snow guard 11 rows (0.5 m) up from the eave |
 | 780 up | unique | the four opening regions, the bin roof disc, the corner strip, nine flat patches |
+| 676–817, x 760–1004 | ROOF_T | the tower's slope, 5.80 × 3.35 m at 42 px/m both ways (both slopes share it): profiled sheet, the galvanised snow guard 0.5 m up from the eave |
+| 822–1009, x 760–958 | ROOF_L | the lean-to's slope, 4.70 × 4.45 m at 42 px/m: the same sheet and snow guard, and the flashing against the tower wall along its top 0.25 m |
 
 `check_bands()` fails the bake on a stray id in any band. `atlas.pad()` fills
-the rest.
+the rest, the old roof band's rows (674–776, x 0–758) included, which no
+face samples.
 
 **Bands that tile in V.** W2 and BIN carry their opposite ends into their
 gutters. Every noise over them repeats on their own period: `noise()` in
@@ -520,7 +602,12 @@ rows. Height-following weather goes on S1 only.
 
 - the bin's wall runs once round in 1024 px (109 px/m along U), since nothing
   in it varies round the bin except the four sheet seams;
-- the roof band is 21.6 px/m up the slope; its ribs run down the slope;
+- the two roof regions are 42 px/m both ways (isotropic). Until 2026-11-22
+  the roofs sampled one full-width band at 64 px/m along the eave and 21.6
+  up the slope (anisotropy 2.97), which smeared the painted snow guard; at
+  64 px/m the lean-to's slope alone would need 285 rows, so each roof is now
+  a region of its own, and 42 is the most at which both fit, stacked, in the
+  atlas's free right-hand columns;
 - the bin roof disc is 38 px/m in plan;
 - the corner strip is stretched along its length.
 
@@ -542,11 +629,12 @@ derives the normal map:
 | Bin roof ribs | 16 mm |
 | Gutter, half-round | 62.5 mm (its radius) |
 | Gutter hangers | +4 mm |
-| Snow guard tubes | 35 mm |
+| Snow guard tubes | 35 mm (50 and 35 mm across) |
 | Snow guard brackets | 30 mm |
 
-The roof band's heights that vary in V (snow guard, flashing) are scaled by
-its px/m over 64, so their slopes stay physical.
+Every height in the roof regions (ribs, snow guard, flashing) is scaled by
+their 42 px/m over 64, so the slopes `atlas.normal_map()` derives stay
+physical.
 
 The battens read raised in a 10 m render under the low morning sun: a lit
 edge toward the sun, a shadow away from it.
@@ -562,7 +650,8 @@ Glass keeps a flat normal.
 | Trim | 0.60 | 0 |
 | Glass | 0.08 | 0 |
 | Concrete | 0.90 | 0 |
-| Roof | 0.46 | 0.25 |
+| Roof (coil-coated, painted steel) | 0.50 | 0 |
+| Flashings, drip caps (painted, the roof's colour) | 0.46 | 0 |
 | Galvanised steel | 0.40 | 0.85 |
 | Gutters, downpipes and snow guards (`ID_GUTTER`, older zinc, sRGB 134/137/137) | 0.48 | 0.60 |
 | Flue | 0.62 | 0.30 |
@@ -580,7 +669,8 @@ flue are separate ids and unchanged.
 
 - on S1: soil and algae at the plinth, splash on the boards' foot;
 - dirt on the drip boards and short runs under them;
-- the roof band's runs and chalking, and dirt between the ribs;
+- on each roof region, runs and chalking up its own slope, and dirt between
+  the ribs;
 - runs down the fascia board under the gutter; a dirty gutter belly and
   light runs down its face from the lip, the same treatment as the farm's
   other two gutters;
@@ -600,7 +690,7 @@ id/shade/AO pass.
 | --- | --- |
 | base colour passed to `rooms()` | sRGB 62/68/71 (`glazing.BASE` × 1.25) |
 | measured over the glass mask | mean sRGB 54, linear 0.033 |
-| relative to the trim around it | 0.24× (red and yellow), 0.33× (grey) |
+| relative to the trim around it | 0.25× (red), 0.24× (yellow), 0.33× (grey) |
 | roughness / metallic | 0.08 / 0 |
 | panes in the atlas | 1 |
 
@@ -619,16 +709,18 @@ ORM, normal map and emission mask:
 
 | Variant | Boards | Trim | Roof | Doors |
 | --- | --- | --- | --- | --- |
-| `red_ochre` (default) | punamulta red ochre | off-white | dark grey steel | boards in the wall colour, white frames and braces |
-| `grey_weathered` | unpainted boards gone silver | a lighter silvered grey | dark grey steel | as the walls |
-| `yellow_ochre` | yellow ochre | off-white | dark red-brown steel | as the walls |
+| `red_ochre` (default) | punamulta red ochre, sRGB 122/52/42 | off-white 221/217/205 | dark grey steel 54/56/58 | boards a shade darker than the walls (112/48/39), white frames and braces |
+| `grey_weathered` | unpainted boards gone silver, 110/106/98 | weathered light grey, lighter than the boards but no white, 150/146/137 | dark grey steel 62/62/60 | silvered boards 101/98/90, grey frames and braces |
+| `yellow_ochre` | yellow ochre, 184/148/86 | off-white 222/218/206 | dark red-brown steel 75/51/45 | boards 169/136/79, white frames and braces |
+
+The farmstead's three buildings (this dryer, `navetta_board_gable` and
+`konehalli_open_bays`) stand together, so they share these variant names and
+these exact numbers: one name dresses the set.
 
 The bin, spout, collar, flue, plinth, glass and the galvanised gutters,
-downpipes and snow guards never change. This is
-CLAUDE.md's low-rise case, paint on shared geometry. The grey variant was
-darkened after the first sheet, where it read as pale painted grey rather
-than weathered timber. Every `.glb` references the default albedo; another
-variant is that one file swapped.
+downpipes, snow guards and roof safety kit never change. This is
+CLAUDE.md's low-rise case, paint on shared geometry. Every `.glb`
+references the default albedo; another variant is that one file swapped.
 
 ## Night lighting
 
@@ -638,7 +730,10 @@ and the bin are black.
 
 **Bindings.** All four GLBs bind it through `emissiveTexture` on UV0, with
 `emissiveFactor` `[0, 0, 0]` by default (`scripts/window_emission.py`). The
-reference lit factor is the catalog's warm `LIT_FACTOR`.
+reference lit factor is linear RGB `[1.0, 0.88, 0.72]`
+(`facade_atlas.LIT_FACTOR`, passed to `asset_build.Asset`), the warm white of
+the catalog's newer buildings; it tints `variants.png` and `source.blend`
+only, as the exports ship the factor at zero.
 
 **Control.** All windows share one region, so there is one building-wide
 control; per-window switching is not possible. Occupancy, schedule, colour
@@ -698,9 +793,10 @@ bindings and the uri-only images on every tier.
 
 Checked here, in Blender 5.3.0, headless:
 
-- `scripts/validate_asset.py` reports no failures. The one warning is the
-  sidecar's `source.dirty`, since the asset is not yet committed; rewrite the
-  sidecar with `build.py -- facts` from a committed tree. It also confirms:
+- `scripts/validate_asset.py` reports no failures, and no warnings once the
+  sidecar is written from a committed tree; after a rebuild from a working
+  tree it warns `source.dirty` until `build.py -- facts` is rerun from the
+  commit. It also confirms:
   - welded manifold topology on every tier;
   - one material, uri-only images, the normal map at scale 1, emission bound
     and default off;
@@ -737,6 +833,14 @@ Checked here, in Blender 5.3.0, headless:
   eave fascias average to a light grey line, gutter and board together, the
   roof edge stays dark, and no colour leaks between the fascia and roof
   bands.
+- The 2026-11-22 audit fixes: `check_layout()` passes with the roof safety
+  kit (`RS.append(check=True)` found no clash); 0 FAIL on the rebuilt tiers
+  (1,836 / 1,460 / 684 / 490), bounds 9.70 × 8.80 × 12.19 m, pivot,
+  footprint, storeys and doors unchanged in the sidecar. Tier pairs at the
+  consumer's 22 / 49 / 98 m, `LOD0` front and oblique at 20 and 35 m and
+  each variant at 35 m, before and after with identical settings; the
+  audit's close views re-rendered (the roof and flue, the openings); the
+  three farm buildings' default and grey variants side by side.
 
 Pending, in the consumer:
 
@@ -758,6 +862,16 @@ Recorded as known-good markers, not requirements.
 
 ## Revision log
 
+- **2026-11-22:** audit fixes. A roof safety kit to the furnace flue (a lean
+  wall ladder on the lean-to's rear wall, a roof ladder and a walkway;
+  inside the old bounds). `LOD1` keeps `LOD0`'s casing rings instead of
+  casing-sized recesses, which popped at the 22 m switch. The roofs repacked
+  from a 64 × 21.6 px/m band into two isotropic 42 px/m regions. One palette
+  for the farmstead (all three variants identical on the three farm
+  buildings; red, yellow and the grey trim moved). Roof steel and flashings
+  dielectric (0.50 / 0, 0.46 / 0; were 0.46 / 0.25, 0.42 / 0.30). Night tint
+  (1.0, 0.88, 0.72). The consumer's switch distances recorded. Triangles
+  1,192 / 916 / 544 / 490 → 1,836 / 1,460 / 684 / 490.
 - **2026-11-20:** a downpipe for the tower's east eave gutter, down the
   tower's wall above the lean-to and spilling onto the lean-to's roof
   (`RoofPipe` in `build.py`, lifting `scripts/downpipes.py`'s foot onto the

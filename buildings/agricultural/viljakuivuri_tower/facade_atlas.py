@@ -23,12 +23,14 @@ A trim sheet, not one picture per elevation:
                              (rows 582 .. 646), repeating in V
     y  652 ..  672   FASCIA  white fascia board under the roof's edge, a
                              half-round galvanised gutter across its top
-    y  674 ..  774   ROOF    profiled steel sheet, V stretched up the slope,
-                             a galvanised snow guard 0.5 m up from the eave
     y  778 .. 1024   unique  doors, windows, the louvre, the bin roof,
                              the corner-board strip, flat patches
+    x  758 .. 1024   ROOF_T, ROOF_L, from y 674: the tower's slope and the
+                             lean-to's, profiled steel at 42 px/m both ways,
+                             a galvanised snow guard 0.5 m up from the eave
 
-Every band spans the full width and tiles in U. The tower is 12 m to its
+Every band spans the full width and tiles in U; the roofs are regions of
+their own, each a whole slope at true scale. The tower is 12 m to its
 apex, which no band at 64 px/m holds in a 1024 atlas, so W2 tiles in V as
 well: build.py cuts the tower's walls at 4.80 m and 8.80 m and maps each
 4 m strip onto the same rows. Real board-and-batten does the same thing,
@@ -90,11 +92,20 @@ GUTTER_PX = 8.0      # the gutter's rows, 0.125 m, hung across the fascia's top
 # The downpipes' sides span the middle five of them (scripts/downpipes.py)
 PIPE_STRIP = (FASC_Y0 + FASC_H - 1 - GUTTER_PX / 2.0 - 2.5,
               FASC_Y0 + FASC_H - 1 - GUTTER_PX / 2.0 + 2.5)
-ROOF_Y0, ROOF_H = 676.0, 96.0
-# The lean-to's slope, fascia top to the tower wall, in metres: the roof band
-# stretches it over ROOF_H rows, and the tower's shorter slopes sample its
-# lower rows at the same scale. build.py asserts it against the massing.
+# The roofs: one region per roof, each the whole slope at true scale and
+# ROOF_PPM pixels a metre both ways, U along the eave from the slab's start,
+# V up the slope from its eave edge. A full-width band at 64 px/m would need
+# 285 rows for the lean-to's slope; 42 px/m is the most at which both
+# regions fit, stacked, in the atlas's free right-hand columns. The tower's
+# two slopes share their region. build.py asserts the lengths.
+ROOF_PPM = 42.0
+T_ROOF_LEN, T_SLOPE_LEN = 5.80, 3.3486      # the tower's slab: along, up a slope
+L_ROOF_LEN = 4.70                           # the lean-to's slab, along its eave
+# The lean-to's slope, fascia top to the tower wall, in metres; its top
+# carries the flashing against the tower wall.
 ROOF_SLOPE_LEN = 4.4517
+ROOF_T = (760.0, 676.0, T_ROOF_LEN * ROOF_PPM, T_SLOPE_LEN * ROOF_PPM)
+ROOF_L = (760.0, 822.0, L_ROOF_LEN * ROOF_PPM, ROOF_SLOPE_LEN * ROOF_PPM)
 UNI_Y0 = 780.0
 
 ITEM_ORIGIN = {
@@ -128,27 +139,36 @@ ID_GUTTER = 13       # gutter, downpipes and snow guard: galvanised steel
 # oxide. The gutter, downpipes and snow guard are the farm buildings' one
 # rainwater steel, the same in every variant and on navetta_board_gable and
 # konehalli_open_bays: sRGB (134, 137, 137), older zinc than the bin's, darker
-# and duller. The furnace flue is black-painted steel.
+# and duller. The furnace flue is black-painted steel. The roof sheet and its
+# flashings and drip caps (ID_METAL) are coil-coated, painted steel:
+# dielectric, as on the farm's other two.
 SURFACE = {
     ID_WALL: (0.78, 0.0), ID_TRIM: (0.60, 0.0), ID_SASH: (0.50, 0.0),
     ID_GLASS: (glazing.ROUGHNESS, 0.0), ID_PLINTH: (0.90, 0.0),
-    ID_METAL: (0.42, 0.30), ID_ROOF: (0.46, 0.25), ID_DOOR: (0.70, 0.0),
+    ID_METAL: (0.46, 0.0), ID_ROOF: (0.50, 0.0), ID_DOOR: (0.70, 0.0),
     ID_GALV: (0.40, 0.85), ID_FLUE: (0.62, 0.30), ID_BLANK: (0.95, 0.0),
     ID_HANDLE: (0.40, 0.70), ID_GUTTER: (0.48, 0.60),
 }
 
 # ---------------------------------------------------------------- palettes
 # Farm paints, kept muted: punamulta red ochre and yellow ochre with white
-# trim, and unpainted boards gone silver. The bin is galvanised in all three.
+# trim, and unpainted boards gone silver with weathered grey trim, lighter
+# than the boards but no white. The bin is galvanised in all three. The
+# farmstead's three buildings (this one, navetta_board_gable,
+# konehalli_open_bays) share these numbers exactly, so one variant name
+# dresses the set.
 VARIANTS = {
-    "red_ochre": {"wall": (124, 54, 44), "trim": (222, 219, 208),
-                  "roof": (58, 60, 62), "door": (116, 51, 42)},
-    "grey_weathered": {"wall": (110, 106, 98), "trim": (138, 134, 125),
-                       "roof": (62, 62, 60), "door": (102, 98, 91)},
-    "yellow_ochre": {"wall": (190, 152, 88), "trim": (224, 220, 208),
-                     "roof": (76, 52, 46), "door": (178, 142, 82)},
+    "red_ochre": {"wall": (122, 52, 42), "trim": (221, 217, 205),
+                  "roof": (54, 56, 58), "door": (112, 48, 39)},
+    "grey_weathered": {"wall": (110, 106, 98), "trim": (150, 146, 137),
+                       "roof": (62, 62, 60), "door": (101, 98, 90)},
+    "yellow_ochre": {"wall": (184, 148, 86), "trim": (222, 218, 206),
+                     "roof": (75, 51, 45), "door": (169, 136, 79)},
 }
 DEFAULT_VARIANT = "red_ochre"
+# Linear RGB: the reference night tint, the catalog's newer buildings' warm
+# white, which build.py hands to asset_build. The consumer owns the real one.
+LIT_FACTOR = (1.0, 0.88, 0.72)
 # The atlas has one window region, so the whole building is one pane to
 # glazing.rooms(), and that pane's room level is drawn once, at 0.82 of the
 # mean. Its base is raised by the inverse so the glass measures mid-band
@@ -166,7 +186,6 @@ BAND_IDS = {
     "W2": ((S1_TOP, W2_Y0 + W2_H + 4), {ID_WALL}),
     "BIN": ((BIN_Y0 - 4, BIN_Y0 + BIN_H + 4), {ID_GALV}),
     "FASCIA": ((FASC_Y0 - 2, FASC_Y0 + FASC_H + 2), {ID_METAL, ID_TRIM, ID_GUTTER}),
-    "ROOF": ((ROOF_Y0 - 2, ROOF_Y0 + ROOF_H + 2), {ID_ROOF, ID_METAL, ID_GUTTER}),
 }
 TILE_W2 = int(ATLAS // W2_H)          # 4: noise over W2 repeats every 256 rows
 TILE_BIN = int(ATLAS // BIN_H)        # 16: noise over BIN repeats every 64 rows
@@ -184,6 +203,10 @@ GUTTER_R = 0.0625    # the half-round gutter's radius, 125 mm across
 SNOW_TUBE_H = 0.035  # the snow guard's tubes, proud of the sheet
 SNOW_BRACKET_H = 0.030
 SNOW_GUARD_M = 0.50  # the snow guard's lower tube, up the slope from the eave
+# Its two tubes, metres up the slope from SNOW_GUARD_M: 50 and 35 mm.
+GUARD_TUBES = ((0.0, 0.050), (0.075, 0.110))
+RIB_PITCH = 0.25     # the roof sheet's ribs, metres along the eave
+FLASH_M = 0.25       # the lean-to's flashing up the tower wall, metres of slope
 
 
 def m(v):
@@ -331,51 +354,73 @@ def paint_fascia(c):
     c.height[sy, sx] = np.where(hang, c.height[sy, sx] + 0.004, c.height[sy, sx])
 
 
-def paint_roof(c):
-    """Profiled steel sheet, V stretched up the slope (ROOF_H rows over
-    ROOF_SLOPE_LEN metres). Ribs vary in U only; the snow guard and the
-    flashing at the top, where the lean-to meets the tower wall, vary in V,
-    so their heights are scaled by the band's px/m over PPM to keep their
-    slopes physical. Every slope's V starts at its eave (build.py's slab()),
-    so the snow guard lands SNOW_GUARD_M up from the eave on the tower's two
-    slopes and the lean-to's alike."""
-    y0, h = ROOF_Y0, ROOF_H
-    c.paint(0, ATLAS, y0 - 2, y0 + h + 2, ID_ROOF, 1.0, height=0.0)
-    sy, sx, Y, X = c.field(0, ATLAS, y0 - 2, y0 + h + 2)
-    xm = np.mod(X, 16.0)
-    v = Y - y0
-    k = (h / ROOF_SLOPE_LEN) / PPM
-    rib = np.clip(np.minimum(xm, 4.0 - xm) / 1.0, 0.0, 1.0) * (xm < 4.0)
-    height = RIB_H * rib
-    shade = np.where((xm >= 4.0) & (xm < 5.0), 0.92, 1.0)
-    ao = np.where((xm >= 4.0) & (xm < 5.0), 0.86, 1.0)
-    shade = np.where(v < 2, shade * 0.85, shade)                 # eave drip edge
+def roof_coords(rect, X, Y):
+    """Metres along the eave (from the region's left edge) and up the slope
+    (from the eave edge) of samples X, Y in roof region *rect*."""
+    return (X - rect[0]) / ROOF_PPM, (Y - rect[1]) / ROOF_PPM
+
+
+def guard_bracket(a):
+    """The snow guard's brackets, on every second rib's crest (0.5 m)."""
+    am = np.mod(a, 2.0 * RIB_PITCH)
+    return (am >= 0.016) & (am < 0.047)
+
+
+def paint_roof(c, rect, slope_len, flashing):
+    """One roof region: profiled steel at ROOF_PPM pixels a metre both ways,
+    ribs every RIB_PITCH along the eave, the snow guard SNOW_GUARD_M up from
+    the eave on every slope, and, with *flashing*, the lean-to's flashing
+    against the tower wall along its top. Every height is scaled by
+    ROOF_PPM / PPM, so the slopes the normal map derives at PPM stay
+    physical."""
+    x0, y0, w, h = rect
+    c.paint(x0 - 2, x0 + w + 2, y0 - 2, y0 + h + 2, ID_ROOF, 1.0, height=0.0)
+    sy, sx, Y, X = c.field(x0 - 2, x0 + w + 2, y0 - 2, y0 + h + 2)
+    a, s = roof_coords(rect, X, Y)
+    px = 1.0 / ROOF_PPM                                          # one pixel, metres
+    k = ROOF_PPM / PPM
+    am = np.mod(a, RIB_PITCH)
+    crest = RIB_PITCH / 4.0                                      # the rib, 62 mm
+    rib = np.clip(np.minimum(am, crest - am) / max(px, crest / 4.0), 0.0, 1.0) * (am < crest)
+    height = RIB_H * k * rib
+    foot = (am >= crest) & (am < crest + 0.016)
+    shade = np.where(foot, 0.92, 1.0)
+    ao = np.where(foot, 0.86, 1.0)
+    shade = np.where(s < 0.05, shade * 0.85, shade)              # eave drip edge
     # snow guard: two round tubes on brackets, standard on Finnish metal
     # roofs, in the gutter's galvanised steel (ID_GUTTER) as a matched
     # system; the brackets sit on every second rib
-    g = round(SNOW_GUARD_M * h / ROOF_SLOPE_LEN)
-    guard = np.zeros(v.shape, bool)
-    for t0, t1 in ((g, g + 2.0), (g + 3.0, g + 4.5)):
-        inside = (v >= t0) & (v < t1)
+    g = SNOW_GUARD_M
+    guard = np.zeros(s.shape, bool)
+    for t0, t1 in GUARD_TUBES:
+        inside = (s >= g + t0) & (s < g + t1)
         tube = SNOW_TUBE_H * k * np.sqrt(np.clip(
-            1.0 - (2.0 * (v - t0) / (t1 - t0) - 1.0) ** 2, 0.0, 1.0))
+            1.0 - (2.0 * (s - g - t0) / (t1 - t0) - 1.0) ** 2, 0.0, 1.0))
         height = np.where(inside, np.maximum(height, tube), height)
         shade = np.where(inside, 1.0, shade)
         guard |= inside
-    shade = np.where((v >= g - 3) & (v < g - 1), shade * 0.80, shade)   # under the tubes
-    ao = np.where((v >= g - 3) & (v < g + 4.5), np.minimum(ao, 0.85), ao)
-    xb = np.mod(X, 32.0)
-    bracket = (xb >= 1.0) & (xb < 3.0) & (v >= g - 3) & (v < g + 4.5)
+    lo, hi = g - 0.07, g + GUARD_TUBES[-1][1]
+    shade = np.where((s >= lo) & (s < g - 0.024), shade * 0.80, shade)   # under the tubes
+    ao = np.where((s >= lo) & (s < hi), np.minimum(ao, 0.85), ao)
+    bracket = guard_bracket(a) & (s >= lo) & (s < hi)
     height = np.where(bracket, np.maximum(height, SNOW_BRACKET_H * k), height)
     shade = np.where(bracket, 0.75, shade)
     guard |= bracket
-    top = v >= h - 8
-    height = np.where(top, 0.010 * k, height)
-    shade = np.where(top, 0.97, shade)
-    shade = np.where((v >= h - 8) & (v < h - 7), shade * 0.82, shade)
-    ao = np.where((v >= h - 10) & (v < h - 8), np.minimum(ao, 0.85), ao)
+    top = np.zeros(s.shape, bool)
+    if flashing:
+        f0 = slope_len - FLASH_M
+        top = s >= f0
+        height = np.where(top, 0.010 * k, height)
+        shade = np.where(top, 0.97, shade)
+        shade = np.where(top & (s < f0 + px), shade * 0.82, shade)
+        ao = np.where((s >= f0 - 2 * px) & (s < f0), np.minimum(ao, 0.85), ao)
     c.mid[sy, sx] = np.where(top, ID_METAL, np.where(guard, ID_GUTTER, ID_ROOF))
     c.height[sy, sx], c.shade[sy, sx], c.ao[sy, sx] = height, shade, ao
+
+
+def paint_roofs(c):
+    paint_roof(c, ROOF_T, T_SLOPE_LEN, flashing=False)
+    paint_roof(c, ROOF_L, ROOF_SLOPE_LEN, flashing=True)
 
 
 def paint_opening(c, kind):
@@ -559,28 +604,38 @@ def weather(c):
         w.add("D", 0, ATLAS, yj + 1, y1, 0.06, (ID_WALL,))
         w.runs(0, ATLAS, yj - 12, yj, (ID_WALL,), 0.10, fall=5.0, noise="short")
     w.runs(0, ATLAS, S1_TOP, S1_TOP + 2, (ID_WALL,), 0.10, fall=5.0, noise="short")
-    # the roof band, up the slope from the eave
-    w.roof(0, ATLAS, ROOF_Y0, ROOF_H, ROOF_SLOPE_LEN, (ID_ROOF,))
-    w.add("D", 0, ATLAS, ROOF_Y0 - 2, ROOF_Y0 + ROOF_H + 2, lambda Y, X, nz: 0.10 * (
-        (np.mod(X, 16.0) >= 4.0) & (np.mod(X, 16.0) < 6.0)), (ID_ROOF,))
-    w.add("R", 0, ATLAS, ROOF_Y0 - 2, ROOF_Y0 + 3, lambda Y, X, nz: 0.12 * nz("speck"),
-          (ID_ROOF,))
-    # the snow guard: light dust on it (with the grime above, 0.06 + 0.08
-    # blotch, as on the farm's other two), rust at its brackets, debris held
-    # above it, rust on the sheet round the brackets and in short runs under
-    # them
-    g = ROOF_Y0 + round(SNOW_GUARD_M * ROOF_H / ROOF_SLOPE_LEN)
-    w.add("D", 0, ATLAS, g - 3, g + 4.5, lambda Y, X, nz: 0.06 + 0.045 * nz("blotch"),
-          (ID_GUTTER,))
-    w.add("R", 0, ATLAS, g - 3, g + 4.5, lambda Y, X, nz: 0.15 * (
-        (np.mod(X, 32.0) >= 1.0) & (np.mod(X, 32.0) < 3.0)), (ID_GUTTER,))
-    w.add("D", 0, ATLAS, g + 4.5, g + 14.0, lambda Y, X, nz: 0.22 * nz("blotch")
-          * (1.0 - (Y - g - 4.5) / 9.5), (ID_ROOF,))
-    w.add("R", 0, ATLAS, g - 3, g + 4.5, lambda Y, X, nz: 0.16 * (
-        np.mod(X, 32.0) < 4.0), (ID_ROOF,))
-    w.add("R", 0, ATLAS, g - 10, g - 3, lambda Y, X, nz: 0.12 * (
-        (np.mod(X, 32.0) >= 1.2) & (np.mod(X, 32.0) < 2.8)) * (1.0 - (g - 3 - Y) / 7.0)
-        * atlas.smoothstep(-0.5, 0.8, nz("runs")), (ID_ROOF,))
+    # the roofs, each region up the slope from its eave: dirt in the ribs'
+    # feet, rust specks along the eave; the snow guard with light dust on it
+    # (with the grime above, 0.06 + 0.08 blotch, as on the farm's other two),
+    # rust at its brackets, debris held above it, rust on the sheet round the
+    # brackets and in short runs under them
+    for rect, slope_len in ((ROOF_T, T_SLOPE_LEN), (ROOF_L, ROOF_SLOPE_LEN)):
+        x0, y0, rw, rh = rect
+        xa, xb = x0 - 2, x0 + rw + 2
+        rp = ROOF_PPM
+
+        def along(X, x0=x0):
+            return np.mod((X - x0) / ROOF_PPM, 2.0 * RIB_PITCH)
+
+        w.roof(xa, xb, y0, rh, slope_len, (ID_ROOF,))
+        w.add("D", xa, xb, y0 - 2, y0 + rh + 2, lambda Y, X, nz, f=along: 0.10 * (
+            (np.mod(f(X), RIB_PITCH) >= RIB_PITCH / 4.0)
+            & (np.mod(f(X), RIB_PITCH) < RIB_PITCH / 4.0 + 0.031)), (ID_ROOF,))
+        w.add("R", xa, xb, y0 - 2, y0 + 0.12 * rp, lambda Y, X, nz: 0.12 * nz("speck"),
+              (ID_ROOF,))
+        g = y0 + SNOW_GUARD_M * rp
+        lo, hi = g - 0.07 * rp, g + GUARD_TUBES[-1][1] * rp
+        w.add("D", xa, xb, lo, hi, lambda Y, X, nz: 0.06 + 0.045 * nz("blotch"),
+              (ID_GUTTER,))
+        w.add("R", xa, xb, lo, hi, lambda Y, X, nz, f=along: 0.15 * guard_bracket(f(X)),
+              (ID_GUTTER,))
+        w.add("D", xa, xb, hi, hi + 0.30 * rp, lambda Y, X, nz, hi=hi: 0.22
+              * nz("blotch") * (1.0 - (Y - hi) / (0.30 * ROOF_PPM)), (ID_ROOF,))
+        w.add("R", xa, xb, lo, hi, lambda Y, X, nz, f=along: 0.16 * (f(X) < 0.0625),
+              (ID_ROOF,))
+        w.add("R", xa, xb, lo - 0.30 * rp, lo, lambda Y, X, nz, f=along, lo=lo: 0.12
+              * guard_bracket(f(X)) * (1.0 - (lo - Y) / (0.30 * ROOF_PPM))
+              * atlas.smoothstep(-0.5, 0.8, nz("runs")), (ID_ROOF,))
     # the fascia: dirt and runs down the board from the gutter; the gutter's
     # dirty belly and light runs down its face from the lip, the same
     # treatment as the farm's other two gutters
@@ -648,7 +703,7 @@ def paint(ss=atlas.SS):
     paint_w2(c)
     paint_bin(c)
     paint_fascia(c)
-    paint_roof(c)
+    paint_roofs(c)
     for kind in OPENINGS:
         paint_opening(c, kind)
     paint_bin_roof(c)

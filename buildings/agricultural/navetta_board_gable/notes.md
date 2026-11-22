@@ -110,12 +110,11 @@ The wall ring rises 0.1 m into the roof slab. The union trims the walls exactly
 where the soffits meet them and removes the buried parts of the slab, the
 ramps and the pipes' tops, so the result is the boundary of one empty volume.
 
-The construction is the template's (`rintamamiestalo_porch`), cut down to
-this building. Walls are triangulated as polygons with holes
-(`tessellate_polygon`, with `_flip_slivers()` repairing collinear-hole
-slivers). Every vertex on a shared edge is a corner of both faces.
-`close_solid()` walks the rim in edge-index order, so rebuilds are
-deterministic. The gables hand over from the S1 board band to the S2 band at
+The mesh kit is the catalog's shared `scripts/shell_build.py`: walls are
+filled as polygons with holes (`fill_region()`), openings recessed with
+`recess()`, and the body closed by `close_solid()`, which walks the rim in
+edge-index order, so rebuilds are deterministic. Every vertex on a shared
+edge is a corner of both faces. The gables hand over from the S1 board band to the S2 band at
 the eave height, behind a white belt board.
 
 Authored parameters, which the tiers derive from:
@@ -137,7 +136,9 @@ side, so every opening on all four elevations is cut.
 ground: 4.00 × 2.20 m under the vehicle doors, 1.60 × 1.40 m under the
 pedestrian and service doors. Its back runs 5 cm into the wall. The top stops
 2 cm under the threshold, so it never lies in the plane of a door recess's
-floor.
+floor. The sloping top samples the atlas's `RAMP` region at true scale, U
+across the ramp and V up the slope from its foot; the cheeks sample the
+plinth's rows of S1 by height, also at true scale.
 
 `check_layout()` asserts, before building:
 
@@ -147,7 +148,8 @@ floor.
 - nothing in a gable meets the belt board;
 - the apex fits the S2 band;
 - the roof slope matches the atlas;
-- every ramp is wider than the casing of the door it serves;
+- every ramp is wider than the casing of the door it serves, and its top
+  fits the `RAMP` region at true scale;
 - each downpipe is clear of the corners, of every opening's casing on its
   wall and of the ramps there (`downpipes.problems()`).
 
@@ -216,7 +218,34 @@ side thinner, as `downpipes.MODES` has it.
 
 ## LOD review
 
-The switch distances are the catalog defaults: 35, 70 and 120 m. Reviewed on
+### The consumer's switches
+
+The consumer switches by screen size: adjacent tiers are judged at 1.8, 4 and
+8 times the largest bounds dimension (16.70 m), so **30, 67 and 134 m**, with
+its camera, 75° vertical FOV at 1920×1080, distance from the camera to the
+centre of `LOD0`'s bounds. Rendered on reimported GLBs (Cycles 24 samples,
+AgX, the `review_asset.py` scene with the lens swapped): front, corner (45°
+round, 25° up), eye level and rear at noon, and the corner at night with the
+reference emission on, each pair side by side with its difference.
+
+- **30 m, `LOD0`/`LOD1`:** the casing ring and reveals against one
+  casing-sized recess: the head shadow sits a few pixels higher on `LOD1`,
+  which does not read as a change.
+- **67 m, `LOD1`/`LOD2`:** the recesses go flush; window rhythm, white
+  casings, braces and dark glass hold, and the loft vent (about 4 px) goes
+  unnoticed.
+- **134 m, `LOD2`/`LOD3`:** identical but for the pipes' thinning (mean
+  difference 0.04 / 255).
+- At night the lit panes match across every pair.
+
+Nothing pops at any of the three. Rendered for the 2026-11-22 palette pass
+before and after with identical settings (`review/older_audit_2026_11_22/
+fix_agricultural/navetta_board_gable/`, local, git-ignored); the tier
+differences are unchanged by it.
+
+### Authoring review
+
+The authoring switch distances are the catalog defaults: 35, 70 and 120 m. Reviewed on
 reimported GLBs with `scripts/review_asset.py`: perspective 1920×1080, 50°
 vertical FOV, Cycles 16–24 samples with denoising, AgX/None, exposure 0.
 Distances are measured along the view direction to the centre of the visible
@@ -308,10 +337,9 @@ volume.
   at physical heights.
 - **Reveals are 0.12 m**, shallower than masonry reveals, because a boarded
   timber wall sets its frames near the outside face.
-- **The ramps are plain wedges.** They have no grooves of their own: their
-  slope samples the plinth's concrete band by height, so the formwork line and
-  the plinth's splash and soil land across the ramp's lower part, parallel to
-  the wall.
+- **The ramps are plain wedges.** Their tops are painted concrete at true
+  scale (a faint broom finish, soil carried onto the foot), with no grooves
+  modelled.
 - **One window type, painted on two regions**, so the windows alternate between
   two rooms behind the glass, not one per window.
 - **The gutters are painted**, on the eave fascias: a half-round trough with
@@ -337,7 +365,8 @@ and one emission mask.
 - **Texel density is 64 px/m**, except the roof band, which is stretched up the
   slope (316 rows over 5.716 m, about 55 px/m; the ribs run down the slope, so
   nothing changes along it). The corner-board strip is also stretched along its
-  length.
+  length. The ramps' tops are at true scale in their own region (until
+  2026-11-22 they sampled S1 by height, stretched 5.9:1 up the slope).
 - **The atlas is a trim sheet** generated by `facade_atlas.py` through
   `scripts/atlas.py` at 4×4 supersampling, box-filtered in linear light. The
   bands run from the bottom of the atlas:
@@ -349,8 +378,9 @@ and one emission mask.
   | ROOF | 452–772 | Trapezoidal profiled steel, with the snow guard 0.60 m up from the eave. |
   | FASCIA | 774–798 | White fascia board with the half-round gutter across its top 9 rows, under the sheet's drip edge. `PIPE_STRIP` is the gutter's middle five rows, which the downpipes sample. |
   | Unique | 802–1010 | The braced vehicle doors, the plank door, the loft hatch, two byre-window regions, the vent, the corner strip and flat patches. |
+  | RAMP | 806–953, x 708–964 | The ramps' concrete tops, 4.00 × 2.30 m at 64 px/m: U across the ramp, V up the slope from its foot. Darker over the first 0.30 m, a faint broom finish across the slope, soil splash at the foot. |
 
-  Every band spans the full width and tiles in U. The battens (0.25 m), board
+  Every band spans the full width and tiles in U; RAMP is a region of its own. The battens (0.25 m), board
   tones and roof ribs (0.25 m) all repeat at periods that divide 1024.
   The gutter's hangers (1 m) and the snow guard's brackets (0.5 m, on every
   second rib) also divide 1024. `check_bands()` fails the bake on a stray id
@@ -379,8 +409,8 @@ and one emission mask.
   | Door leaves | 0.78 | 0 |
   | Glass | 0.08 | 0 |
   | Concrete | 0.90 | 0 |
-  | Roof steel | 0.46 | 0.25 |
-  | Flashing, drip caps | 0.42 | 0.30 |
+  | Roof steel (coil-coated, painted) | 0.50 | 0 |
+  | Flashing, drip caps (painted, the roof's colour) | 0.46 | 0 |
   | Gutter, downpipes, snow guard (galvanised) | 0.48 | 0.60 |
   | Hinge iron | 0.55 | 0.45 |
 - **Albedo carries no directional light.** Shade holds only tone, wear and the
@@ -417,10 +447,11 @@ at the catalog's moderate level:
 - dirt on the sills and head casings;
 - hand grime and kicked-up dirt on the doors;
 - splash at the corner boards' foot;
+- soil carried onto the ramps' feet, fading up the slope;
 - dust in the cavities beside the battens.
 
-Glass never weathers. Everything that follows height sits in S1, S2 or ROOF,
-whose V is height or slope.
+Glass never weathers. Everything that follows height sits in S1, S2, ROOF or
+RAMP, whose V is height or slope.
 
 ## Glazing treatment
 
@@ -430,7 +461,7 @@ Panes are painted by `scripts/glazing.py`'s `rooms()` on the finished albedo.
 | --- | --- |
 | base colour | sRGB 50/54/57 (`glazing.BASE`) |
 | measured over the glass mask, every variant | mean sRGB 55, linear 0.034 |
-| relative to the trim around it | 0.25× (red, yellow), 0.41× (grey) |
+| relative to the trim around it | 0.25× (red, yellow), 0.37× (grey) |
 | roughness / metallic | 0.08 / 0 |
 | panes in the atlas | 2 |
 
@@ -444,8 +475,8 @@ band. The two region origins were then chosen so both rooms land mid-band
 (levels 1.09 and 1.06). That was a placement choice, not a change to the
 treatment or its constants.
 
-The grey variant's trim is dark weathered timber, and the glass is still well
-under it. No brief-driven departure. Pending: calibration in the consumer's
+The grey variant's trim is weathered light grey, and the glass is well under
+it. No brief-driven departure. Pending: calibration in the consumer's
 lighting.
 
 ## Variant list
@@ -455,9 +486,13 @@ ORM, normal map and emission mask:
 
 | Variant | Boards | Trim | Doors | Roof |
 | --- | --- | --- | --- | --- |
-| `red_ochre` (default) | red ochre (punamulta), sRGB 120/52/42 | off-white | red ochre, a shade darker | dark grey steel |
-| `grey_weathered` | unpainted boards gone silver-grey, 106/102/95 | darker weathered grey-brown, 74/69/62 | silvered | dark grey steel |
-| `yellow_ochre` | yellow ochre, 178/142/84 | off-white | yellow ochre, a shade darker | dark red-brown steel |
+| `red_ochre` (default) | red ochre (punamulta), sRGB 122/52/42 | off-white 221/217/205 | red ochre, a shade darker, 112/48/39 | dark grey steel 54/56/58 |
+| `grey_weathered` | unpainted boards gone silver-grey, 110/106/98 | weathered light grey, lighter than the boards but no white, 150/146/137 | silvered, 101/98/90 | dark grey steel 62/62/60 |
+| `yellow_ochre` | yellow ochre, 184/148/86 | off-white 222/218/206 | yellow ochre, a shade darker, 169/136/79 | dark red-brown steel 75/51/45 |
+
+The farmstead's three buildings (this barn, `viljakuivuri_tower` and
+`konehalli_open_bays`) stand together, so they share these variant names and
+these exact numbers: one name dresses the set.
 
 This is the low-rise case: a farm building that differs in paint. The roof,
 with the flashing and drip caps, shifts a little with the body colour. Glass,
@@ -476,8 +511,10 @@ are identical by construction.
 - **Bindings.** All four GLBs bind the mask through `emissiveTexture` on UV0,
   with `emissiveFactor` `[0, 0, 0]` by default and the texture kept
   (`scripts/window_emission.py`, via `asset_build.export_all()`).
-- **Reference lit factor.** Linear RGB `[1.0, 0.55, 0.23]`, the catalog
-  default.
+- **Reference lit factor.** Linear RGB `[1.0, 0.88, 0.72]`
+  (`facade_atlas.LIT_FACTOR`, passed to `asset_build.Asset`), the warm white
+  of the catalog's newer buildings; it tints `variants.png` and
+  `source.blend` only, as the exports ship the factor at zero.
 - **Control.** One building-wide control. The windows share two atlas regions,
   so individual windows cannot be switched. The consumer owns intensity,
   colour and schedule; a byre lit at night is a milking or feeding hour.
@@ -541,7 +578,7 @@ The facts sidecar `export/navetta_board_gable.model.json` records:
   | Pedestrian door (`front`) | entrance | yes |
   | Vehicle pair (`big_doors`) | vehicle | no |
   | Rear door (`rear`) | service | no |
-  | Loft hatch (`loft_hatch`) | balcony, because nobody reaches it from the ground | no |
+  | Loft hatch (`loft_hatch`) | balcony: `model_facts` defines it as any door not reachable from the ground, which the 4.05 m hatch is; `store` is for shed and store doors a person walks through | no |
 
 **Preview.** `preview.png` uses the catalog's fixed camera orientation, lens,
 sun and flat grey world (`asset_build.preview_studio()`), with the distance
@@ -561,8 +598,9 @@ Checked here, in Blender:
   - Six 1024² RGB PNGs; normal vectors are unit length and face out.
   - The glass measures in band and darker than the trim.
   - The facts sidecar is consistent.
-  - The one warning is `source.dirty` in the sidecar, expected until the asset
-    is committed and the sidecar regenerated with `build.py -- facts`.
+  - No warnings once the sidecar is written from a committed tree; after a
+    rebuild from a working tree it warns `source.dirty` until
+    `build.py -- facts` is rerun from the commit.
 - `check_layout()` passes, downpipe placement included.
 - The gutter, downpipe and snow-guard pass of 2026-11-20: before/after
   renders at 20–120 m (LOD review), `preview.png` and `variants.png` looked
@@ -581,6 +619,11 @@ Checked here, in Blender:
   laps on the casings and roof ribs read raised in direct sun, which confirms
   the OpenGL green channel.
 - The variant sheet (`variants.png`): day and night for all three colours.
+- The 2026-11-22 audit fixes: tier pairs at the consumer's 30 / 67 / 134 m
+  and `LOD0` front and oblique at 20 and 35 m, each variant at 35 m, before
+  and after with identical settings; the ramp close-up from the audit's
+  camera; the three farm buildings' default and grey variants side by side.
+  Triangle counts, bounds, pivot, footprint and doors unchanged.
 
 Pending, and outside this repository:
 
@@ -601,6 +644,15 @@ These are recorded as known-good markers, not requirements.
 
 ## Revision log
 
+- **2026-11-22.** Audit fixes. One palette for the farmstead: the three
+  variants now carry the same numbers on all three farm buildings, and
+  `grey_weathered`'s trim is weathered light grey (150/146/137) over the
+  boards (110/106/98) instead of darker than them. The roof steel and its
+  flashings are dielectric (0.50 / 0 and 0.46 / 0, were part metallic). The
+  reference night tint is (1.0, 0.88, 0.72). The ramps' tops map onto a new
+  true-scale `RAMP` region instead of S1 stretched 5.9:1. The consumer's
+  switch distances recorded; stale construction notes corrected. Geometry
+  and counts unchanged.
 - **2026-11-20.** The gutter, downpipes and snow guard moved off the
   roof-matched flashing steel (`ID_METAL`) onto a new `ID_GUTTER`: galvanised
   steel at sRGB 134/137/137, roughness 0.48, metallic 0.60, the same in every

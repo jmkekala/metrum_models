@@ -3,7 +3,7 @@
   "version": 1,
   "name": "navetta_board_gable",
   "path": "buildings/agricultural/navetta_board_gable",
-  "source": {"commit": "a63afeef87011843d913649d80d9f2f9c8b2a6c5", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "a700517823f982b8b19930405d20ce058299e39b", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-8.35, 0.0, -6.3], "max": [8.35, 6.7106, 6.3]},
   "footprint": [
@@ -23,22 +23,22 @@
     {"id": "loft_hatch", "kind": "balcony", "position": [8.0, 4.05, -0.4], "facing": [1.0, 0.0, 0.0], "width_m": 1.2, "height_m": 1.4, "main": false}
   ],
   "lods": [
-    {"file": "navetta_board_gable_lod0.glb", "triangles": 756, "sha256": "3ca87dea8d7a11354c41078db4843bf35ebda72ad14ef9cd967b6df4038d3489"},
-    {"file": "navetta_board_gable_lod1.glb", "triangles": 536, "sha256": "7d5358b4f0c3a1257ea53c8dbf6d37cf5bda8f5c50e32b74e9d7172461bfbfd3"},
-    {"file": "navetta_board_gable_lod2.glb", "triangles": 266, "sha256": "152c95c873185a29fec0e12560f08672745c863bb826d29eb2d4c03ce4660952"},
-    {"file": "navetta_board_gable_lod3.glb", "triangles": 262, "sha256": "acfa0d215d1052b9e33bcacc062d6415b1372bea91bec0367c6f507f1e4d17f6"}
+    {"file": "navetta_board_gable_lod0.glb", "triangles": 756, "sha256": "2f66492fb28ee0185dc0b268f01e877c2776df8e365760e7200767c933139292"},
+    {"file": "navetta_board_gable_lod1.glb", "triangles": 536, "sha256": "58c4e3b1c87aaa25871585505c01c3da64dfdf71debaf42e350fa9b931f07817"},
+    {"file": "navetta_board_gable_lod2.glb", "triangles": 266, "sha256": "067dc4e9c1bae92a398665659ff2022a1bfe9d1f0f7767efead419a29cdeec0f"},
+    {"file": "navetta_board_gable_lod3.glb", "triangles": 262, "sha256": "c45d255a2a9e6d210591f5fd6f30a56f2d17b2968dd26ad8f178917b7028e520"}
   ],
   "textures": {
-    "orm": {"file": "navetta_board_gable_orm.png", "sha256": "1bdd9ae7f83b54884f55fbde7a67dd9c9d166b151f8e344c79c783ffd35a7206"},
-    "normal": {"file": "navetta_board_gable_normal.png", "sha256": "aa8323c8ea3c5bb6aab55ab6f744096f790843c1f9d87478553f8de30d9ed662"},
+    "orm": {"file": "navetta_board_gable_orm.png", "sha256": "a83b888bb6584e0cab740311b200d9acc3d9af25328d430a1b1d3b02d5f9e332"},
+    "normal": {"file": "navetta_board_gable_normal.png", "sha256": "efe6b26547e797804c57a2549d360321d385cb4e744430c0bb1db14491b35f15"},
     "emission": {"file": "navetta_board_gable_emission.png", "sha256": "26fc177e791636bc25d9cc2fd47ed88cec59d110b6acc11dee4e80b9efb343b5"}
   },
   "variants": [
-    {"id": "red_ochre", "albedo": "navetta_board_gable_albedo_red_ochre.png", "sha256": "7b5ce333a1ca21c4258e006e3a2f188f1b10909a5aae9fb19672f54bc3fce47d"},
-    {"id": "grey_weathered", "albedo": "navetta_board_gable_albedo_grey_weathered.png", "sha256": "135754226a39bbbd9c2b0ee61819db88c666a56da1de08014e7be690267a9179"},
-    {"id": "yellow_ochre", "albedo": "navetta_board_gable_albedo_yellow_ochre.png", "sha256": "a79dad91e638893bc7c8fc3942e01c3527e28f2c323c54902db67f48fe17a4b4"}
+    {"id": "red_ochre", "albedo": "navetta_board_gable_albedo_red_ochre.png", "sha256": "b5aee05df1777a3bffdf0b84495ead15e5a22e83b4c75afe6a085906cac9a48e"},
+    {"id": "grey_weathered", "albedo": "navetta_board_gable_albedo_grey_weathered.png", "sha256": "1d8d1a6e5b41170d8bbe992ee53c49f8e823809b162de259a51992f10dc144a7"},
+    {"id": "yellow_ochre", "albedo": "navetta_board_gable_albedo_yellow_ochre.png", "sha256": "9cd5a6084b1d4b945268ec3cfc5d39f05b04a9c7455cba9e672b3dabed78908e"}
   ],
   "default_variant": "red_ochre",
-  "preview": {"file": "../preview.png", "sha256": "35b8380f56297bf406c88c60d7e03967924617cfe4294ffd0f7a5693929e5c8d"},
+  "preview": {"file": "../preview.png", "sha256": "3da83dacc85a2a2cd6b88f4e8427d08865a720ecf9e57b0abc0b772d4a65f0fa"},
   "hero": false
 }

@@ -59,7 +59,8 @@ from asset_build import to_object, union  # noqa: E402
 from shell_build import InwardFrame as Frame, fill_region, rect_poly  # noqa: E402
 
 asset_build.check_toolchain()
-BUILD = asset_build.Asset(ASSET, HERE, L.VARIANTS, L.DEFAULT_VARIANT)
+BUILD = asset_build.Asset(ASSET, HERE, L.VARIANTS, L.DEFAULT_VARIANT,
+                          tint=L.LIT_FACTOR)
 get_material, export_all = BUILD.material, BUILD.export_all
 render_preview, render_variants = BUILD.render_preview, BUILD.render_variants
 Builder = functools.partial(SB.Builder, L.ATLAS)
@@ -326,16 +327,20 @@ def gable_slab(half_w, z_eave, over, a0, a1):
 def ramp(x0, x1, wall, outward, run):
     """A concrete ramp: a wedge from Z_RAMP at the wall down to the ground
     *run* metres out, across x0..x1, its back 5 cm into the wall. The slope
-    and cheeks sample the plinth's concrete in S1 by height, so its foot
-    carries the plinth's soil and splash; the bottom is the blank patch."""
+    samples the atlas's RAMP region at true scale, U across the ramp and V
+    up the slope from its foot, which carries the soil; the cheeks sample
+    the plinth's concrete in S1 by height; the bottom is the blank patch."""
     B = Builder()
     profile = [(-0.05, 0.0), (-0.05, Z_RAMP), (0.0, Z_RAMP), (run, 0.0)]
+    slen = math.hypot(run, Z_RAMP)
+    rx0, ry0 = L.RAMP[:2]
 
     def W(a, d, z):
         return (a, wall + outward * d, z)
 
     def slope_uv(co):
-        return ((co.x + 11.0) * PPM, L.S1_Y0 + co.z * PPM)
+        out = (co.y - wall) * outward               # out from the wall face
+        return (rx0 + (co.x - x0) * PPM, ry0 + (run - out) * slen / run * PPM)
 
     def cheek_uv(co):
         return (((co.y - wall) * outward + 11.0) * PPM, L.S1_Y0 + co.z * PPM)
@@ -417,6 +422,10 @@ def check_layout():
         xs = sorted(fr.P(v, 0.0)[0] for v in (l, r))
         if not (x0 < xs[0] - 0.1 and xs[1] + 0.1 < x1):
             problems.append("the ramp at x %.2f..%.2f does not cover the %s" % (x0, x1, kind))
+    # each ramp's top fits the atlas's RAMP region at true scale
+    for x0, x1, _w, _o, run in RAMPS:
+        if x1 - x0 > L.RAMP_W or (run + 0.05) * math.hypot(run, Z_RAMP) / run > L.RAMP_L:
+            problems.append("the ramp at x %.2f..%.2f outgrows the RAMP region" % (x0, x1))
     # downpipes clear of the corners, the openings' casings and the ramps
     for (w, _s), pipe in zip(DOWNPIPE_SPOTS, DOWNPIPES):
         fr = Frame(*MAIN_WALLS[w][:2])
@@ -440,7 +449,9 @@ def facts():
     in the build frame. The footprint is the wall outline, without the ramps
     and the overhangs. One storey: the byre floor on the plinth. The loft in
     the roof space is hay storage, not an occupied storey, and its hatch is
-    a door no one reaches from the ground."""
+    a door no one reaches from the ground: model_facts' "balcony" kind ("any
+    door not reachable from the ground"), not "store", whose shed and store
+    doors a person walks through."""
     def door(door_id, kind, wall, item, main=False):
         p0, p1, items = MAIN_WALLS[wall][0], MAIN_WALLS[wall][1], MAIN_WALLS[wall][3]
         s, z = next((s, z) for k, s, z in items if k == item)

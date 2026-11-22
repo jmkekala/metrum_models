@@ -25,7 +25,7 @@ glazing.
     y  774 ..  798   FASCIA  fascia board with its half-round gutter
     y  802 .. 1010   unique  the big door pair, the plank door, the loft hatch,
                              the byre window, the gable vent, the corner-board
-                             strip, flat patches
+                             strip, flat patches, the ramps' concrete tops
 
 S1, S2, ROOF and FASCIA span the full width and tile in U. Board-and-batten
 varies along U only (battens every 0.25 m), so it tiles at any wall length,
@@ -117,6 +117,12 @@ ITEM_ORIGIN = {
 CORNER = (604.0, UNI_Y0, 10.0, 64.0)        # corner-board strip, V stretched
 PATCHES = {name: (624.0 + 14.0 * i, UNI_Y0, 8.0, 8.0) for i, name in enumerate(
     ("trim", "soffit", "reveal", "blank", "tread", "barge"))}
+# The concrete ramps' sloping tops, at true scale: U across the ramp from its
+# left end, V up the slope from its foot on the ground. The widest ramp and
+# the longest slope (its 5 cm buried in the wall included) fit; the smaller
+# ramps sample its lower left. build.py asserts every ramp fits.
+RAMP_W, RAMP_L = 4.00, 2.30
+RAMP = (708.0, UNI_Y0 + 2.0, RAMP_W * PPM, RAMP_L * PPM)
 
 
 def item_size_px(kind):
@@ -131,30 +137,38 @@ ID_GUTTER = 10       # gutter, downpipes and snow guard: galvanised steel
 # (roughness, metallic). The rainwater goods and the snow guard are the farm
 # buildings' one galvanised steel, the same in every variant and on
 # viljakuivuri_tower and konehalli_open_bays: sRGB (134, 137, 137), dulled by
-# its zinc patina, part metallic.
+# its zinc patina, part metallic. The roof sheet and its flashings and drip
+# caps (ID_METAL) are coil-coated, painted steel: dielectric, as on the
+# farm's other two.
 SURFACE = {
     ID_WALL: (0.82, 0.0), ID_TRIM: (0.62, 0.0), ID_SASH: (0.52, 0.0),
     ID_GLASS: (glazing.ROUGHNESS, 0.0), ID_PLINTH: (0.90, 0.0),
-    ID_METAL: (0.42, 0.30), ID_ROOF: (0.46, 0.25), ID_DOOR: (0.78, 0.0),
+    ID_METAL: (0.46, 0.0), ID_ROOF: (0.50, 0.0), ID_DOOR: (0.78, 0.0),
     ID_BLANK: (0.95, 0.0), ID_IRON: (0.55, 0.45), ID_GUTTER: (0.48, 0.60),
 }
 
 # ---------------------------------------------------------------- palettes
 # Muted farm paints. Red ochre (punamulta) and yellow ochre with white trim,
-# and unpainted boards gone silver-grey with darker weathered trim. The doors
-# are boarded like the walls and painted with them, a shade darker; the roof
-# is dark steel and shifts a little with the body colour; the drip flashing
-# and drip caps follow it. The gutter, downpipes and snow guard do not: they
-# are galvanised in every variant (ID_GUTTER).
+# and unpainted boards gone silver-grey with weathered grey trim, lighter
+# than the boards but no white. The doors are boarded like the walls and
+# painted with them, a shade darker; the roof is dark steel and shifts a
+# little with the body colour; the drip flashing and drip caps follow it.
+# The gutter, downpipes and snow guard do not: they are galvanised in every
+# variant (ID_GUTTER). The farmstead's three buildings (this one,
+# viljakuivuri_tower, konehalli_open_bays) share these numbers exactly, so
+# one variant name dresses the set.
 VARIANTS = {
-    "red_ochre": {"wall": (120, 52, 42), "trim": (220, 216, 204),
-                  "roof": (54, 56, 58), "door": (108, 47, 39)},
-    "grey_weathered": {"wall": (106, 102, 95), "trim": (74, 69, 62),
-                       "roof": (60, 60, 59), "door": (94, 89, 82)},
-    "yellow_ochre": {"wall": (178, 142, 84), "trim": (220, 216, 202),
-                     "roof": (74, 50, 44), "door": (162, 128, 76)},
+    "red_ochre": {"wall": (122, 52, 42), "trim": (221, 217, 205),
+                  "roof": (54, 56, 58), "door": (112, 48, 39)},
+    "grey_weathered": {"wall": (110, 106, 98), "trim": (150, 146, 137),
+                       "roof": (62, 62, 60), "door": (101, 98, 90)},
+    "yellow_ochre": {"wall": (184, 148, 86), "trim": (222, 218, 206),
+                     "roof": (75, 51, 45), "door": (169, 136, 79)},
 }
 DEFAULT_VARIANT = "red_ochre"
+# Linear RGB: the reference night tint, the catalog's newer buildings' warm
+# white, which build.py hands to asset_build. The consumer owns the real one.
+LIT_FACTOR = (1.0, 0.88, 0.72)
 FIXED = {
     ID_GLASS: glazing.BASE, ID_PLINTH: (146, 144, 138),
     ID_BLANK: (52, 52, 52), ID_IRON: (60, 58, 56), ID_GUTTER: (134, 137, 137),
@@ -443,6 +457,21 @@ def paint_corner(c):
     c.mul(x0 - 2, x0 + w + 2, y0 - 2, y0 + 3, 0.92)
 
 
+def paint_ramp(c):
+    """The ramps' tops: cast concrete like the plinth, darker over its first
+    0.30 m from the foot where the ground meets it, with a faint broom
+    finish across the slope (rows, since V runs up it)."""
+    x0, y0, w, h = RAMP
+    c.paint(x0 - 2, x0 + w + 2, y0 - 2, y0 + h + 2, ID_PLINTH, 1.0, height=0.0)
+    sy, sx, Y, _ = c.field(x0 - 2, x0 + w + 2, y0 - 2, y0 + h + 2)
+    d = np.clip((Y - y0) / PPM, 0.0, None)
+    c.shade[sy, sx] *= 0.84 + 0.16 * np.clip(d / 0.30, 0.0, 1.0) ** 0.7
+    c.ao[sy, sx] = np.minimum(c.ao[sy, sx], 0.88 + 0.12 * np.clip(d / 0.30, 0, 1))
+    broom = np.mod(Y, 3.0) < 1.0
+    c.shade[sy, sx] = np.where(broom, c.shade[sy, sx] * 0.97, c.shade[sy, sx])
+    c.height[sy, sx] = np.where(broom, -0.0008, 0.0)
+
+
 def paint_patches(c):
     spec = {"trim": (ID_TRIM, 1.0, 1.0), "soffit": (ID_TRIM, 0.86, 0.85),
             "reveal": (ID_TRIM, 0.70, 0.6), "blank": (ID_BLANK, 1.0, 0.5),
@@ -511,6 +540,10 @@ def weather(c):
     kx0, ky0, kw, kh = CORNER
     w.add("D", kx0 - 2, kx0 + kw + 2, ky0 - 2, ky0 + kh + 2, lambda Y, X, nz: 0.22
           * np.exp(-np.clip(Y - ky0, 0.0, None) / 4.0), (ID_TRIM,))
+    # the ramps: soil carried onto their foot, fading up the slope
+    rx0, ry0, rw, rh = RAMP
+    w.splash(rx0 - 2, rx0 + rw + 2, ry0 - 2, ry0 + rh + 2, (ID_PLINTH,),
+             amount=0.20, fall=0.25)
     return w
 
 
@@ -525,6 +558,7 @@ def paint(ss=atlas.SS):
         paint_opening(c, kind)
     paint_corner(c)
     paint_patches(c)
+    paint_ramp(c)
     c.check_bands(BAND_IDS)
 
     wear = 0.025 * atlas.noise(c, 3, 40.0) + 0.015 * atlas.noise(c, 4, 8.0)

@@ -3,7 +3,7 @@
   "version": 1,
   "name": "viljakuivuri_tower",
   "path": "buildings/agricultural/viljakuivuri_tower",
-  "source": {"commit": "3655f55d58396fe4415d343ed7d2447890f38ad6", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "a700517823f982b8b19930405d20ce058299e39b", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-4.85, 0.0, -4.4], "max": [4.85, 12.1934, 4.4]},
   "footprint": [
@@ -25,22 +25,22 @@
     {"id": "intake", "kind": "vehicle", "position": [2.6, 0.1, 3.6], "facing": [0.0, 0.0, 1.0], "width_m": 3.0, "height_m": 3.2, "main": false}
   ],
   "lods": [
-    {"file": "viljakuivuri_tower_lod0.glb", "triangles": 1192, "sha256": "0433f3a3c766ce48ec5c312ce235fee6c30605de9fec03947121ce6b28d141a4"},
-    {"file": "viljakuivuri_tower_lod1.glb", "triangles": 916, "sha256": "c5dd2230fab8d8494a59acf62875d21157e2607c1220fd59714e71e76ee231c2"},
-    {"file": "viljakuivuri_tower_lod2.glb", "triangles": 544, "sha256": "faa06624d1cc4fbba45baca166e80ef69f3ea2eb2e9713d14705f8aa175e4c65"},
-    {"file": "viljakuivuri_tower_lod3.glb", "triangles": 490, "sha256": "5a1c3961deb835623095dd8e9dccc10eb27c00dac5a4109d53c80f044aaf962e"}
+    {"file": "viljakuivuri_tower_lod0.glb", "triangles": 1836, "sha256": "57c41ca6ac5f541f5f4bae9393ef3ac0bbb9d6557f51e752f3cc3a5e164e2f06"},
+    {"file": "viljakuivuri_tower_lod1.glb", "triangles": 1460, "sha256": "e7fbc887499b31218cc62c7460f591ecfea35262fc7ff25b2f2bd86529d52072"},
+    {"file": "viljakuivuri_tower_lod2.glb", "triangles": 684, "sha256": "77e085aca479cb95734700fe91bf01df03afb30f08f08f6b6fc7d922fd84a5a6"},
+    {"file": "viljakuivuri_tower_lod3.glb", "triangles": 490, "sha256": "33cb38d562c58e7d66984f800504466904af7b9a1ce4c234929ed2e707c411b3"}
   ],
   "textures": {
-    "orm": {"file": "viljakuivuri_tower_orm.png", "sha256": "d5e49951fb0735bd6abef3ab9323a9c211dea8b23ca2cb9aaa14e164986f3fa5"},
-    "normal": {"file": "viljakuivuri_tower_normal.png", "sha256": "e34fa124535444fa1a23f3ad7557431547095a9d706eb8b6087807ecb38a01d2"},
+    "orm": {"file": "viljakuivuri_tower_orm.png", "sha256": "dd7a6fd9aadb5e2b1ba52e2192f8cfe1db06af183604ddddd06ac5fab321ecde"},
+    "normal": {"file": "viljakuivuri_tower_normal.png", "sha256": "151d51e62e0a773696d5580d3ca60d6fab5edd5b0114596f280e61fd3164a3be"},
     "emission": {"file": "viljakuivuri_tower_emission.png", "sha256": "61311d98c460bd19c438f0404c9f3ed574da8e222b2c35084e18a5afc6af6ab5"}
   },
   "variants": [
-    {"id": "red_ochre", "albedo": "viljakuivuri_tower_albedo_red_ochre.png", "sha256": "ebda724b7aca8e4fa2d247bcb6903d64f6778f44d53aa43734b63df2b59d846c"},
-    {"id": "grey_weathered", "albedo": "viljakuivuri_tower_albedo_grey_weathered.png", "sha256": "bc9f20dd72618a1dba4512d91fcb12e9bc44251dcd8673210228f684311ba0d1"},
-    {"id": "yellow_ochre", "albedo": "viljakuivuri_tower_albedo_yellow_ochre.png", "sha256": "fffefea578af4d9c57e57e1b890008b4157ce1e5ede618406e090c1ecd54ddb3"}
+    {"id": "red_ochre", "albedo": "viljakuivuri_tower_albedo_red_ochre.png", "sha256": "448082fb1aa9342245c4bb9f61bca013465b3f3a97c1b3256ffb95241f26be80"},
+    {"id": "grey_weathered", "albedo": "viljakuivuri_tower_albedo_grey_weathered.png", "sha256": "a3c129545924939eed1e6a7a409713f4a5179d0ba70b8c047ec0996a2298706a"},
+    {"id": "yellow_ochre", "albedo": "viljakuivuri_tower_albedo_yellow_ochre.png", "sha256": "f9d0983a8899e8cebea4b46296fd3196277df1767423e87604d5d76dcd2241da"}
   ],
   "default_variant": "red_ochre",
-  "preview": {"file": "../preview.png", "sha256": "1a40965ac43a17b1ee81ca6fb6a17242365cecc2348b666bda374fdbadbff18f"},
+  "preview": {"file": "../preview.png", "sha256": "1f8fb7a67ccfe7dd9491d4d568597561ed8929736e347aeea189a5cf28d22c01"},
   "hero": false
 }
