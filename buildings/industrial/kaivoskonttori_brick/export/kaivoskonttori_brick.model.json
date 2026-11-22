@@ -3,7 +3,7 @@
   "version": 1,
   "name": "kaivoskonttori_brick",
   "path": "buildings/industrial/kaivoskonttori_brick",
-  "source": {"commit": "a700517823f982b8b19930405d20ce058299e39b", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "0fbc373621991d9a98b0df8293666d1a124d735c", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-8.3, 0.0, -5.25], "max": [8.3, 5.6937, 5.25]},
   "footprint": [
