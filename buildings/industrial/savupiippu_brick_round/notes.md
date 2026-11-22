@@ -77,11 +77,11 @@ empty (see Export, *Facts sidecar*).
 n/a: the stack has no pedestrian door. The two openings in the base are not
 doors:
 
-- **Flue inlet** (front, -Y): 1.625 × 2.00 m, sill at 1.00 m, head at
+- **Flue inlet** (front, -Y): 1.625 × 1.984 m, sill at 1.016 m, head at
   3.00 m under a 0.25 m cast concrete lintel. It is closed by a bolted black
   steel blanking plate in an angle frame, with a small inspection door low
   in it.
-- **Cleanout hatch** (east): 0.70 × 0.91 m, sill at 0.44 m, a painted cast
+- **Cleanout hatch** (east): 0.70 × 0.89 m, sill at 0.44 m, a painted cast
   iron door on two strap hinges in an iron frame.
 
 Neither reads at human scale as a door: the inlet's sill is a metre up, and
@@ -91,7 +91,7 @@ head.
 
 ## Window sills
 
-n/a: no windows. The inlet's sill is at 1.00 m and the hatch's at 0.44 m.
+n/a: no windows. The inlet's sill is at 1.016 m and the hatch's at 0.44 m.
 
 ## Eave overhang
 
@@ -139,11 +139,22 @@ the wash's edges). The base and the attachments are flat-shaded.
 
 ### The base
 
-A massive brick base: 6.8 m square to 4.2 m, the corner fillets rising
-1.2 m over a 1.41 m run (40°) to an octagon whose flats are the walls'
-planes, a 0.3 m concrete coping round the octagon, and a concrete wash
-rising 0.5 m from the coping to the shaft (about 19°). The shaft's foot
-stands 1.3 m inside the octagon's flats.
+A massive brick base: 6.8 m square to 4.219 m, the corner fillets rising
+1.17 m over a 1.41 m run (40°) to an octagon whose flats are the walls'
+planes at 5.391 m, a 0.31 m concrete coping round the octagon to 5.7 m,
+and a concrete wash rising 0.5 m from the coping to the shaft (about
+19°). The shaft's foot stands 1.3 m inside the octagon's flats.
+
+The base's brick is the catalog's stretcher bond (`scripts/brickwork.py`,
+0.25 m stretchers on 0.078125 m courses, counted from the footing's top),
+and its brick-bound heights are on those courses where that moved them by
+under 3 cm: the footing 0.3125 m (4 courses), the square walls' head
+4.21875 m (54), the fillets' head and coping's foot 5.390625 m (69), the
+inlet's sill 1.015625 m (13) and the hatch's head 1.328125 m (17). The
+inlet's lintel (3.0–3.25 m, the inlet's head at its soffit) and the
+hatch's sill (0.4375 m) are each 3.1 cm from the nearest course line, so
+they stay where they were, a part course at their edges. The shaft keeps
+its own module (radial header brick, Texture set).
 
 ### The round
 
@@ -189,6 +200,13 @@ stopping `GAP` short of both rails; on `LOD0` ten pairs of brackets
 (triangular bars 0.04 m) from `GAP` off the shaft to `GAP` off the rails'
 inner faces, at 8.9 m, every 4 m from 12.7 m, and at 44.3 m; none on
 `LOD1`, where they are under a pixel.
+
+**No fixed route to the ladder's foot, by design.** The ladder starts
+8.70 m up, 2.5 m over the wash, and nothing leads to it from the ground:
+a stack's fixed ladder starts out of reach so it cannot be climbed
+casually (an anti-climb gap), and the maintainers reach its foot with a
+portable ladder from the wash. `check_layout()` holds the foot out of
+reach.
 
 **Safety cage.** A ladder this tall has a cage from about 2.5 m above its
 foot: 21 hoops every 1.65 m along the batter from 11.2 m to 44.2 m (the
@@ -255,8 +273,9 @@ conductor (`COND_X`, `COND_W`, `COND_T`, `COND_OFF`, its strips
 `SIDES`, and the atlas layout. `check_layout()` asserts:
 
 - the inlet clear of the corners and under its lintel, the hatch low and
-  above the footing; the base's heights in order and the wash at least
-  0.8 m wide;
+  above the footing; the base's heights in order, its brick-bound heights
+  and the fillets' shift on the catalog's courses (but for the lintel and
+  the hatch's sill), and the wash at least 0.8 m wide;
 - on every tier, every lift's facets within their band's overrun and its
   taper within the band's left margin, the far tiers' back facet inside its
   strip, the head band inside its region; the lifts running from the
@@ -400,6 +419,18 @@ Findings:
   as a turned metal drum: the staves, the lift joint and the tie holes
   show at 12–16 m, the soot runs under the dark cap ring at 14–60 m.
 
+**The consumer's switches.** The consumer switches by screen size; measured
+at 1080p and a 75° vertical FOV (CLAUDE.md, LOD Budgets), it switches at
+about 1.8, 4 and 8 times the largest bounds dimension, 47.5 m: about 86,
+190 and 380 m. Each pair was rendered there at 75°, 1920×1080, 24
+samples, noon, front, corner (also at night), eye level and rear, before
+and after the 2026-11-22 audit fix (render set in
+`review/older_audit_2026_11_22/fix_industrial_b1/savupiippu_brick_round/`).
+Nothing pops at any of them: between tiers the mean difference is
+0.03–0.42 levels, the 99th percentile 1–6, at most 6 pixels over 24. The
+fix moved none of it: each render differs from its before by a 99th
+percentile of 1–4 levels.
+
 The six working views (`review_asset.py --six-views`: orthographic front,
 back, left, right, top and a 45° aerial) were looked at for `LOD0` and
 `LOD3`.
@@ -457,9 +488,9 @@ One 1024² atlas at 64 px/m, rasterised by `scripts/atlas.py` at `atlas.SS`
 
 | Rows | Region | Mapping |
 | --- | --- | --- |
-| 0–269, x 0–870 | BASE | the base's walls, z 0–4.2 m, V = height; range A (x 0–435) the east, rear and west walls, range B the front's |
+| 0–270, x 0–870 | BASE | the base's walls, z 0–4.21875 m, V = height, the catalog's stretcher bond (`scripts/brickwork.py`, tone period 48 courses, seed 17); range A (x 0–435) the east, rear and west walls, range B the front's |
 | 6–258, x 880–992 | unique | the inlet's closure; the wash seen from above |
-| 0–269, x 998–1010 | strip | the conductor's strip of the rear wall and its trapezoid |
+| 0–270, x 998–1010 | strip | the conductor's strip of the rear wall and its trapezoid |
 | 276–540 | MID, U1 | shaft bands with their ladder strips |
 | 544–808 | U2, U3 | shaft bands with their ladder strips; at x 940–1004 the hatch, the lamp, flat patches |
 | 816–932 | HEAD | the head band, unwrapped round the stack; at x 532–712 one side of the octagon's coping, at x 724–736 the conductor's strip of the rear coping side |
@@ -495,9 +526,10 @@ part lift under the ladder's foot samples MID's top 2.5 m, without strip.
 
 ### The base's trapezoids and fillets
 
-The base band holds the walls to 4.2 m only. The trapezoids and fillets
-above sample range A 14 courses (1.33 m) lower, where it is plain brick,
-the courses aligned; the fillets' coursing is level and runs along their
+The base band holds the walls to 4.21875 m only. The trapezoids and
+fillets above sample range A 18 courses (1.40625 m) lower, where it is
+plain brick, the courses aligned (an even number of courses, so the bond's
+offset holds too); the fillets' coursing is level and runs along their
 head.
 
 ### Deviations from 64 px/m
@@ -555,9 +587,14 @@ splash-back and salt bloom on the base's brick; dirt on the coping and the
 wash; runs and rust on the head band and cap ring; rust and runs on the
 inlet's plate and the hatch's foot. MID gets periodic noise only.
 
-The module has no soot, so `facade_atlas.soot()` darkens shade and adds the
-module's dirt field: on the shaft by height alone, nothing below 32.7 m
-and thickening almost linearly, 0.98 t^1.05, to the head (t the fraction of
+The soot is the module's coal dust, `Weather.coal()` at its default depth
+(the K field, which resolves toward settled fines and turns the surface
+matte, and the shade darkened where it lies thick), as the plant's hall
+lays it on its own stacks. Each soot profile s (0..1) lays `SOOT_K` = 0.8 s
+of it, which matches the stack's earlier private soot (shade and dirt) in
+value within about 3 sRGB levels, the heaviest a little more neutral. The
+profiles: on the shaft by height alone, nothing below 32.7 m and
+thickening almost linearly, 0.98 t^1.05, to the head (t the fraction of
 the way from 32.7 to 44.7 m: the shaft's upper third), modulated by
 vertical streaks periodic round the stack; on the head band as above; a
 soot plume over the inlet's lintel. The grade cannot start lower: every
@@ -566,7 +603,8 @@ and the atlas has no room for a fifth band. Nor can the shaft favour one
 side: its bands tile round the stack every 4 m, so any bias would repeat
 two or three times round it; the one-sided soot is the head band's only.
 Mean sRGB of the plain shaft, from MID to U3's top, falls from about
-(111, 82, 73) to about (65, 51, 44).
+(111, 82, 73) to about (66, 53, 50) in U3's top 16 rows (the private soot
+gave (67, 53, 46) there).
 
 ### Filtering
 
@@ -699,15 +737,15 @@ Checked here, in Blender:
 - `scripts/validate_asset.py`: 0 FAIL. Every tier welded manifold (the
   kit's shells each closed), one material, uri-only images, normal map at
   scale 1, emission bound and default off, under its ceiling, pivot at
-  ground and centred; hidden-surface candidates 219 / 83 / 18 / 0, the
+  ground and centred; hidden-surface candidates 222 / 86 / 18 / 0, the
   attachments' end faces (Interior geometry); six 1024² RGB PNGs; the
   red lamp mask reported as coloured fixtures (`MANUAL`), the lens's
   albedo measured by hand (Glazing treatment); the facts sidecar, its
   bounds 6.8 × 6.8 × 47.5 m (the air terminal's tip; plan bounds,
   footprint and pivot unchanged from the previous revision), the same
-  extents on every tier's GLB. The sidecar's `source.dirty` is true (written from an
-  uncommitted tree); it must be rewritten from a committed one
-  (`build.py -- facts`).
+  extents on every tier's GLB. The sidecar's `source.dirty` follows the
+  tree it is written from: it is rewritten from a committed tree with
+  `build.py -- facts`.
 - `check_layout()`, `build_lod()`'s no-intersection test on every tier
   (the air terminal's rod, clamp, bracket and spike included), and the
   atlas's `check_regions()` and `check_bands()`.
@@ -730,6 +768,24 @@ Checked here, in Blender:
   on `brown_brick`; a 35 m oblique noon render of each variant before and
   after.
 
+- The audit-fix pass (2026-11-22): the asset folder copied to
+  `review/older_audit_2026_11_22/fix_industrial_b1/savupiippu_brick_round/before/`
+  first; before and after with identical settings: the tier pairs at the
+  consumer's 86, 190 and 380 m (LOD review), `review_asset.py` `LOD0` front
+  and oblique at 20 and 35 m, noon and reverse (`compare_lod0/`), and close
+  renders of the head (rear and front), the shaft's top from 30 m, the
+  inlet, the hatch, the base's corner and rear and the wash
+  (`close_ab.png`). The head, its soot and runs, the shaft's sooted top and
+  the wash read as before (the head's close renders within 2 levels at the
+  99th percentile); the base's brick is finer, the plant's module, with no
+  seam where the trapezoids and fillets meet the walls. The atlas's soot
+  bands and head measured against the before bake (Texture set,
+  *Weathering and soot*); `check_layout()` with the new course checks and
+  `check_regions()`; the sidecar diffed against the previous one (only
+  hashes and source changed).
+- Not re-run in that pass: the mip stress renders and the six working
+  views.
+
 Pending:
 
 - in the consumer: import, orientation and pivot on reimport, LOD
@@ -744,6 +800,19 @@ with numpy, scipy and Pillow.
 
 ## Revision log
 
+- **2026-11-22:** audit fix. The soot is `weathering.py`'s coal dust
+  (`Weather.coal()`, `SOOT_K` 0.8); the private `soot()` is gone, and the
+  shaft's and head's soot keep their values within about 3 sRGB levels. The
+  base is painted in the catalog's stretcher bond (`scripts/brickwork.py`)
+  instead of 0.296 × 0.095 m bricks, with its brick-bound heights on its
+  courses where they moved under 3 cm: the square walls' head 4.2 →
+  4.21875 m, the fillets' head (coping's foot) 5.4 → 5.390625 m, the
+  inlet's sill 1.0 → 1.015625 m (the inlet 2.0 → 1.984375 m tall), the
+  hatch's head 1.34375 → 1.328125 m (0.90625 → 0.890625 m tall); the
+  fillets' sampling shift 14 old courses (1.333 m) → 18 catalog courses
+  (1.40625 m). The lintel and the hatch's sill stay (3.1 cm off). The
+  ladder's out-of-reach foot recorded. Triangles, bounds, pivot and
+  footprint unchanged.
 - **2026-11-21:** air terminal. A lightning rod on the strap's line,
   rising 1.0 m over the rim to 47.5 m: a tapered square copper rod on a
   clamp block, with a bracket under the cap ring, on `LOD0`/`LOD1`; a

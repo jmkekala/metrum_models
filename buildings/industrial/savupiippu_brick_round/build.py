@@ -978,6 +978,15 @@ def check_layout():
     # the base: fillets rising, the shaft's foot well inside the octagon
     if not (L.Z_FOOT < L.Z_SQ < L.Z_OCT < L.Z_CAP < L.Z_SHAFT0):
         bad.append("the base's heights are out of order")
+    # the base's brick heights on the catalog's courses, but for the lintel
+    # and the hatch's sill (each 3.1 cm off the nearest line, left; notes.md)
+    for what, z in (("footing", L.Z_FOOT), ("square walls' head", L.Z_SQ),
+                    ("fillets' head", L.Z_OCT), ("inlet's sill", L.INLET[1]),
+                    ("hatch's head", L.HATCH[1] + L.HATCH[3]),
+                    ("fillets' shift", L.FILLET_SHIFT)):
+        k = z / L.brickwork.COURSE
+        if abs(k - round(k)) > 1e-6:
+            bad.append("the base's %s at %.6f m is off the coursing" % (what, z))
     for n in L.SIDES:
         if L.r_shaft(L.Z_SHAFT0) * L.k_sides(n) > BH - 0.8:
             bad.append("%d sides: the wash is under 0.8 m wide" % n)

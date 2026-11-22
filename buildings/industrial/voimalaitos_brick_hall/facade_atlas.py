@@ -39,8 +39,10 @@ The atlas is a trim sheet. Five bands run the full width and tile in U:
                              bond), the coping over the inlet, the closed
                              inlet itself (40 px/m), the stub stacks (a plain
                              face and the ladder's), the two roof decks
-                             (8 px/m), the LOD3 elevations (6 px/m) and flat
-                             patches.
+                             (8 px/m), the LOD3 elevations (6 px/m), LOD2's
+                             flush openings, each window size and door
+                             whole at 12 px/m with its recess's occlusion
+                             (LO), and flat patches.
 
 The hall window is painted once, four columns and four pane rows, and
 build.py assembles every multi-pane window from its sections: the bottom
@@ -361,6 +363,11 @@ def item_rect(name, item):
     return (s - w / 2.0, s + w / 2.0, item[2], item[2] + h)
 
 
+def lo_key(item):
+    """The LO region a recessed opening samples when flush (LOD2)."""
+    return tuple(item[3]) if item[0] == "win" else item[0]
+
+
 def slab_of(z):
     """Index of the brick slab a height lies in, from the cell's foot."""
     for i, c in enumerate(CUTS):
@@ -437,6 +444,20 @@ INLET = (880, 810, 116, 124)                    # 2.9 x 3.1 m at IPPM
 REGION = {"entrance": ENTRANCE, "bigdoor": BIGDOOR, "service": SERVICE,
           "sq": SQWIN, "bushing": BUSHING, "letters": LETTERS, "mouth": MOUTH,
           "inlet": INLET}
+# LOD2's flush openings at LO_PPM: every window size painted whole and every
+# door, each with its recess's occlusion baked in (occlude()), so an
+# opening that stops being cut keeps the dark of its reveal. Keyed by
+# lo_key(); window keys are (cols, rows).
+LO_PPM = 12.0
+LO = {
+    (3, 9): (1000, 806, 20, 83),                # 1.625 x 6.875 m
+    (3, 6): (1000, 893, 20, 56),                # 1.625 x 4.609375 m
+    (2, 5): (737, 882, 14, 47),                 # 1.125 x 3.90625 m
+    "bigdoor": (692, 882, 41, 48),
+    "entrance": (692, 934, 24, 37),
+    "sq": (720, 934, 9, 10),
+    "service": (737, 935, 15, 30),
+}
 # pixels per metre of each region, where it is not PPM
 REGION_PPM = {"bushing": BPPM, "inlet": IPPM}
 # where each deck's region starts on the plan
@@ -517,8 +538,9 @@ SURFACE = {
 # it holds. The concrete, the coping, the roofs, the conveyor inlet and the
 # kit stay the same.
 #
-# red_brick and brown_brick are shared, constant for constant, with the
-# plant's other four pieces. red_brick is the catalog red (144, 72, 52),
+# The three bricks, and the red variant's door paint, are shared constant
+# for constant with the plant's other pieces (scripts/boundary_wall.py's
+# walls among them). red_brick is the catalog red (144, 72, 52),
 # (114, 58, 45), mortar (150, 145, 136), each channel taken to
 # Y + 0.6 * (c - Y) (Y its Rec.709 luma), times 0.94, the mortar a further
 # 10 % darker. brown_brick is a dark purple-brown clinker, well below the
@@ -528,8 +550,8 @@ SURFACE = {
 VARIANTS = {
     "red_brick": {"brick": (114, 73, 62), "brick2": (90, 59, 51),
                   "mortar": (125, 123, 118), "frame": (198, 198, 192),
-                  "door": (64, 80, 76)},
-    "yellow_brick": {"brick": (186, 164, 120), "brick2": (162, 140, 102),
+                  "door": (66, 82, 76)},
+    "yellow_brick": {"brick": (188, 166, 122), "brick2": (164, 142, 104),
                      "mortar": (160, 156, 148), "frame": (98, 110, 104),
                      "door": (104, 56, 44), "letter": (66, 74, 70)},
     "brown_brick": {"brick": (80, 59, 57), "brick2": (62, 46, 45),
@@ -1245,8 +1267,11 @@ def paint_stack(c, rect, rot=False, ladder=False):
 
 
 # ----------------------------------------------------------------- decks
+LINE_OUT = 0.125        # the parapet's inner line on LOD3's coping box tops
+
+
 def paint_deck(c, rect, origin, inner, drains, hatches, kerbs, paths, soot=(),
-               bunker=None):
+               bunker=None, open_x0=False):
     """A flat roof deck at DPPM, its region's corner at plan point *origin*:
     mineral-surfaced felt, lap seams a metre apart, patches of gravel and of
     a later repair; the felt's upstand along the parapet round *inner*
@@ -1278,6 +1303,26 @@ def paint_deck(c, rect, origin, inner, drains, hatches, kerbs, paths, soot=(),
     for a0, a1, b0, b1 in ((x0, x1, y0, y0 + 2), (x0, x1, y1 - 2, y1),
                            (x0, x0 + 2, y0, y1), (x1 - 2, x1, y0, y1)):
         c.paint(a0, a1, b0, b1, ID_FELT, 1.14, 0.80, height=0.0)
+    # Outside *inner* only LOD3's coping box samples the region (LOD0-LOD2's
+    # decks stop at the parapets' inner faces). There, out to the coping's
+    # outer edge (PIN + CO out), it paints what their sunk deck shows from
+    # above: the coping's light top, and next to the deck a dark line for the
+    # parapet's inner face and foot, so the roofs read the same across the
+    # LOD2-LOD3 switch. *open_x0*: no parapet on the x0 side (the turbine
+    # hall's deck runs to the boiler house).
+    o = (PIN + CO) * DPPM
+    d = LINE_OUT * DPPM
+    xo = x0 if open_x0 else x0 - o
+    xd = x0 if open_x0 else x0 - d
+    c.paint(xo, x1 + o, y0 - o, y0 - d, ID_COPE, 1.02, 1.0, height=0.0)
+    c.paint(xo, x1 + o, y1 + d, y1 + o, ID_COPE, 1.02, 1.0, height=0.0)
+    c.paint(x1 + d, x1 + o, y0 - d, y1 + d, ID_COPE, 1.02, 1.0, height=0.0)
+    c.paint(xd, x1 + d, y0 - d, y0, ID_FELT, 0.62, 0.60, height=0.0)
+    c.paint(xd, x1 + d, y1, y1 + d, ID_FELT, 0.62, 0.60, height=0.0)
+    c.paint(x1, x1 + d, y0, y1, ID_FELT, 0.62, 0.60, height=0.0)
+    if not open_x0:
+        c.paint(x0 - o, x0 - d, y0 - d, y1 + d, ID_COPE, 1.02, 1.0, height=0.0)
+        c.paint(x0 - d, x0, y0, y1, ID_FELT, 0.62, 0.60, height=0.0)
     for px, py in drains:
         cx, cy = P(px, py)
         c.disc(cx, cy, 2.4, ID_FELT, 0.80, 0.70)
@@ -1325,7 +1370,8 @@ def paint_decks(c):
                drains=((2.5, -4.5), (2.5, 4.5), (13.0, -4.5), (13.0, 4.5)),
                hatches=((1.5, -5.5, 1.0),),
                kerbs=((8.0, -3.0, 1.4, 2.6), (8.0, 3.5, 1.4, 2.6)),
-               paths=(((11.25, 7.7), (11.25, 6.2), (-1.2, 6.2), (-1.2, 0.0)),))
+               paths=(((11.25, 7.7), (11.25, 6.2), (-1.2, 6.2), (-1.2, 0.0)),),
+               open_x0=True)
     paint_deck(c, DECK_B, DECK_B_O, DECK_B_INNER,
                drains=((-14.0, -6.5), (-4.0, -6.5)),
                hatches=((-6.0, -4.5, 1.0),),
@@ -1358,7 +1404,8 @@ PAINTERS = {"entrance": paint_entrance, "bigdoor": paint_bigdoor,
 
 def paint_elevation(c, ename):
     """One LOD3 elevation at LPPM: every wall it holds, with its plinth, its
-    openings and panels, drawn by the same painters as the regions."""
+    openings and panels, drawn by the same painters as the regions, each
+    opening LOD0-LOD1 recess with its recess's occlusion (occlude())."""
     ex, ey, ew, eh = ELEV[ename]
     zb0 = ELEV_ZB[ename]
     for wname, off in ELEV_WALLS[ename]:
@@ -1387,6 +1434,82 @@ def paint_elevation(c, ename):
                 continue                    # weather() dusts it
             else:
                 PAINTERS[kind](c, X(s0), Y(z0), LPPM, pad=0)
+            if kind in REVEAL:
+                occlude(c, X(s0), Y(z0), s1 - s0, z1 - z0, LPPM, kind)
+
+
+# ----------------------------------------------- the flat tiers' openings
+# How much of the light a recess REVEAL deep takes at its edge, falling off
+# over its depth: under the head, at each jamb, over the sill. A door has no
+# sill. LOD2's LO regions and LOD3's elevations paint it into the openings
+# they show flush, so the tiers keep LOD0-LOD1's dark reveals; measured
+# against LOD1's cut openings at the consumer's 128 m switch (notes.md, LOD
+# review).
+RECESS_OCC = (0.55, 0.30, 0.15)
+RECESS_FLOOR = 0.35
+DOORS = ("entrance", "bigdoor", "service")
+
+
+def lo_size(key):
+    """The opening an LO region holds, (width, height) in metres."""
+    return win_size(*key) if isinstance(key, tuple) else SIZES[key]
+
+
+def occlude(c, x0, y0, w, h, ppm, kind, grow=0.0):
+    """Darken an opening painted flush at (x0, y0), *w* x *h* metres at
+    *ppm*, by its recess's occlusion, shade and AO, and *grow* px round it
+    with the edge's value (an LO region's bleed). The occlusion is the
+    environment's, the same whatever the sun does, so it may go into the
+    albedo: CLAUDE.md, Texture Requirements."""
+    d = REVEAL[kind]
+    head, jamb, sill = RECESS_OCC
+    if kind in DOORS:
+        sill = 0.0
+    sy, sx, Y, X = c.field(x0 - grow, x0 + w * ppm + grow, y0 - grow, y0 + h * ppm + grow)
+    s = np.clip((X - x0) / ppm, 0.0, w)
+    z = np.clip((Y - y0) / ppm, 0.0, h)
+    t = (head * np.exp(-(h - z) / d) + jamb * (np.exp(-s / d) + np.exp(-(w - s) / d))
+         + sill * np.exp(-z / d))
+    f = np.clip(1.0 - t, RECESS_FLOOR, 1.0).astype(np.float32)
+    c.shade[sy, sx] *= f
+    c.ao[sy, sx] = np.minimum(c.ao[sy, sx], f)
+
+
+def paint_lo(c):
+    """LOD2's flush openings at LO_PPM, by the same painters as the
+    full-size regions: each window whole, its pane rows stretched to the
+    opening as the mesh stretches the region's sections, and each door,
+    with its recess's occlusion (occlude()). export() keeps their glass at
+    glazing.BASE, as the elevations': their bars are under a pixel, and
+    glazing.rooms() would paint over them and the occlusion."""
+    for key, (x, y, w, h) in LO.items():
+        if isinstance(key, tuple):
+            cols, rows = key
+            paint_window(c, x, y, LO_PPM, cols, row_seq(rows), ky=win_k(rows))
+        else:
+            PAINTERS[key](c, x, y, LO_PPM)
+        occlude(c, x, y, *lo_size(key), LO_PPM, "win" if isinstance(key, tuple) else key,
+                grow=PAD)
+
+
+LO_SOURCE = {"sq": SQWIN, "entrance": ENTRANCE, "bigdoor": BIGDOOR, "service": SERVICE}
+
+
+def lo_match_emission(em, glass):
+    """Scale each LO region's lit rooms (glazing.night_rooms() draws each
+    its own level) to the light per unit of glass of the full-size region
+    LOD0-LOD1 sample for the same opening, so the lit windows keep their
+    brightness across the LOD1-LOD2 switch. *em* and *glass* are at pixel
+    resolution, V up."""
+    def per_glass(x, y, w, h):
+        g = glass[y:y + h, x:x + w].sum()
+        return em[y:y + h, x:x + w].mean(axis=2).sum() / g if g > 0 else None
+    for key, (x, y, w, h) in LO.items():
+        a = per_glass(*(WINDOW if isinstance(key, tuple) else LO_SOURCE[key]))
+        b = per_glass(x, y, w, h)
+        if a and b:
+            em[y - PAD:y + h + PAD, x - PAD:x + w + PAD] *= a / b
+    return em
 
 
 def paint_patches(c):
@@ -1422,7 +1545,17 @@ def check_regions():
              "inlet": INLET, "stack_l": STACK_L, "cope_dust": COPE_DUST}
     rects.update({"elev_" + k: v for k, v in ELEV.items()})
     rects.update(PATCHES)
+    rects.update({"lo_%s" % (k,): v for k, v in LO.items()})
     problems = atlas.region_problems(rects, ATLAS, bands_top=PIPE_Y0 + PIPE_H + PAD)
+    for key, (x, y, w, h) in LO.items():
+        lw, lh = lo_size(key)
+        if not (0.0 <= w - lw * LO_PPM < 1.0 and 0.0 <= h - lh * LO_PPM < 1.0):
+            problems.append("LO region %s is not its opening at LO_PPM" % (key,))
+    lo_need = {lo_key(it) for name in WALL_ORDER for it in ITEMS[name]
+               if it[0] in REVEAL}
+    if lo_need != set(LO):
+        problems.append("LO regions %s for openings %s" % (sorted(map(str, LO)),
+                                                          sorted(map(str, lo_need))))
     W, H = win_size(REGION_COLS, REGION_ROWS)
     if (WINDOW[2], WINDOW[3]) != (m(W), m(H)):
         problems.append("the window region is not %s x %s m" % (W, H))
@@ -1584,6 +1717,25 @@ def weather(c):
     x, y, rw, rh = SERVICE
     w.door(x + m(DOOR_FRAME), x + rw - m(DOOR_FRAME), y, y + m(LEAF_TOP["service"]),
            (ID_DOOR,), handle=(x + rw - m(DOOR_FRAME) - 8, y + m(1.05)))
+    # the same on LOD2's copies, at their density
+    k = LO_PPM / PPM
+    for key, (x, y, rw, rh) in LO.items():
+        if isinstance(key, tuple) or key == "sq":
+            w.add("D", x, x + rw, y - PAD, y + (FR + 1.0 / PPM) * LO_PPM,
+                  lambda Y, X, nz: 0.12 + 0.12 * atlas.smoothstep(0.2, 1.4, nz("short")),
+                  (ID_FRAME,))
+    for key, top, hx in (("entrance", LEAF_TOP["entrance"], None),
+                         ("bigdoor", None, None),
+                         ("service", LEAF_TOP["service"], -(DOOR_FRAME + 8.0 / PPM))):
+        x, y, rw, rh = LO[key]
+        dw, dh = SIZES[key]
+        f = DOOR_FRAME * LO_PPM
+        hx = x + dw * LO_PPM / 2.0 if hx is None else x + dw * LO_PPM + hx * LO_PPM
+        hy = y + (1.1 if key == "bigdoor" else 1.05) * LO_PPM
+        w.door(x + f, x + dw * LO_PPM - f, y, y + (top or dh) * LO_PPM, (ID_DOOR,),
+               handle=(hx, hy), ppm=LO_PPM)
+    x, y, rw, rh = LO["bigdoor"]
+    w.add("R", x, x + rw, y, y + 14 * k, lambda Y, X, nz: 0.12 * nz("blotch"), (ID_DOOR,))
     # the flue's blanking plate and casing: soot and rust, and soot runs
     # down the casing's sides from its top (U is up the side there)
     x, y, rw, rh = FLUE_END
@@ -1709,6 +1861,7 @@ def paint(ss=atlas.SS):
     paint_decks(c)
     for ename in ELEV:
         paint_elevation(c, ename)
+    paint_lo(c)
     paint_patches(c)
 
     # Tone wear, grain and pores. Every field repeats every 240 rows, so the
@@ -1765,10 +1918,11 @@ def export(out_dir, ss=atlas.SS):
     rough = 0.04 * slab_noise(c, 13, 20.0)
     path = os.path.join(out_dir, ASSET)
     glass = atlas.coverage(c, ID_GLASS)
+    night = lo_match_emission(glazing.night_rooms(glass > 0, atlas.emission_colours(c, EMIT)),
+                              glass)
     written = [atlas.save(atlas.orm(c, SURFACE, rough, 0.5 * cav), path + "_orm.png"),
                atlas.save(atlas.normal_map(c, flat_ids=(ID_GLASS,)), path + "_normal.png"),
-               atlas.save(glazing.night_rooms(glass > 0, atlas.emission_colours(c, EMIT)),
-                          path + "_emission.png")]
+               atlas.save(night, path + "_emission.png")]
     for v in VARIANTS:
         base = atlas.albedo(c, lut(v), grime=0.25 * cav)
         rgb = glazing.rooms(glass >= 0.5, base.copy())
@@ -1779,6 +1933,10 @@ def export(out_dir, ss=atlas.SS):
         if ELEV_BASE_GLASS:
             for ex, ey, ew, eh in ELEV.values():
                 rgb[ey:ey + eh, ex:ex + ew] = base[ey:ey + eh, ex:ex + ew]
+        # So do LOD2's 12 px/m openings, whose bars are under a pixel too
+        for x, y, w, h in LO.values():
+            rgb[y - PAD:y + h + PAD, x - PAD:x + w + PAD] = \
+                base[y - PAD:y + h + PAD, x - PAD:x + w + PAD]
         written.append(atlas.save(rgb, "%s_albedo_%s.png" % (path, v)))
     return written
 

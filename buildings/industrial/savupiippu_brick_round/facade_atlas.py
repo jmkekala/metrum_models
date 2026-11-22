@@ -22,12 +22,14 @@ them fit: MID, the clean lift every lift below 32.7 m samples, and U1-U3,
 copies of MID with the soot thickening up the stack's upper third, so the
 gradient runs on unbroken from lift to lift. Rows from the bottom:
 
-    y    0 ..  269   BASE    the base's square brick walls, z 0 .. 4.2 m over a
-                             cast concrete footing; range A (x 0 .. 435) is the
-                             east, rear and west walls', range B (x 435 .. 870)
-                             the front's, with the inlet's lintel. The walls'
-                             trapezoids and the corner fillets above 4.2 m
-                             sample range A 14 courses lower.
+    y    0 ..  270   BASE    the base's square brick walls, z 0 .. 4.21875 m
+                             over a cast concrete footing, in the catalog's
+                             stretcher bond (scripts/brickwork.py); range A
+                             (x 0 .. 435) is the east, rear and west walls',
+                             range B (x 435 .. 870) the front's, with the
+                             inlet's lintel. The walls' trapezoids and the
+                             corner fillets above 4.21875 m sample range A 18
+                             courses lower.
     x  880 .. 992            the inlet's closure; the wash seen from above
     y  276 ..  540   MID | U1          shaft bands, each with the strip the
     y  544 ..  808   U2  | U3          back facet of LOD2/LOD3 samples: brick
@@ -37,9 +39,9 @@ gradient runs on unbroken from lift to lift. Rows from the bottom:
                              the stack at 64 px/m; the steel cap ring
     x  532 ..  712           the octagon's concrete coping, one side
 
-Rasterising is scripts/atlas.py's; dirt, algae, rust and faded paint are
-scripts/weathering.py's fields, placed by weather() below. weathering.py has
-no soot, so the soot is this module's own shade and dirt (see soot()).
+Rasterising is scripts/atlas.py's; dirt, algae, rust, faded paint and the
+soot are scripts/weathering.py's fields (the soot is its coal dust,
+Weather.coal()), placed by weather() and paint_soot() below.
 """
 
 import math
@@ -51,6 +53,7 @@ import numpy as np
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "scripts"))
 import atlas  # noqa: E402
+import brickwork  # noqa: E402
 import weathering  # noqa: E402
 
 ASSET = "savupiippu_brick_round"
@@ -65,9 +68,13 @@ def m(v):
 
 # ------------------------------------------------------------------ the base
 BH = 3.4                # the base: 6.8 x 6.8 m at its walls
-Z_FOOT = 0.3125         # 20 px; cast concrete footing course
-Z_SQ = 4.2              # the square walls' head, where the corner fillets start
-Z_OCT = 5.4             # the fillets' head: the plan is an octagon from here
+# The base's brick is the catalog's (scripts/brickwork.py), its heights on
+# its 0.078125 m courses where they move under 3 cm to reach one.
+Z_FOOT = 0.3125         # 20 px, 4 courses; cast concrete footing course
+Z_SQ = 4.21875          # 54 courses: the square walls' head, where the
+                        # corner fillets start
+Z_OCT = 5.390625        # 69 courses: the fillets' head, the coping's foot;
+                        # the plan is an octagon from here
 Z_CAP = 5.7             # the octagon's concrete coping
 Z_SHAFT0 = 6.2          # the wash rises from the coping to the shaft's foot
 OCT_A = BH * math.tan(math.pi / 8)      # half an octagon side, 1.408 m
@@ -219,21 +226,24 @@ BAND_H = 256
 PL_Y0 = 0
 BASE_TOP_PX = m(Z_SQ)                   # 268.8
 U_OFF = {"east": 0.0, "rear": 0.0, "west": 0.0, "front": 2 * BH}
-FILLET_SHIFT_COURSES = 14               # trapezoids and fillets sample 14 courses lower
+FILLET_SHIFT_COURSES = 18               # trapezoids and fillets sample 18 courses lower
 
 # The flue inlet, on the front (-Y), toward the hall: a closed opening in
 # the base under a cast concrete lintel. The cleanout hatch: low on the
 # east wall. (centre along the wall from its p0, sill z, width, height)
-INLET = (BH, 1.0, 1.625, 2.0)
+# The inlet's sill is on a course (13); its head is the lintel's soffit. The
+# lintel (3.0 .. 3.25 m) and the hatch's sill stay off the courses: each is
+# 3.1 cm from the nearest line.
+INLET = (BH, 1.015625, 1.625, 1.984375)
 INLET_REVEAL = 0.25
 Z_LINTEL = (3.0, 3.25)
 LINTEL_HALF = 1.0625
-HATCH = (BH, 0.4375, 0.703125, 0.90625)
+HATCH = (BH, 0.4375, 0.703125, 0.890625)    # its head on a course (17)
 
-INLET_R = (880, 6, 104, 128)            # 1.625 x 2.0 m
+INLET_R = (880, 6, 104, 127)            # 1.625 x 1.984375 m
 WASH_PPM = 16.0                         # the wash, seen from above
 WASH_R = (880, 146, 112, 112)           # 7.0 x 7.0 m at 16 px/m
-HATCH_R = (940, 556, 45, 58)            # 0.703 x 0.906 m
+HATCH_R = (940, 556, 45, 57)            # 0.703 x 0.891 m
 LAMP_R = (940, 626, 16, 10)             # 0.25 x 0.16 m: housing, then lens
 HEAD_R = (4, 816, 516, m(Z_TOP - Z_HEAD0))
 COPING_R = (532, 816, m(2 * OCT_A), m(Z_CAP - Z_OCT))
@@ -249,15 +259,16 @@ PATCHES = {n: (940 + 24 * (i % 3), 660 + 24 * (i // 3), 16, 16)
            for i, n in enumerate(PATCH_NAMES)}
 
 # ------------------------------------------------------------------ brick
-# Finnish brick, 285 x 135 x 85 mm with 10 mm joints. The shaft is radial
-# brick in header bond; the base is stretcher bond. 42 courses to a lift,
-# so the bond and its tone repeat with the bands' V period, and the half-brick
-# offset alternates across a lift's joint too.
+# The shaft is radial brick in header bond on its own module: 42 courses to
+# a lift, so the bond and its tone repeat with the bands' V period, and the
+# half-brick offset alternates across a lift's joint too. The base is the
+# catalog's stretcher bond (scripts/brickwork.py: 0.25 m stretchers on
+# 0.078125 m courses), as on the plant's other brick pieces.
 COURSES = 42
-COURSE = SEG / COURSES                  # 0.0952 m, 6.10 px
+COURSE = SEG / COURSES                  # 0.0952 m, 6.10 px: the shaft's
 HEADER_N = 27                           # header bricks to the shaft bands' period
-STRETCH_N = 54                          # stretchers across the atlas
-FILLET_SHIFT = FILLET_SHIFT_COURSES * COURSE      # 1.333 m
+BASE_TONE_COURSES = 48                  # the base's tone period, as the hall's
+FILLET_SHIFT = FILLET_SHIFT_COURSES * brickwork.COURSE      # 1.40625 m
 
 # Galvanised flats round the top 10 m, thin and dulled by soot.
 BANDS_Z = (38.5, 41.5, 43.9)
@@ -313,7 +324,9 @@ LADDER_RELIEF = 0.03    # the painted ladder of the far tiers
 
 # ================================================================== brick
 def paint_brick(c, x0, x1, y0, y1, y_ref, blen, n_period, x_ref=0.0):
-    """Brick over the rect, courses counted from row *y_ref*, bricks *blen*
+    """The shaft's radial header bond, on its own module (COURSE; the base is
+    the catalog's, scripts/brickwork.py, a different module and technique).
+    Brick over the rect, courses counted from row *y_ref*, bricks *blen*
     px long from column *x_ref*, alternate courses offset by half a brick.
     Tone repeats every COURSES courses and every *n_period* bricks, so a
     band painted with it tiles in both directions."""
@@ -349,14 +362,15 @@ def _period_rows(y0, y1, ref, period, offsets):
 
 # ================================================================ the base
 def paint_base(c):
-    """The base band: a cast concrete footing course and stretcher-bond
-    brick to the square walls' head. Range B, the front's, carries the
-    inlet's cast concrete lintel."""
+    """The base band: a cast concrete footing course and the catalog's
+    stretcher-bond brick (scripts/brickwork.py), its courses from the
+    footing's top, to the square walls' head. Range B, the front's, carries
+    the inlet's cast concrete lintel."""
     y0 = PL_Y0
     top = y0 + BASE_TOP_PX
     x1 = m(4 * BH)
-    paint_brick(c, -PAD, x1 + PAD, y0 + m(Z_FOOT), top + PAD, y0 + m(Z_FOOT),
-                ATLAS / STRETCH_N, STRETCH_N)
+    brickwork.paint(c, -PAD, x1 + PAD, y0 + m(Z_FOOT), top + PAD, BRICK_IDS,
+                    BASE_TONE_COURSES, y_ref=y0 + m(Z_FOOT))
     c.paint(-PAD, x1 + PAD, y0 - PAD, y0 + m(Z_FOOT), ID_CONC, 1.0, 1.0, height=0.0)
     c.mul(-PAD, x1 + PAD, y0 + m(Z_FOOT) - 1.5, y0 + m(Z_FOOT), 0.88, ao=0.85)
     c.lift(-PAD, x1 + PAD, y0 + m(Z_FOOT) - 1.0, y0 + m(Z_FOOT), 0.004)
@@ -690,13 +704,11 @@ def check_regions():
 
 
 # ================================================================ weather
-def soot(c, x0, x1, y0, y1, fn):
-    """Soot staining, which scripts/weathering.py has no field for: shade
-    darkened and pulled toward its dirt by fn(Y, X) in 0..1, per sample."""
-    sy, sx, Y, X = c.field(x0, x1, y0, y1)
-    s = fn(Y, X)
-    c.shade[sy, sx] *= 1.0 - 0.70 * s
-    c.weather.f["D"][sy, sx] += 0.45 * s
+# Soot is scripts/weathering.py's coal dust (Weather.coal(), at its default
+# depth): a soot profile s in 0..1 lays SOOT_K * s of it, which matches the
+# stack's earlier private soot in value within about 3 sRGB levels (the
+# heaviest a little more neutral).
+SOOT_K = 0.8
 
 
 def _streak(seed, period, amount=0.30):
@@ -771,14 +783,16 @@ def head_runs(seed=53, count=90):
 
 
 def paint_soot(c):
-    """The soot gradient, on U1-U3 and their strips, and on the head."""
+    """The soot gradient, on U1-U3 and their strips, and on the head, as
+    coal dust (Weather.coal(), SOOT_K)."""
+    wt = c.weather
     for name in SOOT_BANDS:
         x0, y0, ov, sx, sw = BANDS[name]
         z0 = BAND_Z0[name]
         for (a, b), ref in zip(band_extent(name), (x0, sx)):
-            soot(c, a, b, y0 - 4, y0 + BAND_H + 4,
-                 lambda Y, X, ref=ref, y0=y0, z0=z0: np.clip(
-                     soot_shaft(z0 + (Y - y0) / PPM) * STREAK(X - ref), 0.0, 1.0))
+            wt.coal(a, b, y0 - 4, y0 + BAND_H + 4,
+                    lambda Y, X, nz, ref=ref, y0=y0, z0=z0: SOOT_K * np.clip(
+                        soot_shaft(z0 + (Y - y0) / PPM) * STREAK(X - ref), 0.0, 1.0))
     # the shadow under the head band's 0.06 m projection, on the top lift
     x0, y0, ov, sx, sw = BANDS["U3"]
     for a, b in band_extent("U3"):
@@ -786,14 +800,14 @@ def paint_soot(c):
     x, y, w, h = HEAD_R
     runs, streak = head_runs(), _streak(37, w, 0.18)
 
-    def head(Y, X):
+    def head(Y, X, nz):
         side = 1.0 + 0.22 * np.cos(np.radians(head_angle(X) - LEE))
         s = soot_head(Z_HEAD0 + (Y - y) / PPM) * streak(X - x) + runs(Y, X)
-        return np.clip(s * side, 0.0, 1.0)
-    soot(c, x - PAD, x + w + PAD, y - PAD, y + h - m(CAP_RING), head)
+        return SOOT_K * np.clip(s * side, 0.0, 1.0)
+    wt.coal(x - PAD, x + w + PAD, y - PAD, y + h - m(CAP_RING), head)
     # the cap ring itself: sooted steel, a little more on the lee
-    soot(c, x - PAD, x + w + PAD, y + h - m(CAP_RING), y + h + PAD,
-         lambda Y, X: 0.35 + 0.1 * np.cos(np.radians(head_angle(X) - LEE)))
+    wt.coal(x - PAD, x + w + PAD, y + h - m(CAP_RING), y + h + PAD,
+            lambda Y, X, nz: SOOT_K * (0.35 + 0.1 * np.cos(np.radians(head_angle(X) - LEE))))
 
 
 def weather(c):
@@ -819,9 +833,9 @@ def weather(c):
     # the front: soot and rust stains up from the inlet onto its lintel
     f0 = m(U_OFF["front"])
     s0, s1 = f0 + m(INLET[0] - INLET[2] / 2 - 0.15), f0 + m(INLET[0] + INLET[2] / 2 + 0.15)
-    soot(c, s0, s1, m(Z_LINTEL[0]), PL_Y0 + BASE_TOP_PX,
-         lambda Y, X: 0.35 * np.exp(-(Y - m(Z_LINTEL[0])) / 14.0)
-         * (0.6 + 0.4 * np.cos(np.pi * (X - (s0 + s1) / 2) / (s1 - s0))))
+    w.coal(s0, s1, m(Z_LINTEL[0]), PL_Y0 + BASE_TOP_PX,
+           lambda Y, X, nz: SOOT_K * 0.35 * np.exp(-(Y - m(Z_LINTEL[0])) / 14.0)
+           * (0.6 + 0.4 * np.cos(np.pi * (X - (s0 + s1) / 2) / (s1 - s0))))
     # MID: periodic noise only
     x0, y0, ov, sx, sw = BANDS["MID"]
     w.add("D", x0 - SHAFT_ML - PAD, x0 + SHAFT_P + ov + PAD, y0 - 4, y0 + BAND_H + 4,

@@ -219,16 +219,19 @@ floor, which is the type.
 Blender's exact boolean (`asset_build.union`):
 
 - **The shell**: both volumes' walls as one closed solid, meshed directly.
-  - On `LOD0`/`LOD1` it also carries both roofs' parapets (their tops, their
+  - On `LOD0`–`LOD2` it also carries both roofs' parapets (their tops, their
     brick inner faces and the sunk decks), so it closes with its floor alone.
-  - On `LOD2`/`LOD3` flat lids at the wall tops close it, under coping boxes.
-- **The copings**: a ring over each parapet (on `LOD2`/`LOD3`, a box over
-  the whole roof, its top the deck). The boiler house's west face is cut
-  2 m either side of the conveyor inlet's axis, and that middle stretch
-  samples the dusted coping (`COPE_DUST`).
+  - On `LOD3` flat lids at the wall tops close it, under coping boxes.
+- **The copings**: a ring over each parapet (on `LOD3`, a box over the
+  whole roof, its top the deck region, which paints the coping's top and
+  the parapet's inner line round its edge). The boiler house's west face
+  is cut 2 m either side of the conveyor inlet's axis, and that middle
+  stretch samples the dusted coping (`COPE_DUST`).
 - **The coal bunker bay** and the two **stub stacks**.
-- The two hall **ventilators** (`asset_build.open_stack`, `LOD0`/`LOD1`
-  only), the **flue stub** and the **entrance canopy**.
+- The two hall **ventilators**: hollow round a sooted flue
+  (`asset_build.open_stack`) on `LOD0`/`LOD1`, solid boxes of the same
+  outline and height with a sooted top on `LOD2` (`vent_mode()`), none on
+  `LOD3`; the **flue stub** and the **entrance canopy**.
 
 The walls run 0.125 m up into the copings, and every roof item's foot is
 buried in its deck. The union trims what is inside, so the result is the
@@ -279,14 +282,17 @@ closing plane set back:
 | Machinery door | 0.30 m |
 
 Doors have no threshold cheek; the floor cap covers the recess. At `LOD2`
-each opening is the same rectangle, flush. At `LOD3` it is painted on the
-wall's elevation.
+each opening is the same rectangle, flush: one quad sampling its own
+12 px/m region (`facade_atlas.LO`, one per window size and door), which
+paints the whole window or door with its recess's occlusion (Texture set,
+*LOD2's openings*). At `LOD3` it is painted on the wall's elevation, with
+the same occlusion.
 
-A hall window's closing plane is made of the window region's sections
-(`facade_atlas.window_sections()`). In height these are the bottom row, the
-middle rows (plain, with a hopper row every third) and the top row; in width,
-the outer columns and the middle ones. Consecutive sections that are
-consecutive in the region are one quad.
+On `LOD0`/`LOD1` a hall window's closing plane is made of the window
+region's sections (`facade_atlas.window_sections()`). In height these are
+the bottom row, the middle rows (plain, with a hopper row every third) and
+the top row; in width, the outer columns and the middle ones. Consecutive
+sections that are consecutive in the region are one quad.
 
 ### The bunker bay
 
@@ -417,7 +423,8 @@ samples a region of its own (`STACK_L`), turned a quarter.
   the boiler house at both ends.
 - The bay's faces cross the boiler house's parapet and coping on three
   sides. Its foot and the stacks' feet are buried 0.2 m in the deck, and
-  the ventilators' in the hall's.
+  the ventilators' in the hall's; on `LOD3`, which has no sunk decks and no
+  ventilators, the bay's and the stacks' feet are buried in the coping box.
 
 ### Sides facing the other pieces
 
@@ -477,12 +484,9 @@ part.
 
 - The walls and the plinth are flush, and the copings oversail 0.05 m, 0.12 m
   inside the rails, so no bracket needs `behind`.
-- The upper ladder's foot hangs 0.3 m over the hall's deck, clear of it.
-- From `LOD2` the hall's roof is its coping box, whose top is 0.84 m above
-  that deck. There the upper ladder's bare rails start 0.01 m over the box
-  (`WALL2_FLAT`), and its back strap keeps the cage's hoop heights
-  (`CAGE2_FLAT`). The parapet hides that stretch from the ground on every
-  tier.
+- The upper ladder's foot hangs 0.3 m over the hall's deck, clear of it,
+  on every tier that carries the kit: `LOD0`–`LOD2` all keep the sunk
+  decks.
 
 Tiers (`LADDER_MODES`, `CAGE_MODES`, and the lean forms of
 `roof_safety.LEAN_FORMS`):
@@ -552,7 +556,7 @@ Every tier derives from `facade_atlas.py`:
 | --- | --- | --- |
 | `LOD0` | 4144 | 12,000 |
 | `LOD1` | 3306 | 4,000 |
-| `LOD2` | 1452 | 1,500 |
+| `LOD2` | 1134 | 1,500 |
 | `LOD3` | 304 | 500 |
 
 Where they go, counted on the solids before the union (the kit is appended
@@ -560,11 +564,11 @@ whole, so its count is exact):
 
 | | `LOD0` | `LOD1` | `LOD2` | `LOD3` |
 | --- | --- | --- | --- | --- |
-| Shell (walls, openings, the conveyor inlet, parapets, decks) | 1638 | 1638 | 1134 | 32 |
-| Copings | 68 | 68 | 32 | 32 |
+| Shell (walls, openings, the conveyor inlet, parapets, decks) | 1638 | 1638 | 768 | 32 |
+| Copings | 68 | 68 | 68 | 32 |
 | Bunker bay (its windows cut to `LOD1`; its lower brick cut at the 20.0 m slab line) | 372 | 372 | 52 | 52 |
 | Stub stacks (their rings, `stack_rings()`) | 440 | 184 | 120 | 120 |
-| Ventilators | 56 | 56 | 0 | 0 |
+| Ventilators (hollow to `LOD1`, boxes on `LOD2`) | 56 | 56 | 24 | 0 |
 | Flue stub and canopy | 24 | 24 | 24 | 24 |
 | Roof safety kit | 1412 | 830 | 48 | 0 |
 
@@ -572,8 +576,18 @@ The **roof safety kit's share of the finished tier**:
 
 | | `LOD0` | `LOD1` | `LOD2` | `LOD3` |
 | --- | --- | --- | --- | --- |
-| Kit | 1412 (34.1 %) | 830 (25.1 %) | 48 (3.3 %) | 0 |
-| The rest | 2732 | 2476 | 1404 | 304 |
+| Kit | 1412 (34.1 %) | 830 (25.1 %) | 48 (4.2 %) | 0 |
+| The rest | 2732 | 2476 | 1086 | 304 |
+
+`LOD2`'s openings are one quad each on their 12 px/m regions instead of
+their sections of the 64 px/m ones (a band light was 6 quads, a hall
+window 12, the door's window 8), and so cut the walls round them at fewer
+points: the shell went from 1134 to 768 triangles before the union. That
+paid for keeping the sunk decks with their parapets and ring copings on
+`LOD2` (+36 on the copings, and the parapets' faces in the shell) and the
+ventilators as boxes (+24 before the union, and their holes in the hall's
+deck), all of which `LOD2` dropped before; the tier went from 1452 to
+1134.
 
 Two ladders of 12.6 m and 9.43 m make 22 m of rail and 76 rungs, and both
 cages are required by length. As the lean kit it cuts nothing: a rung is a
@@ -583,13 +597,14 @@ kit was 3554 triangles at `LOD0` and 1368 at `LOD1` (every third rung and
 hoop), 63.5 % and 40.1 % of those tiers. `LOD1` keeps every other rung and every other hoop, and its
 brackets as tetrahedra.
 
-The kit is still over the quarter of a tier CLAUDE.md suggests for trim at
-`LOD0`, by 9 points, because the rungs are kept whole. `LOD0` has 7,856
-triangles to spare, and thinning rungs that read at 20–35 m would show.
+CLAUDE.md's trim allocation is about a quarter of the tier's ceiling, and
+the kit is inside it on every tier: 1412 of `LOD0`'s 12,000 (11.8 %), 830
+of `LOD1`'s 4,000 (20.8 %), 48 of `LOD2`'s 1,500 (3.2 %). The rungs are
+kept whole on `LOD0`, where thinning rungs that read at 20–35 m would show.
 
 The 20 cut bunker windows (320 triangles to `LOD1`) and the stacks' rings
 (320 at `LOD0`, 64 at `LOD1`) are what the lean kit's saving paid for.
-`LOD1` keeps 694 (17.4 %) of its ceiling, `LOD2` 48.
+`LOD1` keeps 694 (17.4 %) of its ceiling, `LOD2` 366 (24.4 %).
 
 The conveyor inlet replaced the 12-triangle gallery head. Cut on
 `LOD0`/`LOD1` (frame face with a hole, four reveals, the panel) and with
@@ -621,32 +636,86 @@ own scene, lights and camera but aimed at the west wall's centre, 10 m up
 | `LOD1` → `LOD2` | ~70 m | 65 and 75 m, `LOD1` and `LOD2`, the same views, noon; 60 m oblique at night, emission on |
 | `LOD2` → `LOD3` | ~120 m | 115 and 125 m, `LOD2` and `LOD3`, the same views, noon; 120 m oblique at night, emission on |
 
-No distance overrides.
+No distance overrides. The renders at these distances come from earlier
+passes; the 2026-11-22 audit-fix pass rendered the consumer's switches
+(below) instead, before and after, and the findings here are read from
+those where they differ.
 
 - **35 m.** `LOD1` matches `LOD0`. The ladders lose every other rung and
   keep their brackets as tetrahedra; the cages keep every other hoop and
   all three straps. The stacks lose their stiffening rings' geometry; the
   painted rings and shadow lines stay. At 35 m a rung is about one pixel.
 - **70 m** (re-checked at 65/75 m after the lean kit). Flattening the
-  openings loses the 0.2–0.25 m reveal shadow, about 2 px, the bunker
-  bay's windows included. The ventilators and the stacks' cap ring
-  geometry go. The sunk decks become coping boxes, which read the same from
-  the ground and nearly so from above. The ladders keep their rails and the
-  cages' back straps as hair lines, as before the lean kit. The silhouette
-  is unchanged: the bay, stacks, canopy, flue stub and coping line. So are
+  openings loses the 0.2–0.25 m reveal's geometry, about 2 px; its
+  occlusion is painted into `LOD2`'s openings (Texture set, *LOD2's
+  openings*); the bunker bay's painted windows carry their own. The
+  ventilators become boxes and the stacks' cap ring geometry goes; the
+  sunk decks stay. The ladders keep their rails and the cages' back
+  straps as hair lines, as before the lean kit. The silhouette is
+  unchanged: the bay, stacks, canopy, flue stub and coping line. So are
   the window band, the spandrels and the lettering. The conveyor inlet's
   recess shallows from 0.17 m to the frame's 0.05 m (the panel in the
   wall's plane); its head and jamb shadows are painted, so it stays a dark
   framed rectangle.
 - **120 m.** `LOD3` replaces the walls' geometry with the 6 px/m
   elevations. The plinth, the band and its spandrels, the windows, the doors
-  and the lettering are painted on single faces. At 120 m a metre is about
-  9.7 px, so the elevations are slightly soft. The bay and the stacks keep
-  their geometry and textures; the conveyor inlet and its dust are painted
-  on the west elevation. The ladder rails go. The hall
-  windows average within about 10 sRGB levels of what `LOD2` samples, the
-  small square windows within -13 to +6 measured with their frames
-  (Texture set, *The LOD3 elevations*); at 115/125 m they read alike.
+  and the lettering are painted on single faces, the openings with the
+  same occlusion as `LOD2`'s. At 120 m a metre is about 9.7 px, so the
+  elevations are slightly soft. The bay and the stacks keep their geometry
+  and textures; the conveyor inlet and its dust are painted on the west
+  elevation. The ladder rails and the ventilators go, and the sunk decks
+  become coping boxes, their tops painted with the coping and the
+  parapets' inner line. The openings average within +1 to -8 sRGB levels
+  of `LOD2`'s on `red_brick` (Texture set, *LOD2's openings*).
+
+**The consumer's switches.** The consumer switches by screen size; measured
+at 1080p and a 75° vertical FOV (CLAUDE.md, LOD Budgets), it switches at
+about 1.8, 4 and 8 times the largest bounds dimension, 32.1 m: about 58,
+128 and 257 m. Each pair was rendered there at 75°, 1920×1080, 24 samples,
+noon (sun 60° up), front (10° up), corner (45° round, 25° up, also at
+night with the reference emission on) and eye level (1.7 m, 30° round),
+distance to the bounds' centre (`render_pairs.py` and `pair_sheets.py`;
+difference: largest channel, mean, 99th percentile and pixels over 24):
+
+| Switch | View | Before the 2026-11-22 fix | Now |
+| --- | --- | --- | --- |
+| `LOD0`/`LOD1`, 58 m | front, corner, night, eye | p99 ≤ 1, ≤ 19 px | unchanged |
+| `LOD1`/`LOD2`, 128 m | front | mean 2.59, p99 44, 1917 px | mean 1.28, p99 21, 313 px |
+| | corner | 2.73, 54, 2976 | 0.95, 23, 663 |
+| | corner, night | 1.68, 46, 1509 | 1.53, 44, 1718 |
+| | eye | 2.02, 40, 1818 | 1.50, 29, 959 |
+| `LOD2`/`LOD3`, 257 m | front | 1.00, 13, 18 | 1.29, 20, 91 |
+| | corner | 0.59, 10, 4 | 1.28, 27, 324 |
+| | corner, night | 0.68, 19, 177 | 0.69, 17, 152 |
+| | eye | 0.88, 12, 10 | 0.88, 12, 52 |
+
+- **128 m.** The pop the audit found is gone from the roofs (the sunk
+  decks and the ventilators stay) and much reduced in the openings: over
+  the pixels that differ, `LOD2` was 5.5–18 levels lighter than `LOD1`
+  and is now 1.7–8.9 (the eye-level view the most, where `LOD1`'s heads
+  hide the most glass; a first pass at 0.45/0.25 head/jamb occlusion left
+  2.8–10). At night the lit windows match in brightness (2
+  levels over the differing pixels, from 8); what still differs is the
+  bars' fine pattern, `LOD1` a 64 px/m region at mip 3 against `LOD2`'s
+  12 px/m one, which is why the count over 24 is a little higher.
+- **257 m.** What `LOD2` now keeps goes here, at half the size: the
+  ventilators (about 2 px) and the sunk decks' parapet shadows, which the
+  coping boxes' painted ring stands in for only in part. From the raised
+  corner that is about 320 pixels over 24 of a 166-pixel-wide building;
+  from the front and at eye level the openings now match (signed
+  difference -0.5 levels). Left: keeping the decks and ventilators on
+  `LOD3` would cost about 100 of its 196 spare triangles and an extended
+  step elevation for a 1–2 px change.
+
+The working renders are local and git-ignored:
+
+- `review/older_audit_2026_11_22/fix_industrial_b1/voimalaitos_brick_hall/`:
+  the audit-fix pass. `before/` (the asset folder copied first),
+  `renders_before/` and `renders_after/` (the pairs above, `pairs/` and
+  `sheets/`, and `review_asset.py` front and oblique at 20 and 35 m, noon
+  and reverse, in `lod0/`), `compare_lod0/` (`review_compare.py`), the
+  zoomed before/after pair sheets (`zoom_*.png`) and the atlas crops of
+  the new regions (`lo_albedo2.png`, `deck_albedo.png`);
 
 The working renders are local and git-ignored:
 
@@ -688,12 +757,14 @@ The validator's hidden-surface test reports:
 | --- | --- |
 | `LOD0` | 205 (4.9 %) |
 | `LOD1` | 99 (3.0 %) |
-| `LOD2` | 35 (2.4 %) |
+| `LOD2` | 47 (4.1 %) |
 | `LOD3` | 0 |
 
 The candidates are exterior surfaces the rays cannot reach:
 
-- the copings' 0.05 m inner drips over the decks, the largest of them;
+- the copings' 0.05 m inner drips over the decks, the largest of them
+  (12 of `LOD2`'s 47, which keeps the sunk decks; the rest there are the
+  bare rails' and the cages' back straps' faces toward the walls);
 - the ladder rails' backs, 0.17 m off the walls;
 - the lean kit's small faces between the rails and the walls: the rungs'
   and brackets' undersides and the hoops' inner ridges, each a closed solid
@@ -737,7 +808,13 @@ and no interior shows.
   pipe bridges, cables, ground slab or yard. Each piece of the plant is its
   own asset.
 - The ventilators are capped by their sooted flues and the stacks are open
-  round sooted flues, so no unmodelled interior shows.
+  round sooted flues, so no unmodelled interior shows. On `LOD2` the
+  ventilators are solid boxes with a sooted top; `LOD3` drops them (about
+  2 px at the consumer's 257 m switch).
+- `LOD2`'s openings are flush, their reveals' occlusion painted (Texture
+  set, *LOD2's openings*); `LOD3`'s are painted on the elevations with the
+  same occlusion, and its roofs are coping boxes whose tops paint the
+  coping and the parapets' inner line.
 
 ## Texture set
 
@@ -783,8 +860,15 @@ The unique regions:
   turned a quarter (U up the stack) to fit a 20-row strip;
 - the dusted stretch of the west coping, 4.0 × 0.375 m, painted as the
   coping band at the U its face samples it at, so its unit joints run on;
-- the two roof decks (8 px/m);
+- the two roof decks (8 px/m), which outside the parapets' inner faces,
+  where only `LOD3`'s coping boxes sample them, paint the coping's light
+  top and a dark line for the parapet's inner face (`LINE_OUT`, 0.125 m),
+  as `LOD0`–`LOD2`'s sunk decks show them from above;
 - the five `LOD3` elevations (6 px/m);
+- `LOD2`'s openings (`LO`, 12 px/m): each window size (the band's lights,
+  the hall windows, the door's window), the small square window and the
+  three doors, whole, at x 692–752 / y 882–971 and x 1000–1020 /
+  y 806–949 (*LOD2's openings*);
 - ten flat patches (`lining`, the inlet's reveals, in the gallery
   underside's place).
 
@@ -886,33 +970,68 @@ Texel density is 64 px/m everywhere, with these exceptions:
   the end facing the transformer yard, moved off the 64 px/m sheet to make
   room for the larger dusted panel;
 - the flue stub's sides, at 32 px/m: plain concrete with a soot gradient;
-- the `LOD3` elevations, at 6 px/m: about 1:1.6 at the 120 m switch;
+- the `LOD3` elevations, at 6 px/m: about 1:1.6 at the 120 m switch, and
+  about 1:1.1 at the consumer's 257 m one;
+- `LOD2`'s openings, at 12 px/m: at the consumer's 128 m switch a metre is
+  about 5.5 px, so about two texels a pixel; `LOD1` samples its 64 px/m
+  regions there at mip 3 or so, near 8 px/m;
 - the flat patches.
+
+### LOD2's openings
+
+`LOD0`/`LOD1` cut every window and door 0.20–0.30 m deep, and the recess
+darkens it: the head's and jambs' shade on the glass and frames, and the
+reveals' occlusion. Flush on `LOD2` with the 64 px/m regions, the openings
+read lighter at the consumer's 128 m switch (LOD review). So `LOD2`
+samples regions of its own (`LO`, 12 px/m, one per window size and door,
+about 6,800 px in all), painted whole by the same painters as the full-size
+regions (each window's pane rows stretched to its opening, as the mesh
+stretches the sections), and `occlude()` multiplies shade and AO by the
+recess's occlusion: 0.55 at the head, 0.30 at each jamb and 0.15 at the
+sill (none at a door's foot), each falling off over the recess's depth,
+never below 0.35 (`RECESS_OCC`, `RECESS_FLOOR`). It is the reveal's
+occlusion, the same whatever the sun does, not a cast shadow. The glass
+keeps `glazing.BASE`, box-filtered with its bars, as the elevations' does:
+at 12 px/m the bars are under a pixel and `glazing.rooms()` would paint
+over them.
+
+Measured on the albedos, the luminance of each opening (sRGB, area-weighted
+in linear light): `LOD1`'s 64 px/m window as its sections assemble it,
+`LOD2`'s region and `LOD3`'s elevations (the mean of every such opening):
+
+| Opening | `red_brick` | `yellow_brick` | `brown_brick` |
+| --- | --- | --- | --- |
+| Hall window (3 × 9) | 108 / 101 / 99 | 75 / 64 / 68 | 100 / 93 / 91 |
+| Door's window (3 × 6) | 107 / 100 / 92 | 74 / 63 / 68 | 100 / 92 / 85 |
+| Band light (2 × 5) | 111 / 99 / 99 | 75 / 61 / 68 | 104 / 91 / 92 |
+| Small square window | 126 / 105 / 105 | 74 / 62 / 80 | 116 / 97 / 95 |
+| Machinery door | 92 / 83 / 77 | 71 / 65 / 65 | 80 / 72 / 66 |
+| Entrance | 102 / 94 / 89 | 70 / 66 / 65 | 91 / 85 / 80 |
+| Service door | 112 / 99 / 92 | 76 / 69 / 73 | 100 / 87 / 81 |
+
+`LOD1`'s albedo has no occlusion: its recesses' geometry gives it, which
+the renders measure (LOD review).
 
 ### The LOD3 elevations
 
 Each wall's elevation is painted at 6 px/m by the same painters as the
 full-size regions (`paint_elevation()`). The windows, panels, doors and
-lettering therefore sit where the mesh has them. Two measures keep their
-windows the average colour of the region `LOD2` samples:
+lettering therefore sit where the mesh has them. Three measures keep their
+openings the average colour of the regions `LOD2` samples:
 
 - **Bars stay visible.** Glazing bars and frames are never thinner than one
   sample, or at 6 px/m they vanish.
 - **The glass keeps `glazing.BASE`, box-filtered with its bars, instead of
-  being repainted by `glazing.rooms()`** (`ELEV_BASE_GLASS`). This exception
-  was re-checked after the windows were regrouped, against a bake without
-  it:
-  - Without it the elevations' windows average 54 sRGB levels darker than
-    their `LOD2` regions, up to 88.
-  - With it the hall windows are within about 10 levels (the band's lights
-    -10, the turbine hall's -1 to -2).
-  - The small square windows, measured again with the crop including their
-    frames (an area-weighted mean in linear light over each window's exact
-    rectangle in the elevation, against the whole 52 px region `LOD2`
-    samples): the front's 8 average +6 sRGB levels, the rear's 17 -7 to
-    -9, the west's 7 -6 to -8, the east's and the step's -6 to -13. The
-    earlier -25 came from a crop that dropped their light frames, so they
-    are left as they are.
+  being repainted by `glazing.rooms()`** (`ELEV_BASE_GLASS`): without it,
+  as re-checked after the windows were regrouped, the elevations' windows
+  averaged 54 sRGB levels darker than their regions, up to 88.
+- **Every opening `LOD0`/`LOD1` recess carries the same occlusion as its
+  `LO` region** (`occlude()`).
+
+The table above gives the result: the elevations' openings within +1 to
+-8 levels of `LOD2`'s on `red_brick` and `brown_brick`, and -1 to +7 on
+`yellow_brick` but for the small square windows, +18 there (its dark
+window steel is held to one sample wide at 6 px/m, so the frames thin).
 
 ### Relief
 
@@ -1038,10 +1157,11 @@ The validator measures:
 
 All of this is inside the Style Direction band, and the glass is darker than
 its steel frames in every variant. There are no brief-driven departures. In
-the `LOD3` elevations the glass is `glazing.BASE` box-filtered with its bars
-(Texture set). The bunker bay's windows take `rooms()` like the rest: the
-small square window's region where they are cut, the band's painted ones
-from `LOD2`.
+`LOD2`'s 12 px/m openings and the `LOD3` elevations the glass is
+`glazing.BASE` box-filtered with its bars, then darkened with its frames by
+the recess's occlusion (Texture set, *LOD2's openings*). The bunker bay's
+windows take `rooms()` like the rest: the small square window's region
+where they are cut, the band's painted ones from `LOD2`.
 
 ## Variant list
 
@@ -1060,14 +1180,15 @@ brick alternatives on the shared mesh.
 | `yellow_brick` | yellow facing brick, grey-green window steel, oxide-red doors |
 | `brown_brick` | dark purple-brown clinker brick, light grey window steel, blue-grey doors |
 
-`red_brick` and `brown_brick` are the same constants, sRGB, on all five of
-the plant's pieces, so any two of them match side by side:
+The three bricks are the same constants, sRGB, on all of the plant's
+pieces and its boundary walls (`scripts/boundary_wall.py`), so any two of
+them match side by side; so is `red_brick`'s door paint, (66, 82, 76):
 
-| | `red_brick` | `brown_brick` |
-| --- | --- | --- |
-| Brick | (114, 73, 62) | (80, 59, 57) |
-| Darker brick | (90, 59, 51) | (62, 46, 45) |
-| Mortar | (125, 123, 118) | (108, 106, 102) |
+| | `red_brick` | `yellow_brick` | `brown_brick` |
+| --- | --- | --- | --- |
+| Brick | (114, 73, 62) | (188, 166, 122) | (80, 59, 57) |
+| Darker brick | (90, 59, 51) | (164, 142, 104) | (62, 46, 45) |
+| Mortar | (125, 123, 118) | (160, 156, 148) | (108, 106, 102) |
 
 - `red_brick` is the catalog red (144, 72, 52), (114, 58, 45), mortar
   (150, 145, 136), each channel taken to Y + 0.6 (*c* − Y) (Y its Rec.709
@@ -1084,7 +1205,11 @@ the plant's pieces, so any two of them match side by side:
   shared tone hash (`brickwork.paint()`, seed 17, the darker id at seed
   29) only decides which bricks take which tone, as on the plant's pieces
   already on it.
-- `yellow_brick` keeps its brick; only its lettering is dark (Texture set).
+- `yellow_brick`'s lettering is dark (Texture set).
+- The window steel and the other variants' door paint stay this asset's
+  own: `brown_brick`'s door (58, 66, 76) and the steel of `yellow_brick`
+  (98, 110, 104) and `brown_brick` (184, 180, 170) differ by 2–6 levels
+  from the coal reception's.
 
 ## Night lighting
 
@@ -1094,10 +1219,14 @@ the plant's pieces, so any two of them match side by side:
     region where they are cut, the band's painted ones from `LOD2`);
   - the entrance's leaf lights and fanlight;
   - the machinery door's lights;
-  - the same in the `LOD3` elevations.
+  - the same in `LOD2`'s openings (`LO`) and the `LOD3` elevations.
 
   Each is lit as a room by `glazing.night_rooms()`. Everything else is black.
   There are no signs or lamps, and the lettering is not lit.
+  `night_rooms()` gives every window region its own level, so
+  `lo_match_emission()` scales each `LO` region to the light per unit of
+  glass of the 64 px/m region `LOD0`/`LOD1` sample for the same opening:
+  the lit windows keep their brightness across the 128 m switch.
 - **Bindings.** All four GLBs bind the mask through `emissiveTexture` on UV0,
   with `emissiveFactor` `[0, 0, 0]` by default and the texture kept
   (`scripts/window_emission.py`, via `asset_build.export_all()`).
@@ -1201,15 +1330,17 @@ Checked here, in Blender:
   - All four tiers have uri-only external images, one opaque material slot,
     and welded manifold topology.
   - Their hidden-surface candidates are only the exterior faces listed under
-    Interior geometry (205, 99, 35 and 0 triangles).
+    Interior geometry (205, 99, 47 and 0 triangles; `LOD2`'s listed by
+    normal and height, `hidden_list.py` in the audit-fix folder).
   - The pivot is at ground level and centred.
   - Every tier binds emission on UV0, default off, and the normal map at
     scale 1.
   - Six 1024² RGB PNGs; normal vectors are unit length and face out.
-  - The glass measures in band and darker than the trim.
-  - The facts sidecar is consistent: 3 doors, no passages.
-  - The one warning is `source.dirty` in the sidecar, expected until the
-    asset is committed and the sidecar regenerated with `build.py -- facts`.
+  - The glass measures in band and darker than the trim (sRGB 58, 58, 56;
+    0.29–0.31× trim).
+  - The facts sidecar is consistent: 3 doors, no passages. Its
+    `source.dirty` follows the tree it is written from: it is rewritten
+    from a committed tree with `build.py -- facts`.
 - `check_layout()` and `check_regions()` pass.
 - The six pre-export views at `LOD0` (four orthographic elevations, the top
   view and the raised front three-quarter aerial). Also the aerials off the
@@ -1287,9 +1418,27 @@ Checked here, in Blender:
   one (only the machinery door's position and size, the service door's
   width, triangle counts, hashes and source changed); `check_layout()`
   with its new brick checks and `check_regions()`.
-- Not re-measured in that pass: the `LOD3` elevations' window averages
-  against their `LOD2` regions (Texture set), and the mip 4 and day-cycle
-  renders.
+- Not re-measured in that pass: the mip 4 and day-cycle renders.
+
+- The audit-fix pass (2026-11-22): the asset folder copied to
+  `review/older_audit_2026_11_22/fix_industrial_b1/voimalaitos_brick_hall/before/`
+  first; the tier pairs at the consumer's 58, 128 and 257 m before and
+  after with identical settings, their sheets and signed differences (LOD
+  review); `review_asset.py` `LOD0` front and oblique at 20 and 35 m, noon
+  and reverse, before and after, compared with `review_compare.py`
+  (`LOD0` changes by at most 1 level at the 99th percentile: `red_brick`'s
+  door paint, two levels, and, in the 35 m oblique only, up to 18 levels
+  on about 120 pixels along the top of the bunker bay, whose roof samples
+  the deck region where it meets the new painted coping ring, a lighter
+  edge on its light coping); the atlas's new regions looked at (`LO`, the decks'
+  painted ring); the openings' luminance per tier and variant measured
+  on the albedos (Texture set); `LOD2`'s hidden-surface candidates listed;
+  `check_layout()` and `check_regions()` (with the `LO` checks). The
+  sidecar's facts (bounds, footprint, storeys, doors) are unchanged; its
+  triangle counts and hashes moved.
+- Not re-run in the audit-fix pass: the mip stress renders, the day cycle
+  and the six pre-export views (`LOD0` and `LOD1` are geometrically
+  unchanged; `LOD2` and `LOD3` were looked at in the pair renders only).
 
 Pending, outside this repository:
 
@@ -1315,6 +1464,18 @@ These are recorded as known-good markers, not requirements.
 
 ## Revision log
 
+- **2026-11-22**: Audit fix for the consumer's 128 m `LOD1`/`LOD2` pop.
+  `LOD2`'s openings sample new 12 px/m regions (`LO`), each window and
+  door whole with its recess's occlusion painted in, one quad each; the
+  `LOD3` elevations' openings take the same occlusion; `LOD2` keeps the
+  sunk decks and the ventilators as boxes; `LOD3`'s coping-box tops paint
+  the coping and the parapets' inner line; the `LO` regions' night light
+  matched to the 64 px/m regions'. `yellow_brick` (188, 166, 122) /
+  (164, 142, 104) and `red_brick`'s door (66, 82, 76) set to the plant's
+  constants (they were 2 levels off). Triangles 4144/3306/1452/304 →
+  4144/3306/1134/304; `LOD0`, `LOD1` and `LOD3` GLBs byte-identical;
+  bounds, pivot, footprint and doors unchanged. Stale statements fixed
+  (the trim allocation, the sidecar warning).
 - **2026-11-22**: Re-coursed to the catalog brick (`scripts/brickwork.py`:
   0.25 m stretchers on 0.078125 m courses, the shared tone hash) from the
   asset's own 0.0833 m courses; bounds, pivot, footprint, storeys, palette

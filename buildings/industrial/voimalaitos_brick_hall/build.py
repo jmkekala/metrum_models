@@ -35,9 +35,10 @@ of cells; every face is then given every vertex that lies on its edges
 (tjunctions()), so neighbours meet on shared vertices. Recessed openings
 add their concrete reveals and the closing plane, the conveyor inlet its
 steel frame standing 0.05 m proud on the copings' plane (the face the coal
-reception's gallery butts against), steel reveals and blanking panel. On LOD0-LOD1 the
-shell also carries both roofs' parapets and sunk decks, so it closes with
-its floor alone; on LOD2-LOD3 two flat lids close it. The copings, the
+reception's gallery butts against), steel reveals and blanking panel; on
+LOD2 every opening is one flush quad sampling its 12 px/m LO region. On
+LOD0-LOD2 the shell also carries both roofs' parapets and sunk decks, so it
+closes with its floor alone; on LOD3 two flat lids close it. The copings, the
 bunker bay (its windows cut to LOD1), the stacks (with their rings), the
 ventilators, the flue stub and the entrance canopy are closed solids of
 their own, unioned with Blender's exact boolean. The wall ladders with their
@@ -90,24 +91,28 @@ LADDER_HANG = 0.30      # the upper wall ladder's foot, above the hall's deck
 
 # ----------------------------------------------------------------- tiers
 def opening_mode(level):
-    """Recessed with concrete reveals to 70 m; flush, the same rectangles
-    painted, at LOD2; at LOD3 the walls are single faces carrying the
-    6 px/m elevations, every opening and panel painted on them."""
+    """Recessed with concrete reveals to LOD1; flush at LOD2, each opening
+    one quad sampling its whole LO region (facade_atlas.LO: 12 px/m, the
+    recess's occlusion painted in, so it keeps the reveal's dark); at LOD3
+    the walls are single faces carrying the 6 px/m elevations, every
+    opening and panel painted on them."""
     return ("cut", "cut", "flush", "elevation")[level]
 
 
 def roof_flat(level):
-    """From LOD2 each roof closes with a lid under a coping box: the
-    roofline stays; the deck sunk 0.875 m behind the parapet, a pixel or two
-    deep past 70 m and hidden from the ground, goes."""
-    return level >= 2
+    """On LOD3 each roof closes with a lid under a coping box: the roofline
+    stays; the deck sunk 0.875 m behind the parapet, about a pixel deep at
+    the consumer's 257 m switch, goes. LOD2 keeps the sunk decks, so the
+    parapets' inner line holds at its 128 m switch."""
+    return level >= 3
 
 
-def vents_kept(level):
-    """The two 0.8 m ventilators are hollow to LOD1 and go from LOD2: they
-    stand 0.3 m over the coping, under three pixels past 70 m, and the
-    parapet hides the rest from the ground."""
-    return level < 2
+def vent_mode(level):
+    """The two 0.8 m ventilators: hollow round sooted flues to LOD1, solid
+    boxes with a sooted top on LOD2 (at the 128 m switch they are about 4 px
+    across, against the deck), gone on LOD3 (under 2 px past 257 m, and
+    the parapet hides them from the ground)."""
+    return ("hollow", "hollow", "box", None)[level]
 
 
 # ============================================================== wall frames
@@ -446,11 +451,16 @@ def inlet_polys(fr, rect, mode):
 
 def opening_polys(fr, item, rect, mode):
     """One opening: its closing plane, set back REVEAL with concrete reveals
-    round it while cut, in the wall's plane when flush. A door has no
-    threshold cheek: the floor cap covers its recess."""
+    round it while cut; when flush, one quad in the wall's plane sampling
+    its LO region. A door has no threshold cheek: the floor cap covers its
+    recess."""
     kind = item[0]
     s0, s1, z0, z1 = rect
-    depth = L.REVEAL[kind] if mode == "cut" else 0.0
+    if mode == "flush":
+        # LOD2: one quad on the wall's plane, its whole LO region
+        quad = [fr.P(s0, z0), fr.P(s1, z0), fr.P(s1, z1), fr.P(s0, z1)]
+        return [Poly([quad], SB.uv_region(fr, L.LO[L.lo_key(item)], s0, z0, L.LO_PPM))]
+    depth = L.REVEAL[kind]
     polys = []
     if depth > 0.0:
         out = -depth
@@ -778,11 +788,15 @@ def stub_stack(cx, cy, level):
     return B
 
 
-def ventilator(px, py):
-    """A roof ventilator on the turbine hall: hollow, its flue sooted."""
+def ventilator(px, py, mode):
+    """A roof ventilator on the turbine hall: hollow, its flue sooted; as a
+    "box", a solid of the same outline and height, its top the soot."""
     h = L.VENT_W / 2.0
     zb, zt = L.Z_TD - 0.2, L.Z_TD + L.VENT_H
     B = Builder()
+    if mode == "box":
+        return SB.box(B, px - h, px + h, py - h, py + h, zb, zt, uv_patch("duct"),
+                      uv_patch("soot"), uv_patch("blank"))
     return open_stack(B, px - h, px + h, py - h, py + h, zb, zt, 0.06, 0.9,
                       uv_patch("duct"), uv_patch("rim"), uv_patch("soot"), uv_patch("blank"))
 
@@ -856,20 +870,13 @@ LADDER_MODES = ((1, True), (2, True), (None, False), (None, False))
 CAGE_MODES = (1, 2, None, None)
 CAGE1 = RS.Cage(WALL1, modes=CAGE_MODES)
 CAGE2 = RS.Cage(WALL2, modes=CAGE_MODES)
-# From LOD2 the hall's roof is its coping box, its top 0.875 m over the deck
-# the upper ladder hangs above, so there its bare rails start just on the
-# box (hidden behind the parapet from the ground either way) and its back
-# strap keeps the cage's hoops' heights.
-WALL2_FLAT = RS.WallLadder(EAVE2, L.wall_s("step", LADDER2_Y), foot=L.Z_TC + 0.01,
-                           lean=True)
-CAGE2_FLAT = RS.Cage(WALL2_FLAT, foot=CAGE2.hoops[0], top=CAGE2.hoops[-1],
-                     modes=CAGE_MODES)
 
 
 def kit(level):
-    """The roof safety kit's parts at *level*, for one RS.append()."""
-    upper = [WALL2_FLAT, CAGE2_FLAT] if roof_flat(level) else [WALL2, CAGE2]
-    return [WALL1, CAGE1] + upper
+    """The roof safety kit's parts at *level*, for one RS.append(). Every
+    tier that carries the kit keeps the sunk decks (roof_flat()), so the
+    upper ladder hangs over the hall's deck on each."""
+    return [WALL1, CAGE1, WALL2, CAGE2]
 
 
 # ================================================================ assembly
@@ -881,9 +888,9 @@ def build_lod(level):
         parts.append(to_object(stub_stack(px, py, level), "tmp_stack%d" % i))
     parts.append(to_object(flue_stub(), "tmp_flue"))
     parts.append(to_object(canopy(), "tmp_canopy"))
-    if vents_kept(level):
+    if vent_mode(level):
         for i, (px, py) in enumerate(L.VENTS):
-            parts.append(to_object(ventilator(px, py), "tmp_vent%d" % i))
+            parts.append(to_object(ventilator(px, py, vent_mode(level)), "tmp_vent%d" % i))
     obj = union(base, parts)
     obj.name = "{}_LOD{}".format(ASSET, level)
     obj.data.name = obj.name + "_mesh"
