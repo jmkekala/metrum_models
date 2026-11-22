@@ -40,13 +40,14 @@ build_lod() checks that no two intersect.
 Every number the mesh and the atlas share is imported from facade_atlas.py.
 """
 
+import functools
 import importlib
 import math
 import os
 import sys
 
 import bmesh
-from mathutils import Vector, geometry
+from mathutils import Vector
 
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -59,7 +60,9 @@ ASSET = L.ASSET
 EXPORT_DIR = os.path.join(HERE, "export")
 sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "scripts"))
 import asset_build  # noqa: E402
+import shell_build as SB  # noqa: E402
 from asset_build import to_object  # noqa: E402
+from shell_build import Frame  # noqa: E402
 
 asset_build.check_toolchain()
 
@@ -71,6 +74,9 @@ BUILD = asset_build.Asset(ASSET, HERE, L.VARIANTS, L.DEFAULT_VARIANT)
 get_material, export_all = BUILD.material, BUILD.export_all
 _show_only, preview_studio = BUILD.show_only, BUILD.preview_studio
 render_preview, render_variants = BUILD.render_preview, BUILD.render_variants
+# Vertices are shared at 0.01 mm; a UV function sees each corner as passed
+# to face(), not the cached vertex's (single-precision) position.
+Builder = functools.partial(SB.Builder, L.ATLAS, digits=5, uv_point=tuple)
 
 
 # ----------------------------------------------------------------- tiers
@@ -101,51 +107,7 @@ PLATFORM = ({"rail", "knee", "posts", "struts"},
             set())
 
 
-# ============================================================== mesh builder
-class Builder:
-    """One closed solid, with UVs given per face corner. Vertices are shared
-    through a position cache, so faces meet on the same vertices."""
-
-    def __init__(self):
-        self.bm = bmesh.new()
-        self.uv = self.bm.loops.layers.uv.new("UVMap")
-        self.cache = {}
-
-    def v(self, co):
-        key = (round(co[0], 5), round(co[1], 5), round(co[2], 5))
-        vert = self.cache.get(key)
-        if vert is None:
-            vert = self.bm.verts.new(co)
-            self.cache[key] = vert
-        return vert
-
-    def face(self, cos, uvs, smooth=False):
-        verts = [self.v(co) for co in cos]
-        if len(set(verts)) != len(verts):
-            raise ValueError("degenerate face at %s" % (tuple(cos[0]),))
-        f = self.bm.faces.new(verts)
-        for loop, (u, w) in zip(f.loops, uvs):
-            loop[self.uv].uv = (u / L.ATLAS, w / L.ATLAS)
-        f.smooth = smooth
-        return f
-
-
-class Frame:
-    """A wall plane: s along the wall from p0, z world height, out along the
-    outward normal (on the right of p0 -> p1, walking counter-clockwise)."""
-
-    def __init__(self, p0, p1):
-        self.p0 = Vector((p0[0], p0[1], 0.0))
-        d = Vector((p1[0] - p0[0], p1[1] - p0[1], 0.0))
-        self.L = d.length
-        self.t = d / self.L
-        self.n = Vector((self.t.y, -self.t.x, 0.0))
-
-    def P(self, s, z, out=0.0):
-        q = self.p0 + self.t * s + self.n * out
-        return (q.x, q.y, z)
-
-
+# ============================================================== the plan
 BH = L.BH
 WALLS = {
     "front": ((-BH, -BH), (BH, -BH)),
@@ -158,50 +120,8 @@ A = L.OCT_A
 OCTAGON = [(-A, -BH), (A, -BH), (BH, -A), (BH, A), (A, BH), (-A, BH), (-BH, A), (-BH, -A)]
 
 
-def _flip_slivers(pts, tris):
-    """Replace zero-area triangles by flipping their long edge (see
-    nostokonehuone_brick/build.py)."""
-    tris = [list(t) for t in tris]
-
-    def area2(t):
-        (ax, ay), (bx, by), (cx, cy) = (pts[i] for i in t)
-        return (bx - ax) * (cy - ay) - (by - ay) * (cx - ax)
-
-    for _ in range(4 * len(tris) + 8):
-        bad = next((i for i, t in enumerate(tris) if abs(area2(t)) < 1e-10), None)
-        if bad is None:
-            return tris
-        t = tris[bad]
-        pairs = [(t[0], t[1], t[2]), (t[1], t[2], t[0]), (t[2], t[0], t[1])]
-        e0, e1, mid = max(pairs, key=lambda p: (pts[p[0]][0] - pts[p[1]][0]) ** 2 +
-                          (pts[p[0]][1] - pts[p[1]][1]) ** 2)
-        for j, u in enumerate(tris):
-            if j == bad or e0 not in u or e1 not in u:
-                continue
-            k = next(k for k in range(3) if {u[k], u[(k + 1) % 3]} == {e0, e1})
-            x, y, d = u[k], u[(k + 1) % 3], u[(k + 2) % 3]
-            tris[bad], tris[j] = [x, mid, d], [mid, y, d]
-            break
-        else:
-            raise ValueError("zero-area triangle with no neighbour to flip against")
-    raise ValueError("sliver repair did not converge")
-
-
-def fill_planar(B, outline, holes, to3d, uvfn, smooth=False):
-    """Triangulate a planar region given in 2D (an outline and holes) and add
-    it; *to3d* lifts a 2D point, *uvfn* gives the 3D point's UV."""
-    loops = [outline] + list(holes)
-    flat = [p for loop in loops for p in loop]
-    tris = geometry.tessellate_polygon(
-        [[Vector((a, b, 0.0)) for a, b in loop] for loop in loops])
-    for i, j, k in _flip_slivers(flat, tris):
-        cos = [to3d(*flat[n]) for n in (i, j, k)]
-        B.face(cos, [uvfn(co) for co in cos], smooth)
-
-
 def uv_patch(name):
-    x, y, w, h = L.PATCHES[name]
-    return lambda co: (x + w / 2.0, y + h / 2.0)
+    return SB.uv_patch(L.PATCHES[name])
 
 
 # ================================================================== the base
@@ -217,6 +137,8 @@ def uv_wall(fr, wall, shift=0.0):
 
 
 def uv_region(fr, rect, s0, z0):
+    """A region on wall frame *fr*, s measured in single precision (not
+    shell_build.uv_region()'s s_of(), which the exports were not built with)."""
     x, y, w, h = rect
 
     def f(co):
@@ -335,7 +257,7 @@ def fill_split(B, outline, to3d, uvfn, s0, s1, uv_strip):
     for a, b, fn in ((None, s0, uvfn), (s0, s1, uv_strip), (s1, None, uvfn)):
         piece = clip_s(outline, a, b)
         if len(piece) >= 3:
-            fill_planar(B, piece, [], to3d, fn)
+            SB.fill_planar(B, [piece], to3d, fn)
 
 
 def base(B, level, foot):
@@ -365,7 +287,7 @@ def base(B, level, foot):
             fill_split(B, trap, fr.P, f, s0, s1,
                        uv_region(fr, (cx, cy, 0, 0), s0, L.FILLET_SHIFT))
             continue
-        fill_planar(B, outline, holes, fr.P, uv_wall(fr, wall))
+        SB.fill_planar(B, [outline] + holes, fr.P, uv_wall(fr, wall))
         cos = [fr.P(s, z) for s, z in trap]
         B.face(cos, [f(c) for c in cos])
     # the fillets: a sloping brick triangle at each corner, its coursing
@@ -422,7 +344,7 @@ def base(B, level, foot):
                 return (qx + (s - sc) * PPM, qy + (co[2] - L.Z_OCT) * PPM)
             fill_split(B, outline, to3d, uvc, sc, sc + L.COND_SW / PPM, uvs)
             continue
-        fill_planar(B, outline, [], to3d, uvc)
+        SB.fill_planar(B, [outline], to3d, uvc)
     # the wash: from the coping's head up to the shaft's foot, mapped from
     # above
     wx, wy, ww, wh = L.WASH_R
@@ -792,7 +714,8 @@ def off_band(x, corners, n, clear):
 
 
 def box(B, x0, x1, y0, y1, z0, z1, uvfn):
-    """A closed axis-aligned block."""
+    """A closed axis-aligned block, bottom and top first (shell_build.box()
+    makes the sides first, which would renumber the faces)."""
     lo = [(x0, y0, z0), (x1, y0, z0), (x1, y1, z0), (x0, y1, z0)]
     hi = [(x, y, z1) for x, y, _ in lo]
     quads = [lo[::-1], hi] + [[lo[i], lo[(i + 1) % 4], hi[(i + 1) % 4], hi[i]] for i in range(4)]

@@ -45,14 +45,14 @@ onto the same rows, split by the concrete frame's columns at the corners and
 over the lane's side walls.
 """
 
+import functools
 import importlib
 import math
 import os
 import sys
 
 import bmesh
-import bpy
-from mathutils import Vector, geometry
+from mathutils import Vector
 
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -66,10 +66,13 @@ sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "scripts"))
 import asset_build  # noqa: E402
 import downpipes as DP  # noqa: E402
 import model_facts  # noqa: E402
+import shell_build as SB  # noqa: E402
 from asset_build import to_object, union  # noqa: E402
+from shell_build import InwardFrame, fill_region, rect_poly  # noqa: E402
 
 asset_build.check_toolchain()
 BUILD = asset_build.Asset(ASSET, HERE, L.VARIANTS, L.DEFAULT_VARIANT)
+Builder = functools.partial(SB.Builder, L.ATLAS)
 PPM = L.PPM
 EPS = 1e-6
 LEVELS = (0, 1, 2, 3)
@@ -157,84 +160,9 @@ DOWNPIPES = [DP.eave_pipe(_REAR["p0"], _REAR["p1"], s, L.Z_EAVE_R, L.TAN, L.REAR
              for s in DOWNPIPE_S]
 
 
-# ============================================================== mesh builder
-class Builder:
-    """One closed solid under construction, with UVs set as faces are made.
-    Vertices are shared through a position cache, so faces that meet along an
-    edge meet on the same vertices; region outlines carry their neighbours'
-    breakpoints explicitly so every edge has a vertex at each of its ends."""
-
-    def __init__(self):
-        self.bm = bmesh.new()
-        self.uv = self.bm.loops.layers.uv.new("UVMap")
-        self.cache = {}
-
-    def v(self, co):
-        key = (round(co[0], 4), round(co[1], 4), round(co[2], 4))
-        vert = self.cache.get(key)
-        if vert is None:
-            vert = self.bm.verts.new(co)
-            self.cache[key] = vert
-        return vert
-
-    def face(self, cos, uvfn):
-        verts = []
-        for co in cos:
-            vv = self.v(co)
-            if not verts or verts[-1] is not vv:
-                verts.append(vv)
-        if len(verts) > 2 and verts[0] is verts[-1]:
-            verts.pop()
-        if len(verts) < 3:
-            return None
-        o = verts[0].co
-        pts = [(v.co.x - o.x, v.co.y - o.y, v.co.z - o.z) for v in verts]
-        nx = ny = nz = 0.0
-        for i in range(len(pts)):
-            (ax, ay, az), (bx, by, bz) = pts[i], pts[(i + 1) % len(pts)]
-            nx += ay * bz - az * by
-            ny += az * bx - ax * bz
-            nz += ax * by - ay * bx
-        if nx * nx + ny * ny + nz * nz < 1e-18:
-            return None
-        try:
-            f = self.bm.faces.new(verts)
-        except ValueError:
-            return None
-        self.set_uv(f, uvfn)
-        return f
-
-    def set_uv(self, f, uvfn):
-        for loop in f.loops:
-            u, w = uvfn(loop.vert.co)
-            loop[self.uv].uv = (u / L.ATLAS, w / L.ATLAS)
-
-
-class Frame:
-    """A wall plane: s runs along the wall from p0, z is world height, and
-    depth runs inward, away from the outward normal."""
-
-    def __init__(self, p0, p1):
-        self.p0 = Vector((p0[0], p0[1], 0.0))
-        d = Vector((p1[0] - p0[0], p1[1] - p0[1], 0.0))
-        self.L = d.length
-        self.t = d / self.L
-        self.n = Vector((self.t.y, -self.t.x, 0.0))
-
-    def P(self, s, z, depth=0.0):
-        q = self.p0 + self.t * s - self.n * depth
-        return (q.x, q.y, z)
-
-    def xy(self, s):
-        q = self.p0 + self.t * s
-        return q.x, q.y
-
-    def s_of(self, co):
-        return (co.x - self.p0.x) * self.t.x + (co.y - self.p0.y) * self.t.y
-
-
 # ------------------------------------------------------------ UV mappings
-# Each returns (u, v) in atlas pixels for a vertex position.
+# Each returns (u, v) in atlas pixels for a vertex position. Wall frames are
+# shell_build.InwardFrame: P(s, z, depth), depth running inward.
 def uv_s1(fr, u_off):
     return lambda co: ((fr.s_of(co) + u_off) * PPM, L.S1_Y0 + co.z * PPM)
 
@@ -247,19 +175,16 @@ def uv_clad(fr, a, z0, u_off):
 
 
 def uv_col(fr, a, z0):
-    x0 = L.COL[0]
-    return lambda co: (x0 + (fr.s_of(co) - a) * PPM, L.C_Y0 + (co.z - z0) * PPM)
+    return SB.uv_region(fr, (L.COL[0], L.C_Y0, 0, 0), a, z0, PPM)
 
 
 def uv_item(fr, kind, s_left, z_bot):
     x0, y0 = L.ITEM_ORIGIN[kind]
-    return lambda co: (x0 + (fr.s_of(co) - s_left) * PPM, y0 + (co.z - z_bot) * PPM)
+    return SB.uv_region(fr, (x0, y0, 0, 0), s_left, z_bot, PPM)
 
 
 def uv_patch(name):
-    x0, y0, w, h = L.PATCHES[name]
-    c = (x0 + w / 2.0, y0 + h / 2.0)
-    return lambda co: c
+    return SB.uv_patch(L.PATCHES[name])
 
 
 def uv_lane_side(co):
@@ -299,46 +224,6 @@ def uv_fascia_y(co):
 
 
 # ================================================================== walls
-def _flip_slivers(pts, tris):
-    """Replace zero-area triangles by flipping their long edge: collinear
-    corners in a region's outline (the column breakpoints along the ring
-    beam's top) let the triangulator make triangles of no area."""
-    tris = [list(t) for t in tris]
-
-    def area2(t):
-        (ax, ay), (bx, by), (cx, cy) = (pts[i] for i in t)
-        return (bx - ax) * (cy - ay) - (by - ay) * (cx - ax)
-
-    for _ in range(4 * len(tris) + 8):
-        bad = next((i for i, t in enumerate(tris) if abs(area2(t)) < 1e-10), None)
-        if bad is None:
-            return tris
-        t = tris[bad]
-        pairs = [(t[0], t[1], t[2]), (t[1], t[2], t[0]), (t[2], t[0], t[1])]
-        e0, e1, mid = max(pairs, key=lambda p: (pts[p[0]][0] - pts[p[1]][0]) ** 2 +
-                          (pts[p[0]][1] - pts[p[1]][1]) ** 2)
-        for j, u in enumerate(tris):
-            if j == bad or e0 not in u or e1 not in u:
-                continue
-            k = next(k for k in range(3) if {u[k], u[(k + 1) % 3]} == {e0, e1})
-            x, y, d = u[k], u[(k + 1) % 3], u[(k + 2) % 3]
-            tris[bad], tris[j] = [x, mid, d], [mid, y, d]
-            break
-        else:
-            raise ValueError("zero-area triangle with no neighbour to flip against")
-    raise ValueError("sliver repair did not converge")
-
-
-def fill_region(B, fr, outline, holes, uvfn):
-    """Triangulate a wall region (s, z) with rectangular holes and add it."""
-    loops = [outline] + holes
-    flat = [p for loop in loops for p in loop]
-    tris = geometry.tessellate_polygon(
-        [[Vector((s, z, 0.0)) for s, z in loop] for loop in loops])
-    for a, b, c in _flip_slivers(flat, tris):
-        B.face([fr.P(*flat[a]), fr.P(*flat[b]), fr.P(*flat[c])], uvfn)
-
-
 def clip_below(poly, top):
     """A convex (s, z) polygon clipped to z <= top(s), top linear in s."""
     out = []
@@ -351,14 +236,7 @@ def clip_below(poly, top):
         if (fp < -EPS and fq > EPS) or (fp > EPS and fq < -EPS):
             t = fp / (fp - fq)
             out.append((p[0] + t * (q[0] - p[0]), p[1] + t * (q[1] - p[1])))
-    res = []
-    for p in out:
-        p = (round(p[0], 6), round(p[1], 6))
-        if not res or abs(p[0] - res[-1][0]) > 1e-6 or abs(p[1] - res[-1][1]) > 1e-6:
-            res.append(p)
-    if len(res) > 1 and abs(res[0][0] - res[-1][0]) < 1e-6 and abs(res[0][1] - res[-1][1]) < 1e-6:
-        res.pop()
-    return res
+    return SB.dedupe([(round(p[0], 6), round(p[1], 6)) for p in out], 1e-6)
 
 
 def recess(B, fr, rect, depth, fn, rev, floor=True):
@@ -366,21 +244,12 @@ def recess(B, fr, rect, depth, fn, rev, floor=True):
     that stands on the ground gets no floor of its own (floor=False): the
     strip it would lay at z = 0 would sit on the floor cap, and left out, the
     rim detours round the recess and the cap covers it."""
-    l, r, b, t = rect
-    c = [(l, b), (r, b), (r, t), (l, t)]
-    for k in range(4):
-        if k == 0 and not floor:
-            continue
-        (s0, z0), (s1, z1) = c[k], c[(k + 1) % 4]
-        B.face([fr.P(s0, z0), fr.P(s1, z1), fr.P(s1, z1, depth), fr.P(s0, z0, depth)], rev)
-    B.face([fr.P(s, z, depth) for s, z in c], fn)
+    SB.recess(B, fr, rect_poly(rect), 0.0, depth, fn, rev,
+              skip_z=None if floor else rect[2])
 
 
 def item_rects(kind, s, z):
-    w, h, cs, cb, ct = L.OPENINGS[kind]
-    outer = (s - w / 2 - cs, s + w / 2 + cs, z - cb, z + h + ct)
-    inner = (s - w / 2, s + w / 2, z, z + h)
-    return outer, inner
+    return SB.item_rects(L.OPENINGS[kind], s, z)
 
 
 def build_item(B, fr, kind, s, z, level):
@@ -423,7 +292,7 @@ def build_wall(B, spec, level, top_at):
 
     Every wall carries vertices at z = 0, Z_CLAD and each strip joint at both
     ends, so walls meeting at a corner meet on exactly the same vertices."""
-    fr = Frame(spec["p0"], spec["p1"])
+    fr = InwardFrame(spec["p0"], spec["p1"])
     Lw = fr.L
 
     def top(s):
@@ -478,34 +347,8 @@ def build_wall(B, spec, level, top_at):
 def close_solid(B, n_loops):
     """Cap every open rim with an n-gon: the floors on the ground and the lid
     inside the roof slab, all buried or underneath, but the solid must be
-    closed for the boolean. The rims are walked in edge-index order, so the
-    caps start on the same vertex every run."""
-    bm = B.bm
-    bm.edges.index_update()
-    order = [e for e in bm.edges if len(e.link_faces) == 1]
-    rim = set(order)
-    if any(sum(1 for e in v.link_edges if e in rim) != 2
-           for e in order for v in e.verts):
-        raise ValueError("a rim branches: a T-junction somewhere")
-    loops = []
-    for first in order:
-        if first not in rim:
-            continue
-        rim.discard(first)
-        start, cur = first.verts
-        loop = [start]
-        while cur is not start:
-            loop.append(cur)
-            e = min((x for x in cur.link_edges if x in rim), key=lambda x: x.index)
-            rim.discard(e)
-            cur = e.other_vert(cur)
-        loops.append(loop)
-    if len(loops) != n_loops:
-        raise ValueError("expected %d rims, got %d: a T-junction somewhere"
-                         % (n_loops, len(loops)))
-    blank = uv_patch("blank")
-    for loop in loops:
-        B.set_uv(bm.faces.new(loop), blank)
+    closed for the boolean (shell_build.close_solid())."""
+    SB.close_solid(B, uv_patch("blank"), count=n_loops)
 
 
 def house_body(level):
@@ -562,14 +405,8 @@ def roof_slab():
 
 
 def box(x0, x1, y0, y1, z0, z1, side, top, bottom):
-    B = Builder()
-    ring = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
-    for k in range(4):
-        (ax, ay), (bx, by) = ring[k], ring[(k + 1) % 4]
-        B.face([(ax, ay, z0), (bx, by, z0), (bx, by, z1), (ax, ay, z1)], side)
-    B.face([(x, y, z1) for x, y in ring], top)
-    B.face([(x, y, z0) for x, y in reversed(ring)], bottom)
-    return B
+    """A closed box in a Builder of its own (shell_build.box())."""
+    return SB.box(Builder(), x0, x1, y0, y1, z0, z1, side, top, bottom)
 
 
 def uv_int_roof(co):
@@ -858,7 +695,7 @@ def check_layout():
     problems = []
     gap = 0.05
     for spec in WALLS + INTAKE_WALLS:
-        fr = Frame(spec["p0"], spec["p1"])
+        fr = InwardFrame(spec["p0"], spec["p1"])
         top_at = house_top if spec in WALLS else intake_top
         rects = []
         for kind, s, z in spec["items"]:
@@ -886,8 +723,7 @@ def check_layout():
         for i in range(len(rects)):
             for j in range(i + 1, len(rects)):
                 a, b_ = rects[i], rects[j]
-                if a[1] < b_[2] + gap and b_[1] < a[2] + gap and \
-                        a[3] < b_[4] + gap and b_[3] < a[4] + gap:
+                if SB.overlap(a[1:], b_[1:], gap):
                     problems.append("%s: %s and %s overlap" % (spec["name"], a[0], b_[0]))
     # the lane: the brief's truck is 3.5 m wide and 4.0 m high; the lane is
     # to be at least 4.5 m both ways, under the hoppers' mouths too
@@ -975,7 +811,7 @@ def check_layout():
         problems += DP.problems(pipe, "the rear downpipe at s %.2f" % pipe.s, avoid)
     # atlas: the cladding's U stays inside C, the snow guard inside its strip
     for spec in WALLS:
-        for a, b, is_col in partition(spec, Frame(spec["p0"], spec["p1"]).L):
+        for a, b, is_col in partition(spec, InwardFrame(spec["p0"], spec["p1"]).L):
             if not is_col and 8.0 + (b - a + spec["u_off"]) * PPM > L.C_W - 2:
                 problems.append("%s: a panel runs off the cladding band" % spec["name"])
     if 8.0 + (L.GAL_LEN + 1.0) * PPM > L.C_W - 2:

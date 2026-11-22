@@ -43,6 +43,7 @@ The yard has no glazing, so it has no emission map (CLAUDE.md, Output
 Contract); BUILD below is asset_build.Asset with night_lit=False.
 """
 
+import functools
 import importlib
 import math
 import os
@@ -50,7 +51,7 @@ import sys
 
 import bmesh
 import bpy
-from mathutils import Euler, Vector, geometry
+from mathutils import Vector
 
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -63,9 +64,12 @@ ASSET = L.ASSET
 sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "scripts"))
 import asset_build  # noqa: E402
 import model_facts  # noqa: E402
-from asset_build import bounds as _bounds, to_object, union  # noqa: E402
+import shell_build as SB  # noqa: E402
+from asset_build import to_object, union  # noqa: E402
+from shell_build import InwardFrame as Frame  # noqa: E402  (P's third coordinate is depth)
 
 asset_build.check_toolchain()
+Builder = functools.partial(SB.Builder, L.ATLAS)
 
 
 BUILD = asset_build.Asset(ASSET, HERE, L.VARIANTS, L.DEFAULT_VARIANT, night_lit=False)
@@ -254,87 +258,10 @@ def mode(level):
     ][level]
 
 
-# ============================================================== mesh builder
-class Builder:
-    """One closed solid under construction, with UVs set as faces are made.
-    Vertices are shared through a position cache, so faces that meet along an
-    edge meet on the same vertices."""
-
-    def __init__(self):
-        self.bm = bmesh.new()
-        self.uv = self.bm.loops.layers.uv.new("UVMap")
-        self.cache = {}
-
-    def v(self, co):
-        key = (round(co[0], 4), round(co[1], 4), round(co[2], 4))
-        vert = self.cache.get(key)
-        if vert is None:
-            vert = self.bm.verts.new(co)
-            self.cache[key] = vert
-        return vert
-
-    def face(self, cos, uvfn):
-        verts = []
-        for co in cos:
-            vv = self.v(co)
-            if not verts or verts[-1] is not vv:
-                verts.append(vv)
-        if len(verts) > 2 and verts[0] is verts[-1]:
-            verts.pop()
-        if len(verts) < 3:
-            return None
-        o = verts[0].co
-        pts = [(v.co.x - o.x, v.co.y - o.y, v.co.z - o.z) for v in verts]
-        nx = ny = nz = 0.0
-        for i in range(len(pts)):
-            (ax, ay, az), (bx, by, bz) = pts[i], pts[(i + 1) % len(pts)]
-            nx += ay * bz - az * by
-            ny += az * bx - ax * bz
-            nz += ax * by - ay * bx
-        if nx * nx + ny * ny + nz * nz < 1e-18:
-            return None
-        try:
-            f = self.bm.faces.new(verts)
-        except ValueError:
-            return None
-        self.set_uv(f, uvfn)
-        return f
-
-    def set_uv(self, f, uvfn):
-        for loop in f.loops:
-            u, w = uvfn(loop.vert.co)
-            loop[self.uv].uv = (u / L.ATLAS, w / L.ATLAS)
-
-
-class Frame:
-    """A wall plane: s runs along the wall from p0, z is world height, and
-    depth runs inward, away from the outward normal."""
-
-    def __init__(self, p0, p1):
-        self.p0 = Vector((p0[0], p0[1], 0.0))
-        d = Vector((p1[0] - p0[0], p1[1] - p0[1], 0.0))
-        self.L = d.length
-        self.t = d / self.L
-        self.n = Vector((self.t.y, -self.t.x, 0.0))
-
-    def P(self, s, z, depth=0.0):
-        q = self.p0 + self.t * s - self.n * depth
-        return (q.x, q.y, z)
-
-    def xy(self, s):
-        q = self.p0 + self.t * s
-        return q.x, q.y
-
-    def s_of(self, co):
-        return (co.x - self.p0.x) * self.t.x + (co.y - self.p0.y) * self.t.y
-
-
 # ------------------------------------------------------------ UV mappings
 # Each returns (u, v) in atlas pixels for a vertex position.
 def uv_patch(name):
-    x0, y0, w, h = L.PATCHES[name]
-    c = (x0 + w / 2.0, y0 + h / 2.0)
-    return lambda co: c
+    return SB.uv_patch(L.PATCHES[name])
 
 
 def _along(a, b):
@@ -371,17 +298,12 @@ def plan_uv(rect, ox, oy, ppm):
 
 # ================================================================== solids
 def box(x0, x1, y0, y1, z0, z1, side, top, bottom):
-    """A closed box; *side(a, b)* returns the uv function of the side face
-    from plan point a to b (walked counter-clockwise, outward on the right)."""
-    B = Builder()
+    """A closed box (shell_build.box()); *side(a, b)* returns the uv function
+    of the side face from plan point a to b (walked counter-clockwise,
+    outward on the right)."""
     ring = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
-    for k in range(4):
-        a, b = ring[k], ring[(k + 1) % 4]
-        B.face([(a[0], a[1], z0), (b[0], b[1], z0), (b[0], b[1], z1), (a[0], a[1], z1)],
-               side(a, b))
-    B.face([(x, y, z1) for x, y in ring], top)
-    B.face([(x, y, z0) for x, y in reversed(ring)], bottom)
-    return B
+    sides = [side(ring[k], ring[(k + 1) % 4]) for k in range(4)]
+    return SB.box(Builder(), x0, x1, y0, y1, z0, z1, sides, top, bottom)
 
 
 def lathe(c, axis, e1, rings, sides, uvf, cap0, cap1, phase=0.0):
@@ -470,64 +392,20 @@ def gate():
 
 
 # ================================================================= the house
-def _flip_slivers(pts, tris):
-    """Replace zero-area triangles by flipping their long edge."""
-    tris = [list(t) for t in tris]
-
-    def area2(t):
-        (ax, ay), (bx, by), (cx, cy) = (pts[i] for i in t)
-        return (bx - ax) * (cy - ay) - (by - ay) * (cx - ax)
-
-    for _ in range(4 * len(tris) + 8):
-        bad = next((i for i, t in enumerate(tris) if abs(area2(t)) < 1e-10), None)
-        if bad is None:
-            return tris
-        t = tris[bad]
-        pairs = [(t[0], t[1], t[2]), (t[1], t[2], t[0]), (t[2], t[0], t[1])]
-        e0, e1, mid = max(pairs, key=lambda p: (pts[p[0]][0] - pts[p[1]][0]) ** 2 +
-                          (pts[p[0]][1] - pts[p[1]][1]) ** 2)
-        for j, u in enumerate(tris):
-            if j == bad or e0 not in u or e1 not in u:
-                continue
-            k = next(k for k in range(3) if {u[k], u[(k + 1) % 3]} == {e0, e1})
-            x, y, d = u[k], u[(k + 1) % 3], u[(k + 2) % 3]
-            tris[bad], tris[j] = [x, mid, d], [mid, y, d]
-            break
-        else:
-            raise ValueError("zero-area triangle with no neighbour to flip against")
-    raise ValueError("sliver repair did not converge")
-
-
-def fill_region(B, fr, outline, holes, uvfn):
-    loops = [outline] + holes
-    flat = [p for loop in loops for p in loop]
-    tris = geometry.tessellate_polygon(
-        [[Vector((s, z, 0.0)) for s, z in loop] for loop in loops])
-    for a, b, c in _flip_slivers(flat, tris):
-        B.face([fr.P(*flat[a]), fr.P(*flat[b]), fr.P(*flat[c])], uvfn)
-
-
 def recess(B, fr, rect, depth, fn, rev, floor=True):
-    l, r, b, t = rect
-    c = [(l, b), (r, b), (r, t), (l, t)]
-    for k in range(4):
-        if k == 0 and not floor:
-            continue
-        (s0, z0), (s1, z1) = c[k], c[(k + 1) % 4]
-        B.face([fr.P(s0, z0), fr.P(s1, z1), fr.P(s1, z1, depth), fr.P(s0, z0, depth)], rev)
-    B.face([fr.P(s, z, depth) for s, z in c], fn)
+    """shell_build.recess() of rectangle *rect* (l, r, b, t), *depth* in;
+    without *floor* the bottom edge has no cheek (a door on the ground)."""
+    SB.recess(B, fr, SB.rect_poly(rect), 0.0, depth, fn, rev,
+              skip_z=None if floor else rect[2])
 
 
 def item_rects(kind, s, z):
-    w, h, cs, cb, ct = L.OPENINGS[kind]
-    outer = (s - w / 2 - cs, s + w / 2 + cs, z - cb, z + h + ct)
-    inner = (s - w / 2, s + w / 2, z, z + h)
-    return outer, inner
+    return SB.item_rects(L.OPENINGS[kind], s, z)
 
 
 def uv_item(fr, kind, s_left, z_bot):
     x0, y0 = L.ITEM_ORIGIN[kind]
-    return lambda co: (x0 + (fr.s_of(co) - s_left) * PPM, y0 + (co.z - z_bot) * PPM)
+    return SB.uv_region(fr, (x0, y0, 0, 0), s_left, z_bot, PPM)
 
 
 def build_item(B, fr, kind, s, z, level):
@@ -556,34 +434,11 @@ def build_item(B, fr, kind, s, z, level):
 
 
 def close_solid(B, top_uv):
-    """Cap the house's two open rims: the floor on the ground and the roof's
-    top. The rims are walked in edge-index order, so the caps start on the
-    same vertex every run."""
-    bm = B.bm
-    bm.edges.index_update()
-    order = [e for e in bm.edges if len(e.link_faces) == 1]
-    rim = set(order)
-    if any(sum(1 for e in v.link_edges if e in rim) != 2
-           for e in order for v in e.verts):
-        raise ValueError("a rim branches: a T-junction somewhere")
-    loops = []
-    for first in order:
-        if first not in rim:
-            continue
-        rim.discard(first)
-        start, cur = first.verts
-        loop = [start]
-        while cur is not start:
-            loop.append(cur)
-            e = min((x for x in cur.link_edges if x in rim), key=lambda x: x.index)
-            rim.discard(e)
-            cur = e.other_vert(cur)
-        loops.append(loop)
-    if len(loops) != 2:
-        raise ValueError("expected a floor and a roof rim, got %d" % len(loops))
-    for loop in loops:
+    """Cap the house's two open rims (shell_build.rim_loops()): the floor on
+    the ground, blank, and the roof's top, mapped by *top_uv*."""
+    for loop in SB.rim_loops(B, 2):
         up = loop[0].co.z > 1.0
-        B.set_uv(bm.faces.new(loop), top_uv if up else uv_patch("blank"))
+        SB.cap(B, loop, top_uv if up else uv_patch("blank"))
 
 
 def house(level):
@@ -609,9 +464,9 @@ def house(level):
             outline += pts
         outline += [(Lw, 0.0), (Lw, L.Z_WALL), (0.0, L.Z_WALL)]
         u_off = spec["u_off"]
-        fill_region(B, fr, outline, holes,
-                    lambda co, fr=fr, u_off=u_off: ((fr.s_of(co) + u_off) * PPM,
-                                                    L.H_Y0 + co.z * PPM))
+        SB.fill_region(B, fr, outline, holes,
+                       lambda co, fr=fr, u_off=u_off: ((fr.s_of(co) + u_off) * PPM,
+                                                       L.H_Y0 + co.z * PPM))
         B.face([fr.P(0.0, L.Z_WALL), fr.P(Lw, L.Z_WALL), fr.P(Lw, L.Z_TOP),
                 fr.P(0.0, L.Z_TOP)],
                lambda co, fr=fr: (fascia[0] + fr.s_of(co) * PPM,
@@ -1475,43 +1330,9 @@ def facts():
 def render_views(out_dir, level=0, res=(1400, 1000)):
     """The six working views CLAUDE.md asks for before export: four
     orthographic elevations, a plan from above, and a raised three-quarter
-    aerial off the front corner. Working views only -- not committed."""
-    BUILD.preview_studio()
-    BUILD.show_only(level)
-    scn = bpy.context.scene
-    saved = (scn.camera, scn.render.resolution_x, scn.render.resolution_y)
-    scn.render.resolution_x, scn.render.resolution_y = res
-    centre, radius = _bounds(bpy.data.objects["{}_LOD{}".format(ASSET, level)])
-    cam = bpy.data.objects.get("_view_cam")
-    if cam is None:
-        cam = bpy.data.objects.new("_view_cam", bpy.data.cameras.new("_view_cam"))
-        scn.collection.objects.link(cam)
-    scn.camera = cam
-    cam.data.clip_end = 1000.0
-    views = {
-        "front": ((0, -1, 0), (90, 0, 0)), "rear": ((0, 1, 0), (90, 0, 180)),
-        "east": ((1, 0, 0), (90, 0, 90)), "west": ((-1, 0, 0), (90, 0, -90)),
-        "top": ((0, 0, 1), (0, 0, 0)),
-    }
-    written = []
-    for name, (d, rot) in views.items():
-        cam.data.type = 'ORTHO'
-        cam.data.ortho_scale = radius * 2.1
-        cam.rotation_euler = Euler([math.radians(a) for a in rot], 'XYZ')
-        cam.location = centre + Vector(d) * 60.0
-        scn.render.filepath = os.path.join(out_dir, "L%d_%s.png" % (level, name))
-        bpy.ops.render.render(write_still=True)
-        written.append(scn.render.filepath)
-    cam.data.type = 'PERSP'
-    cam.data.lens = 35.0
-    d = Vector((1.0, -1.0, math.sqrt(2.0))).normalized()
-    cam.location = centre + d * radius * 3.0
-    cam.rotation_euler = (centre - cam.location).to_track_quat('-Z', 'Y').to_euler()
-    scn.render.filepath = os.path.join(out_dir, "L%d_aerial.png" % level)
-    bpy.ops.render.render(write_still=True)
-    written.append(scn.render.filepath)
-    scn.camera, scn.render.resolution_x, scn.render.resolution_y = saved
-    return written
+    aerial off the front corner (shell_build.render_views()). Working views
+    only -- not committed."""
+    return SB.render_views(BUILD, out_dir, level, res, distance=60.0)
 
 
 if __name__ == "__main__":

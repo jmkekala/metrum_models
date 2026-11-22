@@ -62,6 +62,7 @@ trestle, the hoist beam and trolley, the tie beams and the downpipes are
 unioned in (asset_build.union).
 """
 
+import functools
 import importlib
 import json
 import math
@@ -70,8 +71,7 @@ import struct
 import sys
 
 import bmesh
-import bpy
-from mathutils import Vector, geometry
+from mathutils import Vector
 
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -85,10 +85,13 @@ sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "scripts"))
 import asset_build  # noqa: E402
 import downpipes as DP  # noqa: E402
 import model_facts  # noqa: E402
+import shell_build as SB  # noqa: E402
 from asset_build import difference, to_object, union  # noqa: E402
+from shell_build import Frame  # noqa: E402
 
 asset_build.check_toolchain()
 BUILD = asset_build.Asset(ASSET, HERE, L.VARIANTS, L.DEFAULT_VARIANT, tint=L.LIT_FACTOR)
+Builder = functools.partial(SB.Builder, L.ATLAS)
 PPM, LPM = L.PPM, L.LPM
 EPS = 1e-6
 LEVELS = (0, 1, 2, 3)
@@ -108,92 +111,6 @@ def annex_top(y):
     return L.annex_under(y) + L.WALL_INTO
 
 
-# ============================================================== mesh builder
-class Builder:
-    """One closed solid under construction, with UVs set as faces are made.
-    Vertices are shared through a position cache, so faces that meet along an
-    edge meet on the same vertices; region outlines carry their neighbours'
-    breakpoints explicitly (fix_tjunctions) so every edge has a vertex at
-    each of its ends."""
-
-    def __init__(self):
-        self.bm = bmesh.new()
-        self.uv = self.bm.loops.layers.uv.new("UVMap")
-        self.cache = {}
-
-    def v(self, co):
-        key = (round(co[0], 4), round(co[1], 4), round(co[2], 4))
-        vert = self.cache.get(key)
-        if vert is None:
-            vert = self.bm.verts.new(co)
-            self.cache[key] = vert
-        return vert
-
-    def face(self, cos, uvfn):
-        verts = []
-        for co in cos:
-            vv = self.v(co)
-            if not verts or verts[-1] is not vv:
-                verts.append(vv)
-        if len(verts) > 2 and verts[0] is verts[-1]:
-            verts.pop()
-        if len(verts) < 3:
-            return None
-        o = verts[0].co
-        pts = [(v.co.x - o.x, v.co.y - o.y, v.co.z - o.z) for v in verts]
-        nx = ny = nz = 0.0
-        for i in range(len(pts)):
-            (ax, ay, az), (bx, by, bz) = pts[i], pts[(i + 1) % len(pts)]
-            nx += ay * bz - az * by
-            ny += az * bx - ax * bz
-            nz += ax * by - ay * bx
-        if nx * nx + ny * ny + nz * nz < 1e-18:
-            return None
-        try:
-            f = self.bm.faces.new(verts)
-        except ValueError:
-            return None
-        self.set_uv(f, uvfn)
-        return f
-
-    def set_uv(self, f, uvfn):
-        for loop in f.loops:
-            u, w = uvfn(loop.vert.co)
-            loop[self.uv].uv = (u / L.ATLAS, w / L.ATLAS)
-
-
-class Frame:
-    """A wall plane: s runs along the wall from p0, z is world height, and
-    out runs away from the wall on the side its outward normal points."""
-
-    def __init__(self, p0, p1):
-        self.p0 = Vector((p0[0], p0[1], 0.0))
-        d = Vector((p1[0] - p0[0], p1[1] - p0[1], 0.0))
-        self.L = d.length
-        self.t = d / self.L
-        self.n = Vector((self.t.y, -self.t.x, 0.0))
-
-    def P(self, s, z, out=0.0):
-        q = self.p0 + self.t * s + self.n * out
-        return (q.x, q.y, z)
-
-    def s_of(self, co):
-        return (co.x - self.p0.x) * self.t.x + (co.y - self.p0.y) * self.t.y
-
-    def out_of(self, co):
-        return (co.x - self.p0.x) * self.n.x + (co.y - self.p0.y) * self.n.y
-
-    def s_at(self, plan):
-        """s of a plan coordinate along this wall (x for walls along x)."""
-        along_x = abs(self.t.x) > 0.5
-        return (plan - (self.p0.x if along_x else self.p0.y)) * (
-            self.t.x if along_x else self.t.y)
-
-    def xy(self, s):
-        q = self.p0 + self.t * s
-        return q.x, q.y
-
-
 # ------------------------------------------------------------ UV mappings
 # Each returns (u, v) in atlas pixels for a vertex position.
 def uv_brick(fr, u_off, shift=0.0):
@@ -210,14 +127,12 @@ def uv_col(fr, a, strip=None):
 
 
 def uv_patch(name):
-    x, y, w, h = L.PATCHES[name]
-    c = (x + w / 2.0, y + h / 2.0)
-    return lambda co: c
+    return SB.uv_patch(L.PATCHES[name])
 
 
 def uv_region(fr, kind, s0, z0):
-    x, y, w, h = L.REGION[kind]
-    return lambda co: (x + (fr.s_of(co) - s0) * PPM, y + (co.z - z0) * PPM)
+    """Opening *kind*'s region, its lower-left corner at (s0, z0)."""
+    return SB.uv_region(fr, L.REGION[kind], s0, z0, PPM)
 
 
 def uv_reveal(fr, edge, u_off, shift=0.0):
@@ -236,59 +151,13 @@ def uv_reveal(fr, edge, u_off, shift=0.0):
 
 
 # ================================================================== walls
-def _flip_slivers(pts, tris):
-    """Replace zero-area triangles by flipping their long edge: collinear
-    breakpoints along a region's outline let the triangulator make
-    triangles of no area."""
-    tris = [list(t) for t in tris]
-
-    def area2(t):
-        (ax, ay), (bx, by), (cx, cy) = (pts[i] for i in t)
-        return (bx - ax) * (cy - ay) - (by - ay) * (cx - ax)
-
-    for _ in range(4 * len(tris) + 8):
-        bad = next((i for i, t in enumerate(tris) if abs(area2(t)) < 1e-10), None)
-        if bad is None:
-            return tris
-        t = tris[bad]
-        pairs = [(t[0], t[1], t[2]), (t[1], t[2], t[0]), (t[2], t[0], t[1])]
-        e0, e1, mid = max(pairs, key=lambda p: (pts[p[0]][0] - pts[p[1]][0]) ** 2 +
-                          (pts[p[0]][1] - pts[p[1]][1]) ** 2)
-        for j, u in enumerate(tris):
-            if j == bad or e0 not in u or e1 not in u:
-                continue
-            k = next(k for k in range(3) if {u[k], u[(k + 1) % 3]} == {e0, e1})
-            x, y, d = u[k], u[(k + 1) % 3], u[(k + 2) % 3]
-            tris[bad], tris[j] = [x, mid, d], [mid, y, d]
-            break
-        else:
-            raise ValueError("zero-area triangle with no neighbour to flip against")
-    raise ValueError("sliver repair did not converge")
-
-
-def fill_region(B, to3d, outline, holes, uvfn):
-    """Triangulate a planar region (an outline and holes, in 2D) and add it."""
-    loops = [outline] + list(holes)
-    flat = [p for loop in loops for p in loop]
-    tris = geometry.tessellate_polygon(
-        [[Vector((a, b, 0.0)) for a, b in loop] for loop in loops])
-    for i, j, k in _flip_slivers(flat, tris):
-        B.face([to3d(*flat[i]), to3d(*flat[j]), to3d(*flat[k])], uvfn)
-
-
 def _area(poly):
     return sum(a[0] * b[1] - b[0] * a[1] for a, b in zip(poly, poly[1:] + poly[:1])) / 2.0
 
 
 def _dedupe(poly):
-    out = []
-    for p in poly:
-        p = (round(p[0], 6), round(p[1], 6))
-        if not out or abs(p[0] - out[-1][0]) > 1e-6 or abs(p[1] - out[-1][1]) > 1e-6:
-            out.append(p)
-    if len(out) > 1 and abs(out[0][0] - out[-1][0]) < 1e-6 and abs(out[0][1] - out[-1][1]) < 1e-6:
-        out.pop()
-    return out
+    """*poly* on a 1e-6 m grid, without repeated points (shell_build.dedupe())."""
+    return SB.dedupe([(round(p[0], 6), round(p[1], 6)) for p in poly])
 
 
 def clip_rect(poly, s0, s1, z0, z1):
@@ -438,49 +307,9 @@ def build_wall(B, spec, level):
         leg = is_col and any(abs(a - c0) < 1e-6 for c0, _ in spec.get("legs", []))
         fn = (uv_col(fr, a, L.PIER if leg else None) if is_col
               else uv_brick(fr, spec["u_off"], shift))
-        fill_region(B, fr.P, piece, holes, fn)
+        SB.fill_planar(B, [piece] + holes, fr.P, fn)
     if len(placed) != len(items):
         raise ValueError("%s: an opening straddles a split or a column" % spec["name"])
-
-
-def close_solid(B, n_loops, split=None):
-    """Cap every open rim with an n-gon, walked in edge-index order so the
-    caps start on the same vertex every run. A rim that is not planar (the
-    shed's gable lid) is cut in two between the *split* vertices."""
-    bm = B.bm
-    bm.edges.index_update()
-    order = [e for e in bm.edges if len(e.link_faces) == 1]
-    rim = set(order)
-    branch = [v for e in order for v in e.verts
-              if sum(1 for x in v.link_edges if x in rim) != 2]
-    if branch:
-        c = branch[0].co
-        raise ValueError("a rim branches at (%.3f, %.3f, %.3f): a T-junction" % (c.x, c.y, c.z))
-    loops = []
-    for first in order:
-        if first not in rim:
-            continue
-        rim.discard(first)
-        start, cur = first.verts
-        loop = [start]
-        while cur is not start:
-            loop.append(cur)
-            e = min((x for x in cur.link_edges if x in rim), key=lambda x: x.index)
-            rim.discard(e)
-            cur = e.other_vert(cur)
-        loops.append(loop)
-    if len(loops) != n_loops:
-        raise ValueError("expected %d rims, got %d: a T-junction somewhere"
-                         % (n_loops, len(loops)))
-    blank = uv_patch("blank")
-    keys = [B.v(p) for p in split] if split else []
-    for loop in loops:
-        if keys and all(k in loop for k in keys):
-            i, j = sorted(loop.index(k) for k in keys)
-            for half in (loop[i:j + 1], loop[j:] + loop[:i + 1]):
-                B.set_uv(bm.faces.new(half), blank)
-        else:
-            B.set_uv(bm.faces.new(loop), blank)
 
 
 # --------------------------------------------------------------- the shed
@@ -517,7 +346,12 @@ def shed_box(level):
     B = Builder()
     for spec in SHED_WALLS:
         build_wall(B, spec, level)
-    close_solid(B, 2, split=[(HX, YC, house_top(YC)), (-HX, YC, house_top(YC))])
+    # the lid is not planar: it caps in two halves meeting on the ridge
+    loops = SB.rim_loops(B, 2)
+    ridge = (B.v((HX, YC, house_top(YC))), B.v((-HX, YC, house_top(YC))))
+    for loop in loops:
+        SB.cap(B, loop, uv_patch("blank"),
+               split=ridge if all(v in loop for v in ridge) else None)
     return B
 
 
@@ -575,7 +409,7 @@ def lane_void(level):
     if opening_mode(level) == "flush":
         s0, s1, z0, z1 = lane_win_rect()
         hole = [(s0, z0), (s1, z0), (s1, z1), (s0, z1)]
-        fill_region(B, lambda x, z: (x, YL1, z), rear, [hole], uv_lane_side)
+        SB.fill_planar(B, [rear, hole], lambda x, z: (x, YL1, z), uv_lane_side)
         kind = LANE_WIN[0]
         rx, ry = L.REGION[kind][:2]
         B.face([(x, YL1, z) for x, z in hole],
@@ -689,7 +523,7 @@ def annex_body(level):
     B = Builder()
     for spec in ANNEX_WALLS:
         build_wall(B, spec, level)
-    close_solid(B, 4)
+    SB.close_solid(B, uv_patch("blank"), count=4)
     return B
 
 
@@ -755,14 +589,8 @@ def lean_to_slab():
 
 
 def box(x0, x1, y0, y1, z0, z1, side, top, bottom):
-    B = Builder()
-    ring = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
-    for k in range(4):
-        (ax, ay), (bx, by) = ring[k], ring[(k + 1) % 4]
-        B.face([(ax, ay, z0), (bx, by, z0), (bx, by, z1), (ax, ay, z1)], side)
-    B.face([(x, y, z1) for x, y in ring], top)
-    B.face([(x, y, z0) for x, y in reversed(ring)], bottom)
-    return B
+    """A closed box of its own (shell_build.box())."""
+    return SB.box(Builder(), x0, x1, y0, y1, z0, z1, side, top, bottom)
 
 
 def tower_slab():
@@ -818,8 +646,8 @@ def head_house(level):
             for (a0, b0), (a1, b1) in zip(poly, poly[1:] + poly[:1]):
                 B.face([fr.P(a0, b0), fr.P(a1, b1), fr.P(a1, b1, -d), fr.P(a0, b0, -d)], rev)
             B.face([fr.P(s, z, -d) for s, z in poly], closing)
-        fill_region(B, fr.P, [(0.0, z0), (fr.L, z0), (fr.L, z1), (0.0, z1)], holes,
-                    uv_clad(fr, spec["u_off"]))
+        SB.fill_planar(B, [[(0.0, z0), (fr.L, z0), (fr.L, z1), (0.0, z1)]] + holes, fr.P,
+                       uv_clad(fr, spec["u_off"]))
     ring = [(L.HX0, L.HY0), (L.HX1, L.HY0), (L.HX1, L.HY1), (L.HX0, L.HY1)]
     B.face([(x, y, z0) for x, y in reversed(ring)], uv_patch("hh_soffit"))
     B.face([(x, y, z1) for x, y in ring], uv_patch("blank"))
@@ -953,10 +781,10 @@ def gallery(level):
         return B
     r, d = L.GAL_END_RIM, L.GAL_END_RECESS
     inner = [(-xw + r, zb + r), (xw - r, zb + r), (xw - r, zb + H - r), (-xw + r, zb + H - r)]
-    # fill_region winds its triangles anticlockwise in (s, z); mirrored in s
+    # fill_planar winds its triangles anticlockwise in (s, z); mirrored in s
     # they face +Y, out of the end
-    fill_region(B, flip, [(-s, z) for s, z in reversed(outline)],
-                [[(-s, z) for s, z in reversed(inner)]], uv_gal_end)
+    SB.fill_planar(B, [[(-s, z) for s, z in reversed(outline)],
+                       [(-s, z) for s, z in reversed(inner)]], flip, uv_gal_end)
     rev = uv_patch("clad_rev")
     for (s0, z0), (s1, z1) in zip(inner, inner[1:] + inner[:1]):
         B.face([(s0, yb, z0), (s1, yb, z1), (s1, yb - d, z1), (s0, yb - d, z0)], rev)

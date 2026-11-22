@@ -46,14 +46,14 @@ cages are scripts/roof_safety.py's lean kit, appended after the cleanup.
 Every number the mesh and the atlas share is imported from facade_atlas.py.
 """
 
+import functools
 import importlib
 import math
 import os
 import sys
 
 import bmesh
-import bpy
-from mathutils import Euler, Vector, geometry
+from mathutils import Vector, geometry
 
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -68,18 +68,22 @@ sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "scripts"))
 import asset_build  # noqa: E402
 import model_facts  # noqa: E402
 import roof_safety as RS  # noqa: E402
-from asset_build import bounds as _bounds, open_stack, to_object, union  # noqa: E402
+import shell_build as SB  # noqa: E402
+from asset_build import open_stack, to_object, union  # noqa: E402
+from shell_build import Frame  # noqa: E402
 
 asset_build.check_toolchain()
 BUILD = asset_build.Asset(ASSET, HERE, L.VARIANTS, L.DEFAULT_VARIANT,
                           tint=L.LIT_FACTOR)
 get_material, export_all = BUILD.material, BUILD.export_all
-_show_only, preview_studio = BUILD.show_only, BUILD.preview_studio
 render_preview, render_variants = BUILD.render_preview, BUILD.render_variants
 
 PPM = L.PPM
 EPS = 1e-6
 ND = 4                  # vertex positions are compared at 0.1 mm
+# Every vertex is made at its rounded position, so faces traced on the 0.1 mm
+# grid (Poly) and faces made directly meet on the same vertices.
+Builder = functools.partial(SB.Builder, L.ATLAS, digits=ND, snap=True)
 LEVELS = (0, 1, 2, 3)
 LADDER_HANG = 0.30      # the upper wall ladder's foot, above the hall's deck
 
@@ -106,100 +110,14 @@ def vents_kept(level):
     return level < 2
 
 
-# ============================================================== mesh builder
-def _key(co):
-    return (round(co[0], ND) + 0.0, round(co[1], ND) + 0.0, round(co[2], ND) + 0.0)
-
-
-class Builder:
-    """One closed solid under construction, with UVs set as faces are made.
-
-    Vertices are shared through a position cache, so faces that meet along an
-    edge meet on the same vertices when every vertex on the edge is a corner
-    of both faces.
-    """
-
-    def __init__(self):
-        self.bm = bmesh.new()
-        self.uv = self.bm.loops.layers.uv.new("UVMap")
-        self.cache = {}
-
-    def v(self, co):
-        key = _key(co)
-        vert = self.cache.get(key)
-        if vert is None:
-            vert = self.bm.verts.new(key)
-            self.cache[key] = vert
-        return vert
-
-    def face(self, cos, uvfn):
-        verts = []
-        for co in cos:
-            vv = self.v(co)
-            if not verts or verts[-1] is not vv:
-                verts.append(vv)
-        if len(verts) > 2 and verts[0] is verts[-1]:
-            verts.pop()
-        if len(verts) < 3:
-            return None
-        o = verts[0].co
-        pts = [(v.co.x - o.x, v.co.y - o.y, v.co.z - o.z) for v in verts]
-        nx = ny = nz = 0.0
-        for i in range(len(pts)):
-            (ax, ay, az), (bx, by, bz) = pts[i], pts[(i + 1) % len(pts)]
-            nx += ay * bz - az * by
-            ny += az * bx - ax * bz
-            nz += ax * by - ay * bx
-        if nx * nx + ny * ny + nz * nz < 1e-18:
-            return None
-        try:
-            f = self.bm.faces.new(verts)
-        except ValueError:
-            return None
-        self.set_uv(f, uvfn)
-        return f
-
-    def set_uv(self, f, uvfn):
-        for loop in f.loops:
-            u, w = uvfn(loop.vert.co)
-            loop[self.uv].uv = (u / L.ATLAS, w / L.ATLAS)
-
-
-class Frame:
-    """A wall plane: s runs along the wall from p0, z is world height, and out
-    runs away from the wall on the side the outward normal points."""
-
-    def __init__(self, p0, p1):
-        self.p0 = Vector((p0[0], p0[1], 0.0))
-        d = Vector((p1[0] - p0[0], p1[1] - p0[1], 0.0))
-        self.L = d.length
-        self.t = d / self.L
-        self.n = Vector((self.t.y, -self.t.x, 0.0))
-
-    def P(self, s, z, out=0.0):
-        q = self.p0 + self.t * s + self.n * out
-        return (q.x, q.y, z)
-
-    def s_of(self, co):
-        return (co.x - self.p0.x) * self.t.x + (co.y - self.p0.y) * self.t.y
-
-    def out_of(self, co):
-        return (co.x - self.p0.x) * self.n.x + (co.y - self.p0.y) * self.n.y
-
-
+# ============================================================== wall frames
 def wall_frame(name):
     return Frame(*L.WALLS[name][:2])
 
 
 # ------------------------------------------------------------ UV mappings
-def _patch_centre(name):
-    x, y, w, h = L.PATCHES[name]
-    return (x + w / 2.0, y + h / 2.0)
-
-
 def uv_patch(name):
-    c = _patch_centre(name)
-    return lambda co: c
+    return SB.uv_patch(L.PATCHES[name])
 
 
 def uv_brick(fr, u_off, shift):
@@ -223,11 +141,6 @@ def uv_head(fr):
     return lambda co: (fr.s_of(co) * PPM, L.CONC_Y0 + (-fr.out_of(co)) * PPM)
 
 
-def uv_region(fr, rect, s0, z0, ppm=PPM):
-    x, y, w, h = rect
-    return lambda co: (x + (fr.s_of(co) - s0) * ppm, y + (co.z - z0) * ppm)
-
-
 def uv_elevation(fr, ename, off, zb):
     ex, ey, ew, eh = L.ELEV[ename]
     return lambda co: (ex + (fr.s_of(co) + off) * L.LPPM, ey + (co.z - zb) * L.LPPM)
@@ -245,6 +158,11 @@ def uv_deck(rect, origin):
 
 
 # ========================================================== polygon faces
+def _key(co):
+    """A point on the Builder's 0.1 mm grid, as the Builder keys it."""
+    return (round(co[0], ND) + 0.0, round(co[1], ND) + 0.0, round(co[2], ND) + 0.0)
+
+
 class Poly:
     """A planar face before triangulation: an outline and any holes, as 3D
     points, and the UV mapping its vertices take."""
@@ -294,34 +212,6 @@ def tjunctions(polys):
     return polys
 
 
-def _flip_slivers(pts, tris):
-    """Replace zero-area triangles by flipping their long edge."""
-    tris = [list(t) for t in tris]
-
-    def area2(t):
-        (ax, ay), (bx, by), (cx, cy) = (pts[i] for i in t)
-        return (bx - ax) * (cy - ay) - (by - ay) * (cx - ax)
-
-    for _ in range(4 * len(tris) + 8):
-        bad = next((i for i, t in enumerate(tris) if abs(area2(t)) < 1e-10), None)
-        if bad is None:
-            return tris
-        t = tris[bad]
-        pairs = [(t[0], t[1], t[2]), (t[1], t[2], t[0]), (t[2], t[0], t[1])]
-        e0, e1, mid = max(pairs, key=lambda p: (pts[p[0]][0] - pts[p[1]][0]) ** 2 +
-                          (pts[p[0]][1] - pts[p[1]][1]) ** 2)
-        for j, u in enumerate(tris):
-            if j == bad or e0 not in u or e1 not in u:
-                continue
-            k = next(k for k in range(3) if {u[k], u[(k + 1) % 3]} == {e0, e1})
-            x, y, d = u[k], u[(k + 1) % 3], u[(k + 2) % 3]
-            tris[bad], tris[j] = [x, mid, d], [mid, y, d]
-            break
-        else:
-            raise ValueError("zero-area triangle with no neighbour to flip against")
-    raise ValueError("sliver repair did not converge")
-
-
 def emit(B, poly):
     """Triangulate *poly* in its own plane and add it to builder *B*."""
     o = poly.loops[0]
@@ -339,7 +229,7 @@ def emit(B, poly):
         return
     tris = geometry.tessellate_polygon(
         [[Vector((p[d0], p[d1], 0.0)) for p in lp] for lp in poly.loops])
-    for i, j, k in _flip_slivers(flat2, tris):
+    for i, j, k in SB.flip_slivers(flat2, tris):
         B.face([flat3[i], flat3[j], flat3[k]], poly.uvfn)
 
 
@@ -509,7 +399,7 @@ def item_polys(fr, item, rect, mode, cuts=()):
         return inlet_polys(fr, rect, mode)
     if kind in L.FLUSH:
         fn = (uv_conc(fr, z0) if kind == "conc" else
-              uv_region(fr, L.REGION[kind], s0, z0, L.REGION_PPM.get(kind, PPM)))
+              SB.uv_region(fr, L.REGION[kind], s0, z0, L.REGION_PPM.get(kind, PPM)))
         if cuts:
             return [Poly([[fr.P(s, z) for s, z in lp] for lp in [outline] + holes], fn)
                     for outline, holes in panel_outlines(rect, cuts)]
@@ -530,7 +420,7 @@ def inlet_polys(fr, rect, mode):
     wall's plane. Frame face and panel sample the inlet's region where they
     stand on the wall, the returns and the reveals the galvanised lining."""
     s0, s1, z0, z1 = rect
-    fn = uv_region(fr, L.INLET, s0, z0, L.IPPM)
+    fn = SB.uv_region(fr, L.INLET, s0, z0, L.IPPM)
     f, p = L.INLET_FRAME, L.INLET_PROUD
     d = -L.INLET_DEPTH if mode == "cut" else 0.0
     a0, a1, b0, b1 = s0 + f, s1 - f, z0 + f, z1 - f
@@ -576,7 +466,7 @@ def opening_polys(fr, item, rect, mode):
     out = -depth
     if kind != "win":
         polys.append(Poly([[fr.P(s0, z0, out), fr.P(s1, z0, out), fr.P(s1, z1, out),
-                            fr.P(s0, z1, out)]], uv_region(fr, L.REGION[kind], s0, z0)))
+                            fr.P(s0, z1, out)]], SB.uv_region(fr, L.REGION[kind], s0, z0, PPM)))
         return polys
     cols, rows = item[3]
     wx, wy = L.WINDOW[:2]
@@ -637,40 +527,12 @@ def cap_loops(B, expect):
     """Close the shell: the floor, and on a flat-roofed tier the two lids,
     one n-gon per rim loop, every one of them buried by the ground or a
     coping."""
-    bm = B.bm
-    bm.edges.index_update()
-    order = [e for e in bm.edges if len(e.link_faces) == 1]
-    rim = set(order)
-    branch = [v for e in order for v in e.verts
-              if sum(1 for x in v.link_edges if x in rim) != 2]
-    if branch:
-        c = branch[0].co
-        raise ValueError("the shell's rim branches at %d vertices, e.g. "
-                         "(%.3f, %.3f, %.3f): a T-junction there"
-                         % (len(set(branch)), c.x, c.y, c.z))
-    loops = []
-    for first in order:
-        if first not in rim:
-            continue
-        rim.discard(first)
-        start, cur = first.verts
-        loop = [start]
-        while cur is not start:
-            loop.append(cur)
-            e = min((x for x in cur.link_edges if x in rim), key=lambda x: x.index)
-            rim.discard(e)
-            cur = e.other_vert(cur)
-        loops.append(loop)
-    if len(loops) != expect:
-        c = loops[-1][0].co if loops else Vector()
-        raise ValueError("expected %d rim loops, got %d: a T-junction somewhere, "
-                         "e.g. near (%.3f, %.3f, %.3f)" % (expect, len(loops), c.x, c.y, c.z))
     blank = uv_patch("blank")
-    for lp in loops:
+    for lp in SB.rim_loops(B, expect):
         zs = {round(v.co.z, 4) for v in lp}
         if len(zs) != 1:
             raise ValueError("a rim loop is not level: %s" % sorted(zs))
-        B.set_uv(bm.faces.new(lp), blank)
+        SB.cap(B, lp, blank)
 
 
 def shell(level):
@@ -762,19 +624,6 @@ def copings(level):
 
 
 # ============================================================ other solids
-def box(x0, x1, y0, y1, z0, z1, sides, top, bottom):
-    """A closed box; *sides* is one mapping or four, south/east/north/west."""
-    B = Builder()
-    ring = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
-    fns = sides if isinstance(sides, (list, tuple)) else [sides] * 4
-    for k in range(4):
-        (ax, ay), (bx, by) = ring[k], ring[(k + 1) % 4]
-        B.face([(ax, ay, z0), (bx, by, z0), (bx, by, z1), (ax, ay, z1)], fns[k])
-    B.face([(x, y, z1) for x, y in ring], top)
-    B.face([(x, y, z0) for x, y in reversed(ring)], bottom)
-    return B
-
-
 def bunker_windows(length):
     """Where along a bunker bay face of *length* its windows are centred: one
     in the middle, the rest every BUNKER_PITCH, as the band paints them."""
@@ -952,8 +801,8 @@ def flue_stub():
 
     def side(co):
         return (sx + (co.z - z0) * L.FPPM, sy + max(0.0, co.y - L.BH[3]) * L.FPPM)
-    return box(x0, x1, y0, y1, z0, z0 + hgt, [uv_patch("blank"), side, end, side],
-               uv_patch("conc"), uv_patch("soffit"))
+    return SB.box(Builder(), x0, x1, y0, y1, z0, z0 + hgt, [uv_patch("blank"), side, end, side],
+                  uv_patch("conc"), uv_patch("soffit"))
 
 
 def canopy():
@@ -965,9 +814,9 @@ def canopy():
     def edge(axis):
         return lambda co: ((co.x if axis == "x" else co.y) * PPM,
                            L.CONC_Y0 + (co.z - z0) * PPM)
-    return box(x0, x1, y0, y1, z0, z0 + t,
-               [edge("x"), edge("y"), uv_patch("blank"), edge("y")],
-               uv_patch("conc"), uv_patch("soffit"))
+    return SB.box(Builder(), x0, x1, y0, y1, z0, z0 + t,
+                  [edge("x"), edge("y"), uv_patch("blank"), edge("y")],
+                  uv_patch("conc"), uv_patch("soffit"))
 
 
 # ---------------------------------------------------------------- ladders
@@ -1060,10 +909,6 @@ def build_lod(level):
 
 
 # ================================================================== checks
-def _overlap(a, b, gap=0.0):
-    return a[0] < b[1] + gap and b[0] < a[1] + gap and a[2] < b[3] + gap and b[2] < a[3] + gap
-
-
 def _avoid(wall):
     return [(it[0], *L.item_rect(wall, it)[:2]) for it in L.ITEMS[wall]
             if it[0] not in ("conc",)]
@@ -1177,7 +1022,7 @@ def check_layout():
                     gap = 0.2
                 else:
                     gap = 0.3
-                if _overlap(ra, rb, gap):
+                if SB.overlap(ra, rb, gap):
                     bad.append("%s: %s at %.2f and %s at %.2f within %.2f m"
                                % (name, a[0], a[1], b[0], b[1], gap))
     for kind, top in L.LEAF_TOP.items():
@@ -1299,59 +1144,20 @@ def render_views(out_dir, level=0, res=(1400, 1000)):
     orthographic elevations, a plan from above, and a raised three-quarter
     aerial off the front corner; plus aerials off the other corners and eye
     views at the doors, the flue, the conveyor inlet and the boiler house's
-    east face. Working views only, not committed."""
-    preview_studio()
-    _show_only(level)
-    scn = bpy.context.scene
-    saved = (scn.camera, scn.render.resolution_x, scn.render.resolution_y)
-    scn.render.resolution_x, scn.render.resolution_y = res
-    obj = bpy.data.objects["{}_LOD{}".format(ASSET, level)]
-    centre, radius = _bounds(obj)
-    off = Vector(BUILD.pivot) if BUILD.pivot else Vector()
-    cam = bpy.data.objects.get("_view_cam")
-    if cam is None:
-        cam = bpy.data.objects.new("_view_cam", bpy.data.cameras.new("_view_cam"))
-        scn.collection.objects.link(cam)
-    scn.camera = cam
-    cam.data.clip_end = 1000.0
-    os.makedirs(out_dir, exist_ok=True)
-    views = {
-        "front": ((0, -1, 0), (90, 0, 0)), "rear": ((0, 1, 0), (90, 0, 180)),
-        "east": ((1, 0, 0), (90, 0, 90)), "west": ((-1, 0, 0), (90, 0, -90)),
-        "top": ((0, 0, 1), (0, 0, 0)),
-    }
-    written = []
-    for name, (d, rot) in views.items():
-        cam.data.type = 'ORTHO'
-        cam.data.ortho_scale = radius * 2.1
-        cam.rotation_euler = Euler([math.radians(a) for a in rot], 'XYZ')
-        cam.location = centre + Vector(d) * 80.0
-        scn.render.filepath = os.path.join(out_dir, "L%d_%s.png" % (level, name))
-        bpy.ops.render.render(write_still=True)
-        written.append(scn.render.filepath)
-
-    def B(x, y, z):                     # a build-frame point in the pivoted scene
-        return Vector((x, y, z)) - off
-    persp = [("aerial", centre, Vector((1.0, -1.0, math.sqrt(2.0))), 2.6),
-             ("aerial_rear", centre, Vector((-1.0, 1.0, math.sqrt(2.0))), 2.6),
-             ("aerial_west", centre, Vector((-1.0, -1.0, math.sqrt(2.0))), 2.6),
-             ("aerial_east_rear", centre, Vector((1.0, 1.0, math.sqrt(2.0))), 2.6),
-             ("eye_entrance", B(-9.0, -8.5, 3.0), Vector((0.3, -1.0, 0.05)), 0.9),
-             ("eye_bigdoor", B(13.5, -8.0, 3.5), Vector((0.2, -1.0, 0.05)), 1.0),
-             ("eye_flue", B(-9.0, 8.5, 12.0), Vector((-0.6, 1.0, 0.1)), 1.0),
-             ("eye_inlet", B(-16.0, 4.5, 16.5), Vector((-1.0, -0.6, -0.2)), 0.7),
-             ("eye_roof", B(-7.0, 0.0, 20.0), Vector((1.0, -0.8, 0.6)), 0.9),
-             ("eye_step", B(-2.0, 3.0, 15.0), Vector((1.0, 0.6, 0.35)), 0.8)]
-    for name, target, d, k in persp:
-        cam.data.type = 'PERSP'
-        cam.data.lens = 35.0
-        cam.location = target + d.normalized() * radius * k
-        cam.rotation_euler = (target - cam.location).to_track_quat('-Z', 'Y').to_euler()
-        scn.render.filepath = os.path.join(out_dir, "L%d_%s.png" % (level, name))
-        bpy.ops.render.render(write_still=True)
-        written.append(scn.render.filepath)
-    scn.camera, scn.render.resolution_x, scn.render.resolution_y = saved
-    return written
+    east face (shell_build.render_views(); the eye views aim at build-frame
+    points). Working views only, not committed."""
+    r2 = SB.SQRT2
+    return SB.render_views(BUILD, out_dir, level, res, views=(
+        SB.orbit("aerial", (1.0, -1.0, r2), 2.6),
+        SB.orbit("aerial_rear", (-1.0, 1.0, r2), 2.6),
+        SB.orbit("aerial_west", (-1.0, -1.0, r2), 2.6),
+        SB.orbit("aerial_east_rear", (1.0, 1.0, r2), 2.6),
+        SB.orbit("eye_entrance", (0.3, -1.0, 0.05), 0.9, target=(-9.0, -8.5, 3.0)),
+        SB.orbit("eye_bigdoor", (0.2, -1.0, 0.05), 1.0, target=(13.5, -8.0, 3.5)),
+        SB.orbit("eye_flue", (-0.6, 1.0, 0.1), 1.0, target=(-9.0, 8.5, 12.0)),
+        SB.orbit("eye_inlet", (-1.0, -0.6, -0.2), 0.7, target=(-16.0, 4.5, 16.5)),
+        SB.orbit("eye_roof", (1.0, -0.8, 0.6), 0.9, target=(-7.0, 0.0, 20.0)),
+        SB.orbit("eye_step", (1.0, 0.6, 0.35), 0.8, target=(-2.0, 3.0, 15.0))))
 
 
 if __name__ == "__main__":
