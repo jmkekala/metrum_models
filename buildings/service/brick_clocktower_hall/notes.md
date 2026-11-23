@@ -105,8 +105,10 @@ Every height the walls share with the brick is a line of the catalog's
 All three are within 2.0–2.4 m; the entrance's ceremony is its fanlight,
 its rusticated stone surround and its keystone, not a taller leaf. The
 balcony door's 3.52 m opening reads as a leaf under a fanlight by its heavy
-transom with a shadow line under it. Each door's step is modelled to `LOD1`
-(Construction, Steps).
+transom with a shadow line under it. Each door stands on its step on every
+tier that recesses it: the entrance to `LOD2`, the service door to `LOD1`;
+the flush doors beyond have the riser painted under the threshold
+(Construction, Balcony and steps).
 
 ## Window sills
 
@@ -160,7 +162,9 @@ sorted by their corners so a rebuild writes the same files:
 6. **six chimneys** by `asset_build.open_stack()`, from inside the roof to
    16.328 m, each a 0.25 m shell round one flue sunk 1.0 m to a soot floor
    still 0.67 m over the deck, open on every tier;
-7. **the balcony** over the entrance and the **two steps** (`LOD0`/`LOD1`);
+7. **the balcony** over the entrance and the **two steps**, each on every
+   tier that recesses its door (the entrance's to `LOD2`, the service
+   door's to `LOD1`);
 8. **twelve quoin blocks** (`LOD0`/`LOD1`);
 9. **twelve downpipes** (`scripts/downpipes.py`) and the **roof ladder**
    (`scripts/roof_safety.py`); the caged wall ladder goes in after the weld as
@@ -241,7 +245,17 @@ one block, from `LOD3` the slab and parapets one block. The top rail stops a
 course under the tall windows' sills, so the side parapets run into the wall
 clear of their recesses. A **stone step** one riser high (0.156 m) under the
 entrance (3.5 x 0.45 m) and the service door (2.0 x 0.4 m) fills each door's
-recess and runs into the wall: under three risers, so no handrail.
+recess and runs into the wall: under three risers, so no handrail. **The step
+is the door's floor**, so it stays on every tier that keeps the door's
+recess and goes only where the door is flush (`steps_kept()`, which asks
+`wall_mode()`, the predicate that cuts the recess): the entrance's to `LOD2`
+with the street front's reveals, the service door's to `LOD1`, where the
+right rear wing's end goes to its flush elevation. No recess at grade stands
+open to the terrain on any tier, and the sidecar's 0.156 m thresholds hold
+on every tier that models them. On the flush tiers the door items paint the
+step's riser in granite under the threshold; at the elevations' 16 texels a
+metre that is a faint pale line at the door's foot (2.5 texels), and the
+door reads as standing at the ground.
 
 ### Quoined corners
 
@@ -295,7 +309,7 @@ ladder reaching the deck.
 | --- | --- | --- | --- |
 | `LOD0` | **6,956** | 12,000 | 20,000 |
 | `LOD1` | **3,802** | 4,000 | 6,000 |
-| `LOD2` | **1,308** | 1,500 | 2,500 |
+| `LOD2` | **1,330** | 1,500 | 2,500 |
 | `LOD3` | **500** | 500 | 700 |
 
 Every tier is inside the ordinary ceiling; `LOD3` is at it.
@@ -314,7 +328,7 @@ walls, soffit and deck):
 | roof safety kit (roof ladder; wall ladder and cage) | 464; 832 | 104; 250 | – | – |
 | balcony | 120 | 48 | 48 | 12 |
 | quoin blocks | 144 | 144 | – | – |
-| attic, pediment, dial, steps | 104 | 44 | 20 | 20 |
+| attic, pediment, dial, steps | 104 | 44 | 32 | 20 |
 
 The walls are the largest share: 106 items, each recessed costing about 24
 triangles (the casing round the opening, four reveals, the back face, the
@@ -343,13 +357,14 @@ asset as it was, `after_final/` with identical settings, and the sheets in
 | Switch | What changes | Looked at |
 | --- | --- | --- |
 | `LOD0` → `LOD1`, 35 m | the U-court's walls to their elevations; dial, ball and rails flat; pipes straight; the kit thinned to every fourth rung and sixth hoop | front and oblique at 35 m: indistinguishable at native size |
-| `LOD1` → `LOD2`, 70 m | every wall to its elevation, the street front's openings still recessed; quoin blocks painted; steps gone; dome 12 → 8 sides; the kit gone (it stands in the court) | front, oblique and rear at 70 m: the walls, quoins, trim and windows read the same; the court's kit is not visible from the street views |
-| `LOD2` → `LOD3`, 120 m | the street front's openings flush; dome 8 → 4 sides; no ball, no pipes (painted); balcony one block; soffit and fascia one face | front, oblique and rear at 120 m: the same building; the dome's flats are the visible change, about 25 px wide there |
+| `LOD1` → `LOD2`, 70 m | every wall to its elevation, the street front's openings still recessed, the entrance on its step; quoin blocks painted; the service door flush and its step gone; dome 12 → 8 sides; the kit gone (it stands in the court) | front, oblique and rear at 70 m: the walls, quoins, trim and windows read the same; the court's kit is not visible from the street views |
+| `LOD2` → `LOD3`, 120 m | the street front's openings flush, the entrance's step with them (its riser painted, faint at 16 texels a metre); dome 8 → 4 sides; no ball, no pipes (painted); balcony one block; soffit and fascia one face | front, oblique and rear at 120 m: the same building; the dome's flats are the visible change, about 25 px wide there; the entrance's step, about 2 px tall, goes as a pale line under the door, with the reveals (2026-11-23, front and oblique) |
 
 ### The street front's reveals on `LOD2`
 
 `LOD2` keeps the openings of the five street-front walls recessed (464
-triangles: 1,308 against 844 flat). Compared at 70 m, oblique and front-on,
+triangles) and the entrance on its step, the recessed door's floor (22):
+1,330 against 844 flat. Compared at 70 m, oblique and front-on,
 noon and reversed light, with the same tier built flat
 (`review/clocktower_rebuild_2026_11_22/compare_lod2_reveals/`): with the
 reveals the windows keep the shaded heads and reveals `LOD1` shows at the
@@ -555,8 +570,11 @@ Done here:
 
 - `scripts/validate_asset.py ... building hero`: 0 FAIL, 1 WARN
   (`source.dirty`, until the sidecar is rewritten from a committed tree),
-  10 MANUAL. Without `hero` only the four 2048 PNGs (and the sidecar's hero
-  flag) fail; every tier's triangles pass the ordinary ceilings.
+  11 MANUAL; its door-floor probe finds the entrance and the service door
+  on their steps (0.156 m) on every tier that recesses them, the balcony
+  door on its sill through `LOD2`, every door flush on `LOD3`. Without
+  `hero` only the four 2048 PNGs (and the sidecar's hero flag) fail; every
+  tier's triangles pass the ordinary ceilings.
 - The six views and the aerials of every tier, plus close views of the
   entrance with a 1.8 m figure, the U-court, the crown, the attic, a
   pavilion's corner, the side, the service door, the ladder and the deck
@@ -565,6 +583,13 @@ Done here:
   and 120 m front, oblique and rear, every tier; night at 35 and 120 m) and
   their comparison sheets; the LOD pairs at 35, 70 and 120 m; the `LOD2`
   street-front reveals against a flat `LOD2`; mip 2 and mip 3 stress renders.
+- The entrance's step kept on `LOD2` (2026-11-23): before and after sets
+  with identical settings (the six views; every tier at 20, 35, 70 and
+  120 m, front and oblique; eye-level, low and oblique views of the
+  entrance and the service door over a terrain plane, noon and reversed
+  sun, every tier) and their comparison sheets, in
+  `review/review_2026_11_23/brick_clocktower_hall_pass2/`; `LOD0`, `LOD1`
+  and `LOD3` byte-identical.
 - Hidden-surface candidates inspected by place (Interior geometry); the
   material bindings traced in a GLB (Export); the glazing measured (Glazing
   treatment); laps, joints and mouldings read raised in the lit renders.
@@ -593,6 +618,12 @@ floor should build this asset.
 
 ## Revision log
 
+- **2026-11-23 — the entrance keeps its step on `LOD2`.** `LOD2` kept the
+  entrance's 0.28 m recess but dropped the step under it, so the door stood
+  0.156 m over a reveal open to the terrain. Each step now stays on every
+  tier that recesses its door (`steps_kept()`): the entrance's to `LOD2`.
+  `LOD2` 1,308 → 1,330; the other tiers, the bounds, footprint and doors
+  unchanged.
 - **2026-11-22 — rebuilt to the current contract.** After an audit: one
   closed shell by union (no buried partitions), walls in true metres on the
   catalog brick module with every opening kind its own atlas item and room

@@ -90,12 +90,14 @@ SLOPE_K = math.sqrt(1.0 + L.TAN * L.TAN)
 #         sixth hoop of the kit
 #   LOD2  every wall one face on its elevation (16 texels a metre: the
 #         band, the items, the quoins and the downpipes painted in), the
-#         street front's openings still recessed; the dome at 8 sides,
-#         straight pipes; no quoin blocks, dial or steps; no kit, which
-#         stands in the U-court
-#   LOD3  as LOD2 with every opening flush, the dome at 4 sides, no ball,
-#         no pipes (painted on the elevations), the balcony one block, the
-#         soffit and fascia one face
+#         street front's openings still recessed, the entrance on its
+#         step; the dome at 8 sides, straight pipes; no quoin blocks, dial
+#         or service step (its door is flush); no kit, which stands in the
+#         U-court
+#   LOD3  as LOD2 with every opening flush and no step (the risers painted
+#         under the doors), the dome at 4 sides, no ball, no pipes (painted
+#         on the elevations), the balcony one block, the soffit and fascia
+#         one face
 FRONT_REVEALS = (True, True, True, False)
 DOME_SIDES = (16, 12, 8, 4)
 DOME_RINGS = ((0, 1, 2, 3, 4), (0, 2, 3, 4), (0, 2, 4), (0, 4))
@@ -114,7 +116,8 @@ def wall_mode(name, level):
 
 
 def detail(level):
-    """Quoin blocks, the modelled dial, the steps."""
+    """Quoin blocks, the modelled dial (the steps follow their doors'
+    recesses: steps_kept())."""
     return level < 2
 
 
@@ -586,20 +589,31 @@ def balcony(level):
     return out
 
 
-def steps():
-    """A stone step under each door, one riser to the ground floor, filling
-    the door's recess and running into the wall behind it."""
+def steps(level):
+    """A stone step under each door whose recess *level* keeps, one riser to
+    the ground floor, filling the door's recess and running into the wall
+    behind it: the door's floor, so no recess stands open to the ground. The
+    entrance's goes with the street front's reveals (to LOD2), the service
+    door's with the near tiers' items (to LOD1); a flush door has none."""
     out = []
-    fr = frame_of("entrance")
-    y = fr.p0.y
-    out.append((box(-1.75, 1.75, y - 0.45, y + L.REVEAL + 0.12, 0.0, L.Z_FLOOR, plain("step")),
-                "tmp_step_entrance"))
-    w = L.WALL["wing_end_r"]
-    xs = w["p0"][0] - dict((k, s) for k, s, _v in w["items"])["service"]
-    yr = w["p0"][1]
-    out.append((box(xs - 1.0, xs + 1.0, yr - L.REVEAL - 0.12, yr + 0.40, 0.0, L.Z_FLOOR,
-                    plain("step")), "tmp_step_service"))
+    if steps_kept("entrance", level):
+        fr = frame_of("entrance")
+        y = fr.p0.y
+        out.append((box(-1.75, 1.75, y - 0.45, y + L.REVEAL + 0.12, 0.0, L.Z_FLOOR,
+                        plain("step")), "tmp_step_entrance"))
+    if steps_kept("wing_end_r", level):
+        w = L.WALL["wing_end_r"]
+        xs = w["p0"][0] - dict((k, s) for k, s, _v in w["items"])["service"]
+        yr = w["p0"][1]
+        out.append((box(xs - 1.0, xs + 1.0, yr - L.REVEAL - 0.12, yr + 0.40, 0.0, L.Z_FLOOR,
+                        plain("step")), "tmp_step_service"))
     return out
+
+
+def steps_kept(wall, level):
+    """Whether *level* recesses the openings of *wall*, and so keeps the
+    step its door stands on (wall_mode(), the predicate that cuts them)."""
+    return wall_mode(wall, level)[1]
 
 
 # ================================================================== quoins
@@ -651,7 +665,7 @@ def build_lod(level):
     if detail(level):
         parts += [to_object(quoin_block(A, B_), "tmp_quoin%d" % i)
                   for i, (A, B_) in enumerate(corners())]
-        parts += [to_object(B, n) for B, n in steps()]
+    parts += [to_object(B, n) for B, n in steps(level)]
     parts += [to_object(B, n) for B, n in DP.solids(PIPES, *PIPE_MODES[level], L.PIPE_STRIP,
                                                      L.ATLAS)]
     kit = KIT_MODES[level][0] is not None
