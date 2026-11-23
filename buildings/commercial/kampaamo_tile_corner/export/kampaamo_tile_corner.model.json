@@ -3,7 +3,7 @@
   "version": 1,
   "name": "kampaamo_tile_corner",
   "path": "buildings/commercial/kampaamo_tile_corner",
-  "source": {"commit": "efcc8a02599a387ca28259b789e961090cd256fd", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "be33d72c919af87c294fb5cf28858b378f58cae0", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-5.0625, 0.0, -5.2], "max": [5.0625, 5.125, 5.2]},
   "footprint": [
@@ -31,23 +31,23 @@
     {"id": "staff", "kind": "service", "position": [-2.0, 0.0, -4.7], "facing": [0.0, 0.0, -1.0], "width_m": 0.9, "height_m": 2.1, "main": false}
   ],
   "lods": [
-    {"file": "kampaamo_tile_corner_lod0.glb", "triangles": 1168, "sha256": "4b470aab8847030deae6f6f8244eec0bd4af7faff2595363183dfa8a3851bb87"},
-    {"file": "kampaamo_tile_corner_lod1.glb", "triangles": 912, "sha256": "9710b2a4d780832097c94c8174ded9c2f31b2d28904be62e8b86ad8abcef7b61"},
+    {"file": "kampaamo_tile_corner_lod0.glb", "triangles": 1172, "sha256": "89cdb1a1ffeaa0a26cbccd0aba627c785bc6c2bbc2a4efda1ea8f54e7b529771"},
+    {"file": "kampaamo_tile_corner_lod1.glb", "triangles": 916, "sha256": "17d1a6d89147f1febf478df6e7c73d92c2f07b82d56904b05946c91dcd22f80d"},
     {"file": "kampaamo_tile_corner_lod2.glb", "triangles": 494, "sha256": "7c6461dbc934af6b23204fbeea0547135e907bea7085c776ac62c06f616e4357"},
     {"file": "kampaamo_tile_corner_lod3.glb", "triangles": 258, "sha256": "9e25045b0c395fdefba23d0d18d4c9b203be753d0628222e0a47745891079dbe"}
   ],
   "textures": {
-    "orm": {"file": "kampaamo_tile_corner_orm.png", "sha256": "d178e062176f75fa65cf0cd0ae8fff05232be485141274abc159890d974a1d16"},
-    "normal": {"file": "kampaamo_tile_corner_normal.png", "sha256": "c1a2e9c81d2ea59df0f33b1db139680dd524b837dfae14b92ffd9d9ac443ae9c"},
+    "orm": {"file": "kampaamo_tile_corner_orm.png", "sha256": "2d7115ad089ef6304a1786ce44b2e361ab89b1f336313662dc2c238e4ab4a97b"},
+    "normal": {"file": "kampaamo_tile_corner_normal.png", "sha256": "c93930c072e05f40b762f9ff9b139e4ff9f1265a65045e83a463ba06118b88e5"},
     "emission": {"file": "kampaamo_tile_corner_emission.png", "sha256": "52ce8e3b6f7b3fd9c6c73fafeae6e2785db489ff024cb4c10a1e2d2c797e2422"}
   },
   "variants": [
-    {"id": "teal_tile", "albedo": "kampaamo_tile_corner_albedo_teal_tile.png", "sha256": "3d010e6071127a9b6a108672313301599a5ccf549acacb49f3ce4af5c4c21c54"},
-    {"id": "rose_tile", "albedo": "kampaamo_tile_corner_albedo_rose_tile.png", "sha256": "b8e0239eaf53dbf5d874d529c2ebeaf5cd55baa5cefa6ca2458679d41e64552e"},
-    {"id": "blue_tile", "albedo": "kampaamo_tile_corner_albedo_blue_tile.png", "sha256": "5c3c0496e0d0370fd72d18b5a570845d258bf2c3aa8d060ae8efd0edaca9d1d5"},
-    {"id": "brown_tile", "albedo": "kampaamo_tile_corner_albedo_brown_tile.png", "sha256": "a47d86b078424e346ee966d0f7fa54940d0da31ca78657d74afdb32041002125"}
+    {"id": "teal_tile", "albedo": "kampaamo_tile_corner_albedo_teal_tile.png", "sha256": "86bfa725fb83ce83d8d4af7fcd4954de3a64e13befeacdf07c2edff18451d8df"},
+    {"id": "rose_tile", "albedo": "kampaamo_tile_corner_albedo_rose_tile.png", "sha256": "bcd74ea6093ea82db6c967522746d9f90fce6cb94f1a4e0c4bd5abbbd2bea6bb"},
+    {"id": "blue_tile", "albedo": "kampaamo_tile_corner_albedo_blue_tile.png", "sha256": "946acfae35b00f30206c4e951eed872f31d543d4e8296e230f6568ffc43cd7c7"},
+    {"id": "brown_tile", "albedo": "kampaamo_tile_corner_albedo_brown_tile.png", "sha256": "1cfff58023f6b7f6514f78b7560757a1ac8ab15f757588d2a87d4c1e2a23baa2"}
   ],
   "default_variant": "teal_tile",
-  "preview": {"file": "../preview.png", "sha256": "e86d91e31bb3e44e5f2ffe885f1e19869277c08cf2d5e2bfe5413d1de0b87078"},
+  "preview": {"file": "../preview.png", "sha256": "22a0f88805af60feeccaa52d529c4a470fa67d417884554b84b4e07c02883302"},
   "hero": false
 }

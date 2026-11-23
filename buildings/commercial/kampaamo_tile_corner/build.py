@@ -24,7 +24,8 @@ free under the band's middle with a projecting light box above it.
 
 The straight front has two display windows under striped awnings, the
 salon's lettering on the band over them, and the one shop door next to the
-corner under a thin steel canopy hung on two rods. The left side has two
+corner under a thin steel canopy hung on two rods, its reveal on a 0.02 m
+concrete floor slab. The left side has two
 windows, the back a small window, the staff door under a small steel canopy
 and the wall ladder to the roof, and the right side a window, the meter cupboard and an exhaust louvre.
 The roof drains inside the parapet, so there are no gutters or downpipes.
@@ -239,6 +240,23 @@ def uv_reveal_flat(fr, s_off):
                        L.WALL_Y0 + (REVEAL_V + max(0.0, -fr.out_of(co))) * PPM)
 
 
+def uv_door_floor(fr, s0):
+    """The floor slab in the shop door's reveal, unfolded: up its nosing on
+    the wall plane, then back across its top to the door
+    (facade_atlas.DOOR_FLOOR_R)."""
+    x, y, _w, _h = L.DOOR_FLOOR_R
+    return lambda co: (x + (fr.s_of(co) - s0) * PPM,
+                       y + (co.z + max(0.0, -fr.out_of(co))) * PPM)
+
+
+def floored(kind, level):
+    """The shop door is the entrance and stands on the ground, so wherever
+    its reveal is cut it is floored: a concrete slab L.DOOR_FLOOR_T over the
+    ground, clear of the consumer's terrain at z = 0. The staff door's
+    shallower reveal goes without, and so does the corner recess."""
+    return kind == "door" and cut(level)
+
+
 def uv_arc_band(co):
     return ((FRONT_L + R_OUT * _theta(co)) * PPM, L.WALL_Y0 + co.z * PPM)
 
@@ -289,9 +307,14 @@ def _segments(pts):
 def build_item(B, fr, s_off, item, level):
     """One opening or painted panel; returns its outline on the wall.
 
-    Cut: four reveals (no sill under a door that stands on the ground: the
-    floor cap covers its footprint) and the closing face DEPTH back. Flush:
-    the closing face on the wall plane. Either way it samples its region.
+    Cut: four reveals (no sill under the staff door, which stands on the
+    ground: the floor cap covers its footprint) and the closing face DEPTH
+    back. Flush: the closing face on the wall plane. Either way it samples
+    its region.
+
+    The shop door's reveal stands on a floor slab (floored()): its nosing on
+    the wall plane under the opening, its top the reveal's sill. The recess
+    starts on that top; the door's art keeps its place.
     """
     kind, s0, s1, z0, z1 = item
     fn = uv_region(fr, REGION[kind], s0, s1, z0, z1)
@@ -301,6 +324,13 @@ def build_item(B, fr, s_off, item, level):
         B.face([fr.P(s, z) for s, z in o], fn)
         return o
     flat = uv_reveal_flat(fr, s_off)
+    if floored(kind, level):
+        zf = z0 + L.DOOR_FLOOR_T
+        floor = uv_door_floor(fr, s0)
+        B.face([fr.P(s0, z0), fr.P(s1, z0), fr.P(s1, zf), fr.P(s0, zf)], floor)
+        SB.recess(B, fr, [(s0, zf), (s1, zf), (s1, z1), (s0, z1)], 0.0, -depth, fn,
+                  [floor, uv_jamb(fr, s_off, s1), flat, uv_jamb(fr, s_off, s0)])
+        return o
     SB.recess(B, fr, o, 0.0, -depth, fn,
               [flat, uv_jamb(fr, s_off, s1), flat, uv_jamb(fr, s_off, s0)],
               skip_z=z0 if z0 <= EPS else None)
@@ -316,7 +346,12 @@ def build_wall(B, name, level, z_top):
     outline = [(0.0, 0.0)]
     for kind, s0, s1, z0, z1 in sorted((i for i in items if i[3] <= EPS),
                                        key=lambda i: i[1]):
-        outline += [(s0, 0.0), (s0, z1), (s1, z1), (s1, 0.0)]
+        if floored(kind, level):
+            # the floor slab's nosing puts a corner on each side of the notch
+            zf = L.DOOR_FLOOR_T
+            outline += [(s0, 0.0), (s0, zf), (s0, z1), (s1, z1), (s1, zf), (s1, 0.0)]
+        else:
+            outline += [(s0, 0.0), (s0, z1), (s1, z1), (s1, 0.0)]
     outline += [(ln, 0.0)] + [(ln, z) for z in sorted(spec["right"])]
     outline += [(ln, z_top), (0.0, z_top)]
     outline += [(0.0, z) for z in sorted(spec["left"], reverse=True)]
@@ -669,6 +704,17 @@ def check_layout():
     a, b = WALLS["front"]["p0"], WALLS["front"]["p1"]
     if abs(math.hypot(b[0] - a[0], b[1] - a[1]) - FRONT_L) > 1e-9:
         bad.append("the front wall is not FRONT_L long")
+    # the floor slab in the shop door's reveal: over the terrain but no step,
+    # on its own atlas region, under a door that stands on the ground
+    if not 0.01 <= L.DOOR_FLOOR_T <= 0.03:
+        bad.append("the door's floor slab is %.3f m over the ground, outside 0.01-0.03"
+                   % L.DOOR_FLOOR_T)
+    shop = next(i for i in ITEMS["front"] if i[0] == "door")
+    if shop[3] > EPS or "door" not in DEPTH:
+        bad.append("the door's floor slab expects a cut reveal standing on the ground")
+    if abs(L.DOOR_FLOOR_R[2] - (shop[2] - shop[1]) * PPM) > 1e-6 or \
+            abs(L.DOOR_FLOOR_R[3] - (L.DOOR_FLOOR_T + DEPTH["door"]) * PPM) > 1e-6:
+        bad.append("the door floor's atlas region is not the slab's nosing and top")
     # door and transom
     if not 2.0 <= L.Z_LEAF <= 2.4:
         bad.append("the shop door's leaf is %.2f m, outside 2.0-2.4" % L.Z_LEAF)
