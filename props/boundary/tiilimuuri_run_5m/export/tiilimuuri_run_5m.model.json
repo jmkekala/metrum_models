@@ -1,9 +1,9 @@
 {
   "schema": "metrum-model-facts",
-  "version": 1,
+  "version": 4,
   "name": "tiilimuuri_run_5m",
   "path": "props/boundary/tiilimuuri_run_5m",
-  "source": {"commit": "34e7907c21ae09668d5ecd5e571b8725573511a2", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "39d6b1f4ed34bea4a2460128fceaa4b0c0deaa84", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-2.725, 0.0, -0.225], "max": [2.4, 2.25, 0.225]},
   "footprint": [
