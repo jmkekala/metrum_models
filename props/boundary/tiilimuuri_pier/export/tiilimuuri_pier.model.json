@@ -1,9 +1,9 @@
 {
   "schema": "metrum-model-facts",
-  "version": 1,
+  "version": 4,
   "name": "tiilimuuri_pier",
   "path": "props/boundary/tiilimuuri_pier",
-  "source": {"commit": "c92ea00140c23e1078f58786abe78fb30d398558", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "ef7a33ec2ad6966f8b9acae8f6ff8da8c4b2a1f2", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-0.225, 0.0, -0.225], "max": [0.225, 2.25, 0.225]},
   "footprint": [
