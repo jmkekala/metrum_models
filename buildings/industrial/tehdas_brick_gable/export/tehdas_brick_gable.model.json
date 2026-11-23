@@ -3,7 +3,7 @@
   "version": 1,
   "name": "tehdas_brick_gable",
   "path": "buildings/industrial/tehdas_brick_gable",
-  "source": {"commit": "4d72b2e27978a124341983f6137e3ae0a0396baf", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "74f44c4462cf5a406b39f79bc20bf6a37e316ebb", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-21.3, 0.0, -14.125], "max": [21.3, 10.042, 14.125]},
   "footprint": [
