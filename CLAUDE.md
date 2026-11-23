@@ -530,6 +530,14 @@ triangle cost and the tiers that keep it.
   threshold. Glazing bars and ornament are textured. Detached buildings are
   seen from every side, so a flat secondary-elevation opening needs an
   intended-view justification.
+  - **A recess that stands on the ground gets a floor.** An entrance lobby
+    or set-back doorway about 0.25 m deep or more has no sill, and the
+    shell has no upward face under it, so the consumer's terrain shows
+    inside. Fill its plan with a concrete slab: top 0.02 m above grade (a
+    face at grade fights the terrain), a nosing on the wall plane, nothing
+    past it, on its own atlas region, on every tier that keeps the recess.
+    Bounds, footprint and the door's threshold stay as they are. A plain
+    door reveal needs none.
 - **Count full opening topology:** four reveal sides alone are eight
   triangles, before the closure and surrounding wall. Measure triangulated
   exports, walls included. Polygons with holes avoid needless wall grids.
