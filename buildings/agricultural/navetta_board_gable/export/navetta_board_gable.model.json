@@ -1,9 +1,9 @@
 {
   "schema": "metrum-model-facts",
-  "version": 1,
+  "version": 4,
   "name": "navetta_board_gable",
   "path": "buildings/agricultural/navetta_board_gable",
-  "source": {"commit": "51372936a060d47afae0e335b074dcc31aa68991", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "23bad5db36ccef52aff8f78e458be355c938a42a", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-8.35, 0.0, -6.3], "max": [8.35, 6.7106, 6.3]},
   "footprint": [
@@ -17,10 +17,10 @@
   ],
   "dwellings": 0,
   "doors": [
-    {"id": "front", "kind": "entrance", "position": [6.6, 0.4, 4.1], "facing": [0.0, 0.0, 1.0], "width_m": 0.95, "height_m": 2.1, "main": true},
-    {"id": "big_doors", "kind": "vehicle", "position": [-4.6, 0.4, 4.1], "facing": [0.0, 0.0, 1.0], "width_m": 3.2, "height_m": 3.0, "main": false},
-    {"id": "rear", "kind": "service", "position": [0.0, 0.4, -4.9], "facing": [0.0, 0.0, -1.0], "width_m": 0.95, "height_m": 2.1, "main": false},
-    {"id": "loft_hatch", "kind": "balcony", "position": [8.0, 4.05, -0.4], "facing": [1.0, 0.0, 0.0], "width_m": 1.2, "height_m": 1.4, "main": false}
+    {"id": "front", "kind": "entrance", "position": [6.6, 0.4, 4.1], "facing": [0.0, 0.0, 1.0], "width_m": 0.95, "height_m": 2.1, "floor_y_m": 0.4, "storey": 0, "main": true},
+    {"id": "big_doors", "kind": "vehicle", "position": [-4.6, 0.4, 4.1], "facing": [0.0, 0.0, 1.0], "width_m": 3.2, "height_m": 3.0, "floor_y_m": 0.4, "storey": 0, "main": false},
+    {"id": "rear", "kind": "service", "position": [0.0, 0.4, -4.9], "facing": [0.0, 0.0, -1.0], "width_m": 0.95, "height_m": 2.1, "floor_y_m": 0.4, "storey": 0, "main": false},
+    {"id": "loft_hatch", "kind": "balcony", "position": [8.0, 4.05, -0.4], "facing": [1.0, 0.0, 0.0], "width_m": 1.2, "height_m": 1.4, "floor_y_m": 4.05, "storey": null, "main": false}
   ],
   "lods": [
     {"file": "navetta_board_gable_lod0.glb", "triangles": 756, "sha256": "2f66492fb28ee0185dc0b268f01e877c2776df8e365760e7200767c933139292"},
