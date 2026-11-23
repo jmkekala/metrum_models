@@ -26,7 +26,8 @@ disconnector on a tall steel table, three minimum-oil breaker poles on a
 steel stand and three current transformers on a concrete table, joined by
 slack flexible conductors. The small red brick switchgear house stands in
 the front-east corner, its front and east walls in the yard wall's outer
-planes, its steel door on the street.
+planes, its steel door on the street, whose reveal stands on a 0.02 m
+concrete floor slab (scripts/door_floor.py).
 
 Construction is a set of closed solids unioned with Blender's exact boolean
 (asset_build.union): the switchgear house (one solid with its openings, slab
@@ -63,6 +64,7 @@ importlib.reload(L)       # an interactive session must not keep a stale layout
 ASSET = L.ASSET
 sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "scripts"))
 import asset_build  # noqa: E402
+import door_floor as DF  # noqa: E402
 import model_facts  # noqa: E402
 import shell_build as SB  # noqa: E402
 from asset_build import to_object, union  # noqa: E402
@@ -464,28 +466,56 @@ def uv_item(fr, kind, s_left, z_bot):
     return SB.uv_region(fr, (x0, y0, 0, 0), s_left, z_bot, PPM)
 
 
+def floored(kind, z, level):
+    """Whether the opening stands on the door_floor slab at *level*: the
+    door, on the ground, on every tier that recesses it (ring or cut); a
+    flush door has no reveal to floor."""
+    return kind == "door" and z < EPS and mode(level)["item"] != "flush"
+
+
 def build_item(B, fr, kind, s, z, level):
     """Faces for one opening. A door on the ground returns the notch it cuts
-    in the wall's bottom edge, left to right; a louvre returns its hole."""
+    in the wall's bottom edge, left to right; a louvre returns its hole.
+
+    The door's reveal stands on a concrete floor slab (scripts/door_floor.py,
+    floored()): its nosing on the wall plane under the opening, its top
+    door_floor.T over the ground and the reveal's foot, so the consumer's
+    terrain cannot show inside. LOD1's recess is the casing's rectangle, and
+    its notch in the wall carries the nosing's two top corners. LOD0's is
+    the leaf's, inside the flush casing ring: the ring's jambs carry those
+    corners instead, and the slab samples the region from the casing's left
+    side (u0), so both tiers share the one region."""
     m = mode(level)["item"]
     (ol, orr, ob, ot), (il, ir, ib, it) = item_rects(kind, s, z)
     fn = uv_item(fr, kind, ol, ob)
     depth = L.REVEAL_DEPTH[kind]
     rev = uv_patch("reveal")
     on_ground = z < EPS
+    slab = floored(kind, z, level)
     o = [(ol, ob), (orr, ob), (orr, ot), (ol, ot)]
     hole = [(ol, ob), (ol, ot), (orr, ot), (orr, ob)] if on_ground else o
     if m == "flush":
         B.face([fr.P(*p) for p in o], fn)
         return hole
     if m == "cut":
+        if slab:
+            DF.recess(B, fr, (ol, orr, ob, ot), 0.0, depth, fn, rev, L.FLOOR)
+            return DF.notch((ol, orr, ob, ot))
         recess(B, fr, (ol, orr, ob, ot), depth, fn, rev, floor=not on_ground)
         return hole
     i = [(il, ib), (ir, ib), (ir, it), (il, it)]
+    zf = ib + DF.T
     for k in range(4):          # a door's bottom quad has no area and is skipped
-        B.face([fr.P(*o[k]), fr.P(*o[(k + 1) % 4]),
-                fr.P(*i[(k + 1) % 4]), fr.P(*i[k])], fn)
-    recess(B, fr, (il, ir, ib, it), depth, fn, rev, floor=not on_ground)
+        ring = [o[k], o[(k + 1) % 4], i[(k + 1) % 4], i[k]]
+        if slab and k == 1:     # the jambs carry the nosing's top corners
+            ring.insert(3, (ir, zf))
+        elif slab and k == 3:
+            ring.insert(3, (il, zf))
+        B.face([fr.P(*p) for p in ring], fn)
+    if slab:
+        DF.recess(B, fr, (il, ir, ib, it), 0.0, depth, fn, rev, L.FLOOR, u0=ol)
+    else:
+        recess(B, fr, (il, ir, ib, it), depth, fn, rev, floor=not on_ground)
     return hole
 
 
@@ -1365,6 +1395,13 @@ def check_layout():
     w, h = L.OPENINGS["door"][:2]
     if not 2.0 <= h <= 2.4:
         problems.append("the door leaf is %.2f m, outside 2.0-2.4" % h)
+    # the door's reveal on its floor slab (scripts/door_floor.py): the slab's
+    # region the casing's width and the reveal's depth, under a door at grade
+    kind, s, z = H_WALLS[0]["items"][0]
+    if kind != "door":
+        problems.append("the front wall's first item is not the door")
+    problems += DF.problems(L.FLOOR, "the switchgear door", item_rects(kind, s, z)[0],
+                            L.REVEAL_DEPTH[kind])
     # plan: everything inside the piers' outline, the gate between its piers
     half = L.PIER_W / 2.0
     if abs(GATE_W_PIER + half - L.GATE_OPEN[0]) > EPS or \

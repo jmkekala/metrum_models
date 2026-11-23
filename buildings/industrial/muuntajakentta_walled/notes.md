@@ -129,8 +129,9 @@ the switchgear cubicles.
 **Steel door leaf 1.00 × 2.125 m**, with no fanlight or transom. The pressed
 steel frame adds 0.0625 m at the sides and head, so its opening in the
 brick is 1.125 × 2.1875 m (9 half stretchers by 28 courses). The threshold
-is at ground level and the door faces the street (−Y). It is the house's
-only door.
+is at ground level and the door faces the street (−Y); the reveal's 0.02 m
+concrete floor slab (Construction) is a floor finish, not a step. It is the
+house's only door.
 
 The gate (two leaves, 3.375 m clear, 1.48 m high) is not a door in the
 facts schema: it opens onto the open yard, not an occupied space. It reads
@@ -239,6 +240,9 @@ Openings by tier:
 - **`LOD1`:** one recess the size of the casing;
 - **`LOD2`/`LOD3`:** a flush painted rectangle.
 
+The door's reveal stands on a concrete floor slab on `LOD0` and `LOD1`
+(Door floor slab below).
+
 Every opening's casing is on the brick module: its sides on half
 stretchers in its wall's U (`HOUSE_U_OFF`: front 0, east 5.125, north
 9.0, west 14.125, each a half stretcher, chosen so the bond turns a half
@@ -256,6 +260,40 @@ at U values that map onto those walls only (`paint_house_fittings()`):
   reflector showing under it. It is paint, not emission;
 - a blue vitreous enamel number plate, 0.22 × 0.16 m, at 1.62 m on the
   north wall, white border and a plain numeral 1.
+
+### Door floor slab
+
+The door stands on the ground in a 0.12 m reveal that had no upward face
+under it (the house's floor cap faces down), so a consumer's terrain showed
+inside, across the foot of the door. The reveal is floored with a concrete
+slab from the shared `scripts/door_floor.py` (`build_item()` calls
+`door_floor.recess()`; `floored()` decides the tiers):
+
+| Tier | Recess | Slab, width x depth |
+| --- | --- | --- |
+| `LOD0` | the leaf's, inside the flush casing ring | 1.0 x 0.12 m |
+| `LOD1` | the casing's rectangle | 1.125 x 0.12 m |
+| `LOD2`, `LOD3` | none: the door is painted flush | none |
+
+- **Top 0.02 m over the ground** (`door_floor.T`), clear of terrain at
+  z = 0 and too low to read as a step.
+- **A nosing on the wall plane** between the recess's jambs. Nothing
+  projects past the wall, so the bounds, the pivot, the footprint and the
+  door's threshold in the sidecar are as they were.
+- **The reveal starts on the slab's top:** the cheeks and the leaf begin at
+  z 0.02. On `LOD1` the wall's notch carries the nosing's two top corners
+  (`door_floor.notch()`); on `LOD0` the casing ring's two jambs do, each a
+  five-cornered face, and the wall's notch round the casing is unchanged.
+  Wall or ring, nosing, slab and cheeks meet on shared vertices, and under
+  the nosing the floor cap runs straight along the wall line instead of
+  round the reveal. The door's artwork keeps its place, so the slab covers
+  the bottom 1.3 px of its dark threshold bar.
+- **Its own atlas region** (Texture set), sized to `LOD1`'s casing width;
+  `LOD0`'s narrower slab samples its middle 1.0 m (`u0` at the casing's left
+  side), so both tiers share it.
+
+`check_layout()` adds `door_floor.problems()`: the region the casing's
+width and the reveal's depth, under a door at grade.
 
 ### Transformers
 
@@ -409,6 +447,8 @@ points and sags (`spans()`) and the tiers' modes (`mode()`).
 
 - the openings sit clear of corners, piers, each other and the slab;
 - the door leaf is in the 2.0–2.4 m band;
+- the door's floor slab region is the casing's width and the reveal's
+  depth, and the door stands at grade (`door_floor.problems()`);
 - the gate's piers frame the opening;
 - the house's walls lie in the wall's planes;
 - the clearances above;
@@ -424,9 +464,17 @@ points and sags (`spans()`) and the tiers' modes (`mode()`).
 | Tier | Triangles | Ceiling | What changes |
 | --- | --- | --- | --- |
 | `LOD0` | 8,794 | 12,000 | everything; the lattice portal braced on every face (rails and a diagonal per panel), its truss a Warren zigzag on the sides with rails and diagonals top and bottom; turned disc strings (6 sides); 8-sided breaker poles and current transformers, 6-sided disconnector posts with caps and blades; conductors 4-sided, 6 segments on the drop and 4 on each span; 8-sided bushings and conservators; the wall as lengths between piers; house openings as casing rings round recesses |
-| `LOD1` | 3,936 | 4,000 | the lattice coarser: legs and one zigzag of diagonals per face over 6 panels, no rails, the truss's sides a 10-panel zigzag and a rail under each string; strings as plain 4-sided prisms carrying the discs in paint; poles and current transformers 5-sided, the current transformers without the base step, posts 3-sided tapers with no caps, no blades; conductors 3-sided, 3 segments on the drop and 2 on the spans; bushings 5-sided turret and one taper; conservators 6-sided; openings one recess each |
+| `LOD1` | 3,938 | 4,000 | the lattice coarser: legs and one zigzag of diagonals per face over 6 panels, no rails, the truss's sides a 10-panel zigzag and a rail under each string; strings as plain 4-sided prisms carrying the discs in paint; poles and current transformers 5-sided, the current transformers without the base step, posts 3-sided tapers with no caps, no blades; conductors 3-sided, 3 segments on the drop and 2 on the spans; bushings 5-sided turret and one taper; conservators 6-sided; openings one recess each |
 | `LOD2` | 1,476 | 1,500 | the wall one pier thick, the piers folded in; the lattice's corner angles and chords alone, a plain spike finial; poles and current transformers 4-sided single tapers carrying heads and bases in paint, posts 3-sided, no breaker cabinet; only the six drops kept, straight; strings 3-sided, bushings (one taper) and conservators 4-sided, the conservators' saddles gone and each drum a box down into its cover; openings flush; coplanar boolean splits dissolved |
 | `LOD3` | 494 | 500 | the switchgear goes but for the six breaker poles, each one 3-sided prism from the ground, and the two disconnector tables, each deck a 3-sided prism on two 3-sided legs; the gantry slim solids with the lattice painted on; the strings 3-sided pyramids; the bushings 3-sided pyramids over the covers; every one of those touches nothing, nor does the gate, which stops 4 mm short of its runs; conductors go; both radiator banks one box through the tank; cable boxes and pads go; trenches go; the house's two yard-side louvres go |
+
+The door's floor slab (Construction) costs 4 triangles, the nosing and the
+top, on `LOD0` and `LOD1`; `LOD2` and `LOD3` have no recess and are the
+same files as before it. `LOD0` is still 8,794: the slab's 4 and the ring
+jambs' extra corners are offset in the house's own triangulation, the
+floor cap no longer detouring round the reveal (measured on the export,
+not broken down further). `LOD1` rose
+by 2, to 3,938.
 
 Where `LOD0`'s triangles go, measured by building each group alone (with
 the union inside the group) and by leaving groups out of the union:
@@ -495,7 +543,7 @@ reads by its two stepped heads and a string by its scalloped outline.
 Trim in CLAUDE.md's sense (the piers, the house's slab edge and the
 trench covers) is under 500 triangles.
 
-**Every tier from `LOD1` down sits near its ceiling** (`LOD1` 64 to
+**Every tier from `LOD1` down sits near its ceiling** (`LOD1` 62 to
 spare, `LOD2` 24, `LOD3` 6), so any change to them must be recounted. The
 union costs more than the parts here: every conductor end, post foot and
 leg cuts the face it enters. Thinning the posts to 3 sides, the spans to 2
@@ -601,6 +649,16 @@ over the 1.56 m wall. The lattice pass's six views at all four tiers,
 before and after with identical settings, with sheets from
 `scripts/review_compare.py` in its `compare/`.
 
+**The door's floor slab (2026-11-23)** adds no transition of its own. It
+goes with the door's 0.12 m reveal at the `LOD1`/`LOD2` switch, where the
+door is already painted flat: a 0.02 m nosing and 0.12 m of slab are under
+a pixel at 70 m and at the consumer's 80 m. Between `LOD0` and `LOD1` the
+slab widens from the leaf's 1.0 m to the casing's 1.125 m with the recess,
+as the recess itself does. Checked from a standing eye (1.7 m, 75° vertical
+FOV, 1280 × 720) and from 0.35 m over a terrain plane at z = 0, 1–4 m from
+the door, face-on, from both sides and from above, noon and reversed sun,
+every tier (Review status).
+
 Pending in the consumer: real LOD switching, shadows in the yard and
 performance.
 
@@ -639,7 +697,10 @@ What is removed and kept:
   the conductors' ends, the wall lengths' ends in the piers and the
   house, and the trenches' ends.
 - The closure faces kept are the floor faces on the ground under the
-  piers, house, plinths, pads, legs, fire wall and trenches, the wall
+  piers, house, plinths, pads, legs, fire wall and trenches (the house's
+  runs straight along the front wall line under the door's floor slab, so
+  no face lies at grade inside the reveal; the slab is exterior surface and
+  adds no face inside the shell), the wall
   lengths' undersides 1 mm over the ground, and every lattice bar's own
   faces where it stops 4 mm short of the bar or angle it meets.
 
@@ -680,6 +741,9 @@ What is removed and kept:
   on. `LOD2` drops the bracing and `LOD3` paints it.
 - **One door and no yard door:** the house has no door into the yard, and
   the yard's only way in is the gate. The house's door is on the street.
+- **Floors:** only the door's reveal has one, a flat concrete slab with no
+  mat, drain or threshold strip (Construction). The gate stands in the
+  wall's thickness on the consumer's ground, as the yard does.
 - **Yard lamp, number plate and trench cover plates are paint** on the
   house's yard walls, flat to the wall; the lamp is unlit (Night
   lighting). No signage text, fence wire or barbed wire.
@@ -698,7 +762,7 @@ the default supersampling (`atlas.SS` = 4) and padded last by
 | --- | --- | --- |
 | 0–248 | HOUSE band | U along the wall, V = height, 64 px/m; concrete plinth to 0.391 m (5 courses), then the catalog's stretcher bond (`scripts/brickwork.py`); on the yard walls' own U ranges the trench cover plates, the yard lamp and the number plate (`HOUSE_U_OFF`) |
 | 252–384 | FENCE band | U along the wall, V = height; concrete footing to 0.3125 m, brick, the thin precast coping one course tall, 1.484–1.5625 m; the piers' faces too (their 0.02 m over the coping samples the coping's top row and the padding above it) |
-| 390–558 | unique, row A | tank side, gate, door, radiator face and end, conservator barrel, gravel bed |
+| 390–558 | unique, row A | tank side, gate, door, the door's floor slab, radiator face and end, conservator barrel, gravel bed |
 | 566–734 | unique, row B | tank cover, roof, slab edge, radiator top, louvre, bushing, string, cable box, conservator end |
 | 740–1016 | unique, row C | flat patches (the breakers' head paint among them), breaker pole, disconnector post, current transformer, `LOD3`'s whole-pole strip (32 px/m in V), `LOD3`'s painted lattice (a column face, the truss's sides, its top and bottom), the disconnector legs' painted lattice, the fire wall's board-marked concrete (also the current transformers' tables), the trench covers |
 
@@ -732,7 +796,31 @@ the default supersampling (`atlas.SS` = 4) and padded last by
 - porcelain sheds 30 mm, painted discs 25 mm;
 - the breakers' and current transformers' head flanges 12–15 mm;
 - felt laps 6 mm, scaled by 32/64;
-- form-tie holes −10 mm.
+- form-tie holes −10 mm;
+- the door's floor slab's pores, 0.4 mm.
+
+### The door's floor slab
+
+`FLOOR`, 72 × 8.96 px at (414, 544), in the free rows between the door's
+region and row B, at 64 px/m (`scripts/door_floor.py`): the slab unfolded,
+U along the wall from the casing's left side across its 1.125 m, V the
+nosing's 0.02 m (1.28 px) and then the top from the wall plane to the leaf.
+`LOD1` samples all of it, `LOD0` the middle 64 px. Painted by
+`door_floor.paint()`, `grain()` and `weather()`, as the catalog's other
+entrance slabs are: float-finished cast concrete, `ID_FLOOR`, sRGB
+**(132, 130, 124)** in every variant, roughness **0.88**, nonmetallic.
+Occlusion deepens toward the jambs and the leaf (within 0.048 m), a
+slightly paler path is worn toward the leaf, the pores are the concrete's
+noise at 5 % shade and 0.4 mm of height, and blotchy trodden-in dirt lies
+over it. The region bleeds 2 px into its gutter. On `LOD0` the jambs'
+occlusion is fainter than on `LOD1`, the region's edges being under the
+casing ring.
+
+Adding it changed only that free strip: the albedos and the ORM differ
+from the previous bake only in x 389–517, y 531–563 (the slab and the
+padding round it, which now carries the slab's edges instead of the door's
+and row B's), the normal map only in x 412–487, y 542–554 (working diff in
+`review/review_2026_11_23/muuntajakentta_walled/`, not committed).
 
 ### Porcelain on the switchgear
 
@@ -763,7 +851,8 @@ lighter shed paint.
   trench covers;
 - **steel and porcelain:** light dust on the zinc (the galvanised patch
   and the painted lattices), a trace on the porcelain;
-- **slab edge:** runs down it from the felt.
+- **slab edge:** runs down it from the felt;
+- **the door's floor slab:** trodden-in dirt.
 
 ### Filtering and inventory
 
@@ -1017,6 +1106,30 @@ Checked here, in Blender:
   door's x, 6.24 → 6.2525, and height, 2.10 → 2.125, the `LOD2`/`LOD3`
   counts, hashes and source moved); the validator, 0 FAIL.
 
+- The door's floor slab (Construction, Revision log), from a snapshot in
+  `review/review_2026_11_23/muuntajakentta_walled/before/`:
+  - **Door views** (`review/review_2026_11_23/muuntajakentta_walled/
+    door_views.py`, every tier, noon and reversed sun, over a green terrain
+    plane at z = 0): the door from 4 m and 2 m at eye level, from either
+    side, from 0.35 m up and from above, and the yard wall's and the
+    house's feet from 0.35 m. Before, grass ran into the reveal up to the
+    leaf on `LOD0` and `LOD1`; after, concrete fills it jamb to jamb, its
+    nosing a light line on the wall plane with nothing past it, no dark
+    seam or stretched texels. `LOD2` and `LOD3`, whose door is flush, are
+    the same files as before. Every camera stands outside the compound.
+  - **`review_asset.py`** from both: the day cycle on `LOD0`, the six
+    orthographic views, and every tier front and oblique at 20, 35, 70 and
+    120 m under noon; `review_compare.py` sheets in
+    `review/review_2026_11_23/muuntajakentta_walled/compare/`.
+  - Bounds, pivot, footprint, storey and the door in the sidecar
+    unchanged; `LOD2` and `LOD3` byte-identical. On `LOD0` and `LOD1` a
+    downward ray meets an upward face at 0.020 m at 9 of 9 sample points
+    of the reveal (none before), no face lies at grade inside it, and the
+    only upward faces under 0.1 m near the door are the slab's top.
+  - `scripts/validate_asset.py`: 0 FAIL; the one WARN is `source.dirty`,
+    the sidecar written from an uncommitted tree, to be rewritten with
+    `build.py -- facts` once committed.
+
 Pending here: the six views and the whole-atlas mip review after the
 2026-11-22 pass (its texture change is the re-coursed heights, gate and
 door, in their own regions).
@@ -1042,6 +1155,14 @@ Python 3 with numpy, scipy and Pillow.
 
 ## Revision log
 
+- **2026-11-23 — door floor slab.** The switchgear door's 0.12 m reveal
+  had no upward face under it, so a consumer's terrain showed inside, at
+  the foot of the leaf. It now stands on a concrete slab 0.02 m over the
+  ground, nosing on the wall plane, on its own atlas region, built and
+  painted by the shared `scripts/door_floor.py`, on `LOD0` (1.0 m, inside
+  the casing ring) and `LOD1` (1.125 m, the casing's recess). Tiers
+  8,794 / 3,936 / 1,476 / 494 to 8,794 / 3,938 / 1,476 / 494; bounds,
+  pivot, footprint and door unchanged.
 - **2026-11-22 — audit fixes.** Re-coursed to the catalog brick module as
   the plant hall was (`brick_problems()`): the yard wall 1.55 → 1.5625 m
   with a one-course coping from 1.484 m (was 1.4875), the gate opening
