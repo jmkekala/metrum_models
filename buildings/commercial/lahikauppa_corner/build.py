@@ -23,7 +23,8 @@ itself, and there is no separate canopy.
 
 The street elevation carries the whole public side of the shop. Its right-hand
 corner is cut off at 45 degrees and glazed, with a pair of sliding glass doors
-in the middle of the cut and a lit sign standing on the eave above them. At the
+in the middle of the cut, set back into a lobby on a 0.02 m concrete floor
+slab, and a lit sign standing on the eave above them. At the
 other end of the same wall the walls step back under the roof to make a covered
 loading bay deep enough to take all but the nose of a delivery van, with the
 goods door in its back wall and a column at the open corner.
@@ -207,6 +208,15 @@ def lobby_kept(level):
     return level < 2
 
 
+def lobby_floor_top(spec, level):
+    """The height the entrance's recess starts at: the top of the lobby's
+    floor slab on the tiers that keep the lobby, the ground elsewhere (a flat
+    entrance, a bay without one)."""
+    if spec.get("entrance") and item_mode(level) != "flush" and lobby_kept(level):
+        return L.LOBBY_FLOOR_T
+    return 0.0
+
+
 def plant_kept(level, kind):
     """Roof plant.
 
@@ -266,6 +276,14 @@ def uv_door_unit(fr, d0):
                        y + co.z / L.Z_HEAD * h)
 
 
+def uv_lobby_floor(fr, d0):
+    """The entrance lobby's floor slab, unfolded: up its nosing on the wall
+    plane, then back across its top to the doors (facade_atlas.LOBBY_FLOOR)."""
+    x, y, _w, _h = L.LOBBY_FLOOR
+    return lambda co: (x + (fr.s_of(co) - d0) * PPM,
+                       y + (co.z + max(0.0, -fr.out_of(co))) * PPM)
+
+
 def uv_soffit(fr):
     """The white eave and the canopy share one band; v is how far out the
     surface has reached, as a fraction of the eave's own slope length."""
@@ -304,11 +322,13 @@ def uv_bay_ceiling(co):
 def recess(B, fr, rect, depth, fn, rev):
     """Push a rectangle *depth* back from the wall and close it.
 
-    An opening that stands on the ground gets no floor of its own: the strip it
-    would lay at z = 0 is inside the building's own footprint, so it would sit
-    on top of the floor the wall ring is capped with, and the two coplanar
-    faces leave the export non-manifold at the threshold. Left out, the rim
-    simply detours round the recess and the floor cap covers it.
+    A shallow opening that stands on the ground (a door's reveal) gets no
+    floor of its own: the strip it would lay at z = 0 is inside the building's
+    own footprint, so it would sit on top of the floor the wall ring is capped
+    with, and the two coplanar faces leave the export non-manifold at the
+    threshold. Left out, the rim simply detours round the recess and the floor
+    cap covers it. The entrance lobby is deep enough to see into and is
+    floored with a slab instead (build_glazing()).
     """
     SB.recess(B, fr, rect_poly(rect), 0.0, -depth, fn, rev,
               skip_z=None if rect[2] > EPS else rect[2])
@@ -358,14 +378,21 @@ def build_glazing(B, fr, spec, s0, s1, level):
     stands on the ground, so its leaves are a door's height from the pavement.
     Every face of the unit is split at the sill line, where the plinth's
     return and the glazing beside it meet its edge.
+
+    Where the lobby is kept, the way in is deep enough to see into, so it is
+    floored: a concrete slab L.LOBBY_FLOOR_T over the ground (clear of the
+    consumer's terrain at z = 0) from the wall plane back to the doors, its
+    nosing on the wall plane between the plinth's cut ends. The recess starts
+    on its top; the unit's art keeps its place.
     """
     mode = item_mode(level)
     entrance = spec.get("entrance", False)
     d0, d1 = entrance_span(s0, s1)
     door_uv = uv_door_unit(fr, d0)
+    zf = lobby_floor_top(spec, level)
 
     def door_plane(out):
-        for za, zb in ((0.0, L.Z_SILL), (L.Z_SILL, L.Z_HEAD)):
+        for za, zb in ((zf, L.Z_SILL), (L.Z_SILL, L.Z_HEAD)):
             B.face([fr.P(d0, za, out), fr.P(d1, za, out),
                     fr.P(d1, zb, out), fr.P(d0, zb, out)], door_uv)
     # The entrance breaks the bay's sill and head lines whether it is a recess
@@ -405,9 +432,9 @@ def build_glazing(B, fr, spec, s0, s1, level):
     if entrance:
         # the plinth's cut ends, each side of the way in
         for dj in (d0, d1):
-            B.face([fr.P(dj, 0.0), fr.P(dj, L.Z_SILL),
+            B.face([fr.P(dj, zf), fr.P(dj, L.Z_SILL),
                     fr.P(dj, L.Z_SILL, -L.GLAZE_DEPTH),
-                    fr.P(dj, 0.0, -L.GLAZE_DEPTH)], uv_patch("plinth_top"))
+                    fr.P(dj, zf, -L.GLAZE_DEPTH)], uv_patch("plinth_top"))
     if not lobby:
         if entrance:
             for a, b, fn in ((s0, d0, uv_shop(fr, s0)), (d1, s1, uv_shop(fr, d1))):
@@ -433,14 +460,24 @@ def build_glazing(B, fr, spec, s0, s1, level):
                 fr.P(a, L.Z_HEAD, -L.GLAZE_DEPTH)], fn)
     # the lobby's sides, split at the sill line like the unit itself: below it
     # the plinth carries on from its cut end back to the doors, above it the
-    # light reveal; then its head. It has no floor of its own (see recess()).
+    # light reveal; then its head.
     for dj in (d0, d1):
-        for za, zb, fn in ((0.0, L.Z_SILL, uv_patch("plinth_top")),
+        for za, zb, fn in ((zf, L.Z_SILL, uv_patch("plinth_top")),
                            (L.Z_SILL, L.Z_HEAD, rev)):
             B.face([fr.P(dj, za, -L.GLAZE_DEPTH), fr.P(dj, zb, -L.GLAZE_DEPTH),
                     fr.P(dj, zb, -L.DOOR_DEPTH), fr.P(dj, za, -L.DOOR_DEPTH)], fn)
     B.face([fr.P(d0, L.Z_HEAD, -L.GLAZE_DEPTH), fr.P(d1, L.Z_HEAD, -L.GLAZE_DEPTH),
             fr.P(d1, L.Z_HEAD, -L.DOOR_DEPTH), fr.P(d0, L.Z_HEAD, -L.DOOR_DEPTH)], rev)
+    # its floor slab: the nosing on the wall plane, then the top in two
+    # strips, split where the plinth's cut ends stop and the lobby's own
+    # sides begin, so each side face meets it on shared vertices (as one
+    # face it would carry those two as collinear corners and triangulate
+    # with a zero-area triangle)
+    floor = uv_lobby_floor(fr, d0)
+    B.face([fr.P(d0, 0.0), fr.P(d1, 0.0), fr.P(d1, zf), fr.P(d0, zf)], floor)
+    for near, far in ((0.0, -L.GLAZE_DEPTH), (-L.GLAZE_DEPTH, -L.DOOR_DEPTH)):
+        B.face([fr.P(d0, zf, near), fr.P(d1, zf, near),
+                fr.P(d1, zf, far), fr.P(d0, zf, far)], floor)
     door_plane(-L.DOOR_DEPTH)
     return outline
 
@@ -519,6 +556,12 @@ def build_wall(B, fr, spec, level):
             f["notch"] = [(d0, 0.0), (d0, L.Z_SILL), (s0, L.Z_SILL), (s0, L.Z_HEAD),
                           (d0, L.Z_HEAD), (d1, L.Z_HEAD), (s1, L.Z_HEAD),
                           (s1, L.Z_SILL), (d1, L.Z_SILL), (d1, 0.0)]
+            zf = lobby_floor_top(spec, level)
+            if zf > EPS:
+                # the floor slab's nosing puts a corner on each side of the
+                # notch's foot
+                f["notch"][1:1] = [(d0, zf)]
+                f["notch"][-1:-1] = [(d1, zf)]
         features.append(f)
     built = {}
 
@@ -884,6 +927,18 @@ def check_layout():
         bad.append("the entrance leaf is %.2f m, outside 2.0-2.4" % L.Z_TRANSOM)
     if L.Z_HEAD <= L.Z_TRANSOM:
         bad.append("the entrance has no transom above its leaves")
+    # the lobby's floor slab: over the terrain but no step, on its own atlas
+    # region, on every tier that keeps the lobby and no other
+    if not 0.01 <= L.LOBBY_FLOOR_T <= 0.03:
+        bad.append("the lobby's floor is %.3f m over the ground, outside 0.01-0.03"
+                   % L.LOBBY_FLOOR_T)
+    for lv in LEVELS:
+        if lobby_kept(lv) != (item_mode(lv) != "flush"):
+            bad.append("LOD%d keeps the entrance's recess without its lobby, "
+                       "or the other way round: the floor slab expects both" % lv)
+    if abs(L.LOBBY_FLOOR[2] - L.DOOR_UNIT_W * PPM) > 1e-6 or \
+            abs(L.LOBBY_FLOOR[3] - (L.LOBBY_FLOOR_T + L.DOOR_DEPTH) * PPM) > 1e-6:
+        bad.append("the lobby floor's atlas region is not the slab's nosing and top")
     if L.Z_EAVE_B >= L.Z_WALL:
         bad.append("the eave rises outward instead of falling; snow pushed off "
                    "the deck would have nowhere to go")
@@ -938,7 +993,8 @@ def facts():
     of it: the roof passes over the bay, but its two walls are outer walls and
     the column at its open corner is a post, not a wall. The entrance is given
     on the chamfer's wall plane, though the shopfront stands GLAZE_DEPTH back
-    in it and the doors DOOR_DEPTH. Its threshold is the pavement and its
+    in it and the doors DOOR_DEPTH. Its threshold is the pavement (the
+    lobby's 0.02 m floor slab is a floor finish, not a step) and its
     height runs from there to the transom bar; the pair is the two sliding
     leaves without the fixed screens at their sides.
     One retail storey, floored at the ground the service and goods doors

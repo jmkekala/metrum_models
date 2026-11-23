@@ -16,8 +16,8 @@ the brick, the white render, the shopfront glazing and the white eave soffit.
 The brick and the render bands each start at the ground and carry the concrete
 plinth in their own bottom 24 rows, so a wall is two courses of region rather
 than three and no opening has to straddle a band edge. Everything singular --
-the entrance, the sign, the goods door, the roof deck, the plant -- gets a
-region of its own above them. Bands are separated by four
+the entrance and its lobby's concrete floor slab, the sign, the goods door,
+the roof deck, the plant -- gets a region of its own above them. Bands are separated by four
 rows of padding, and atlas.pad() fills every sample no region claims from the
 nearest region's own edge, so base-level and mip sampling stays on the right
 artwork.
@@ -95,6 +95,7 @@ OPENINGS = {
 REVEAL_DEPTH = {"staff_window": 0.14, "service_door": 0.12, "goods_door": 0.18}
 GLAZE_DEPTH = 0.20      # the shopfront sits this far back in its opening
 DOOR_DEPTH = 0.70       # the entrance is set back further again, into a lobby
+LOBBY_FLOOR_T = 0.02    # the lobby's floor slab, its top over the ground
 
 # ------------------------------------------------------------------- bands
 BRICK_Y0, BRICK_H = 0, 224        # z 0 .. Z_BRICK, plinth in the bottom 24
@@ -133,6 +134,11 @@ AHU_SIDE = (268, 948, 96, 43)         # 2.0 x 0.9 m of plant casing at 48 px/m
 AHU_TOP = (368, 948, 96, 64)          # 2.0 x 1.33 m of plant lid
 COWL = (468, 948, 60, 48)             # a roof fan's drum and hood
 PIPE = (532, 948, 24, 32)             # a vent pipe
+# The entrance lobby's floor slab, unfolded: U along the chamfer wall from
+# the entrance unit's left edge, V up the slab's nosing from the ground
+# (LOBBY_FLOOR_T) and then back across its top from the wall plane to the
+# doors (DOOR_DEPTH).
+LOBBY_FLOOR = (568, 948, DOOR_UNIT_W * PPM, (LOBBY_FLOOR_T + DOOR_DEPTH) * PPM)
 
 ITEM_REGION = {"staff_window": STAFF_WINDOW, "service_door": SERVICE_DOOR,
                "goods_door": GOODS_DOOR}
@@ -160,6 +166,7 @@ ID_BLANK, ID_PLINTH, ID_BRICK, ID_STUCCO, ID_ROOF, ID_EAVE = 0, 1, 2, 3, 4, 5
 ID_TRIM, ID_GLASS, ID_DOOR, ID_SIGN, ID_SIGN_M, ID_METAL, ID_STEEL = \
     6, 7, 8, 9, 10, 11, 12
 ID_FRAME = 13           # the shopfront's anodised aluminium, light not dark
+ID_FLOOR = 14           # the entrance lobby's cast concrete floor slab
 
 # (roughness, metallic). Painted steel stays dielectric -- the paint is what
 # the light sees. The mullions are anodised aluminium and the roof plant is
@@ -170,7 +177,7 @@ SURFACE = {
     ID_TRIM: (0.36, 0.70), ID_GLASS: (glazing.ROUGHNESS, 0.0),
     ID_DOOR: (0.48, 0.0), ID_SIGN: (0.14, 0.0), ID_SIGN_M: (0.16, 0.0),
     ID_METAL: (0.46, 0.72), ID_STEEL: (0.44, 0.0),
-    ID_FRAME: (0.30, 0.75),
+    ID_FRAME: (0.30, 0.75), ID_FLOOR: (0.88, 0.0),
 }
 
 # ---------------------------------------------------------------- palettes
@@ -198,6 +205,7 @@ FIXED = {
     ID_SIGN: (206, 212, 218), ID_SIGN_M: (22, 56, 118),
     ID_METAL: (146, 150, 152), ID_STEEL: (92, 94, 96),
     ID_BLANK: (52, 52, 52), ID_FRAME: (148, 150, 152),
+    ID_FLOOR: (132, 130, 124),
 }
 
 # A stray pixel in a tiling band is not a local blemish: every surface that
@@ -434,6 +442,30 @@ def paint_door_unit(c):
     c.mul(x, x + w, y, y + h, 0.94, ao=0.80)
 
 
+def paint_lobby_floor(c):
+    """The entrance lobby's floor slab (LOBBY_FLOOR): float-finished cast
+    concrete, one bay, flat. The first rows are its nosing on the wall plane.
+    Occlusion deepens toward the lobby's sides and the doors, where the floor
+    sees least sky; the tread wears a little paler from the mouth to where
+    the two leaves part."""
+    x, y, w, h = LOBBY_FLOOR
+    # No bleed past its top edge: the patch row lies just above, and pad()
+    # carries this edge up to the midline anyway. Bleeding further would take
+    # gutter samples next to the patches away from them.
+    c.paint(x - PAD, x + w + PAD, y - PAD, y + h, ID_FLOOR, 1.0, 1.0, height=0.0)
+    sy, sx, Y, X = c.field(x - PAD, x + w + PAD, y - PAD, y + h)
+    u = np.clip((X - x) / PPM, 0.0, DOOR_UNIT_W)
+    v = np.clip((Y - y) / PPM - LOBBY_FLOOR_T, 0.0, DOOR_DEPTH)
+    side = np.minimum(u, DOOR_UNIT_W - u)
+    # the lobby proper starts GLAZE_DEPTH in; before it the slab lies between
+    # the plinth's cut ends, in the open
+    edge = np.minimum(side, DOOR_DEPTH - v)
+    corner = np.exp(-edge / 0.12)
+    tread = np.exp(-((u - DOOR_UNIT_W / 2.0) / 0.60) ** 2)
+    c.shade[sy, sx] = (1.0 - 0.14 * corner) * (1.0 + 0.05 * tread)
+    c.ao[sy, sx] = 1.0 - 0.30 * corner
+
+
 def _draw_sign(c, x, y, w, h):
     """The sign's artwork.
 
@@ -624,7 +656,7 @@ def check_regions():
              "bay_ceiling": BAY_CEILING, "roof_deck": ROOF_DECK,
              "service_door": SERVICE_DOOR, "staff_window": STAFF_WINDOW,
              "ahu_side": AHU_SIDE, "ahu_top": AHU_TOP, "cowl": COWL,
-             "pipe": PIPE}
+             "pipe": PIPE, "lobby_floor": LOBBY_FLOOR}
     rects.update(PATCHES)
     problems = atlas.region_problems(rects, ATLAS, bands_top=SOF_Y0 + SOF_H + PAD)
     if problems:
@@ -653,6 +685,10 @@ def weather(c):
     # the entrance's threshold, walked over all day
     x, y, dw, dh = DOOR_UNIT
     w.add("D", x, x + dw, y, y + 10, lambda Y, X, nz: 0.15 + 0.08 * nz("blotch"), (ID_FRAME,))
+    # the lobby's floor: trodden-in dirt, blotchy, most along its edges
+    x, y, rw, rh = LOBBY_FLOOR
+    w.add("D", x - PAD, x + rw + PAD, y - PAD, y + rh,
+          lambda Y, X, nz: 0.08 + 0.10 * nz("blotch"), (ID_FLOOR,))
     # the staff window's sill and the runs below it; the doors' feet
     for kind in OPENINGS:
         x, y, rw, rh = ITEM_REGION[kind]
@@ -686,6 +722,7 @@ def paint(ss=atlas.SS):
     paint_soffit(c)
     c.check_bands(BAND_IDS)
     paint_door_unit(c)
+    paint_lobby_floor(c)
     paint_placard(c)
     for kind in OPENINGS:
         paint_item(c, kind)
@@ -710,6 +747,12 @@ def paint(ss=atlas.SS):
     pores = atlas.noise(c, 9, 0.8)
     c.shade[mineral] *= 1.0 + 0.025 * pores[mineral]
     c.height[mineral] += 0.0006 * pores[mineral]
+    # The floor slab's pores are shade only. Its height stays exactly flat:
+    # the slab's bleed takes over gutter samples its neighbours' edges used to
+    # fill at height 0, and any relief there would reach those regions' edge
+    # rows through the cavity filter.
+    cast = c.mid == ID_FLOOR
+    c.shade[cast] *= 1.0 + 0.05 * pores[cast]
     weather(c)
     c.pad()
     return c

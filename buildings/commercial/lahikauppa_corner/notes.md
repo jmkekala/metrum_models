@@ -93,7 +93,9 @@ is no floor-to-floor rhythm that has to line up with the housing.
   its foot and no step, while the shopfront glazing each side of it stands on
   the 0.375 m plinth; the plinth stops at the unit's edges and returns into
   the lobby to the door plane. The leaf height and the transom line are both
-  measured from the ground. The
+  measured from the ground; the lobby's concrete floor slab lies 0.02 m over
+  it (Construction), which is a floor finish and not a step, and the door's
+  threshold in the sidecar stays at 0. The
   opening continues to the shopfront head at 3.25 m, so the 0.9375 m above the
   leaves is a **transom light**, and the transom bar is drawn across it in the
   entrance's own atlas region and continues across the whole shopfront at the
@@ -232,11 +234,43 @@ meet its edge: the door plane (on the lobby's back at `LOD0`/`LOD1`, flush on
 the wall at `LOD2`/`LOD3`) and the lobby's two sides are each two faces, below
 and above that line. Below it the lobby's sides take the concrete plinth
 patch, so the plinth returns from its cut end back to the doors; above it they
-keep the light reveal. There is no sill under the unit and no lobby floor;
-the floor cap covers the lobby at z = 0, as below.
+keep the light reveal. There is no sill under the unit; on `LOD0` and `LOD1`
+it stands on the lobby's floor slab, below.
 
-An opening that stands on the ground — the goods door, both staff doors and
-the entrance — gets **no floor of its own**. The strip it would lay at z = 0 is inside the
+### The lobby's floor slab
+
+The entrance's recess is 0.70 m deep from the wall plane to the doors and
+3.203 m wide, and it stands on the ground: deep enough to see into from the
+pavement. The shell had no upward face under it (the wall ring's floor cap
+faces down), so a consumer's terrain showed inside. On the tiers that keep
+the recess, `LOD0` and `LOD1`, its plan is filled with a **concrete slab**
+(`build_glazing()`, `lobby_floor_top()`):
+
+- **3.203 x 0.70 m**, the entrance unit's width from the chamfer's wall plane
+  back to the door plane, its top **0.02 m over the ground**
+  (`LOBBY_FLOOR_T`), clear of terrain at z = 0 and too low to read as a step;
+- a **nosing on the wall plane**, 0.02 m high, between the plinth's cut ends;
+  nothing projects past the wall, so the bounds, the pivot, the footprint and
+  the door's threshold are as they were;
+- the top is two quads, split 0.20 m in, where the plinth's cut ends stop and
+  the lobby's own sides begin, so those side faces meet it on shared
+  vertices. As one face it carried the two as collinear corners and
+  triangulated with a zero-area triangle;
+- the recess starts on the slab's top: the plinth's cut ends, the lobby's
+  sides and the door plane begin at z 0.02 instead of 0, and the wall's notch
+  carries the nosing's two top corners. The door unit's artwork keeps its
+  place, so the slab covers the bottom 1.3 px of the threshold strip;
+- it samples its own atlas region (Texture set), unfolded: V up the nosing,
+  then back across the top.
+
+`LOD2` and `LOD3` paint the entrance flat on the wall, have no recess and no
+slab, and are unchanged. `check_layout()` holds the slab's height to
+0.01–0.03 m, its atlas region to the slab's size, and the lobby to the tiers
+that cut the shopfront.
+
+A shallow opening that stands on the ground — the goods door (0.18 m) and
+the three staff and bay doors (0.12 m) — gets **no floor of its own**: these
+are plain door reveals. The strip it would lay at z = 0 is inside the
 building's own footprint and would sit on top of the floor the wall ring is
 capped with; the two coplanar faces left the export non-manifold at the
 threshold until `recess()` was given a `floor` flag. Left out, the rim simply
@@ -283,8 +317,8 @@ Measured on the exported, triangulated GLBs by `scripts/validate_asset.py`:
 
 | Tier | Triangles | Ceiling | Status |
 | --- | --- | --- | --- |
-| `LOD0` | 1,076 | 12,000 | far under, explained |
-| `LOD1` | 836 | 4,000 | far under, explained |
+| `LOD0` | 1,080 | 12,000 | far under, explained |
+| `LOD1` | 840 | 4,000 | far under, explained |
 | `LOD2` | 502 | 1,500 | far under, explained |
 | `LOD3` | 434 | 500 | under |
 
@@ -299,7 +333,11 @@ breakpoint, so the dissolve still merges them.
 
 The entrance standing on the ground costs 12 triangles at `LOD0` and `LOD1`
 and 8 at `LOD2` and `LOD3`: the plinth's cut ends, the lobby sides and the
-door plane split at the sill line, and the wall's notched outline.
+door plane split at the sill line, and the wall's notched outline. The
+lobby's floor slab adds a net **4** at `LOD0` and `LOD1`: six of its own (the
+nosing and the top's two quads) and two in the chamfer wall for the nosing's
+corners on its notch, less four the ground cap saves now that its rim runs
+straight under the nosing instead of round the recess.
 
 The low counts have one cause, and it is not
 under-modelling. The building is a box: one storey, one flat roof, four
@@ -372,6 +410,13 @@ eye / night), before and after the 2026-11-22 fixes:
 The wall ladder is on the rear, out of these views; it was checked at 14 m
 from the rear and above on every tier (Review status).
 
+The lobby's floor slab (2026-11-23) is on `LOD0` and `LOD1` and goes with the
+lobby at the 140 m switch, where the 0.70 m recess is already flat and the
+slab, 0.02 m high and seen edge-on from the ground, is far under a pixel: no
+new transition. Checked from a standing eye (1.7 m, 75°, 1280 x 720) over a
+terrain plane at z = 0, 5.7 m and 2.9 m from the entrance and obliquely, by
+noon and reversed sun, `LOD0` and `LOD1` alike (Review status).
+
 Checked in both directions at each switch, and against `LOD0` directly at all
 three distances. Preserved at every tier: the overall silhouette, the level
 line of the eave, the loading bay recess, the chamfered corner, the sign, the
@@ -398,6 +443,12 @@ They are exterior faces of the lean kit's separate solids, closed off by the
 of a gap that narrow. Kept: removing them would open the solids. The
 building itself has no hidden triangles on any tier.
 
+The lobby's floor slab is exterior surface: its top and nosing are seen from
+the pavement. Under it the wall ring's ground cap now runs straight along
+the chamfer's wall plane; the cap faces down, is the shell's closure on the
+ground and is kept, as on every tier. The slab adds no face inside the
+shell.
+
 The building's count was not always zero. The exact boolean had left one sliver of about a square
 millimetre at the top of the chamfer wall, where the eave's soffit crossed it at
 the boundary of the glazed length — three surfaces meeting very near a point.
@@ -423,6 +474,13 @@ edges**, all four tiers.
 - **The loading bay is open on two sides**, front and west, with a column at
   the free corner. That is the honest reading of an outer corner taken away
   from a building.
+- **Only the entrance lobby has a floor.** Its slab is a flat concrete bay
+  0.02 m over the ground: no mat well, drain or tactile strip, and no slab on
+  `LOD2`/`LOD3`, where the entrance is painted flat. The loading bay is open
+  yard under the roof, outside the footprint, and has no floor: the
+  consumer's ground runs through it. The goods door's 0.18 m reveal and the
+  staff and bay doors' 0.12 m reveals are plain door reveals and have none
+  either; a strip of ground that deep lies at each door's foot.
 - **The eave over the entrance is sheeted, not glazed.** It was glazed at
   first, on the brief: the same slope and the same plane as the rest of the
   eave, reading as a clerestory over the lobby. Once the eave was turned over
@@ -494,8 +552,8 @@ at the top of the brickwork, and no opening straddles a band edge. `build.py`'s
 band edge would need its casing, its reveal and its closure all split there to
 stay welded to the wall.
 
-Everything singular gets a region of its own above the bands: the entrance, the
-sign panel, the goods door, the staff door, a staff window, the roof deck, the
+Everything singular gets a region of its own above the bands: the entrance,
+its lobby's floor slab, the sign panel, the goods door, the staff door, a staff window, the roof deck, the
 loading-bay ceiling, and four small plates for the roof plant.
 
 The **entrance region** is **205 x 208 px** at (4, 760), for the 3.203 m wide
@@ -505,6 +563,16 @@ transom light above it, and the threshold strip in its bottom rows. It grew
 from 184 px when the unit came down off the plinth, and took the space the
 staff door and staff window had below it: those two moved, unchanged in size
 and density, to **(788, 948)** and **(836, 948)**, beside the patch row.
+
+The **lobby floor region** is **205 x 46.08 px** at (568, 948), between the
+vent pipe's plate and the staff door, under the patch row: the slab unfolded
+at 64 px/m, U along the chamfer wall from the unit's left edge, V the
+nosing's 0.02 m (1.28 px) and then the top's 0.70 m from the wall plane to
+the doors. Cast concrete, sRGB (132, 130, 124), roughness 0.88, nonmetallic
+(`ID_FLOOR`), a little darker than the plinth's (150, 148, 142); occlusion
+deepening toward the lobby's sides and the doors, a slightly paler tread down
+the middle where the leaves part. It took free space: every other region and
+band is byte-identical to the bake before it, in every map (below).
 `facade_atlas.py`'s `check_regions()` asserts that no two of
 them overlap, that none runs off the sheet, and that none collides with the
 bands; `check_bands()` asserts that no band contains an id it should not,
@@ -603,6 +671,19 @@ Bands are separated by **4 rows** of padding, into which each band paints 2
 rows of its own edge texels. Unique regions have at least a 4 px gutter, which
 `check_regions()` enforces, and each is painted to its own edge.
 
+The lobby floor region sits 4 px above the bay ceiling and 5.9 px under the
+patch row's 2 px bleed. It bleeds 2 px to the sides and below, and not past
+its top edge: `atlas.pad()` carries that edge up to the midline anyway, and
+a bleed would take gutter samples beside the patches away from them. Its
+height channel is exactly flat for the same reason: `atlas.cavity()` blurs
+height over 1.5 px, and relief in the slab's part of the gutter reached the
+edge rows of the bay ceiling and of two patches by one grey level. As baked,
+the albedos and the ORM differ from the previous bake only inside
+x 553–790, y 904–1000, which is the new region and the gutter round it; no
+existing region's rectangle has a changed pixel, and the normal and emission
+maps are byte-identical (`texture_diff.py` in
+`review/recess_floor_2026_11_23/`, not committed).
+
 The tiling bands are periodic in u, which is what a gutter cannot provide: the
 brick's perpend is wrapped back in at x = 0, the render's panel joints are at
 multiples of 256 px (4 m), the eave soffit's seams at multiples of 32 px
@@ -639,7 +720,7 @@ mipmaps, which this repository does not own.
   - the steel doors' frames and panel joints, and the roof plant's louvres, fan
     rings and pipe.
   The sign's printed face is flat; only its frame stands proud. The roof deck
-  (~10 px/m) and the bay ceiling stay flat.
+  (~10 px/m), the bay ceiling and the lobby's floor slab stay flat.
   Glass stays flat. Regions painted coarser than 64 px/m (the goods door, the staff window,
   the plant) scale their relief by their px/m over 64.
 - **Albedo carries no directional light.** Highlights that faked a fixed sun
@@ -677,7 +758,7 @@ mipmaps, which this repository does not own.
   brick or render; the render under the deep eave stays dry and gathers a
   little dust instead; dust in the mortar and render joints, from the cavity.
 - **Elsewhere:** dirt on the shopfront's sill rail and on the entrance
-  threshold; the staff window's bottom rail with runs down the render below
+  threshold; trodden-in, blotchy dirt on the lobby's floor slab; the staff window's bottom rail with runs down the render below
   it; kicked-up dirt at the feet of the service and goods doors and grime at
   the service door's handle; dirt where the flat roof's membrane ponds; runs
   down the plant's casings.
@@ -903,6 +984,29 @@ Completed in this repository:
   top and fascia now show their seams and the ladder stands clear of the
   wall and the eave on every tier; every hidden-surface candidate located
   (Interior geometry); texture re-export byte-identical.
+- The lobby's floor slab (2026-11-23), before against after
+  (`review/recess_floor_2026_11_23/lahikauppa_corner/`, not committed):
+  - Standing-eye views over a terrain plane at z = 0 (1.7 m, 75°,
+    1280 x 720; `entrance_views.py`): the entrance from 5.7 m, from 2.9 m
+    looking down, obliquely along the street wall, low from 0.35 m and from
+    above, by noon and reversed sun. Before, the terrain ran into the lobby
+    to the doors on `LOD0` and `LOD1`; after, the slab fills it, grey
+    concrete, level with the plinth's cut ends, no seam at the nosing, the
+    cut ends or the doors, `LOD0` and `LOD1` alike. `LOD2`/`LOD3`, flat, are
+    unchanged.
+  - `review_asset.py` front and oblique at 20 and 63 m, noon and reversed
+    sun, all four tiers, compared with `review_compare.py`: nothing but the
+    lobby's floor differs.
+  - Every tier's vertex positions against the previous export: `LOD2` and
+    `LOD3` are byte-identical files; on `LOD0` and `LOD1` the four vertices
+    at the recess's foot rose from 0 to 0.02 m and the nosing's two top
+    corners are new; no other position moved. Bounds, pivot and the
+    sidecar's footprint, storeys and doors are unchanged (the sidecar
+    differs in hashes, two triangle counts and `source`).
+  - The texture bake against the previous one (Padding and filtering).
+  - The goods door's 0.18 m and the staff and bay doors' 0.12 m reveals,
+    and the open loading bay, were looked at in the same views and left
+    without floors (Known simplifications).
 
 Pending, and outside this repository:
 
@@ -937,6 +1041,16 @@ Pending, and outside this repository:
 
 ## Revision log
 
+- **2026-11-23 — the entrance lobby gets a floor slab.** The 0.70 m deep,
+  3.203 m wide lobby stood on the ground with no upward face under it, so a
+  consumer's terrain showed inside. On `LOD0` and `LOD1` it now stands on a
+  concrete slab, 3.203 x 0.70 m, top 0.02 m over the ground, nosing on the
+  chamfer's wall plane, on a new 205 x 46 px atlas region at (568, 948)
+  (Construction, Texture set). Triangles 1,076 / 836 / 502 / 434 →
+  1,080 / 840 / 502 / 434; `LOD2`/`LOD3` byte-identical. Albedos and ORM
+  rebaked, every existing region byte-identical; normal and emission maps
+  byte-identical. Bounds, pivot, footprint and doors unchanged. The shallow
+  door reveals and the open loading bay stay without floors.
 - **2026-11-23 — kit normals from the shared script.** `scripts/roof_safety.py`
   now builds the mirrored bare rail outward itself, so `kit()` no longer
   recalculates the pieces' normals. Every export byte-identical.
