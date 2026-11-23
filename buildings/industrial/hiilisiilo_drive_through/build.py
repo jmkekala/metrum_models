@@ -20,7 +20,8 @@ drive-through truck lane, which runs straight through it from the front long
 side to the rear: 5.00 m clear between its concrete side walls and 5.20 m to
 its ceiling, from which three steel hoppers hang to 4.60 m. West of the lane
 is a 1.60 m concrete leg; east of it, under the bunker, the control and
-stair room with the operators' steel door. Over the lane, a concrete ring
+stair room with the operators' steel door, whose reveal stands on a 0.02 m
+concrete floor slab (scripts/door_floor.py). Over the lane, a concrete ring
 beam carries the screen house: a concrete frame clad in profiled sheet to a
 1:10 mono-pitch roof falling to the rear, 13.1 m at its front fascia, a row
 of small steel windows at the screen floor. East of it, on the side the
@@ -64,6 +65,8 @@ importlib.reload(L)       # an interactive session must not keep a stale layout
 ASSET = L.ASSET
 sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "scripts"))
 import asset_build  # noqa: E402
+import atlas  # noqa: E402
+import door_floor as DF  # noqa: E402
 import downpipes as DP  # noqa: E402
 import model_facts  # noqa: E402
 import shell_build as SB  # noqa: E402
@@ -117,6 +120,10 @@ WALLS = [
          cols=[(0.0, CW), (2 * HY - CW, 2 * HY)],
          items=[("win", 4.00, L.Z_WIN)], u_off=0.9),
 ]
+# The entrances' floor slabs, by wall and kind (facade_atlas.FLOORS): the
+# control room's door. The intake's vehicle door keeps its reveal on the
+# ground with no floor.
+FLOORED = {"front": {"door": L.FLOORS["control"]}}
 (IX0, IX1), (IY0, IY1) = L.INT_X, L.INT_Y
 INTAKE_WALLS = [
     dict(name="int_front", p0=(IX0, IY0), p1=(IX1, IY0), lane=None, cols=[],
@@ -285,9 +292,28 @@ def item_rects(kind, s, z):
     return SB.item_rects(L.OPENINGS[kind], s, z)
 
 
-def build_item(B, fr, kind, s, z, level):
+def floor_for(wall, kind, level):
+    """The floor slab under *kind*'s reveal on *wall* at *level*, or None: an
+    entrance's, on every tier that recesses it (item_mode() not flush); a
+    flush door has no reveal to floor."""
+    floor = FLOORED.get(wall, {}).get(kind)
+    if floor is None or item_mode(kind, level) == "flush":
+        return None
+    return floor
+
+
+def build_item(B, fr, kind, s, z, level, floor=None):
     """Faces for one opening. A door on the ground returns the notch it cuts
-    in its region's bottom edge, left to right; a window returns its hole."""
+    in its region's bottom edge, left to right; a window returns its hole.
+
+    An entrance (*floor*, a door_floor.Floor) stands on a concrete slab: its
+    nosing on the wall plane across the recessed opening, its top 0.02 m
+    over the ground and the reveal's foot, so the consumer's terrain cannot
+    show inside. At LOD1 the recess is the casing's rect and the slab spans
+    it; at LOD0 the recess is the leaf's, between the casing's legs, which
+    carry the nosing's top corner on their inner edges, and the slab samples
+    the middle of the casing-wide region (u0). The door's art keeps its
+    place."""
     mode = item_mode(kind, level)
     (ol, orr, ob, ot), (il, ir, ib, it) = item_rects(kind, s, z)
     fn = uv_item(fr, kind, ol, ob)
@@ -300,13 +326,21 @@ def build_item(B, fr, kind, s, z, level):
         B.face([fr.P(*p) for p in o], fn)
         return hole
     if mode == "cut":
+        if floor is not None:
+            DF.recess(B, fr, (ol, orr, ob, ot), 0.0, depth, fn, rev, floor)
+            return DF.notch((ol, orr, ob, ot))
         recess(B, fr, (ol, orr, ob, ot), depth, fn, rev, floor=not on_ground)
         return hole
     i = [(il, ib), (ir, ib), (ir, it), (il, it)]
     for k in range(4):          # a door's bottom quad has no area and is skipped
-        B.face([fr.P(*o[k]), fr.P(*o[(k + 1) % 4]),
-                fr.P(*i[(k + 1) % 4]), fr.P(*i[k])], fn)
-    recess(B, fr, (il, ir, ib, it), depth, fn, rev, floor=not on_ground)
+        ring = [o[k], o[(k + 1) % 4], i[(k + 1) % 4], i[k]]
+        if floor is not None and k in (1, 3):   # a leg: the nosing's top corner
+            ring.insert(3, (ring[3][0], ib + DF.T))
+        B.face([fr.P(*p) for p in ring], fn)
+    if floor is not None:
+        DF.recess(B, fr, (il, ir, ib, it), 0.0, depth, fn, rev, floor, u0=ol)
+    else:
+        recess(B, fr, (il, ir, ib, it), depth, fn, rev, floor=not on_ground)
     return hole
 
 
@@ -337,7 +371,8 @@ def build_wall(B, spec, level, top_at):
     for kind, s, z in spec["items"]:
         (l, r, b, t), _ = item_rects(kind, s, z)
         if z < EPS:
-            notches.append((l, build_item(B, fr, kind, s, z, level)))
+            floor = floor_for(spec["name"], kind, level)
+            notches.append((l, build_item(B, fr, kind, s, z, level, floor)))
         elif t < s1_top:
             holes1.append(build_item(B, fr, kind, s, z, level))
         else:
@@ -785,6 +820,22 @@ def check_layout():
                 a, b_ = rects[i], rects[j]
                 if SB.overlap(a[1:], b_[1:], gap):
                     problems.append("%s: %s and %s overlap" % (spec["name"], a[0], b_[0]))
+    # every entrance's reveal on its floor slab (scripts/door_floor.py): the
+    # slab's region the casing's width and the reveal's depth (LOD1 recesses
+    # the casing), under a door at grade, and clear of the atlas's other
+    # unique regions
+    for spec in WALLS:
+        for kind, floor in FLOORED.get(spec["name"], {}).items():
+            (c, z), = [(c, z) for k, c, z in spec["items"] if k == kind]
+            outer, _ = item_rects(kind, c, z)
+            problems += DF.problems(floor, "the %s wall's %s" % (spec["name"], kind),
+                                    outer, L.REVEAL_DEPTH[kind])
+    unique = {"lane_ceil": L.LANE_CEIL, "lane_side": L.LANE_SIDE, "chute": L.CHUTE,
+              "trestle": L.TRESTLE, "int_roof": L.INT_ROOF}
+    unique.update({k: (x, y) + L.item_size_px(k) for k, (x, y) in L.ITEM_ORIGIN.items()})
+    unique.update({"patch_" + k: r for k, r in L.PATCHES.items()})
+    unique.update({"floor_" + k: f.rect for k, f in L.FLOORS.items()})
+    problems += atlas.region_problems(unique, L.ATLAS, bands_top=L.UNI_Y0 - 4)
     # the lane: the brief's truck is 3.5 m wide and 4.0 m high; the lane is
     # to be at least 4.5 m both ways, under the hoppers' mouths too
     if XL1 - XL0 < 4.5:

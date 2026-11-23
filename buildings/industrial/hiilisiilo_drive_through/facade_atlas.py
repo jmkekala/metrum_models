@@ -26,8 +26,9 @@ A trim sheet. Rows from the bottom:
                              gutters 4 rows each side; also the gallery's top
     y  696 ..  956   unique  the lane's ceiling and side walls (32 px/m), the
                              doors, the window, a hopper side, flat patches,
-                             the intake's roof (32 px/m) and the trestle's
-                             steel (32 px/m, V = height from the ground)
+                             the intake's roof (32 px/m), the trestle's
+                             steel (32 px/m, V = height from the ground) and
+                             the control door's floor slab
     y  960 ..  980   FASCIA  the roof slab's front and rake edges
     y  988 .. 1024   EAVE_R  the rear (low) eave: fascia with the gutter, then
                              the roof's lowest 0.40 m with the snow guard
@@ -59,6 +60,7 @@ import numpy as np
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "scripts"))
 import atlas  # noqa: E402
+import door_floor as DF  # noqa: E402
 import glazing  # noqa: E402
 import weathering  # noqa: E402
 
@@ -211,6 +213,14 @@ TR_UX0 = TR_X - 1.25
 # under the coal that spills where the gallery's tail stands through it.
 INT_ROOF = (444.0, UNI_Y0 + 148.0, (INT_X[1] - INT_X[0] + 2 * INT_OV) * LPM,
             (INT_Y[1] - INT_Y[0] + 2 * INT_OV) * LPM)      # 112 x 105.6
+# The concrete floor slab in the control door's reveal (scripts/door_floor.py),
+# unfolded at 64 px/m in the free block under the window: U across the
+# casing's width (LOD1 recesses the whole casing; LOD0's slab, between the
+# casing's legs, samples its middle), V up the nosing and back to the door.
+# 1.11 x 0.14 m, 71.04 x 8.96 px. The intake's vehicle door has none.
+FLOORS = {"control": DF.Floor(522.0, UNI_Y0 + 82.0,
+                              OPENINGS["door"][0] + 2 * OPENINGS["door"][2],
+                              REVEAL_DEPTH["door"])}
 
 # The rear eave band, as konehalli_open_bays: the rear fascia (V = height over
 # the slab's underside) with the gutter across its top, and from its top row
@@ -242,6 +252,7 @@ def hop_at_deck():
 # ----------------------------------------------------------- material ids
 (ID_CONC, ID_CLAD, ID_METAL, ID_ROOF, ID_SASH, ID_GLASS, ID_DOOR, ID_STEEL,
  ID_COAL, ID_FELT, ID_BLANK, ID_HW, ID_GUTTER) = range(13)
+ID_FLOOR = 13           # the cast concrete floor slab in the control door's reveal
 # (roughness, metallic). One ORM for both variants, so the cladding is a
 # painted sheet in both, grey or red oxide; it, the roof, the flashings, the
 # sashes, the doors and the painted steel (hoppers, trestle) are paint to
@@ -252,7 +263,7 @@ SURFACE = {
     ID_ROOF: (0.52, 0.0), ID_SASH: (0.50, 0.0), ID_GLASS: (glazing.ROUGHNESS, 0.0),
     ID_DOOR: (0.55, 0.0), ID_STEEL: (0.55, 0.0), ID_COAL: (0.92, 0.0),
     ID_FELT: (0.90, 0.0), ID_BLANK: (0.95, 0.0), ID_HW: (0.45, 0.55),
-    ID_GUTTER: (0.48, 0.60),
+    ID_GUTTER: (0.48, 0.60), ID_FLOOR: DF.SURFACE,
 }
 
 # ---------------------------------------------------------------- palettes
@@ -268,7 +279,7 @@ DEFAULT_VARIANT = "grey_sheet"
 FIXED = {
     ID_CONC: (134, 132, 126), ID_GLASS: glazing.BASE, ID_STEEL: (72, 72, 70),
     ID_COAL: (30, 30, 30), ID_FELT: (80, 79, 77), ID_BLANK: (52, 52, 52),
-    ID_HW: (46, 46, 46), ID_GUTTER: (134, 137, 137),
+    ID_HW: (46, 46, 46), ID_GUTTER: (134, 137, 137), ID_FLOOR: DF.COLOUR,
 }
 GLASS_BASE = glazing.BASE
 
@@ -917,6 +928,13 @@ def weather(c):
             w.door(ox0, ox1, oy0, oy1, (ID_DOOR, ID_STEEL), handle=(hx_, oy0 + m(1.02)))
             w.coal(ix - 2, ix + rw + 2, iy - 2, iy + m(0.8),
                    lambda Y, X, nz, iy=iy: 0.45 * np.exp(-np.clip(Y - iy, 0, None) / m(0.35)))
+    # the control door's floor slab: trodden-in dirt, and the coal the
+    # door's foot carries, as the plinth beside it
+    for f in FLOORS.values():
+        DF.weather(w, f, ID_FLOOR)
+        x, y, rw, rh = f.rect
+        w.coal(x - 2, x + rw + 2, y - 2, y + rh + 2,
+               lambda Y, X, nz: 0.35 + 0.15 * nz("blotch"), (ID_FLOOR,))
     return w
 
 
@@ -937,6 +955,8 @@ def paint(ss=atlas.SS):
     paint_patches(c)
     paint_trestle(c)
     paint_int_roof(c)
+    for f in FLOORS.values():
+        DF.paint(c, f, ID_FLOOR)
 
     wear = 0.025 * noise(c, 3, 40.0) + 0.015 * noise(c, 4, 8.0)
     c.shade *= 1.0 + wear
@@ -944,6 +964,7 @@ def paint(ss=atlas.SS):
     pores = noise(c, 9, 0.8)
     c.shade[concrete] *= 1.0 + 0.035 * pores[concrete]
     c.height[concrete] += 0.0006 * pores[concrete]
+    DF.grain(c, ID_FLOOR, pores)
     sheet = np.isin(c.mid, (ID_CLAD, ID_ROOF))
     streak = noise(c, 7, 0.8, 40.0)
     c.shade[sheet] *= 1.0 + 0.035 * streak[sheet]

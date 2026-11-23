@@ -104,7 +104,8 @@ apply.
 
 - **Control room door (main entrance): 0.95 × 2.10 m** steel leaf, with no
   transom. Its steel frame adds 0.08 m above it. The threshold is at ground
-  level, on the front wall at x 1.90.
+  level, on the front wall at x 1.90; its reveal's 0.02 m floor slab
+  (Construction) is a floor finish, not a step.
 - **Intake door (vehicle): 2.40 × 2.60 m** steel sliding door, under a 0.12
   m track hood, centred on the intake's front face, so the tipping vehicles
   reach it from the front yard, 10 m east of the lane's approach. It is a
@@ -162,9 +163,10 @@ with the lane as a tunnel through it.
 - The lane's two side walls and its ceiling are ordinary outside surface.
 - The lane has no floor face. The ground is its floor, so the shell's bottom
   is two floor caps, under the west leg and the control room, and nothing
-  lies between them. No coplanar floor is left. The pedestrian door's
-  recess is built with `floor=False` for the same reason, as in
-  `konehalli_open_bays`.
+  lies between them. No coplanar floor is left. The intake's vehicle door
+  is built with `floor=False` for the same reason, as in
+  `konehalli_open_bays`; the control room's door stands on a floor slab
+  (Entrance floor slab below).
 
 **Lane, stated for the consumer:**
 
@@ -174,6 +176,43 @@ with the lane as a tunnel through it.
 - trucks enter from the front (−Y) and leave at the rear.
 
 The facts sidecar states it as its one passage (Export).
+
+### Entrance floor slab
+
+The control room's door stands on the ground in a 0.12 m reveal that had no
+upward face under it (the floor cap faces down), so a consumer's terrain
+showed inside, across the door's foot. The reveal is floored with a concrete
+slab from the shared `scripts/door_floor.py` (`build_item()` calls
+`door_floor.recess()`; on `LOD1` the wall's notch is `door_floor.notch()`):
+
+| Entrance | Sidecar door | Slab, width x depth | Tiers |
+| --- | --- | --- | --- |
+| the control room's door | `control` | 0.95 x 0.12 m (`LOD0`), 1.11 x 0.12 m (`LOD1`) | `LOD0`, `LOD1` |
+
+- **Top 0.02 m over the ground** (`door_floor.T`), clear of terrain at
+  z = 0 and too low to read as a step.
+- **A nosing on the wall plane** across the recessed opening. Nothing
+  projects past the wall, so the bounds, the pivot, the footprint and the
+  door's threshold in the sidecar are as they were.
+- **The reveal starts on the slab's top:** the cheeks and the leaf begin at
+  z 0.02, and the faces beside the nosing carry its top corners, so wall,
+  casing, nosing, slab and cheeks meet on shared vertices. Under the nosing
+  the floor cap runs straight along the wall line instead of round the
+  reveal. The door's artwork keeps its place, so the slab covers the
+  bottom 1.3 px of the leaf's kick plate.
+- **Follows the opening's tier modes** (`item_mode()`). On `LOD0` the
+  casing is a ring of faces on the wall plane and the recess is the leaf's
+  0.95 m: the slab spans the leaf, and the casing's two legs carry the
+  nosing's top corner on their inner edges (the wall's notch is unchanged).
+  On `LOD1` the recess is the whole 1.11 m casing, and the slab spans it,
+  the wall's notch taking the nosing's corners. Both sample one 1.11 m
+  region, `LOD0`'s its middle 0.95 m (`door_floor.recess(u0=)`). `LOD2` and
+  `LOD3` paint the door flat on the wall, with no reveal to floor.
+- **Its own atlas region** (Texture set).
+
+`floor_for()` gives the door its slab on every tier that recesses it. The
+intake's vehicle door keeps its 0.15 m reveal on the ground with no floor
+(Known simplifications).
 
 ### Hoppers
 
@@ -300,6 +339,10 @@ end. `LOD3` leaves both uncut (Texture set).
   the floor, the bracing fits between its feet, its head and the legs'
   flanges, and its UVs stay inside their region;
 - the downpipes clear the lane's mouth (`downpipes.problems()`);
+- `door_floor.problems()` finds the control door's floor slab region the
+  casing's width and the reveal's depth, under a door at grade, and the
+  atlas's unique regions, the slab's among them, clear of one another
+  (`atlas.region_problems()`);
 - the cladding's U stays inside its band;
 - the roof band is one 2.00 m repeat at 64 px/m, and the eave strip ends
   inside its first repeat;
@@ -309,8 +352,8 @@ end. `LOD3` leaves both uncut (Texture set).
 
 | Tier | Triangles | Ceiling | What changes |
 | --- | --- | --- | --- |
-| `LOD0` | 1,054 | 12,000 | openings with a frame ring and a 0.12/0.15 m recess; three hoppers; eight-sided downpipes with swan-necks and shoes; the full trestle; roof and gallery top cut every 2 m |
-| `LOD1` | 902 | 4,000 | each opening one recess the size of its frame; downpipes four-sided, bent; the full trestle |
+| `LOD0` | 1,058 | 12,000 | openings with a frame ring and a 0.12/0.15 m recess; three hoppers; eight-sided downpipes with swan-necks and shoes; the full trestle; roof and gallery top cut every 2 m |
+| `LOD1` | 906 | 4,000 | each opening one recess the size of its frame; downpipes four-sided, bent; the full trestle |
 | `LOD2` | 718 | 1,500 | openings flush; coplanar boolean subdivisions dissolved (UV seams kept); downpipes straight, four-sided; the full trestle |
 | `LOD3` | 486 | 500 | downpipes three-sided; the trestle one U-shaped solid without its X; roof and gallery top uncut; the lane, hoppers, gallery and intake kept |
 
@@ -330,7 +373,12 @@ Where the triangles go at `LOD0`:
 - the roof's and the gallery top's 2 m cuts for the repeating roof band:
   32 on `LOD0`–`LOD2` (eight more top triangles and their breakpoints on
   the rakes and the gallery's sides);
-- the downpipes and the gallery's cuts make up most of the rest.
+- the downpipes and the gallery's cuts make up most of the rest;
+- the control door's floor slab: 4, its nosing and its top, on `LOD0` and
+  `LOD1`. The casing's legs (`LOD0`) and the wall's notch (`LOD1`) take
+  the nosing's corners and the floor cap loses the reveal's detour, which
+  balance: each tier is 4 over its count before the slab, and `LOD2` and
+  `LOD3` are unchanged.
 
 The trestle costs 240 at `LOD0`, `LOD1` and `LOD2`. At `LOD3` its legs and
 head are one solid, 48, without the bracing. Built there as three boxes,
@@ -417,6 +465,13 @@ below that are not the consumer's 37 / 83 / 165 m are those passes'.
   and 120 m the dark feet and the dark lane hold. The intake roof's drifts
   read from raised views at 25 m and blur to a darker roof by 70 m.
 - **Downpipes:** `downpipes.MODES` on every tier; no tier drops them.
+- **The control door's floor slab (2026-11-23)** adds no transition of its
+  own. It goes with the door's 0.12 m reveal at the `LOD1`/`LOD2` switch,
+  where the door is already painted flat: a 0.02 m nosing and 0.12 m of
+  slab are under a pixel at 83 m. Checked from a standing eye (1.7 m, 75°
+  vertical FOV, 1280 × 720) and from 0.35 m over a terrain plane at z = 0,
+  2–5 m from the door, face-on, from both sides and from above, noon and
+  reversed sun, every tier (Review status).
 
 Pending in the consumer: real LOD switching, shadows and ambient occlusion
 in the lane, and performance.
@@ -434,7 +489,11 @@ thresholds.
 - The leg, the control room and the intake are solid: no interior is
   modelled.
 - The kept closure faces are:
-  - the floor caps under the leg, the control room and the intake walls;
+  - the floor caps under the leg, the control room and the intake walls.
+    The control room's runs straight along the wall line under the door's
+    floor slab on `LOD0` and `LOD1`, so no face lies at grade inside its
+    reveal; the slab is exterior surface and adds no face inside the
+    shell;
   - the trestle footings' bottoms (`LOD0`/`LOD1`) and its legs' feet
     (`LOD2`/`LOD3`), on the ground;
   - the hoppers' mouths, painted coal;
@@ -447,7 +506,10 @@ thresholds.
 ## Known simplifications
 
 - **Lane:** no floor, rails, weighbridge or lighting; the ground is the
-  floor. The hoppers have no modelled gates; the gates are painted on their
+  floor.
+- **Floors:** only the control door's reveal has one, a flat concrete slab
+  with no mat, drain or threshold strip (Construction). The intake's
+  vehicle door's 0.15 m reveal stands on the consumer's ground, as before. The hoppers have no modelled gates; the gates are painted on their
   sides' foot.
 - **Interiors:** the screen house's bins, screens, floors and stair are not
   modelled, and neither is the conveyor belt. The windows are closed opaque
@@ -481,7 +543,7 @@ One 1024² trim-sheet atlas, rasterised by `scripts/atlas.py` at `atlas.SS`
 | 0–414 | S1, concrete | U along the wall, V = height 0–6.40 m, 64 px/m |
 | 414–554 | C, cladding (x 0–960) and column strip (x 972) | one 2.00 m repeat (rows 420–548) tiling in V, 64 px/m; periodic gutters 6 rows each side |
 | 558–694 | ROOF | U = x at 64 px/m; V up the slope from the low edge, one 2.00 m repeat (rows 562–690) at 64 px/m tiling in V; periodic gutters 4 rows each side; also the gallery's top |
-| 696–956 | unique | lane ceiling (160 × 256) and side walls (256 × 166) at 32 px/m; door, window, intake door at 64 px/m; hopper side; flat patches; the intake's roof (112 × 106 at x 444, y 846) and the trestle's steel (84 × 200 at x 880, y 718), both at 32 px/m |
+| 696–956 | unique | lane ceiling (160 × 256) and side walls (256 × 166) at 32 px/m; door, window, intake door at 64 px/m; hopper side; flat patches; the intake's roof (112 × 106 at x 444, y 846) and the trestle's steel (84 × 200 at x 880, y 718), both at 32 px/m; the control door's floor slab (71.04 × 8.96 at x 522, y 780) at 64 px/m |
 | 960–980 | FASCIA | front and rake edges, 64 px/m |
 | 988–1024 | EAVE_R | rear fascia with the gutter, then the roof's lowest 0.40 m at 40 px/m with the snow guard |
 
@@ -551,6 +613,7 @@ the ribs stand plumb, sheared by the slope (Deviations above).
 | Ceiling beams | 40 mm |
 | Gutter roll | 70 mm |
 | Snow guard tubes | 35 mm, scaled by 40/64 |
+| Floor slab pores | 0.4 mm |
 
 The ribs read raised in the 22 m morning renders.
 
@@ -591,10 +654,14 @@ runs under the flashings and the gutter.
   - the trestle: 0.20 plus blotches all over, 0.75 more at the ground
     falling by 1/e every 0.90 m, and 0.30 more on the cross-head under the
     gallery's floor; its footings take S1's foot, the heaviest coal there;
-  - the slab soffits and reveals 0.25–0.30; the door feet 0.45.
+  - the slab soffits and reveals 0.25–0.30; the door feet 0.45;
+  - the control door's floor slab: 0.35 plus 0.15 in blotches, over
+    `door_floor.weather()`'s trodden-in dirt, so it reads with the
+    coal-dark plinth and the door's foot beside it.
 - **Measured albedo** (grey_sheet, sRGB, band means):
   - concrete plinth (0–0.3 m) ~61, foot (0.3–1.0 m) ~80, 1–2 m ~97,
-    2–4 m ~113, ring beam ~122 (both variants);
+    2–4 m ~113, ring beam ~122 (both variants); the control door's floor
+    slab ~100, lighter than the plinth beside it, as a trodden threshold;
   - cladding ~105 (grey_sheet), 93/57/49 (red_sheet); columns ~122;
   - lane walls ~42 at the foot and ~82 at 1.5–4 m; lane ceiling ~61;
   - hopper sides ~51; gallery underside ~35;
@@ -605,6 +672,24 @@ runs under the flashings and the gutter.
 - **Working, not abandoned:** the dust darkens and mattes; it adds no rust,
   stains, peeling or growth, and the cladding and roof above stay only
   moderately dirty.
+
+### The entrance floor slab
+
+Painted by `scripts/door_floor.py` (`paint()`, `grain()`, `weather()`), as
+the catalog's other entrance slabs are: float-finished cast concrete,
+`ID_FLOOR`, sRGB **(132, 130, 124)** in both variants, roughness **0.88**,
+nonmetallic. Occlusion deepens toward the jambs and the door (within
+0.05 m in this shallow reveal), a slightly paler path is worn toward the
+leaf, the pores are the concrete's noise at 5 % shade and 0.4 mm of height,
+and trodden-in dirt and the coal above lie over it. The region is
+71.04 × 8.96 px at (522, 780), in the free block under the window: U
+across the casing's 1.11 m from its left side, V the nosing's 0.02 m
+(1.28 px) and then the top from the wall plane to the door. It bleeds 2 px
+into its gutter.
+
+Adding it changed only that free block (x 510–601, y 768–820: the region
+and the padding round it, which now carries the slab's edges instead of
+the window's and the door's). The emission map is the same file.
 
 ### Lane occlusion
 
@@ -622,7 +707,7 @@ the hoppers, the trestle and the reveals 0.55. Until 2026-11-22 they
 carried 0.10–0.30 metallic, which made the dark roof and steel flare grey
 in the sun. Metal stays metal only where it is bare: the galvanised
 gutter, downpipes and snow guard 0.48 / 0.60 and the door hardware
-0.45 / 0.55. Concrete 0.90, coal 0.92, felt 0.90, glass 0.08, all 0; coal
+0.45 / 0.55. Concrete 0.90, the door's floor slab 0.88, coal 0.92, felt 0.90, glass 0.08, all 0; coal
 dust adds roughness and strips metallic (Weathering).
 
 ### Filtering
@@ -818,6 +903,30 @@ Checked here, in Blender:
 - **Filtering:** mip3/mip4 stress renders at 83 and 120 m, after the
   2026-11-22 roof band and atlas re-layout (Texture set).
 - **Variants:** day and night for both (`variants.png`).
+- **The entrance floor slab** (Construction, Revision log), from a snapshot
+  in `review/review_2026_11_23/hiilisiilo_drive_through_before/`:
+  - **Door views** (`review/review_2026_11_23/hiilisiilo_door_views.py`,
+    every tier, noon and reversed sun, over a green terrain plane at
+    z = 0): the control door from 5 m, 2.4 m, both sides, 0.35 m up and
+    from above; the intake door from eye level and 0.35 m up. Before, grass
+    filled the door's reveal between the casing's legs (`LOD0`) and the
+    reveal's walls (`LOD1`); after, concrete fills it wall to wall, its
+    nosing a light line on the wall plane with nothing past it, no dark
+    seam or stretched texels. The `LOD2` and `LOD3` views and every intake
+    view are unchanged (no pixel over 1/255).
+  - **`review_asset.py`** from both: the day cycle on `LOD0`, the six
+    orthographic views, and every tier front and oblique at 20, 35, 70 and
+    120 m under noon; at most 131 pixels change by more than 24, at the
+    door, in the 20 m front view. `review_compare.py` sheets in
+    `review/review_2026_11_23/hiilisiilo_drive_through_compare/`.
+  - The sidecar's bounds, pivot, footprint, storeys, both doors and the
+    passage are unchanged; `LOD2` and `LOD3` are byte-identical. Measured on
+    the exported `LOD0` and `LOD1`, an upward face at 0.020 m under 9 of 9
+    sample points of the reveal and at its four corners, no face at grade
+    inside it; the intake's reveal has none, as before.
+  - `scripts/validate_asset.py`: 0 FAIL; the one WARN is `source.dirty`,
+    the sidecar written from an uncommitted tree, to be rewritten with
+    `build.py -- facts` once committed.
 
 Pending in the consumer:
 
@@ -838,6 +947,14 @@ with numpy, scipy and Pillow.
 
 ## Revision log
 
+- **2026-11-23 — entrance floor slab.** The control room's door had no
+  upward face in its 0.12 m reveal, so a consumer's terrain showed inside.
+  It now stands on a concrete slab 0.02 m over the ground, nosing on the
+  wall plane, on its own atlas region, built and painted by the shared
+  `scripts/door_floor.py`, on `LOD0` and `LOD1`, where the reveal is cut.
+  Tiers 1,054/902/718/486 to 1,058/906/718/486; bounds, pivot, footprint,
+  doors and the passage unchanged; the emission map unchanged. The intake's
+  vehicle door is left as it was.
 - **2026-11-22:** audit fixes. The sidecar's truck lane now starts on the
   plan bounds' front edge under the overhang (z 4.05 to 4.35) and runs to
   the rear edge (length 8.00 to 8.70 m); width and clear height unchanged.
