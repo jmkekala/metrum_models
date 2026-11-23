@@ -25,7 +25,9 @@ and its underside are regions of their own:
                               bays, 33 px/m both ways, V = plan depth
     y  500 ..  712   INT      the bays' back wall: footing, bare boards, girts
     y  716 ..  984   unique   bay side walls, both doors, post and corner
-                              strips, flat patches
+                              strips, flat patches, the concrete floor slab
+                              in the workshop door's reveal
+                              (scripts/door_floor.py)
     y  984 .. 1004   FASC_R   the rear (low) eave's fascia with the gutter
     y 1004 .. 1024   FASCIA   the slab's front and rake edges: white board,
                               sheet flashing
@@ -49,6 +51,7 @@ import numpy as np
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "scripts"))
 import atlas  # noqa: E402
+import door_floor as DF  # noqa: E402
 import weathering  # noqa: E402
 
 ASSET = "konehalli_open_bays"
@@ -124,6 +127,15 @@ CORNER = (704.0, UNI_Y0, CW * PPM, Z_WALL_MAX * PPM)
 PATCHES = {name: (722.0 + 14.0 * i, UNI_Y0, 8.0, 8.0) for i, name in enumerate(
     ("header", "soffit", "reveal", "blank"))}
 
+# The concrete floor slab in the workshop door's reveal (scripts/door_floor.py),
+# unfolded at 64 px/m in the free rows over the door's region: U across the
+# casing's 1.15 m from its left side, V up the 0.02 m nosing and back across
+# the 0.12 m reveal to the leaf. LOD1's recess is the casing's width; LOD0's,
+# inside the casing ring, samples the middle 0.9 m of it. The vehicle pair's
+# reveal has none.
+FLOOR = DF.Floor(600, 872, OPENINGS["door"][0] + 2 * OPENINGS["door"][2],
+                 REVEAL_DEPTH["door"])
+
 # The two fascia bands, above the unique regions, V = height over the slab's
 # underside: the rear (low) edge's with the gutter across its top (FASC_R),
 # then the front and rake edges' (FASCIA).
@@ -154,6 +166,7 @@ def item_size_px(kind):
 ID_WALL, ID_TRIM, ID_FOOT, ID_ROOF, ID_DOOR, ID_INNER, ID_SHEET, ID_BLANK, ID_HW = (
     0, 1, 2, 3, 4, 5, 6, 7, 8)
 ID_GUTTER = 9                # gutter, downpipes and snow guard: galvanised steel
+ID_FLOOR = 10                # the cast concrete floor slab in the workshop door's reveal
 # (roughness, metallic). Red ochre (punamulta) is a very matte paint; the
 # sheet's underside is bare galvanised steel gone dull under dust and
 # condensation, kept nearly dielectric: a brighter metallic underside reflected
@@ -167,7 +180,7 @@ SURFACE = {
     ID_WALL: (0.84, 0.0), ID_TRIM: (0.62, 0.0), ID_FOOT: (0.90, 0.0),
     ID_ROOF: (0.50, 0.0), ID_DOOR: (0.80, 0.0), ID_INNER: (0.88, 0.0),
     ID_SHEET: (0.72, 0.15), ID_BLANK: (0.95, 0.0), ID_HW: (0.55, 0.60),
-    ID_GUTTER: (0.48, 0.60),
+    ID_GUTTER: (0.48, 0.60), ID_FLOOR: DF.SURFACE,
 }
 
 # ---------------------------------------------------------------- palettes
@@ -189,6 +202,7 @@ DEFAULT_VARIANT = "red_ochre"
 FIXED = {
     ID_FOOT: (146, 144, 138), ID_INNER: (104, 90, 72), ID_SHEET: (88, 90, 90),
     ID_BLANK: (52, 52, 52), ID_HW: (44, 44, 44), ID_GUTTER: (134, 137, 137),
+    ID_FLOOR: DF.COLOUR,
 }
 
 # Which ids each tiling band may contain.
@@ -613,6 +627,8 @@ def weather(c):
         hx = (ox0 + ox1) / 2.0 if kind == "door_pair" else ox1 - m(0.10)
         w.door(ox0, ox1, oy0, oy1, (ID_DOOR, ID_TRIM), handle=(hx, oy0 + m(1.10)))
         w.splash(x0 - 2, x0 + item_size_px(kind)[0] + 2, yb, yb + m(0.8), (ID_TRIM,))
+    # the floor slab in the workshop door's reveal: trodden-in dirt
+    DF.weather(w, FLOOR, ID_FLOOR)
     return w
 
 
@@ -630,6 +646,7 @@ def paint(ss=atlas.SS):
         paint_opening(c, kind)
     paint_post(c)
     paint_corner(c)
+    DF.paint(c, FLOOR, ID_FLOOR)
     paint_patches(c)
 
     wear = 0.025 * atlas.noise(c, 3, 40.0) + 0.015 * atlas.noise(c, 4, 8.0)
@@ -645,6 +662,7 @@ def paint(ss=atlas.SS):
     pores = atlas.noise(c, 9, 0.8)
     c.shade[concrete] *= 1.0 + 0.03 * pores[concrete]
     c.height[concrete] += 0.0006 * pores[concrete]
+    DF.grain(c, ID_FLOOR, pores)
     weather(c)
     c.check_bands(BAND_IDS)
     c.pad()

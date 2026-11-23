@@ -19,7 +19,8 @@ farm: a low 10.5 x 6.0 m board-and-batten shed under a mono-pitch roof that
 falls from the yard side to the rear, three 3.5 m bays along it. Two bays are
 open to the yard, the full depth of the shed, with a white post between them
 and a white header over them; the third is a closed workshop with a pair of
-framed board doors on the front and a pedestrian door in its end wall.
+framed board doors on the front and a pedestrian door in its end wall, whose
+reveal stands on a 0.02 m concrete floor slab (scripts/door_floor.py).
 
 Construction is a set of closed solids unioned with Blender's exact boolean:
 the wall ring, the roof slab, the post and the header. The wall ring is not a
@@ -59,6 +60,7 @@ ASSET = L.ASSET
 EXPORT_DIR = os.path.join(HERE, "export")
 sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "scripts"))
 import asset_build  # noqa: E402
+import door_floor as DF  # noqa: E402
 import downpipes as DP  # noqa: E402
 import model_facts  # noqa: E402
 import shell_build as SB  # noqa: E402
@@ -293,27 +295,57 @@ def item_rects(kind, s, z):
     return SB.item_rects(L.OPENINGS[kind], s, z)
 
 
+def floored(kind, z, level):
+    """Whether the opening stands on the door_floor slab at *level*: the
+    workshop door (the pedestrian "door"; the vehicle pair is left on the
+    ground), at grade, on every tier that recesses it (ring or cut); a flush
+    door has no reveal to floor."""
+    return kind == "door" and abs(z) < EPS and item_mode(kind, level) != "flush"
+
+
 def build_item(B, fr, kind, s, z, level):
     """Faces for one door standing on the ground; returns the notch it cuts
-    in the bottom edge of its wall region, as outline points left to right."""
+    in the bottom edge of its wall region, as outline points left to right.
+
+    The workshop door's reveal stands on a concrete floor slab
+    (scripts/door_floor.py, floored()): its nosing on the wall plane under
+    the opening, its top door_floor.T over the ground and the reveal's foot,
+    so the consumer's terrain cannot show inside. LOD1's recess is the
+    casing's rectangle, and its notch in the wall carries the nosing's two
+    top corners. LOD0's is the leaf's, inside the flush casing ring: the
+    ring's jambs carry those corners instead, and the slab samples the
+    region from the casing's left side (u0), so both tiers share the one
+    region."""
     mode = item_mode(kind, level)
     (ol, orr, ob, ot), (il, ir, ib, it) = item_rects(kind, s, z)
     fn = uv_item(fr, kind, ol, ob)
     depth = L.REVEAL_DEPTH[kind]
     rev = uv_patch("reveal")
+    slab = floored(kind, z, level)
     notch = [(ol, ob), (ol, ot), (orr, ot), (orr, ob)]
     if mode == "flush":
         B.face([fr.P(ol, ob), fr.P(orr, ob), fr.P(orr, ot), fr.P(ol, ot)], fn)
         return notch
     if mode == "cut":
+        if slab:
+            DF.recess(B, fr, (ol, orr, ob, ot), 0.0, depth, fn, rev, L.FLOOR)
+            return DF.notch((ol, orr, ob, ot))
         recess(B, fr, (ol, orr, ob, ot), depth, fn, rev, floor=False)
         return notch
     o = [(ol, ob), (orr, ob), (orr, ot), (ol, ot)]
     i = [(il, ib), (ir, ib), (ir, it), (il, it)]
+    zf = ib + DF.T
     for k in range(4):          # the bottom quad has no area and is skipped
-        B.face([fr.P(*o[k]), fr.P(*o[(k + 1) % 4]),
-                fr.P(*i[(k + 1) % 4]), fr.P(*i[k])], fn)
-    recess(B, fr, (il, ir, ib, it), depth, fn, rev, floor=False)
+        ring = [o[k], o[(k + 1) % 4], i[(k + 1) % 4], i[k]]
+        if slab and k == 1:     # the jambs carry the nosing's top corners
+            ring.insert(3, (ir, zf))
+        elif slab and k == 3:
+            ring.insert(3, (il, zf))
+        B.face([fr.P(*p) for p in ring], fn)
+    if slab:
+        DF.recess(B, fr, (il, ir, ib, it), 0.0, depth, fn, rev, L.FLOOR, u0=ol)
+    else:
+        recess(B, fr, (il, ir, ib, it), depth, fn, rev, floor=False)
     return notch
 
 
@@ -546,6 +578,23 @@ def check_layout():
         problems.append("the roof or ceiling region runs into S1 or INT")
     if L.UNI_Y0 + L.Z_WALL_MAX * PPM + 2 > L.FASC_R_Y0 - 2:
         problems.append("the unique regions run into the rear fascia band")
+    # the workshop door's reveal on its floor slab (scripts/door_floor.py):
+    # the slab's region the casing's width and the reveal's depth, under a
+    # door at grade, clear of the other unique regions and of the fascia band
+    east = next(w for w in WALLS if w["name"] == "east")
+    kind, s, z = east["items"][0]
+    if kind != "door":
+        problems.append("the east wall's item is not the workshop door")
+    problems += DF.problems(L.FLOOR, "the workshop door", item_rects(kind, s, z)[0],
+                            L.REVEAL_DEPTH[kind])
+    unique = {"side": L.SIDE, "post": L.POST, "corner": L.CORNER, "floor": L.FLOOR.rect}
+    for k in L.OPENINGS:
+        unique[k] = L.ITEM_ORIGIN[k] + L.item_size_px(k)
+    unique.update(("patch_" + k, r) for k, r in L.PATCHES.items())
+    problems += L.atlas.region_problems(unique, L.ATLAS, bands_top=L.BAND_IDS["INT"][0][1])
+    fx, fy, fw, fh = L.FLOOR.rect
+    if fy + fh + 2 > L.FASC_R_Y0 - 2:
+        problems.append("the floor slab's region runs into the rear fascia band")
     return problems
 
 
