@@ -76,7 +76,9 @@ at 4.125 m. The parapet stands 0.625 m over the deck.
   - The transom bar continues across the display windows and the curved
     shopfront at the same height.
 - **Staff door** (id `staff`, service): leaf 0.90 x 2.10 m in a 1.0 x 2.15 m
-  steel frame. No transom.
+  steel frame, at grade. No transom. Its 0.10 m reveal stands on a concrete
+  floor slab 0.02 m over the ground, as the shop door's does; the
+  threshold stays at 0.
 - Checked against the 1.8 m figure in the eye-level views.
 
 ## Window sills
@@ -118,46 +120,53 @@ One solid built face by face in `main_body()`:
 - the curved corner:
   - the band on the outer arc from 2.75 m up;
   - its soffit back to the inner arc;
-  - the faceted shopfront on the inner arc down to the ground;
-  - a tiled return at each end of the recess;
+  - the faceted shopfront on the inner arc down to the recess's floor slab;
+  - a tiled return at each end of the recess, standing on the slab;
 - the parapet's top and inner face, and the deck;
 - a floor cap triangulated in plan, because the recess makes it concave.
 
-### The shop door's floor slab
+### Floor slabs
 
-The shop door is the entrance and stands on the ground in a 0.15 m reveal.
-The shell had no upward face under it (the floor cap faces down), so a
-consumer's terrain showed as a strip between the paving and the door. On
-`LOD0` and `LOD1`, which cut the reveal, its plan is filled with a
-**concrete slab** (`build_item()`, `floored()`):
+Both doors and the corner recess stand at grade, set back from the wall
+line, where the shell had no upward face (the floor cap faces down), so a
+consumer's terrain showed inside. Each is filled with a **concrete slab**
+from `scripts/door_floor.py`: top **0.02 m over the ground** (`DF.T`),
+clear of terrain at z = 0 and too low to read as a step, a **nosing on the
+wall line** from the ground to 0.02 m, nothing past it, on its own atlas
+region (Texture set), unfolded: V up the nosing, then back across the top.
+The bounds, the pivot, the footprint and the doors' thresholds are as they
+were.
 
-- **1.0 x 0.15 m**, the opening's width from the front wall's plane back to
-  the door, its top **0.02 m over the ground** (`DOOR_FLOOR_T`), clear of
-  terrain at z = 0 and too low to read as a step;
-- a **nosing on the wall plane**, 0.02 m high, between the jambs; nothing
-  projects past the wall, so the bounds, the pivot, the footprint and the
-  door's threshold are as they were;
-- the reveal starts on the slab's top: the jambs and the door's face begin
-  at z 0.02, and the front wall's notch carries the nosing's two top
-  corners. The door's artwork keeps its place, so the slab covers the
-  bottom 1.3 px of its rubber sweep;
-- it samples its own atlas region (Texture set), unfolded: V up the nosing,
-  then back across the top.
+| Slab | Plan | Tiers | Built by |
+| --- | --- | --- | --- |
+| shop door (`shop`) | 1.0 x 0.15 m, front wall to the door | `LOD0`, `LOD1` | `build_item()` |
+| staff door (`staff`) | 1.0 x 0.10 m, back wall to the door | `LOD0`, `LOD1` | `build_item()` |
+| corner recess (`corner`) | quarter annulus, radius 2.5 to 1.9 m, 0.6 m deep | every tier | `build_corner()` |
 
-`LOD2` and `LOD3` paint the door flat on the wall, have no reveal and no
-slab, and are unchanged. `check_layout()` holds the slab's height to
-0.01–0.03 m and its atlas region to the slab's size.
-
-The staff door's 0.10 m reveal is a service door's and has no floor. The
-quarter-round corner recess (0.60 m deep, under the band on every tier)
-has none either: left as it is by the owner's decision (Known
-simplifications).
+- **Doors:** `FLOORED` names each door's slab, and `floor_for()` floors it
+  on the tiers that cut the reveal (`cut()`): `DF.recess()` makes the
+  nosing between the jambs and starts the reveal on the slab's top, and
+  `DF.notch()` gives the wall's foot the nosing's two top corners. The
+  doors' artwork keeps its place, so each slab covers the bottom 1.3 px of
+  its door. `LOD2` and `LOD3` paint the doors flat on the wall, with no
+  reveal and no slab. A door cut at grade without a slab is refused.
+- **Corner recess:** the recess is on every tier, so its slab is too: a
+  nosing quad and a top quad per arc facet (8 / 6 / 4 / 3), the curved
+  shopfront and both returns standing on the top. The floor cap's rim then
+  runs round the band's line under the nosing, and the front and east walls
+  take a corner at 0.02 m where the nosing meets them (their `right`/`left`
+  breaks). The column and its shoe start 0.01 m up (`COLUMN_FOOT`), inside
+  the slab, so their feet are buried rather than coplanar with the cap; the
+  union removes them.
+- `check_layout()` runs `DF.problems()` on each slab (opening at grade, the
+  region the opening's width and the reveal's depth; the corner's the
+  band's arc and the 0.6 m recess) and checks the column's foot is buried.
 
 ### Other solids
 
 - the coping ring;
-- the column: a prism from the pavement up into the band, 0.11 m radius, at
-  2.25 m from the arc centre, under the soffit's middle;
+- the column: a prism from the corner's floor slab up into the band, 0.11 m
+  radius, at 2.25 m from the arc centre, under the soffit's middle;
 - its shoe: a prism of 0.15 m radius and 0.15 m height round the column's
   foot, in the coping's darker paint (`SHOE`); on every tier that keeps the
   column, with the column's side count;
@@ -231,20 +240,25 @@ place. `check_layout()` checks:
 
 | Tier | Triangles | Ceiling |
 | --- | --- | --- |
-| `LOD0` | 1,172 | 12,000 |
+| `LOD0` | 1,150 | 12,000 |
 | `LOD1` | 916 | 4,000 |
-| `LOD2` | 494 | 1,500 |
-| `LOD3` | 258 | 500 |
+| `LOD2` | 512 | 1,500 |
+| `LOD3` | 272 | 500 |
 
-The shop door's floor slab costs 4 triangles at `LOD0` and `LOD1`: the
-nosing and the top (2 each) replace nothing, and the front wall gains the
-nosing's two corners on its notch (2) while the floor cap loses the two
-vertices that went round the reveal (2).
+Each door's floor slab costs about 4 triangles on `LOD0` and `LOD1`: the
+nosing and the top (2 each), with the wall gaining the nosing's two
+corners on its notch while the floor cap loses the two vertices that went
+round the reveal. The corner's slab adds a nosing and a top quad per facet,
+less two cap vertices. On `LOD0` and `LOD1` the union also drops the
+column's and the shoe's feet, which stood at grade and are now buried in
+the slab, which more than pays for it on `LOD0` (1,172 -> 1,150) and
+evens out on `LOD1` (916). `LOD2` +18 and `LOD3` +14 are the corner's slab
+and the walls it re-triangulates.
 
 - **LOD0** carries everything:
   - 8 curve facets;
   - openings cut (shopfront and door 0.15 m, side and back windows 0.12 m,
-    staff door 0.10 m);
+    staff door 0.10 m), both doors on floor slabs;
   - column and its shoe 16 sides (the shoe about 130 triangles), fan 12,
     vents 8;
   - the canopy rods;
@@ -302,13 +316,18 @@ plant.
     2 px.
   - The parapet, lettering, awnings, canopy, recess and colour bands all
     hold.
-- **The door's floor slab (2026-11-23)** is on `LOD0` and `LOD1` and goes
-  with the reveal at the `LOD1`/`LOD2` switch, where the door is already
-  flat; 0.02 m high and 0.15 m deep, it is under a pixel there. No new
-  transition. Checked from a standing eye (1.7 m, 75° vertical FOV,
-  1280 x 720) and from 0.35 m over a terrain plane at z = 0, 4 m and 2 m
-  from the door, obliquely and from above, noon and reversed sun, `LOD0`
-  and `LOD1` alike (Review status).
+- **The doors' floor slabs** are on `LOD0` and `LOD1` and go with the
+  reveals at the `LOD1`/`LOD2` switch, where the doors are already flat;
+  0.02 m high and 0.10–0.15 m deep, they are under a pixel there. No new
+  transition. The corner's slab is on every tier, following the recess's
+  facets, so it does not switch at all. Checked from a standing eye (1.7 m,
+  75° vertical FOV, 1280 x 720) and from 0.35 m over a terrain plane at
+  z = 0, near and far from each door and the corner, obliquely and from
+  above, noon and reversed sun, every tier (Review status).
+- **Consumer switches:** the consumer switches this 10.4 m salon by screen
+  size at about 20, 45 and 85 m (75° vertical FOV, measured). Every tier
+  was rendered at those distances, 1920 x 1080, face-on, oblique and from
+  the back at eye level, before and after the slabs (Review status).
 
 ## Interior geometry
 
@@ -316,10 +335,10 @@ The validator's sampled hidden-surface test passes on every tier:
 
 | Tier | Hidden triangles | Share | Vertical area |
 | --- | --- | --- | --- |
-| `LOD0` | 71 / 1,172 | 6.1 % | 0.0 m² |
+| `LOD0` | 71 / 1,150 | 6.2 % | 0.0 m² |
 | `LOD1` | 43 / 916 | 4.7 % | 0.0 m² |
-| `LOD2` | 28 / 494 | 5.7 % | 0.0 m² |
-| `LOD3` | 0 / 258 | 0.0 % | 0.0 m² |
+| `LOD2` | 28 / 512 | 5.5 % | 0.0 m² |
+| `LOD3` | 0 / 272 | 0.0 % | 0.0 m² |
 
 - On `LOD0`–`LOD2` the candidates are horizontal. They are the coping's
   0.0625 m drip underside at z 4.03 along its inner edge, over the felt
@@ -332,9 +351,10 @@ The validator's sampled hidden-surface test passes on every tier:
   wall band above the coping's drip, the column's foot inside its shoe, and
   the buried backs of the column, awnings, canopies, rods, light box and roof plant are removed by the
   union. The floor cap faces the ground and is kept as the shell's closure.
-- The shop door's floor slab is exterior surface, seen from the pavement.
-  Under it the floor cap runs straight along the front wall's plane; the
-  slab adds no face inside the shell.
+- The floor slabs are exterior surface, seen from the pavement. Under each
+  the floor cap runs straight along the wall line (round the band's arc at
+  the corner); the slabs add no face inside the shell. The column's and
+  the shoe's feet, buried in the corner's slab, are removed by the union.
 
 ## Known simplifications
 
@@ -347,10 +367,9 @@ The validator's sampled hidden-surface test passes on every tier:
   - the door's stiles and pull;
   - the meter cupboard and the louvre (flush panels on every tier);
   - the coping's joints.
-- **Floors:** only the shop door's reveal has one, a flat concrete strip
-  with no mat or drain, on `LOD0`/`LOD1`. The staff door's 0.10 m reveal
-  and the quarter-round corner recess under the band stand on the
-  consumer's ground: the column and its shoe rise from it.
+- **Floors:** the slabs in both doors' reveals and under the corner recess
+  are flat concrete with no mat, drain or edge trim; the column's shoe
+  stands on the corner's slab with no base plate.
 - **Awnings:** closed wedges, without arms, rollers or an open underside.
 - **Behind the glass:** the blinds, the pot plants and the bottles are
   painted in the two display regions and the curve region, one room each
@@ -401,19 +420,33 @@ Regions:
   tile phase; the awning top and valance; flat patches;
 - row C (y 722): the deck (300 x 268) and the right display window
   (152 x 152);
-- the shop door's floor slab, **64 x 10.88 px at (520, 760)**, alone in the
-  free quarter right of row C, 48 px or more from every other region: the
-  slab unfolded at 64 px/m, U along the front wall from the door's left
-  jamb, V the nosing's 0.02 m (1.28 px) and then the top's 0.15 m from the
-  wall plane to the door. Cast concrete, sRGB (132, 130, 124), roughness
-  0.88, nonmetallic (`ID_FLOOR`); occlusion deepening toward the jambs and
-  the door, a slightly paler tread in front of the leaf, pores of 0.4 mm
-  in the height channel. Adding it left every other region and band
-  byte-identical in every map; the emission map is the same file. The
-  albedos and the ORM differ only in the new region and in the empty
-  quarter's padding round it (x 493–949, y 658–1023), which now carries
-  the slab's edge instead of its old neighbours' (`texture_diff.py` in
-  `review/entrance_floor_2026_11_23/`, not committed).
+- the floor slabs (`FLOORS`, `scripts/door_floor.py`), in the free
+  quarter right of row C, each unfolded at 64 px/m, V the nosing's 0.02 m
+  (1.28 px) and then the top from the wall line back:
+  - `shop`, **64 x 10.88 px at (520, 760)**: U along the front wall from
+    the door's left jamb, the top 0.15 m to the door;
+  - `staff`, **64 x 7.68 px at (520, 790)**: U along the back wall from the
+    door's left jamb, the top 0.10 m to the door;
+  - `corner`, **251.3 x 39.68 px at (600, 760)**: U round the band's arc
+    (2.5 m x angle, 3.927 m, as the soffit over it), the top 0.6 m in to
+    the shopfront, so it is stretched to 1.3 x along U at the shopfront's
+    foot.
+  Cast concrete, `DF.COLOUR` sRGB (132, 130, 124), roughness 0.88,
+  nonmetallic (`ID_FLOOR`); occlusion deepening toward the jambs and the
+  door (the returns and the shopfront at the corner), a slightly paler
+  tread in front of each door leaf and none across the corner, pores of
+  0.4 mm in the height channel.
+  - The shop slab was painted by this file's own code until the staff
+    door's and the corner's were added; moved to `door_floor.py`
+    (`DF.Floor(520, 760, 1.0, 0.15, falloff=0.06, spread=0.30)`), every
+    map and every tier rebuilt byte-identical before the new slabs went in.
+  - Adding the staff and corner slabs left every other region and band,
+    the shop slab included, byte-identical in every map; the emission map
+    is the same file. The albedos, ORM and normal map differ in the new
+    regions and in the empty quarter's padding (x 0–1023, y 654–1023),
+    which now carries the new slabs' edges; 11 albedo and 7 ORM gutter
+    texels within 6 px of an older region (the deck's outer column x 2,
+    and two next to the shop slab) moved by one level.
 
 Each display window and the curved shopfront has its own region, so the
 three rooms behind the glass differ. `check_regions()` asserts two gutters
@@ -484,7 +517,7 @@ tile:
 - splash on the accent tile and the curved kick;
 - short runs under the coping's drip;
 - kicked dirt on the doors and grime round the pulls;
-- trodden-in, blotchy dirt on the shop door's floor slab;
+- trodden-in, blotchy dirt on the floor slabs (`DF.weather()`);
 - dirty sill flashings;
 - a meter cupboard splashed and faded;
 - the awning cloth greying toward its valance, whose foot is bound with a
@@ -696,6 +729,32 @@ sidecar alone, from a committed tree.
     by 0.01–0.06 mm, under the 0.1 mm weld. Bounds, pivot and the
     sidecar's footprint, storeys and doors are unchanged.
   - The texture bake against the previous one (Texture set, Layout).
+- **The staff door's and the corner recess's floor slabs (2026-11-23),**
+  before against after (`review/review_2026_11_23/kampaamo_tile_corner_pass2/`,
+  not committed):
+  - The shop slab's move to `scripts/door_floor.py` first, alone: all
+    four tiers and all seven PNGs rebuilt byte-identical.
+  - Validator: `door floors` passes on the slab for `salon` and `staff`
+    on `LOD0` and `LOD1`, flat on `LOD2`/`LOD3`.
+  - Door views over a terrain plane at z = 0 (`door_views.py`, 75°,
+    1280 x 720), every tier, noon and reversed sun: the staff door from a
+    standing eye at 5 m and 2.5 m, both obliques, 0.35 m up and from
+    above; the corner recess likewise; the shop door for reference.
+    Before, terrain showed in the staff door's reveal and across the
+    whole corner recess round the column's shoe; after, concrete fills
+    each wall to wall, the nosing on the wall line, nothing past it, no
+    dark seam, no stretched texels; the shop door is unchanged.
+  - Rays down through each reveal and across the recess meet the slab's
+    top at 0.02 m on every tier that keeps it; the shop slab's four faces
+    on `LOD0`/`LOD1` are identical to the previous export; the welded
+    mesh is closed on every tier; the bounds are unchanged.
+  - `review_asset.py` six views and every tier at 20, 35, 70 and 120 m,
+    front and oblique, noon, and every tier at the consumer's switches
+    (20, 45 and 85 m, 75°, 1920 x 1080, face-on, oblique and from the
+    back), compared with `review_compare.py`: nothing but the doors' feet
+    and the corner's floor differs, and the corner's slab follows each
+    tier's facets, so no tier pair shows a new transition.
+  - The sidecar's bounds, footprint, storeys and doors are unchanged.
 - **Originality:** the lettering is generic Finnish ("hair salon"), with no
   business name, brand or chain look. The design is a composite, not a
   reproduction of any real building.
@@ -719,6 +778,16 @@ sidecar alone, from a committed tree.
 
 ## Revision log
 
+- **2026-11-23:** the staff door and the corner recess get floor slabs, and
+  the shop door's slab moves to `scripts/door_floor.py` (byte-identical).
+  The staff door's 0.10 m reveal and the 0.6 m quarter-round recess under
+  the band stood on the ground with no upward face, so a consumer's
+  terrain showed inside. The staff door's reveal now stands on a 1.0 x
+  0.10 m slab on `LOD0`/`LOD1`, the recess on a slab round the band's arc
+  on every tier; new 64 x 8 and 251 x 40 px regions at (520, 790) and
+  (600, 760). The column and shoe start inside the slab. Triangles
+  1,172 / 916 / 494 / 258 -> 1,150 / 916 / 512 / 272. Bounds, pivot,
+  footprint and doors unchanged.
 - **2026-11-23:** the shop door's reveal gets a floor slab. The 0.15 m
   deep, 1.0 m wide reveal stood on the ground with no upward face under
   it, so a consumer's terrain showed as a strip between the paving and the

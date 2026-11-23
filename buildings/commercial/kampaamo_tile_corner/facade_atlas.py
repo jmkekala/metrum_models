@@ -26,10 +26,10 @@ The atlas is a trim sheet. Three bands run the full width and tile in U:
   * the roof felt's upturn on the parapet's inner face.
 
 Everything singular -- the curved shopfront, the display windows, the shop
-door and the concrete floor slab in its reveal, the lettered stretch of the sign band, the light box, the awning
+door, the lettered stretch of the sign band, the light box, the awning
 fabric, the side and back windows, the back door, the meter cupboard, the
 louvre, the roof deck and the roof fan -- gets a region of its own above the
-bands. atlas.pad() fills every sample no region claims from the nearest
+bands, and so does each concrete floor slab (scripts/door_floor.py). atlas.pad() fills every sample no region claims from the nearest
 region's own edge.
 
 Rasterising is scripts/atlas.py's: a canvas supersampled SS x SS per pixel
@@ -59,6 +59,7 @@ import numpy as np
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "scripts"))
 import atlas  # noqa: E402
+import door_floor as DF  # noqa: E402
 import glazing  # noqa: E402
 import lettering  # noqa: E402
 import weathering  # noqa: E402
@@ -119,8 +120,6 @@ DOOR_FRAME = 0.03                                    # jamb frames each side
 LEAF_W = DOOR_W - 2.0 * DOOR_FRAME                   # 0.94 m leaf
 SHOP_DEPTH = 0.15                                    # display windows and door
                                                      # stand this far back
-DOOR_FLOOR_T = 0.02         # the floor slab in the shop door's reveal, its
-                            # top over the ground
 
 # The lettered stretch of the sign band: a region of its own on the front
 # wall, tiled to the band's own grid so it cannot be told from the band.
@@ -194,11 +193,19 @@ AWN_TOP_R = (356, ROW_B, 160, 68)       # 2.475 m across x the slope
 AWN_VAL_R = (356, ROW_B + 80, 160, 13)  # 2.475 x 0.2 m
 DECK_R = (8, ROW_C, 300, 268)           # the deck, 9.375 x 8.375 m at 32 px/m
 DECK_PPM = 32.0
-# The floor slab in the shop door's reveal, unfolded: U along the front wall
-# from the door's left jamb, V up the slab's nosing from the ground
-# (DOOR_FLOOR_T) and then back across its top from the wall plane to the
-# door (SHOP_DEPTH). It stands clear of every other region.
-DOOR_FLOOR_R = (520, 760, DOOR_W * PPM, (DOOR_FLOOR_T + SHOP_DEPTH) * PPM)
+# The concrete floor slabs (scripts/door_floor.py), each unfolded at 64 px/m:
+# U along the wall from the opening's left side, V up the slab's 0.02 m
+# nosing from the ground and then back across its top from the wall plane.
+# - "shop": the shop door's reveal, back to the door (SHOP_DEPTH);
+# - "staff": the staff door's reveal at the back, back to its door
+#   (SERVICE_DEPTH);
+# - "corner": the quarter-round recess under the band, U round the band's
+#   arc (R_OUT x angle, as the soffit over it), V up the nosing on the band's
+#   line and back RECESS to the curved shopfront's foot. No door opens onto
+#   it, so it has no worn path across.
+FLOORS = {"shop": DF.Floor(520, 760, DOOR_W, SHOP_DEPTH, falloff=0.06, spread=0.30),
+          "staff": DF.Floor(520, 790, SERVICE_DOOR[0], SERVICE_DEPTH),
+          "corner": DF.Floor(600, 760, ARC_OUT_LEN, RECESS, tread=-1e3)}
 
 PATCH_NAMES = ("blank", "metal", "metal_edge", "drip", "soffit", "column",
                "fabric_under", "awn_cheek", "box_side", "felt", "galv")
@@ -208,9 +215,9 @@ REGIONS = {"curve": CURVE_R, "door": DOOR_R, "display": DISPLAY_R,
            "display2": DISPLAY2_R, "service": SERVICE_R, "side": SIDE_R, "meter": METER_R,
            "rear": REAR_R, "louvre": LOUVRE_R, "lightbox": LIGHTBOX_R,
            "cowl": COWL_R, "pipe": PIPE_R, "sign": SIGN_R,
-           "awn_top": AWN_TOP_R, "awn_val": AWN_VAL_R, "deck": DECK_R,
-           "door_floor": DOOR_FLOOR_R}
+           "awn_top": AWN_TOP_R, "awn_val": AWN_VAL_R, "deck": DECK_R}
 REGIONS.update(PATCHES)
+REGIONS.update({"floor_" + k: f.rect for k, f in FLOORS.items()})
 
 # ============================================================= material ids
 ID_BLANK, ID_TILE_HI, ID_TILE_LO, ID_TILE_DK, ID_GROUT = 0, 1, 2, 3, 4
@@ -218,7 +225,7 @@ ID_METAL, ID_FELT, ID_GLASS, ID_FRAME, ID_DOOR = 5, 6, 7, 8, 9
 ID_LETTER, ID_BOX_F, ID_BOX_G, ID_AWN_W, ID_AWN_S = 10, 11, 12, 13, 14
 ID_PAINT_W, ID_GALV, ID_BLIND, ID_PLANT, ID_POT = 15, 16, 17, 18, 19
 ID_RUBBER, ID_METER, ID_GROUT_HI, ID_FLOWER, ID_GOODS = 20, 21, 22, 23, 24
-ID_FLOOR = 25               # the cast concrete floor slab in the door's reveal
+ID_FLOOR = 25               # the cast concrete floor slabs (scripts/door_floor.py)
 TILE_IDS = (ID_TILE_HI, ID_TILE_LO, ID_TILE_DK)
 GROUT_IDS = (ID_GROUT, ID_GROUT_HI)
 # what stands behind the glass is seen through it: glass's surface, the
@@ -240,7 +247,7 @@ SURFACE = {
     ID_POT: (glazing.ROUGHNESS, 0.0), ID_RUBBER: (0.80, 0.0),
     ID_METER: (0.50, 0.0), ID_GROUT_HI: (0.90, 0.0),
     ID_FLOWER: (glazing.ROUGHNESS, 0.0), ID_GOODS: (glazing.ROUGHNESS, 0.0),
-    ID_FLOOR: (0.88, 0.0),
+    ID_FLOOR: DF.SURFACE,
 }
 
 # ---------------------------------------------------------------- palettes
@@ -275,7 +282,7 @@ FIXED = {
     ID_BLIND: (98, 96, 91), ID_PLANT: (50, 60, 43), ID_POT: (104, 72, 60),
     ID_FLOWER: (146, 98, 100), ID_GOODS: (124, 118, 112),
     ID_RUBBER: (40, 40, 40), ID_METER: (156, 158, 154),
-    ID_FLOOR: (132, 130, 124),
+    ID_FLOOR: DF.COLOUR,
 }
 
 # A stray sample in a tiling band repeats under every surface sampling it.
@@ -642,23 +649,6 @@ def paint_door(c):
             shade=1.0, ao=0.9, height=0.035)
 
 
-def paint_door_floor(c):
-    """The floor slab in the shop door's reveal (DOOR_FLOOR_R): float-finished
-    cast concrete, one strip, flat. The first rows are its nosing on the wall
-    plane. Occlusion deepens toward the jambs and the door, where the floor
-    sees least sky; the tread wears a little paler in front of the leaf."""
-    x, y, w, h = DOOR_FLOOR_R
-    c.paint(x - PAD, x + w + PAD, y - PAD, y + h + PAD, ID_FLOOR, 1.0, 1.0, height=0.0)
-    sy, sx, Y, X = c.field(x - PAD, x + w + PAD, y - PAD, y + h + PAD)
-    u = np.clip((X - x) / PPM, 0.0, DOOR_W)
-    v = np.clip((Y - y) / PPM - DOOR_FLOOR_T, 0.0, SHOP_DEPTH)
-    edge = np.minimum(np.minimum(u, DOOR_W - u), SHOP_DEPTH - v)
-    corner = np.exp(-edge / 0.06)
-    tread = np.exp(-((u - DOOR_W / 2.0) / 0.30) ** 2)
-    c.shade[sy, sx] = (1.0 - 0.14 * corner) * (1.0 + 0.05 * tread)
-    c.ao[sy, sx] = 1.0 - 0.30 * corner
-
-
 def door_pull():
     x, y, w, _h = DOOR_R
     return x + w - m(DOOR_FRAME) - m(0.12), y + m(1.1)
@@ -946,9 +936,6 @@ def check_regions():
     if abs(DECK_R[2] - DECK_PPM * 2 * (HX - PARAPET_T)) > 1e-6 or \
             abs(DECK_R[3] - DECK_PPM * 2 * (HY - PARAPET_T)) > 1e-6:
         problems.append("the deck region is not the deck at DECK_PPM")
-    if abs(DOOR_FLOOR_R[2] - m(DOOR_W)) > 1e-6 or \
-            abs(DOOR_FLOOR_R[3] - m(DOOR_FLOOR_T + SHOP_DEPTH)) > 1e-6:
-        problems.append("the door floor's region is not the slab's nosing and top")
     if abs(CURVE_R[2] - m(ARC_IN_LEN)) > 0.5:
         problems.append("the curve region is not the curved shopfront's length")
     for z in (Z_PLINTH, Z_HEAD, Z_STRIPE[0], Z_STRIPE[1], SIGN_Z[0], SIGN_Z[1]):
@@ -986,10 +973,9 @@ def weather(c):
     w.splash(x, x + dw, y, y + m(0.6), (ID_FRAME, ID_RUBBER), amount=0.16, fall=0.12,
              specks=0.0)
     w.spot(*door_pull(), m(0.10), (ID_FRAME, ID_GALV))
-    # the slab in the door's reveal: trodden-in dirt, blotchy
-    x, y, rw, rh = DOOR_FLOOR_R
-    w.add("D", x - PAD, x + rw + PAD, y - PAD, y + rh + PAD,
-          lambda Y, X, nz: 0.08 + 0.10 * nz("blotch"), (ID_FLOOR,))
+    # the floor slabs: trodden-in dirt, blotchy
+    for f in FLOORS.values():
+        DF.weather(w, f, ID_FLOOR, bleed=PAD)
     x, y, sw, sh = SERVICE_R
     w.door(x, x + sw, y, y + sh, (ID_DOOR, ID_GALV),
            handle=(x + sw - m(0.15), y + m(1.04)))
@@ -1044,7 +1030,8 @@ def paint(ss=atlas.SS):
     c.check_bands(BAND_IDS)
     paint_curve(c)
     paint_door(c)
-    paint_door_floor(c)
+    for f in FLOORS.values():
+        DF.paint(c, f, ID_FLOOR, bleed=PAD)
     paint_display(c, DISPLAY_R, "left")
     paint_display(c, DISPLAY2_R, "right")
     paint_service_door(c)
@@ -1067,10 +1054,7 @@ def paint(ss=atlas.SS):
     grain = atlas.noise(c, 5, 60.0, 0.35)
     soft = atlas.noise(c, 11, 20.0)
     c.shade[sheeted] *= 1.0 + 0.014 * grain[sheeted] + 0.02 * soft[sheeted]
-    cast = c.mid == ID_FLOOR
-    pores = atlas.noise(c, 9, 0.7)
-    c.shade[cast] *= 1.0 + 0.05 * pores[cast]
-    c.height[cast] += 0.0004 * pores[cast]
+    DF.grain(c, ID_FLOOR, atlas.noise(c, 9, 0.7))
 
     weather(c)
     c.pad()
