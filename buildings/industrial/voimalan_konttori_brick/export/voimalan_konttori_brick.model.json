@@ -1,9 +1,9 @@
 {
   "schema": "metrum-model-facts",
-  "version": 1,
+  "version": 4,
   "name": "voimalan_konttori_brick",
   "path": "buildings/industrial/voimalan_konttori_brick",
-  "source": {"commit": "bb6f8db4dca67571ff8d5b64b2b99bb9dcffcaa9", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "483c46a30fadc38465099db30f319f76ae5b6ffa", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-7.4525, 0.0, -6.3625], "max": [7.4525, 10.25, 6.3625]},
   "footprint": [
@@ -18,8 +18,8 @@
   ],
   "dwellings": 0,
   "doors": [
-    {"id": "entrance", "kind": "entrance", "position": [-2.235, 0.5, 4.2375], "facing": [0.0, 0.0, 1.0], "width_m": 1.5, "height_m": 2.125, "main": true},
-    {"id": "staff", "kind": "service", "position": [-2.235, 0.5, -4.7625], "facing": [0.0, 0.0, -1.0], "width_m": 1.0, "height_m": 2.125, "main": false}
+    {"id": "entrance", "kind": "entrance", "position": [-2.235, 0.5, 4.2375], "facing": [0.0, 0.0, 1.0], "width_m": 1.5, "height_m": 2.125, "floor_y_m": 0.5, "storey": 0, "main": true},
+    {"id": "staff", "kind": "service", "position": [-2.235, 0.5, -4.7625], "facing": [0.0, 0.0, -1.0], "width_m": 1.0, "height_m": 2.125, "floor_y_m": 0.5, "storey": 0, "main": false}
   ],
   "lods": [
     {"file": "voimalan_konttori_brick_lod0.glb", "triangles": 1644, "sha256": "5b5890981a97926515c8aa489ba18c2b3e872d2cea21ce5910e2ec1bd00665ff"},
