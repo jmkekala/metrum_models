@@ -33,7 +33,7 @@ directly: each wall is a rectangle less its openings and panels, cut into
 3.75 m slabs of brick (facade_atlas.CUTS) whose outlines are traced from a grid
 of cells; every face is then given every vertex that lies on its edges
 (tjunctions()), so neighbours meet on shared vertices. Recessed openings
-add their concrete reveals and the closing plane, the entrance's on a
+add their concrete reveals and the closing plane, every door's on a
 0.02 m concrete floor slab (scripts/door_floor.py), the conveyor inlet its
 steel frame standing 0.05 m proud on the copings' plane (the face the coal
 reception's gallery butts against), steel reveals and blanking panel; on
@@ -117,16 +117,18 @@ def vent_mode(level):
     return ("hollow", "hollow", "box", None)[level]
 
 
-# The entrance's floor slab, by wall and kind (facade_atlas.FLOORS). The
-# machinery door and the service door keep their reveals on the ground with
-# no floor.
-FLOORED = {"bh_front": {"entrance": L.FLOORS["entrance"]}}
+# Every door's floor slab, by wall and kind (facade_atlas.FLOORS): the
+# entrance, the machinery door and the service door all stand at grade in
+# their reveals.
+FLOORED = {"bh_front": {"entrance": L.FLOORS["entrance"]},
+           "th_front": {"bigdoor": L.FLOORS["bigdoor"]},
+           "th_rear": {"service": L.FLOORS["service"]}}
 
 
 def floor_for(wall, kind, level):
     """The floor slab under *kind*'s reveal on *wall* at *level*, or None:
-    an entrance's, on every tier that cuts its recess (opening_mode()); a
-    flush door has no reveal to floor."""
+    a door's, on every tier that cuts its recess (opening_mode()); a flush
+    door has no reveal to floor."""
     floor = FLOORED.get(wall, {}).get(kind)
     if floor is None or opening_mode(level) != "cut":
         return None
@@ -416,7 +418,7 @@ def panel_outlines(rect, cuts):
 
 def item_polys(fr, item, rect, mode, cuts=(), floor=None):
     """One opening or flush panel's faces; *floor* is the door_floor.Floor
-    an entrance's reveal stands on at this tier (floor_for())."""
+    a door's reveal stands on at this tier (floor_for())."""
     kind = item[0]
     s0, s1, z0, z1 = rect
     if kind == "inlet":
@@ -474,7 +476,7 @@ def opening_polys(fr, item, rect, mode, floor=None):
     its LO region. A door has no threshold cheek: the floor cap covers its
     recess.
 
-    The entrance (*floor*, a door_floor.Floor) stands on a concrete slab:
+    A door (*floor*, a door_floor.Floor) stands on a concrete slab:
     its nosing on the wall plane across the opening, its top 0.02 m over
     the ground and the reveal's foot, back to the door, so the consumer's
     terrain cannot show inside. The jambs and the door start on that top;
@@ -1072,7 +1074,7 @@ def check_layout():
         if top > L.SIZES[kind][1] - 2 * L.DOOR_FRAME - 0.05:
             bad.append("no transom or vent panel over the %s leaf" % kind)
     bad += brick_problems()
-    # the entrance's reveal on its floor slab (scripts/door_floor.py): the
+    # every door's reveal on its floor slab (scripts/door_floor.py): the
     # slab's region the reveal's width and depth, under a door at grade
     for wall, floors in FLOORED.items():
         for kind, floor in floors.items():

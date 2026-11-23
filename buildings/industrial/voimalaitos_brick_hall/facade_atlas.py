@@ -42,7 +42,7 @@ The atlas is a trim sheet. Five bands run the full width and tile in U:
                              (8 px/m), the LOD3 elevations (6 px/m), LOD2's
                              flush openings, each window size and door
                              whole at 12 px/m with its recess's occlusion
-                             (LO), the entrance's floor slab, and flat
+                             (LO), the three doors' floor slabs, and flat
                              patches.
 
 The hall window is painted once, four columns and four pane rows, and
@@ -443,11 +443,19 @@ LETTERS = (16, 935, 672, 80)                    # 10.5 x 1.25 m, brick
 DECK_T = (604, 744, 148, 132)                   # 18.5 x 16.5 m at DPPM
 DECK_B = (756, 806, 116, 140)                   # 14.5 x 17.5 m at DPPM
 INLET = (880, 810, 116, 124)                    # 2.9 x 3.1 m at IPPM
-# The concrete floor slab in the entrance's reveal (scripts/door_floor.py),
+# The concrete floor slabs in the doors' reveals (scripts/door_floor.py),
 # unfolded at 64 px/m in the free block east of the lettering: U across the
-# opening, V up the nosing and back to the door. 2.0 x 0.27 m, 128 x 17.28 px.
-# The machinery and service doors have none.
-FLOORS = {"entrance": DF.Floor(696, 980, SIZES["entrance"][0], REVEAL["entrance"])}
+# opening, V up the nosing and back to the door.
+# - "entrance": 2.0 x 0.27 m, 128 x 17.28 px, a worn path to the leaves.
+# - "service": 1.25 x 0.27 m, 80 x 17.28 px, beside it, a worn path to the
+#   leaf.
+# - "bigdoor": the machinery door's, 3.375 x 0.32 m, 216 x 20.48 px, above
+#   them against the sheet's top edge. Plant comes in on wheels, not feet:
+#   no worn path.
+FLOORS = {"entrance": DF.Floor(696, 980, SIZES["entrance"][0], REVEAL["entrance"]),
+          "service": DF.Floor(828, 980, SIZES["service"][0], REVEAL["service"]),
+          "bigdoor": DF.Floor(692, 1001.5, SIZES["bigdoor"][0], REVEAL["bigdoor"],
+                              tread=-1e3)}
 REGION = {"entrance": ENTRANCE, "bigdoor": BIGDOOR, "service": SERVICE,
           "sq": SQWIN, "bushing": BUSHING, "letters": LETTERS, "mouth": MOUTH,
           "inlet": INLET}
@@ -524,7 +532,7 @@ ID_CONC, ID_FRAME, ID_GLASS, ID_DOOR, ID_GALV = 5, 6, 7, 8, 9
 ID_HANDLE, ID_DARK, ID_SEAL, ID_SOFFIT, ID_FELT = 10, 11, 12, 13, 14
 ID_COPE, ID_DUCT, ID_SOOT, ID_PORC, ID_SHEET = 15, 16, 17, 18, 19
 ID_LETTER, ID_STACK, ID_BALLAST, ID_PANEL = 20, 21, 22, 23
-ID_FLOOR = 24           # the cast concrete floor slab in the entrance's reveal
+ID_FLOOR = 24           # the cast concrete floor slabs in the doors' reveals
 
 # (roughness, metallic). Painted steel stays mostly dielectric -- the paint
 # is what the light sees. The ladders are galvanised.
@@ -1745,7 +1753,7 @@ def weather(c):
                handle=(hx, hy), ppm=LO_PPM)
     x, y, rw, rh = LO["bigdoor"]
     w.add("R", x, x + rw, y, y + 14 * k, lambda Y, X, nz: 0.12 * nz("blotch"), (ID_DOOR,))
-    # the entrance's floor slab: trodden-in dirt
+    # the doors' floor slabs: trodden-in dirt
     for f in FLOORS.values():
         DF.weather(w, f, ID_FLOOR, bleed=PAD)
     # the flue's blanking plate and casing: soot and rust, and soot runs
