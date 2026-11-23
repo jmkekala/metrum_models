@@ -20,7 +20,7 @@ The atlas is a trim sheet. Three bands run the full width and tile in U:
     y  558 ..  574   EAVE    the eave fascia with its gutter
     y  586 .. 1020   unique  the two tall steel windows, the entrance screen,
                              the machinery door, the rope-slot louvre, the vent
-                             pipes, the entrance's floor slab and the flat
+                             pipes, the two doors' floor slabs and the flat
                              patches
 
 The brick band stops at the wall head. The two gable triangles above Z_GABLE
@@ -122,10 +122,17 @@ SLOT = (564, UNI_Y, 96, 48)              # 1.5 x 0.75 m
 VENT = (668, UNI_Y, 32, 96)              # a pipe's side: across x 1.5 m up
 PIPE_TOP = (708, UNI_Y, 24, 24)          # a pipe's open end, planar
 
-# The concrete floor slab in the entrance's reveal (scripts/door_floor.py),
+# The concrete floor slabs in the doors' reveals (scripts/door_floor.py),
 # unfolded at 64 px/m: U across the opening, V up the nosing and back to the
-# screen. 1.625 m wide and 0.20 m deep.
-FLOORS = {"entrance": DF.Floor(740, UNI_Y, OPENINGS["screen"][0], REVEAL["screen"])}
+# closing face.
+# - "entrance": the screen's, 1.625 m wide and 0.20 m deep, with the worn
+#   path toward the leaf.
+# - "machinery": the machinery door's, 3.375 m wide and 0.25 m deep, under
+#   the entrance's rows. Vehicles cross it, not feet, and seldom: no worn
+#   path.
+FLOORS = {"entrance": DF.Floor(740, UNI_Y, OPENINGS["screen"][0], REVEAL["screen"]),
+          "machinery": DF.Floor(740, UNI_Y + 20, OPENINGS["bigdoor"][0],
+                                REVEAL["bigdoor"], tread=-1e3)}
 
 REGION = {"screen": SCREEN, "bigdoor": BIGDOOR, "window": WINDOW,
           "window_b": WINDOW_B, "slot": SLOT}
@@ -142,7 +149,7 @@ ID_BLANK, ID_PLINTH, ID_BRICK, ID_BRICK2, ID_MORTAR = 0, 1, 2, 3, 4
 ID_FRAME, ID_GLASS, ID_ROOF, ID_FLASH, ID_CONC = 5, 6, 7, 8, 9
 ID_DOOR, ID_GUTTER, ID_HANDLE, ID_DARK, ID_PIPE = 10, 11, 12, 13, 14
 ID_SOFFIT, ID_SEAL = 15, 16
-ID_FLOOR = 17           # the cast concrete floor slab in the entrance's reveal
+ID_FLOOR = 17           # the cast concrete floor slabs in the doors' reveals
 
 # (roughness, metallic). Painted or coated steel is dielectric -- the paint is
 # what the light sees: the roof sheet, the fascia and barge flashing, the
@@ -592,7 +599,7 @@ def weather(c):
     # the louvre: soot and dirt from the hall's air on its blades
     x, y, rw, rh = SLOT
     w.runs(x, x + rw, y, y + rh, (ID_FRAME, ID_CONC), 0.16, fall=rh / 2.0)
-    # the entrance's floor slab: trodden-in dirt
+    # the doors' floor slabs: trodden-in dirt
     for f in FLOORS.values():
         DF.weather(w, f, ID_FLOOR, bleed=PAD)
     # the vent pipes: soot and rust runs down from the open end

@@ -3,7 +3,7 @@
   "version": 1,
   "name": "nostokonehuone_brick",
   "path": "buildings/industrial/nostokonehuone_brick",
-  "source": {"commit": "eb64bc6aeac1487aafcf92047e0302584855a065", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "b1fd5edf4b84e701aefbdb334dc2ee4110ed2e0e", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-4.9, 0.0, -6.05], "max": [4.9, 7.9, 6.05]},
   "footprint": [
@@ -21,22 +21,22 @@
     {"id": "machinery", "kind": "vehicle", "position": [0.0, 0.0, 5.75], "facing": [0.0, 0.0, 1.0], "width_m": 3.1875, "height_m": 3.6562, "main": false}
   ],
   "lods": [
-    {"file": "nostokonehuone_brick_lod0.glb", "triangles": 544, "sha256": "934bd96c3a5af6dae478767c7bfd65c096a667a623b139bbe0fe63abe2a527d9"},
-    {"file": "nostokonehuone_brick_lod1.glb", "triangles": 448, "sha256": "f3ab0172cfe82ddd0a7ece006fcf53b06729043da1507ccb4f924ac66d5a2edb"},
-    {"file": "nostokonehuone_brick_lod2.glb", "triangles": 332, "sha256": "2fa8edbce87027f51b2eff9cfab1cb296f3cdc137f14438747fb60f271919c03"},
-    {"file": "nostokonehuone_brick_lod3.glb", "triangles": 232, "sha256": "3e8e9c3f07c32a2599684bee4ecd78478c16370aa37ecfe777ee6b78b4a2fcb2"}
+    {"file": "nostokonehuone_brick_lod0.glb", "triangles": 548, "sha256": "626f101da9b5289f72889f25e020fa6a5bf520c713bececa1f695b604882e8b5"},
+    {"file": "nostokonehuone_brick_lod1.glb", "triangles": 452, "sha256": "3573fd891b7825378c68390843f17c95f37835e37d7d804656a896689ad2cae5"},
+    {"file": "nostokonehuone_brick_lod2.glb", "triangles": 336, "sha256": "b589996845db5221f69712a877c3789c8c4024dae7a57664a2b91fa5da077005"},
+    {"file": "nostokonehuone_brick_lod3.glb", "triangles": 236, "sha256": "26e324885ac4c3c83d3642e042602e88a723d96bca4bbae8724b7dbcd81d04ed"}
   ],
   "textures": {
-    "orm": {"file": "nostokonehuone_brick_orm.png", "sha256": "1613b42041754cc4b68480aac296e17e15d5dbf038602b9062594e845b137f3b"},
-    "normal": {"file": "nostokonehuone_brick_normal.png", "sha256": "dcb4c3ed596aaba541b249752fb8abde10747de2a220b69283a95814081700e8"},
+    "orm": {"file": "nostokonehuone_brick_orm.png", "sha256": "2cc937a8dfc10b0996d8005ca764d72c0af015c00285d7c8c76293dddb5f543b"},
+    "normal": {"file": "nostokonehuone_brick_normal.png", "sha256": "41c8d9fd7ee02786d35554e835654cdee1fbdbc0f2bd9f972734f7ec5eb88f84"},
     "emission": {"file": "nostokonehuone_brick_emission.png", "sha256": "3f29a29eaa911a9f0df60231e4c0701d81c9208e9023f79e666527bc266e14bb"}
   },
   "variants": [
-    {"id": "red_brick", "albedo": "nostokonehuone_brick_albedo_red_brick.png", "sha256": "beb34635e0c7db5658a1c955abcc4e64e86c8cea1a5a08986d44f62137f848c7"},
-    {"id": "yellow_brick", "albedo": "nostokonehuone_brick_albedo_yellow_brick.png", "sha256": "ebe68a32b23541d4487c0af71a32500218c394f0f42554e549d87a70a2708cba"},
-    {"id": "brown_brick", "albedo": "nostokonehuone_brick_albedo_brown_brick.png", "sha256": "21bb34f40ad88509cfe084aaeacd85a040695892bfefe33655664a3c0f857d78"}
+    {"id": "red_brick", "albedo": "nostokonehuone_brick_albedo_red_brick.png", "sha256": "d663449ecd411ce0d54d15e806e214c2a84bb1845888f9150c170862455f716c"},
+    {"id": "yellow_brick", "albedo": "nostokonehuone_brick_albedo_yellow_brick.png", "sha256": "97ee5c99066eca8c1a574f13d9d5af8498d186826e647947e9406896ff98460b"},
+    {"id": "brown_brick", "albedo": "nostokonehuone_brick_albedo_brown_brick.png", "sha256": "686488f21f419b390c55c1db672d73cbf29c4e6c21a4b1fbf9da8b7ede388724"}
   ],
   "default_variant": "red_brick",
-  "preview": {"file": "../preview.png", "sha256": "044b37d2ba7cf817bcd490c6f666a8e54f1f831a9da023d872be31be309bed6c"},
+  "preview": {"file": "../preview.png", "sha256": "e64aba5f054bea5453aa473423018606f48c441be2ed60d4ed47183eeb2b5913"},
   "hero": false
 }
