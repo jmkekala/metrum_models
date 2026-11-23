@@ -287,11 +287,11 @@ to `vehicle_build.VehicleAsset`, its subclass).
 | `downpipes.py` | Downpipes as swept, mitred closed solids for `build.py` to union: a `Pipe` placed on a wall, swan-neck and shoe, UVs on the atlas's painted gutter (`PIPE_STRIP`), per-tier `MODES`, and `problems()` for `check_layout()`. Runs inside Blender only. |
 | `roof_safety.py` | Roof safety equipment as closed solids for `build.py` to union: the wall ladder and its safety cage, the roof ladder and the walkway, UVs on the painted gutter (`PIPE_STRIP`) or a fixed patch, per-tier `MODES`, and `problems()` for `check_layout()`; an opt-in lean wall ladder and cage (`lean=True`), separate solids that cut nothing, added after the weld by `append(check=True)` at a fraction of the triangles. Runs inside Blender only. |
 | `handrails.py` | Handrails on entrance flights as closed solids for `build.py` to union: one rail on posts, on the right going up (`side="left"` where that is blocked), level along the landing and down the nosing line, UVs on `PIPE_STRIP` through `roof_safety.Paint`, per-tier `MODES`, and `problems()` for `check_layout()`; an opt-in lean rail (`lean=True`), appended like the lean ladder. Runs inside Blender only. |
-| `door_floor.py` | The concrete floor slab in an entrance's reveal at grade (Geometry and Construction, Openings): `T` (0.02 m) once; a `Floor` (its atlas region at the reveal's width and depth, the worn path and the occlusion at its edges); for the texture generator `COLOUR`, `SURFACE`, `paint()`, `grain()` and `weather()`; for `build.py` `notch()` (the wall foot's detour), `recess()` (the nosing on the wall plane, then `shell_build.recess()` from the slab's top, which is the reveal's foot) and `problems()` for `check_layout()`. numpy only at import; `recess()` runs inside Blender. |
+| `door_floor.py` | The concrete floor slab of every opening recessed at grade (Geometry and Construction, Openings): `T` (0.02 m) once; a `Floor` (its atlas region at the reveal's width and depth, the worn path and the occlusion at its edges); for the texture generator `COLOUR`, `SURFACE`, `paint()`, `grain()` and `weather()`; for `build.py` `notch()` (the wall foot's detour), `recess()` (the nosing on the wall plane, then `shell_build.recess()` from the slab's top, which is the reveal's foot) and `problems()` for `check_layout()`. numpy only at import; `recess()` runs inside Blender. |
 | `window_emission.py` | Wires the emission mask into the material (`attach`, `set_state`), rewrites an exported GLB's emission factor (`rewrite_glb_emission`, which `asset_build` uses to ship it default-off), holds the reference `LIT_FACTOR`. |
 | `glb_images.py` | `strip_embedded_images()`: removes the `bufferView` the exporter leaves beside each image `uri`; `asset_build`'s export runs it on every tier (Texture Requirements). |
 | `variant_previews.py` | `render_sheet()`: the day/night (or, for unlit assets, day-only) `variants.png`, called by `asset_build`. |
-| `validate_asset.py` | Mechanical export checks (Validation Checklist); the vehicle classes add `vehicle_checks.py`. |
+| `validate_asset.py` | Mechanical export checks (Validation Checklist), a building's door floors probed on every tier among them; the vehicle classes add `vehicle_checks.py`. |
 | `vehicle_checks.py` | The vehicle checks on the exported files, for `validate_asset.py`: accessors, sidecar, PNGs and `glass_texels.png`, with exact point-to-triangle distances for steer clearance. numpy and Pillow. |
 | `review_asset.py` | Renders exported tiers in a disposable scene: day cycle, LOD distance pairs, views, light states, optional mip textures, another colour by `--variant`. Run in a separate background Blender. |
 | `review_atlas_mips.py` | Writes temporary atlas mips for filtering stress renders (`review_asset.py --texture-dir`). |
@@ -531,16 +531,21 @@ triangle cost and the tiers that keep it.
   threshold. Glazing bars and ornament are textured. Detached buildings are
   seen from every side, so a flat secondary-elevation opening needs an
   intended-view justification.
-  - **An entrance that stands on the ground gets a floor.** A recess at
-    grade has no sill, and the shell has no upward face under it, so the
-    consumer's terrain shows inside: grass between the paving and the
-    door. Every entrance door's reveal, whatever its depth, and every
-    lobby or set-back doorway about 0.25 m deep or more gets a concrete
-    slab filling its plan: top 0.02 m above grade (a face at grade fights
-    the terrain), a nosing on the wall plane, nothing past it, on its own
-    atlas region, on every tier that keeps the recess. Bounds, footprint
-    and the door's threshold stay as they are. A service door's shallow
-    reveal may go without.
+  - **An opening recessed at grade gets a floor.** A recess at grade has
+    no sill, and the shell has no upward face under it, so the consumer's
+    terrain shows inside: grass between the paving and the door. Every
+    opening recessed at grade, whatever its depth, gets a concrete slab
+    filling its plan, built with `scripts/door_floor.py`: a door of any
+    kind (entrance, service, vehicle, store), a lobby or set-back doorway,
+    glazing or a portal set back at grade. Top 0.02 m above grade (a face
+    at grade fights the terrain), a nosing on the wall plane, nothing past
+    it, on its own atlas region, on every tier that keeps the recess.
+    Bounds, footprint and the door's threshold stay as they are. None is
+    needed where the opening is painted flat on the tier, stands on a
+    step, landing, sill or plinth (that is its floor), opens off a lobby
+    or porch already floored, or is a balcony door; nor in an open bay or
+    a drivable lane (the sidecar's passages), whose floor is the
+    consumer's ground by design.
 - **Count full opening topology:** four reveal sides alone are eight
   triangles, before the closure and surrounding wall. Measure triangulated
   exports, walls included. Polygons with holes avoid needless wall grids.
@@ -1264,7 +1269,14 @@ bounds, PNG size and format, `notes.md` section order, the facts sidecar
 (schema, hashes, tier counts and bounds, door kinds, one `main` entrance
 where there are doors, doors on the footprint, passages within the bounds),
 every prop tier's plan bounds against `LOD0`'s, and a sampled
-hidden-surface test. Where a normal or emission PNG exists, on any class,
+hidden-surface test. On a building it probes every sidecar door on every
+tier: the reveal's depth from rays across the leaf, and, where it is
+recessed at grade, rays down across its plan between the jambs, which must
+meet the slab's top at 0.02 m (a step, landing or sill higher passes; an
+upward face at grade or the open rim fails). A flat door, one onto a
+passage and one with no closing face within 3 m need none. Openings that
+are not doors (set-back glazing, a portal) are not in the sidecar and stay
+`MANUAL`. Where a normal or emission PNG exists, on any class,
 it checks the binding on every tier (emission: its UV attribute and
 default-off factor) and measures the albedo under the mask's neutral
 pixels against the glazing band; coloured pixels are reported as luminous
@@ -1354,6 +1366,9 @@ is exterior surface.
 - Footprint includes projections; story height ~3.0–3.3 m or explained.
 - Door leaves 2.0–2.4 m (~2.6 m ceremonial) with a transom/fanlight above
   taller openings; sills checked against the door and the floor.
+- Every opening recessed at grade stands on its 0.02 m slab on every tier
+  that keeps the recess: the validator's door floors for the doors, a look
+  for set-back glazing and portals.
 - Glazed buildings have correctly bound emission on every tier, default off and
   controllable on reimport, or a recorded reason for none. `variants.png`
   covers every colour; lit window patterns stay consistent across tiers except

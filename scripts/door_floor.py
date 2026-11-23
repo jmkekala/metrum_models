@@ -1,16 +1,18 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""The concrete floor slab in an entrance's reveal: the layout, the atlas
-painting, the geometry and the layout check, in one place.
+"""The concrete floor slab of an opening recessed at grade: the layout, the
+atlas painting, the geometry and the layout check, in one place.
 
-An entrance that stands on the ground is a recess with no upward face under
+An opening that stands on the ground in a recess has no upward face under
 it, so a consumer's terrain shows inside: grass between the paving and the
-door. CLAUDE.md (Geometry and Construction, Openings) gives every entrance
-reveal at grade, and every lobby, a slab filling its plan: its top T over the
-ground (a face at grade fights the terrain), a nosing on the wall plane,
-nothing past it, on its own atlas region, on every tier that keeps the
-recess. Bounds, footprint and the door's threshold stay as they are: the
-slab is a floor finish, not a step.
+door. CLAUDE.md (Geometry and Construction, Openings) gives every opening
+recessed at grade, whatever its depth, a slab filling its plan: a door of
+any kind, a lobby or set-back doorway, set-back glazing or a portal. Its
+top is T over the ground (a face at grade fights the terrain), a nosing on
+the wall plane, nothing past it, on its own atlas region, on every tier
+that keeps the recess. Bounds, footprint and the door's threshold stay as
+they are: the slab is a floor finish, not a step. scripts/validate_asset.py
+probes every sidecar door for it on every tier.
 
 Geometry. The nosing is a quad on the wall plane from the ground to T across
 the opening; the recess starts on its top, and the recess's foot cheek is
