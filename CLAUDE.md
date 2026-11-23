@@ -554,7 +554,10 @@ triangle cost and the tiers that keep it.
     step, landing, sill or plinth (that is its floor), opens off a lobby
     or porch already floored, or is a balcony door; nor in an open bay or
     a drivable lane (the sidecar's passages), whose floor is the
-    consumer's ground by design.
+    consumer's ground by design. A set-back that is not a door (a corner
+    recess, set-back glazing) may go without by the owner's decision,
+    where the consumer's paving is meant to run into it; `notes.md`
+    records the exception under Known simplifications.
 - **Count full opening topology:** four reveal sides alone are eight
   triangles, before the closure and surrounding wall. Measure triangulated
   exports, walls included. Polygons with holes avoid needless wall grids.
@@ -1385,7 +1388,8 @@ is exterior surface.
   taller openings; sills checked against the door and the floor.
 - Every opening recessed at grade stands on its 0.02 m slab on every tier
   that keeps the recess: the validator's door floors for the doors, a look
-  for set-back glazing and portals.
+  for set-back glazing and portals (or the owner's exception recorded in
+  `notes.md`).
 - Glazed buildings have correctly bound emission on every tier, default off and
   controllable on reimport, or a recorded reason for none. `variants.png`
   covers every colour; lit window patterns stay consistent across tiers except
