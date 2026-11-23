@@ -33,7 +33,8 @@ directly: each wall is a rectangle less its openings and panels, cut into
 3.75 m slabs of brick (facade_atlas.CUTS) whose outlines are traced from a grid
 of cells; every face is then given every vertex that lies on its edges
 (tjunctions()), so neighbours meet on shared vertices. Recessed openings
-add their concrete reveals and the closing plane, the conveyor inlet its
+add their concrete reveals and the closing plane, the entrance's on a
+0.02 m concrete floor slab (scripts/door_floor.py), the conveyor inlet its
 steel frame standing 0.05 m proud on the copings' plane (the face the coal
 reception's gallery butts against), steel reveals and blanking panel; on
 LOD2 every opening is one flush quad sampling its 12 px/m LO region. On
@@ -67,6 +68,7 @@ ASSET = L.ASSET
 EXPORT_DIR = os.path.join(HERE, "export")
 sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "scripts"))
 import asset_build  # noqa: E402
+import door_floor as DF  # noqa: E402
 import model_facts  # noqa: E402
 import roof_safety as RS  # noqa: E402
 import shell_build as SB  # noqa: E402
@@ -113,6 +115,22 @@ def vent_mode(level):
     across, against the deck), gone on LOD3 (under 2 px past 257 m, and
     the parapet hides them from the ground)."""
     return ("hollow", "hollow", "box", None)[level]
+
+
+# The entrance's floor slab, by wall and kind (facade_atlas.FLOORS). The
+# machinery door and the service door keep their reveals on the ground with
+# no floor.
+FLOORED = {"bh_front": {"entrance": L.FLOORS["entrance"]}}
+
+
+def floor_for(wall, kind, level):
+    """The floor slab under *kind*'s reveal on *wall* at *level*, or None:
+    an entrance's, on every tier that cuts its recess (opening_mode()); a
+    flush door has no reveal to floor."""
+    floor = FLOORED.get(wall, {}).get(kind)
+    if floor is None or opening_mode(level) != "cut":
+        return None
+    return floor
 
 
 # ============================================================== wall frames
@@ -368,7 +386,7 @@ def wall_polys(name, level):
         rect = L.item_rect(name, item)
         inserts.append(rect)
         cuts = [L.item_rect(name, o) for o in L.ITEMS[name] if o[0] == NOTCHED.get(item[0])]
-        polys += item_polys(fr, item, rect, mode, cuts)
+        polys += item_polys(fr, item, rect, mode, cuts, floor_for(name, item[0], level))
     for slab, outline, holes in brick_regions(Lw, zb, zt, inserts):
         polys.append(Poly([P3(outline)] + [P3(h) for h in holes],
                           uv_brick(fr, L.U_OFF[name], L.SLAB * slab)))
@@ -396,8 +414,9 @@ def panel_outlines(rect, cuts):
     return trace_cells(cells, ss, zs)
 
 
-def item_polys(fr, item, rect, mode, cuts=()):
-    """One opening or flush panel's faces."""
+def item_polys(fr, item, rect, mode, cuts=(), floor=None):
+    """One opening or flush panel's faces; *floor* is the door_floor.Floor
+    an entrance's reveal stands on at this tier (floor_for())."""
     kind = item[0]
     s0, s1, z0, z1 = rect
     if kind == "inlet":
@@ -410,7 +429,7 @@ def item_polys(fr, item, rect, mode, cuts=()):
                     for outline, holes in panel_outlines(rect, cuts)]
         quad = [fr.P(s0, z0), fr.P(s1, z0), fr.P(s1, z1), fr.P(s0, z1)]
         return [Poly([quad], fn)]
-    return opening_polys(fr, item, rect, mode)
+    return opening_polys(fr, item, rect, mode, floor)
 
 
 def inlet_polys(fr, rect, mode):
@@ -449,11 +468,19 @@ def inlet_polys(fr, rect, mode):
     ]
 
 
-def opening_polys(fr, item, rect, mode):
+def opening_polys(fr, item, rect, mode, floor=None):
     """One opening: its closing plane, set back REVEAL with concrete reveals
     round it while cut; when flush, one quad in the wall's plane sampling
     its LO region. A door has no threshold cheek: the floor cap covers its
-    recess."""
+    recess.
+
+    The entrance (*floor*, a door_floor.Floor) stands on a concrete slab:
+    its nosing on the wall plane across the opening, its top 0.02 m over
+    the ground and the reveal's foot, back to the door, so the consumer's
+    terrain cannot show inside. The jambs and the door start on that top;
+    the door's art keeps its place. tjunctions() gives the brick beside it
+    the nosing's top corners, so the floor cap's rim runs straight along
+    the wall line under the nosing."""
     kind = item[0]
     s0, s1, z0, z1 = rect
     if mode == "flush":
@@ -462,6 +489,13 @@ def opening_polys(fr, item, rect, mode):
         return [Poly([quad], SB.uv_region(fr, L.LO[L.lo_key(item)], s0, z0, L.LO_PPM))]
     depth = L.REVEAL[kind]
     polys = []
+    zr = z0                     # the reveal's foot: the slab's top, if floored
+    if floor is not None:
+        zr = z0 + DF.T
+        fn = DF.uv(fr, floor, s0, z0)
+        polys.append(Poly([[fr.P(s0, z0), fr.P(s1, z0), fr.P(s1, zr), fr.P(s0, zr)]], fn))
+        polys.append(Poly([[fr.P(s0, zr), fr.P(s0, zr, -depth), fr.P(s1, zr, -depth),
+                            fr.P(s1, zr)]], fn))
     if depth > 0.0:
         out = -depth
         if z0 > EPS:
@@ -469,13 +503,13 @@ def opening_polys(fr, item, rect, mode):
                                 fr.P(s1, z0)]], uv_head(fr)))
         polys.append(Poly([[fr.P(s0, z1), fr.P(s1, z1), fr.P(s1, z1, out),
                             fr.P(s0, z1, out)]], uv_head(fr)))
-        polys.append(Poly([[fr.P(s0, z0), fr.P(s0, z1), fr.P(s0, z1, out),
-                            fr.P(s0, z0, out)]], uv_jamb(fr)))
-        polys.append(Poly([[fr.P(s1, z0), fr.P(s1, z0, out), fr.P(s1, z1, out),
+        polys.append(Poly([[fr.P(s0, zr), fr.P(s0, z1), fr.P(s0, z1, out),
+                            fr.P(s0, zr, out)]], uv_jamb(fr)))
+        polys.append(Poly([[fr.P(s1, zr), fr.P(s1, zr, out), fr.P(s1, z1, out),
                             fr.P(s1, z1)]], uv_jamb(fr)))
     out = -depth
     if kind != "win":
-        polys.append(Poly([[fr.P(s0, z0, out), fr.P(s1, z0, out), fr.P(s1, z1, out),
+        polys.append(Poly([[fr.P(s0, zr, out), fr.P(s1, zr, out), fr.P(s1, z1, out),
                             fr.P(s0, z1, out)]], SB.uv_region(fr, L.REGION[kind], s0, z0, PPM)))
         return polys
     cols, rows = item[3]
@@ -1038,6 +1072,14 @@ def check_layout():
         if top > L.SIZES[kind][1] - 2 * L.DOOR_FRAME - 0.05:
             bad.append("no transom or vent panel over the %s leaf" % kind)
     bad += brick_problems()
+    # the entrance's reveal on its floor slab (scripts/door_floor.py): the
+    # slab's region the reveal's width and depth, under a door at grade
+    for wall, floors in FLOORED.items():
+        for kind, floor in floors.items():
+            for it in L.ITEMS[wall]:
+                if it[0] == kind:
+                    bad += DF.problems(floor, "the %s wall's %s" % (wall, kind),
+                                       L.item_rect(wall, it), L.REVEAL[kind])
     # the ladders and their cages clear of the corners and the openings
     for wall, ladder, cage in (("th_rear", WALL1, CAGE1), ("step", WALL2, CAGE2)):
         avoid = _avoid(wall)

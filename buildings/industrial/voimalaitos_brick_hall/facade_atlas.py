@@ -42,7 +42,8 @@ The atlas is a trim sheet. Five bands run the full width and tile in U:
                              (8 px/m), the LOD3 elevations (6 px/m), LOD2's
                              flush openings, each window size and door
                              whole at 12 px/m with its recess's occlusion
-                             (LO), and flat patches.
+                             (LO), the entrance's floor slab, and flat
+                             patches.
 
 The hall window is painted once, four columns and four pane rows, and
 build.py assembles every multi-pane window from its sections: the bottom
@@ -76,6 +77,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "scripts"))
 import atlas  # noqa: E402
 import brickwork  # noqa: E402
+import door_floor as DF  # noqa: E402
 import glazing  # noqa: E402
 import weathering  # noqa: E402
 
@@ -441,6 +443,11 @@ LETTERS = (16, 935, 672, 80)                    # 10.5 x 1.25 m, brick
 DECK_T = (604, 744, 148, 132)                   # 18.5 x 16.5 m at DPPM
 DECK_B = (756, 806, 116, 140)                   # 14.5 x 17.5 m at DPPM
 INLET = (880, 810, 116, 124)                    # 2.9 x 3.1 m at IPPM
+# The concrete floor slab in the entrance's reveal (scripts/door_floor.py),
+# unfolded at 64 px/m in the free block east of the lettering: U across the
+# opening, V up the nosing and back to the door. 2.0 x 0.27 m, 128 x 17.28 px.
+# The machinery and service doors have none.
+FLOORS = {"entrance": DF.Floor(696, 980, SIZES["entrance"][0], REVEAL["entrance"])}
 REGION = {"entrance": ENTRANCE, "bigdoor": BIGDOOR, "service": SERVICE,
           "sq": SQWIN, "bushing": BUSHING, "letters": LETTERS, "mouth": MOUTH,
           "inlet": INLET}
@@ -517,6 +524,7 @@ ID_CONC, ID_FRAME, ID_GLASS, ID_DOOR, ID_GALV = 5, 6, 7, 8, 9
 ID_HANDLE, ID_DARK, ID_SEAL, ID_SOFFIT, ID_FELT = 10, 11, 12, 13, 14
 ID_COPE, ID_DUCT, ID_SOOT, ID_PORC, ID_SHEET = 15, 16, 17, 18, 19
 ID_LETTER, ID_STACK, ID_BALLAST, ID_PANEL = 20, 21, 22, 23
+ID_FLOOR = 24           # the cast concrete floor slab in the entrance's reveal
 
 # (roughness, metallic). Painted steel stays mostly dielectric -- the paint
 # is what the light sees. The ladders are galvanised.
@@ -529,7 +537,7 @@ SURFACE = {
     ID_FELT: (0.92, 0.0), ID_COPE: (0.82, 0.0), ID_DUCT: (0.62, 0.15),
     ID_SOOT: (0.98, 0.0), ID_PORC: (0.22, 0.0), ID_SHEET: (0.50, 0.05),
     ID_LETTER: (0.55, 0.0), ID_STACK: (0.60, 0.25), ID_BALLAST: (0.96, 0.0),
-    ID_PANEL: (0.74, 0.0),
+    ID_PANEL: (0.74, 0.0), ID_FLOOR: DF.SURFACE,
 }
 
 # ---------------------------------------------------------------- palettes
@@ -567,7 +575,7 @@ FIXED = {
     ID_FELT: (58, 58, 60), ID_COPE: (164, 162, 155), ID_DUCT: (74, 74, 76),
     ID_SOOT: (20, 19, 18), ID_PORC: (104, 58, 38), ID_SHEET: (192, 192, 186),
     ID_LETTER: (212, 210, 202), ID_STACK: (120, 121, 118), ID_BALLAST: (82, 80, 76),
-    ID_PANEL: (54, 56, 58),
+    ID_PANEL: (54, 56, 58), ID_FLOOR: DF.COLOUR,
 }
 
 # A stray pixel in a tiling band is not a local blemish: every surface that
@@ -1546,6 +1554,7 @@ def check_regions():
     rects.update({"elev_" + k: v for k, v in ELEV.items()})
     rects.update(PATCHES)
     rects.update({"lo_%s" % (k,): v for k, v in LO.items()})
+    rects.update({"floor_" + k: f.rect for k, f in FLOORS.items()})
     problems = atlas.region_problems(rects, ATLAS, bands_top=PIPE_Y0 + PIPE_H + PAD)
     for key, (x, y, w, h) in LO.items():
         lw, lh = lo_size(key)
@@ -1736,6 +1745,9 @@ def weather(c):
                handle=(hx, hy), ppm=LO_PPM)
     x, y, rw, rh = LO["bigdoor"]
     w.add("R", x, x + rw, y, y + 14 * k, lambda Y, X, nz: 0.12 * nz("blotch"), (ID_DOOR,))
+    # the entrance's floor slab: trodden-in dirt
+    for f in FLOORS.values():
+        DF.weather(w, f, ID_FLOOR, bleed=PAD)
     # the flue's blanking plate and casing: soot and rust, and soot runs
     # down the casing's sides from its top (U is up the side there)
     x, y, rw, rh = FLUE_END
@@ -1862,6 +1874,8 @@ def paint(ss=atlas.SS):
     for ename in ELEV:
         paint_elevation(c, ename)
     paint_lo(c)
+    for f in FLOORS.values():
+        DF.paint(c, f, ID_FLOOR, bleed=PAD)
     paint_patches(c)
 
     # Tone wear, grain and pores. Every field repeats every 240 rows, so the
@@ -1880,6 +1894,7 @@ def paint(ss=atlas.SS):
     pores = nz(9, 0.8)
     c.shade[mineral] *= 1.0 + 0.03 * pores[mineral]
     c.height[mineral] += 0.0006 * pores[mineral]
+    DF.grain(c, ID_FLOOR, pores)
     conc = np.isin(c.mid, (ID_CONC, ID_COPE))
     mottle = nz(11, 6.0)
     c.shade[conc] *= 1.0 + 0.035 * mottle[conc]

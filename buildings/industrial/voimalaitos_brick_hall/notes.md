@@ -148,7 +148,8 @@ wall faces (238 m² + 288 m²).
   opening (10 half stretchers × 31 courses).
 
 All thresholds are at ground level, onto the hall floors, so there are no
-steps and no handrails.
+steps and no handrails. The entrance's 0.02 m floor slab (Construction,
+*Entrance floor slab*) is a floor finish, not a step.
 
 ## Window sills
 
@@ -281,7 +282,9 @@ closing plane set back:
 | Small square windows | 0.20 m |
 | Machinery door | 0.30 m |
 
-Doors have no threshold cheek; the floor cap covers the recess. At `LOD2`
+The machinery and service doors have no threshold cheek; the floor cap
+covers their recess. The entrance's reveal stands on a concrete floor slab
+(*Entrance floor slab* below). At `LOD2`
 each opening is the same rectangle, flush: one quad sampling its own
 12 px/m region (`facade_atlas.LO`, one per window size and door), which
 paints the whole window or door with its recess's occlusion (Texture set,
@@ -293,6 +296,38 @@ region's sections (`facade_atlas.window_sections()`). In height these are
 the bottom row, the middle rows (plain, with a hopper row every third) and
 the top row; in width, the outer columns and the middle ones. Consecutive
 sections that are consecutive in the region are one quad.
+
+### Entrance floor slab
+
+The entrance stands on the ground in a 0.25 m reveal that had no upward face
+under it (the shell's floor cap faces down), so a consumer's terrain showed
+inside: grass across the door's foot. The reveal is floored with a concrete
+slab from the shared `scripts/door_floor.py`, built in `opening_polys()`
+(`door_floor.uv()`, `door_floor.T`):
+
+| Entrance | Sidecar door | Slab, width x depth | Tiers |
+| --- | --- | --- | --- |
+| the boiler house front's | `entrance` | 2.0 x 0.25 m | `LOD0`, `LOD1` |
+
+- **Top 0.02 m over the ground** (`door_floor.T`), clear of terrain at
+  z = 0 and too low to read as a step.
+- **A nosing on the wall plane** between the jambs. Nothing projects past
+  the wall, so the bounds, the pivot, the footprint and the door's
+  threshold in the sidecar are as they were.
+- **The reveal starts on the slab's top:** the jambs and the closing face
+  begin at z 0.02, and `tjunctions()` gives the brick beside the opening
+  the nosing's two top corners, so wall, nosing, slab and jambs meet on
+  shared vertices. Under the nosing the floor cap runs straight along the
+  wall line instead of round the reveal. The door's artwork keeps its
+  place, so the slab covers the bottom 1.3 px of its frame.
+- **Its own atlas region** (Texture set, *The entrance floor slab*).
+
+`floor_for()` gives the entrance its slab on every tier that cuts its
+recess (`opening_mode()` "cut"): `LOD0` and `LOD1`. `LOD2` paints the door
+flush on the wall with its reveal's occlusion and `LOD3` on the elevation,
+with no reveal to floor. The machinery door (0.30 m reveal) and the service
+door (0.25 m) keep their reveals on the ground with no floor (Known
+simplifications).
 
 ### The bunker bay
 
@@ -517,7 +552,8 @@ Every tier derives from `facade_atlas.py`:
 - the window band (`BAND_X`, `LIGHT_PIER`, `LIGHT_X`, `TIERS`,
   `BAND_STRIPS`, `SQ_Z`) and the turbine hall's windows (`TH_WIN_X`,
   `TH_SILL`, `BIGDOOR_X`);
-- `SIZES` and `REVEAL` for the other openings;
+- `SIZES` and `REVEAL` for the other openings, and `FLOORS`, the
+  entrance's floor slab;
 - `WALLS` and `ITEMS`;
 - `CANOPY`, `FLUE`, `BUNKER` and `BUNKER_SILL`, `STACKS` and the stacks'
   rings (`STACK_CAP`, `STACK_STIFF`, `STACK_GUY`, `STACK_LADDER_FACE`),
@@ -548,14 +584,16 @@ Every tier derives from `facade_atlas.py`:
   it, the dusted panel wrapping its foot, and the bunker bay's buried foot
   stepped back behind the recess;
 - the bay within the parapets, and the stacks and ventilators clear of each
-  other, the parapets and the ladders.
+  other, the parapets and the ladders;
+- the entrance's floor slab region its opening's width and its reveal's
+  depth, under a door at grade (`door_floor.problems()`).
 
 ## Per-tier triangle counts
 
 | Tier | Triangles | Ceiling |
 | --- | --- | --- |
-| `LOD0` | 4144 | 12,000 |
-| `LOD1` | 3306 | 4,000 |
+| `LOD0` | 4148 | 12,000 |
+| `LOD1` | 3310 | 4,000 |
 | `LOD2` | 1134 | 1,500 |
 | `LOD3` | 304 | 500 |
 
@@ -564,7 +602,7 @@ whole, so its count is exact):
 
 | | `LOD0` | `LOD1` | `LOD2` | `LOD3` |
 | --- | --- | --- | --- | --- |
-| Shell (walls, openings, the conveyor inlet, parapets, decks) | 1638 | 1638 | 768 | 32 |
+| Shell (walls, openings, the conveyor inlet, the entrance's floor slab, parapets, decks) | 1642 | 1642 | 768 | 32 |
 | Copings | 68 | 68 | 68 | 32 |
 | Bunker bay (its windows cut to `LOD1`; its lower brick cut at the 20.0 m slab line) | 372 | 372 | 52 | 52 |
 | Stub stacks (their rings, `stack_rings()`) | 440 | 184 | 120 | 120 |
@@ -576,8 +614,8 @@ The **roof safety kit's share of the finished tier**:
 
 | | `LOD0` | `LOD1` | `LOD2` | `LOD3` |
 | --- | --- | --- | --- | --- |
-| Kit | 1412 (34.1 %) | 830 (25.1 %) | 48 (4.2 %) | 0 |
-| The rest | 2732 | 2476 | 1086 | 304 |
+| Kit | 1412 (34.0 %) | 830 (25.1 %) | 48 (4.2 %) | 0 |
+| The rest | 2736 | 2480 | 1086 | 304 |
 
 `LOD2`'s openings are one quad each on their 12 px/m regions instead of
 their sections of the 64 px/m ones (a band light was 6 quads, a hall
@@ -604,7 +642,13 @@ kept whole on `LOD0`, where thinning rungs that read at 20–35 m would show.
 
 The 20 cut bunker windows (320 triangles to `LOD1`) and the stacks' rings
 (320 at `LOD0`, 64 at `LOD1`) are what the lean kit's saving paid for.
-`LOD1` keeps 694 (17.4 %) of its ceiling, `LOD2` 366 (24.4 %).
+`LOD1` keeps 690 (17.3 %) of its ceiling, `LOD2` 366 (24.4 %).
+
+The entrance's floor slab costs 4 triangles on `LOD0` and `LOD1`, the
+nosing and the top: the brick beside the door re-triangulates round the
+nosing's two top corners and the floor cap loses the four corners that went
+round the reveal, which cancel. `LOD2` and `LOD3` have no slab and are
+byte-identical to the tiers before it.
 
 The conveyor inlet replaced the 12-triangle gallery head. Cut on
 `LOD0`/`LOD1` (frame face with a hole, four reveals, the panel) and with
@@ -746,6 +790,15 @@ The working renders are local and git-ignored:
 - `review/power_plant_rev_2026_11_21/voimalaitos_brick_hall/`, the
   previous revision's sets, `mip3/`, `mip4/` and `daycycle/`.
 
+**The entrance floor slab (2026-11-23)** adds no transition of its own: it
+goes with the entrance's 0.25 m reveal at the `LOD1`/`LOD2` switch, where the
+door is already painted flush with its reveal's occlusion; a 0.02 m nosing
+and 0.25 m of slab are under a pixel at the consumer's 128 m. Checked from a
+standing eye (1.7 m, 75 degree vertical FOV, 1280 x 720) and from 0.35 m
+over a terrain plane at z = 0, 1-5 m from the door, face-on, obliquely
+from both sides and from above, noon and reversed sun, every tier (Review
+status).
+
 These are authoring comparisons. Consumer switching, filtering and
 performance are pending.
 
@@ -771,6 +824,11 @@ The candidates are exterior surfaces the rays cannot reach:
 - the lean kit's small faces between the rails and the walls: the rungs'
   and brackets' undersides and the hoops' inner ridges, each a closed solid
   of its own 1.5 mm clear of its neighbours.
+
+The shell's floor runs straight along the wall line under the entrance's
+floor slab, so no face lies at grade inside its reveal; the slab is
+exterior surface and adds no face inside the shell. The machinery and
+service doors' recesses still close over the floor cap at z = 0.
 
 The shell's floor and lids, the parapet tops inside the copings, the roof
 items' buried feet, and the flue stub's and canopy's backs are all removed
@@ -802,6 +860,10 @@ and no interior shows.
   upstand, the drain outlets, the hatches, the skylight kerbs (opaque, dark)
   and the paving where people walk.
 - **Not modelled:**
+  - floors, except the entrance's reveal: a flat concrete slab with no
+    mat, drain or threshold strip (Construction). The machinery door's
+    0.30 m reveal and the service door's 0.25 m one stand on the
+    consumer's ground, as before;
   - sills (a concrete reveal face, and the band's flush concrete sill);
   - a lintel over the machinery door (plain brick above it);
   - the plinth step (flush with the brick).
@@ -871,6 +933,11 @@ The unique regions:
   the hall windows, the door's window), the small square window and the
   three doors, whole, at x 692–752 / y 882–971 and x 1000–1020 /
   y 806–949 (*LOD2's openings*);
+- the entrance's floor slab, 128 x 17.28 px at (696, 980), 64 px/m, in the
+  free block right of the lettering (`FLOORS`, `scripts/door_floor.py`):
+  the slab unfolded, U along the wall from the opening's left side, V the
+  nosing's 0.02 m (1.28 px) and then the top from the wall plane to the
+  door;
 - ten flat patches (`lining`, the inlet's reveals, in the gallery
   underside's place).
 
@@ -1054,6 +1121,7 @@ The normal map is derived from a painted height channel, in metres:
 | Stack flanges and rings | 0.012 |
 | Stack ladder, hoops and straps | 0.025–0.035 |
 | Guy lug | 0.025 |
+| The entrance floor slab's pores | 0.0004 |
 
 Glass is flat.
 
@@ -1108,6 +1176,7 @@ the 240-row slab period (`SlabWeather`):
 - runs down the coping's face;
 - dirt on the windows' bottom rails;
 - kicked-up dirt and handle grime on the doors;
+- trodden-in dirt on the entrance's floor slab;
 - dirt on the decks.
 
 The plant burns coal, so `Weather.coal()` lays coal dust and soot:
@@ -1144,6 +1213,25 @@ The plant burns coal, so `Weather.coal()` lays coal dust and soot:
 - soot rings round the stacks' feet on the deck.
 
 Cavity dust settles in the mortar joints. Glass and porcelain stay clean.
+
+### The entrance floor slab
+
+Painted by `scripts/door_floor.py` (`paint()`, `grain()`, `weather()`), as
+the catalog's other entrance slabs are: float-finished cast concrete,
+`ID_FLOOR`, sRGB **(132, 130, 124)** in every variant, roughness **0.88**,
+nonmetallic. Occlusion deepens toward the jambs and the door (within
+0.10 m), a slightly paler path is worn toward the leaves, the pores are the
+mineral noise at 5 % shade and 0.4 mm of height, and blotchy trodden-in
+dirt lies over it. The region bleeds 2 px into its gutter.
+
+Adding it changed only the free block it stands in: the emission map is the
+same file, the normal map differs only in the region and its 2 px bleed
+(x 694-825, y 978-999), and the albedos and the ORM elsewhere only in that
+block's padding (x 688-874, y 967-1023), which now carries the slab's
+edges instead of the lettering's, the `LO` doors' and the patches'; the
+other regions' texels are unchanged but for one ORM texel at the
+lettering's last column, by 1/255 (the cavity filter reaching across the
+gutter).
 
 ## Glazing treatment
 
@@ -1443,6 +1531,33 @@ Checked here, in Blender:
   and the six pre-export views (`LOD0` and `LOD1` are geometrically
   unchanged; `LOD2` and `LOD3` were looked at in the pair renders only).
 
+- The entrance floor slab (Construction, *Entrance floor slab*; Revision
+  log), from a snapshot in
+  `review/review_2026_11_23/voimalaitos_brick_hall/voimalaitos_brick_hall_before/`:
+  - **Door views** (`review/review_2026_11_23/voimalaitos_brick_hall/door_views.py`,
+    every tier, noon and reversed sun, over a green terrain plane at
+    z = 0): the entrance from 5 m, 2 m, both sides, 0.35 m up and from
+    above, and the machinery and service doors from 0.35 m up on `LOD0`.
+    Before, grass filled the entrance's reveal across the door's foot;
+    after, concrete fills it wall to wall on `LOD0` and `LOD1`, its nosing
+    a light line on the wall plane with nothing past it, the jambs and the
+    plinth standing on it, no dark seam or stretched texels. `LOD2` and
+    `LOD3` are unchanged.
+  - **`review_asset.py`** from both (the snapshot's exports rendered from a
+    copy under the asset's own name, `before_src/`): the day cycle on
+    `LOD0`, the six
+    orthographic views, and every tier front and oblique at 20, 35, 70 and
+    120 m under noon; `review_compare.py` sheets in
+    `review/review_2026_11_23/voimalaitos_brick_hall/compare/`.
+  - Bounds, pivot, footprint, storeys and the three doors in the sidecar
+    unchanged; the entrance's reveal measured on each tier: on `LOD0` and
+    `LOD1` an upward face at 0.020 m under 25 of 25 sample points and no
+    face at grade inside it, the slab top the only upward face under 0.1 m;
+    `LOD2` and `LOD3` byte-identical to the tiers before.
+  - `scripts/validate_asset.py`: 0 FAIL; the one WARN is `source.dirty`,
+    the sidecar written from an uncommitted tree, to be rewritten with
+    `build.py -- facts` once committed.
+
 Pending, outside this repository:
 
 - **In the consumer:**
@@ -1467,6 +1582,14 @@ These are recorded as known-good markers, not requirements.
 
 ## Revision log
 
+- **2026-11-23 — entrance floor slab.** The entrance's 0.25 m reveal had no
+  upward face under it, so a consumer's terrain showed inside. It now
+  stands on a 2.0 x 0.25 m concrete slab 0.02 m over the ground, nosing on
+  the wall plane, on its own atlas region, built and painted by the shared
+  `scripts/door_floor.py`, on `LOD0` and `LOD1`, where the reveal is cut.
+  Tiers 4144/3306/1134/304 to 4148/3310/1134/304; bounds, pivot, footprint
+  and doors unchanged; the emission map unchanged. The machinery and
+  service doors are left as they are.
 - **2026-11-23**: `LOD2`'s bare rails and the cages' back straps wound
   outward: `scripts/roof_safety.py` built one of each ladder's mirrored
   rails, and each strap in the eave's left-handed axes, inside out. Same
