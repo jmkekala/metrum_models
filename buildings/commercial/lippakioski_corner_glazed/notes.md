@@ -99,7 +99,8 @@ human scale is held by the doors (below).
   - A drawn transom bar runs from 2.10 to 2.16 m, with a transom light
     above it from 2.16 to 2.78 m and the head frame to 2.84 m. The opening is
     1.04 m wide including its 0.07 m frame.
-  - The leaf is recessed 0.10 m at `LOD0`/`LOD1`.
+  - The leaf is recessed 0.10 m at `LOD0`–`LOD2`, its reveal on a 0.02 m
+    concrete floor slab (Construction), a floor finish, not a step.
   - The transom bar is level with the glazing band's, so the leaf height
     reads on the front.
 - **Staff door (`staff`, rear):** a painted steel leaf, **0.90 x 2.10 m**,
@@ -151,7 +152,10 @@ a 0.1 mm weld.
      corner chord and the side's start. Its back faces meet at mitred
      points behind each chord joint, so there are jambs only at the band's
      two ends.
-   - The ring is capped by a triangulated floor (round the door notches) and
+   - The customer door's reveal stands on a concrete floor slab (Entrance
+     floor slab below).
+   - The ring is capped by a triangulated floor (round the staff door's
+     notch, straight along the wall line under the customer door's slab) and
      by a lid at 3.00 m, which is buried in the canopy.
 2. **Canopy** (`canopy()`), built directly as one closed solid:
    - the fascia round the rounded outline;
@@ -209,6 +213,41 @@ Openings, centre on the outer wall plane, build frame:
 | glazing band | front x 0.2..1.8, corner, side y -1.1..0.1 | see below | 3.736 m along the wall, 1.05–2.84 m | 0.06 |
 | staff door (`staff`) | rear, y 1.7 | x 0.90 | leaf 0.90 x 2.10, cased to 2.17 | 0.06 |
 | poster cases | left, x -2.4 | y 0.55, -0.45 | 0.70 x 1.12, flush | none |
+
+### Entrance floor slab
+
+The customer door (`kiosk`) stands on the ground in a 0.10 m reveal that had
+no upward face under it (the ring's floor cap faces down and detoured round
+the recess), so a consumer's terrain showed inside: a strip of grass across
+the threshold. The reveal is now floored with a concrete slab painted by the
+shared `scripts/door_floor.py`, built by hand in `build_ring()`, since the
+ring is one shared grid of cells rather than a `shell_build` wall region:
+
+| Entrance | Sidecar door | Slab, width x depth | Tiers |
+| --- | --- | --- | --- |
+| the customer door | `kiosk` | 1.04 x 0.10 m (the casing's opening) | `LOD0`, `LOD1`, `LOD2` |
+
+- **Top 0.02 m over the ground** (`door_floor.T`), clear of terrain at
+  z = 0 and too low to read as a step.
+- **A nosing on the wall plane** between the jambs, from the ground to
+  0.02 m. Nothing projects past the wall, so the bounds, the pivot, the
+  footprint and the door's threshold in the sidecar are as they were.
+- **The recess starts on the slab's top:** the door's back face and its
+  jambs begin at z 0.02, the slab's top takes the place of a threshold
+  cheek, and the boarding cell on each side of the opening carries a corner
+  at (s, 0.02), so wall, nosing, slab and jambs meet on shared vertices.
+  Under the nosing the floor cap runs straight along the wall line instead
+  of round the reveal. The door's artwork keeps its place, so the slab
+  covers the bottom 1.3 px of its threshold shadow.
+- **Its own atlas region** (Texture set), UVs from `door_floor.uv()`.
+
+The slab is given to the door's `Item` with the same predicate that recesses
+it (`recessed(level, "door")`), so it is on every tier that cuts the reveal:
+`LOD0`–`LOD2`. `LOD3` paints the door flat on the wall with no reveal and
+needs none. The staff door is a service door and keeps its 0.06 m reveal on
+the ground with no floor (Known simplifications). The glazing band starts at
+the 1.05 m counter, and the poster cases are flush, so no other set-back
+stands at grade.
 
 ### Serving counter
 
@@ -286,6 +325,8 @@ furniture sizes. Positions live at the top of `build.py`.
 - the downlights under the soffit, no lower than 0.10 m below the door
   head, clear of the walls;
 - the counter under the sill;
+- `door_floor.problems()`: the customer door's floor slab region the
+  casing's width and the reveal's depth, under a door at grade;
 - plan bounds within 7.0 x 5.5 m;
 - every region's pixel size against its metres.
 
@@ -296,10 +337,16 @@ build offset is (0.625, -0.625, 0), shared by every tier.
 
 | Tier | Triangles | Ceiling | What it keeps or drops |
 | --- | --- | --- | --- |
-| `LOD0` | **1,080** | 12,000 | everything: four corner chords, recessed band and doors, 6-segment canopy corners with the hidden deck, sign board on its posts, three 12-sided drum downlights, counter, stepped shutter stacks, rack, bench with legs, 10-sided bin on a 6-sided post, wall lamp |
-| `LOD1` | **890** | 4,000 | canopy corners 4 segments; downlights 8-sided; bench legs dropped; bin 6-sided on a 4-sided post; the rest as `LOD0` |
-| `LOD2` | **508** | 1,500 | two corner chords; the customer door still recessed, the band and the staff door painted flat; canopy corners 2 segments; downlights 6-sided drums; counter on the two chords; rack; bench seat as one box; bin 6-sided on a 4-sided post; wall lamp; shutter stacks as plain blocks, sign board and posts, and the deck's rim kept; coplanar splits dissolved |
+| `LOD0` | **1,084** | 12,000 | everything: four corner chords, recessed band and doors, 6-segment canopy corners with the hidden deck, sign board on its posts, three 12-sided drum downlights, counter, stepped shutter stacks, rack, bench with legs, 10-sided bin on a 6-sided post, wall lamp |
+| `LOD1` | **894** | 4,000 | canopy corners 4 segments; downlights 8-sided; bench legs dropped; bin 6-sided on a 4-sided post; the rest as `LOD0` |
+| `LOD2` | **510** | 1,500 | two corner chords; the customer door still recessed on its floor slab, the band and the staff door painted flat; canopy corners 2 segments; downlights 6-sided drums; counter on the two chords; rack; bench seat as one box; bin 6-sided on a 4-sided post; wall lamp; shutter stacks as plain blocks, sign board and posts, and the deck's rim kept; coplanar splits dissolved |
 | `LOD3` | **382** | 500 | one chord (a chamfer) at the wall's corner; every opening flat; canopy as `LOD2` but with one flat top and no sunk deck; sign board and posts; downlights 4-sided drums; counter on the chamfer; shutter blocks, rack and bench seat as `LOD2`; bin 4-sided on a 4-sided post; wall lamp dropped |
+
+The customer door's floor slab costs 4 triangles on `LOD0`–`LOD2` (the
+nosing and the top), and the boarding cells beside the door 2 more for their
+corners at the nosing's top, against 2 fewer in the floor cap, which no
+longer goes round the reveal: `LOD0` and `LOD1` +4, `LOD2` +2 after the coplanar
+dissolve, `LOD3` unchanged.
 
 The triangles go mostly to the canopy (its rounded fascia, rim, upstand and
 deck, which the union splits round the walls, the sign's posts and the
@@ -406,6 +453,16 @@ were reworked for them, and reviewed with a 75° camera of their own:
 - The glazing band sits in the canopy's shadow, so it reads darker than the
   walls from raised oblique views. That matches the building type.
 
+**The entrance floor slab (2026-11-23)** adds no transition of its own. It
+is on `LOD0`–`LOD2`, as the door's reveal is, and goes with the reveal at
+the `LOD2`/`LOD3` switch, where the door is painted flat: a 0.02 m nosing
+and 0.10 m of slab are under a pixel at the consumer's 52 m, and at the
+table's 120 m. Every tier rendered at the consumer's switches (12, 25 and
+52 m from the door, 75° vertical FOV, 1920 x 1080, front and oblique at eye
+level and raised 20°, noon) and from a standing eye and 0.35 m over a
+terrain plane at z = 0, 1–3.5 m from the door, noon and reversed sun
+(Review status).
+
 **Pending:** runtime switching and performance in a representative consumer
 scene.
 
@@ -427,8 +484,11 @@ manifold check are summarised under Review status.
   deep, 0.05 m wide, 1.8 m tall. They are exterior surface, open to the
   air, in a slot too narrow for the test's 40 fixed rays; kept, since the
   gap is the point of the rail. `LOD2`/`LOD3`: 0 hidden.
-- The door recesses have no floor of their own; the ring's floor closes under
-  them.
+- The customer door's reveal stands on its floor slab (Construction), which
+  is exterior surface and adds no face inside the shell; the ring's floor
+  runs straight along the wall line under it, so no face lies at grade
+  inside the reveal. The staff door's recess has no floor of its own; the
+  ring's floor closes under it.
 - No closure faces are kept apart from the recessed glass and leaves, which
   are exterior surface.
 
@@ -453,6 +513,9 @@ manifold check are summarised under Review status.
   modelled through `LOD2` and goes at `LOD3`. The customer door's recess
   is kept through `LOD2`; the band and the staff door are flat from
   `LOD2`.
+- **Floors:** only the customer door's reveal has one, a flat concrete slab
+  with no mat or threshold strip (Construction). The staff door's 0.06 m
+  reveal stands on the consumer's ground, as before.
 - **Roof:** the deck's outlet is painted (a galvanised ring round a dark
   grate, with a ponding stain), not modelled. There is no roof hatch or
   penetration: the kiosk is serviced from the ground.
@@ -506,6 +569,7 @@ Rows are V, counted up from the bottom.
   | bench top | 128 x 20 | |
   | wall lamp's face | 10 x 9 | |
   | sign board's face | 358 x 54 | 128 px/m |
+  | the customer door's floor slab, at (284, 690) right of the patches (`FLOORS`, `scripts/door_floor.py`) | 66.6 x 7.7 | unfolded: U along the wall from the opening's left side, V the nosing's 0.02 m (1.28 px) and then the top from the wall plane to the door |
 
   There are also thirteen 16 px flat patches, among them the downlights'
   opal and white housing.
@@ -534,7 +598,8 @@ flat. Relief heights:
 - the pass rail and push bar 20–30 mm;
 - shutter hinges 10 mm, the leaves' arrises 4 mm;
 - felt laps 3 mm;
-- sign letters 4 mm.
+- sign letters 4 mm;
+- the floor slab's pores, 0.4 mm.
 
 The ribs read as raised in the lit renders.
 
@@ -574,10 +639,28 @@ The mip stress review is under Review status.
 - door wear at the push bar, handle and foot;
 - dust on the band's sill frame and pass rail;
 - wear on the bench seat;
+- trodden-in dirt on the customer door's floor slab;
 - dust in the rib grooves (cavity).
 
 The glass, the signs, the posters, the magazines, the downlights and the lamp
 lens stay clean.
+
+### The entrance floor slab
+
+Painted by `scripts/door_floor.py` (`paint()`, `grain()`, `weather()`), as
+the catalog's other entrance slabs are: float-finished cast concrete,
+`ID_FLOOR`, sRGB **(132, 130, 124)** in every variant, roughness **0.88**,
+nonmetallic. Occlusion deepens within 0.04 m of the jambs and the door, a
+slightly paler path is worn toward the leaf, the pores are the plinth's
+noise at 5 % shade and 0.4 mm of height, and blotchy trodden-in dirt lies
+over it. The region bleeds 2 px into its gutter.
+
+Adding it changed no other region's texels: the normal map differs only in
+the slab and its bleed, the emission map is the same file, and the albedos
+and the ORM differ elsewhere only in the unclaimed padding above the patch
+row and the sign (y 655–1023, x 269–743), which `atlas.pad()` now fills from
+the slab's edges where it is the nearest region (working diff in
+`review/review_2026_11_23/lippakioski_corner_glazed/`, not committed).
 
 ## Glazing treatment
 
@@ -796,6 +879,37 @@ Completed here:
 - **Generic composite:** no real kiosk's name, chain colours or trade dress,
   and nothing traced. The textures are generated.
 
+- **The entrance floor slab** (Construction, Revision log), from a snapshot
+  in `review/review_2026_11_23/lippakioski_corner_glazed/before_src/`:
+  - **Door views** (`review/review_2026_11_23/lippakioski_corner_glazed/door_views.py`,
+    every tier, noon and reversed sun, over a green terrain plane at z = 0):
+    the customer door from 3.5 m and 1.5 m at eye level, from both sides,
+    0.35 m up and from above; the staff door from eye level and 0.35 m up.
+    Before, grass ran into the 0.10 m reveal up to the leaf on `LOD0`–`LOD2`;
+    after, concrete fills it wall to wall, its nosing a light line on the
+    wall plane flush with the plinth, nothing past it, no dark seam or
+    stretched texels, in sun and in shade. `LOD3` (flat door) and the staff
+    door are unchanged.
+  - **Consumer switches:** every tier at 12, 25 and 52 m from the door at
+    75° (LOD review), front and oblique at eye level and raised 20°, noon,
+    before and after. Each switch's pair differs as much after as before
+    (pixels changed by more than 24 levels: the same counts, but for the
+    raised 52 m `LOD2`/`LOD3` pair, 38 → 44). At 12 and 25 m the slab is a
+    faint line at the door's foot on `LOD0`, `LOD1` and `LOD2` alike; at
+    52 m `LOD2` with its slab and `LOD3` without cannot be told apart.
+  - **`review_asset.py`** from both: the day cycle on `LOD0`, the six
+    orthographic views, and every tier front and oblique at 20, 35, 70 and
+    120 m under noon; `review_compare.py` sheets in
+    `review/review_2026_11_23/lippakioski_corner_glazed/compare/`.
+  - Bounds, pivot, footprint, storey and both doors in the sidecar
+    unchanged; on `LOD0`–`LOD2` an upward face at 0.020 m under 45 of 45
+    sample points of the reveal, 0.104 m² of slab top, the only upward face
+    under 0.1 m, and no face at grade; welded, 0 non-manifold edges.
+  - `scripts/validate_asset.py`: 0 FAIL; the one WARN is `source.dirty`,
+    the sidecar written from an uncommitted tree, to be rewritten with
+    `build.py -- facts` once committed. Hidden-surface test unchanged: the
+    same 5 hinge-rail triangles on `LOD0`/`LOD1`, 0 on `LOD2`/`LOD3`.
+
 Pending, outside this repository:
 
 - consumer import, LOD switching and emission control;
@@ -812,6 +926,15 @@ Pending, outside this repository:
 - Textures: CPython 3.14.10, numpy 2.5.5, scipy 1.18.1, Pillow 13.0.0.
 
 ## Revision log
+
+- **2026-11-23, entrance floor slab.** The customer door's 0.10 m reveal
+  had no upward face under it, so a consumer's terrain showed inside. It
+  now stands on a 1.04 x 0.10 m concrete slab 0.02 m over the ground,
+  nosing on the wall plane, on its own atlas region, painted by the shared
+  `scripts/door_floor.py`, on `LOD0`–`LOD2` where the reveal is cut. Tiers
+  1,080 / 890 / 508 / 382 → 1,084 / 894 / 510 / 382; bounds, pivot,
+  footprint and doors unchanged; the emission map unchanged. The staff
+  door (service) is left as it was.
 
 - **2026-11-22, far tiers for screen-size switching.** The consumer shows
   `LOD2` from ~25 m and `LOD3` from ~52 m (its measurement, 1080p, 75°

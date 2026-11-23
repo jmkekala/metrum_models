@@ -23,8 +23,9 @@ bands and a set of unique regions:
                   colour, a galvanised edge flashing along the top.
     regions       the soffit and the roof deck (plan-mapped), the glazing
                   band, the doors, the posters, the shutter stack's front
-                  and side, the rack, the bench, the wall lamp's face and
-                  the sign board's face.
+                  and side, the rack, the bench, the wall lamp's face, the
+                  sign board's face and the concrete floor slab in the
+                  customer door's reveal (scripts/door_floor.py).
 
 Rasterising is scripts/atlas.py's (supersampled canvas, height channel for
 the normal map); weathering is scripts/weathering.py's; the panes are
@@ -45,6 +46,7 @@ import numpy as np
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "scripts"))
 import atlas  # noqa: E402
+import door_floor as DF  # noqa: E402
 import glazing  # noqa: E402
 import lettering  # noqa: E402
 import weathering  # noqa: E402
@@ -161,6 +163,12 @@ BENCH_TOP = (722.0, 406.0, m(BENCH[0]), m(BENCH[1]))                       # 128
 LAMP_FACE = (722.0, 432.0, m(0.16), m(0.14))                              # 10.2 x 9.0
 SIGN = (4.0, 576.0, SIGN_W * SIGN_PPM, SIGN_H * SIGN_PPM)                  # 358.4 x 53.8
 
+# The concrete floor slab in the customer door's reveal (scripts/
+# door_floor.py), unfolded at 64 px/m: U across the casing's 1.04 m opening,
+# V up the 0.02 m nosing and back 0.10 m to the door. 66.6 x 7.7 px, right of
+# the patches.
+FLOORS = {"kiosk": DF.Floor(284.0, 690.0, DOOR_SIZE[0], DOOR_DEPTH)}
+
 PATCH_NAMES = ("blank", "reveal", "flash", "steel", "bin", "post", "lamp",
                "lens", "timber", "shutter_top", "sign_edge", "light", "fitting")
 PATCHES = {n: (4.0 + 20.0 * i, 690.0, 16.0, 16.0) for i, n in enumerate(PATCH_NAMES)}
@@ -175,7 +183,7 @@ REGIONS = {"soffit": SOFFIT, "deck": DECK, "band": BAND, "door": DOOR,
  ID_GLASS, ID_DOOR, ID_STEEL, ID_SIGN, ID_SIGN_T, ID_LIGHT, ID_POSTER,
  ID_POSTER_A, ID_POSTER_B, ID_POSTER_C, ID_SHUTTER, ID_TIMBER, ID_BIN,
  ID_MAG_A, ID_MAG_B, ID_MAG_C, ID_LAMP, ID_SEAL, ID_FITTING, ID_SIGN_LIT,
- ID_HINGE) = range(28)
+ ID_HINGE, ID_FLOOR) = range(29)          # ID_FLOOR: the door's cast concrete floor slab
 
 # (roughness, metallic). Powder-coated frames, painted boards and steel are
 # dielectric; galvanised flashing and the stainless counter are metal.
@@ -190,7 +198,7 @@ SURFACE = {
     ID_SHUTTER: (0.46, 0.0), ID_TIMBER: (0.78, 0.0), ID_BIN: (0.50, 0.0),
     ID_MAG_A: (0.45, 0.0), ID_MAG_B: (0.45, 0.0), ID_MAG_C: (0.45, 0.0),
     ID_LAMP: (0.20, 0.0), ID_SEAL: (0.80, 0.0), ID_FITTING: (0.40, 0.0),
-    ID_SIGN_LIT: (0.25, 0.0), ID_HINGE: (0.42, 0.75),
+    ID_SIGN_LIT: (0.25, 0.0), ID_HINGE: (0.42, 0.75), ID_FLOOR: DF.SURFACE,
 }
 
 # ---------------------------------------------------------------- palettes
@@ -214,7 +222,7 @@ FIXED = {
     ID_POSTER_C: (102, 102, 100), ID_TIMBER: (128, 96, 64), ID_BIN: (66, 76, 68),
     ID_MAG_A: (168, 72, 58), ID_MAG_B: (70, 104, 140), ID_MAG_C: (196, 186, 160),
     ID_LAMP: (214, 210, 196), ID_SEAL: (28, 28, 28), ID_FITTING: (208, 208, 202),
-    ID_SIGN_LIT: (230, 224, 204), ID_HINGE: (118, 120, 120),
+    ID_SIGN_LIT: (230, 224, 204), ID_HINGE: (118, 120, 120), ID_FLOOR: DF.COLOUR,
 }
 
 BAND_IDS = {
@@ -668,6 +676,7 @@ def paint_patches(c):
 def check_regions():
     """Fail the bake if two regions overlap, meet the bands, or run off."""
     rects = dict(REGIONS)
+    rects.update({"floor_" + k: f.rect for k, f in FLOORS.items()})
     rects.update(PATCHES)
     problems = atlas.region_problems(rects, ATLAS, bands_top=FASCIA_Y0 + FASCIA_H + PAD)
     if FASCIA_Y0 - PAD < WALL_Y0 + WALL_H + PAD + 2:
@@ -712,6 +721,9 @@ def weather(c):
     # the glazing band: dust on the sill frame and the pass rail
     x, y, rw, rh = BAND
     w.add("D", x, x + rw, y, y + m(0.06), 0.10, (ID_FRAME, ID_STEEL))
+    # the door's floor slab: trodden-in dirt
+    for f in FLOORS.values():
+        DF.weather(w, f, ID_FLOOR, bleed=PAD)
     x, y, rw, rh = BENCH_TOP
     w.add("D", x, x + rw, y, y + rh, lambda Y, X, nz: 0.06 + 0.06 * nz("blotch"), (ID_TIMBER,))
     x, y, rw, rh = SHUTTER_FACE
@@ -738,6 +750,8 @@ def paint(ss=atlas.SS):
     paint_bench(c)
     paint_sign(c)
     paint_lamp_face(c)
+    for f in FLOORS.values():
+        DF.paint(c, f, ID_FLOOR, bleed=PAD)
     paint_patches(c)
 
     wear = 0.02 * atlas.noise(c, 3, 40.0) + 0.012 * atlas.noise(c, 4, 8.0)
@@ -749,6 +763,7 @@ def paint(ss=atlas.SS):
     pores = atlas.noise(c, 9, 0.8)
     c.shade[mineral] *= 1.0 + 0.03 * pores[mineral]
     c.height[mineral] += 0.0004 * pores[mineral]
+    DF.grain(c, ID_FLOOR, pores)
     weather(c)
     c.pad()
     return c

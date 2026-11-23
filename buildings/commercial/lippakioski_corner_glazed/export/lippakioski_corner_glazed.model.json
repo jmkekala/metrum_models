@@ -3,7 +3,7 @@
   "version": 1,
   "name": "lippakioski_corner_glazed",
   "path": "buildings/commercial/lippakioski_corner_glazed",
-  "source": {"commit": "8e89a8120e7f6bd14ea0c3859d5b4d3e3b1566af", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "eb64bc6aeac1487aafcf92047e0302584855a065", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-3.375, 0.0, -2.675], "max": [3.375, 3.67, 2.675]},
   "footprint": [
@@ -25,23 +25,23 @@
     {"id": "staff", "kind": "service", "position": [0.275, 0.0, -2.325], "facing": [0.0, 0.0, -1.0], "width_m": 0.9, "height_m": 2.1, "main": false}
   ],
   "lods": [
-    {"file": "lippakioski_corner_glazed_lod0.glb", "triangles": 1080, "sha256": "ced2e1ea1161b9efc3c040c1e0c2a88f16498e8d03de18e0411744702f017971"},
-    {"file": "lippakioski_corner_glazed_lod1.glb", "triangles": 890, "sha256": "b8e4e5d4fe6d26f7fd583ecaf4c7d689baa8cb00fe950d843a7c69e90d1b624a"},
-    {"file": "lippakioski_corner_glazed_lod2.glb", "triangles": 508, "sha256": "ab9d03a4aaddf166ccdb72c4e1c87eaf3de80b700446e945390944aaac619d81"},
+    {"file": "lippakioski_corner_glazed_lod0.glb", "triangles": 1084, "sha256": "96e1ab5ecdefc664931580de6c97febd30e8f49d6c0734139f1b68a0e9224fc2"},
+    {"file": "lippakioski_corner_glazed_lod1.glb", "triangles": 894, "sha256": "4055c0165a492209c3b9e90deaa448edc341099fcfc8f3c39d1ecc51cbc5bf37"},
+    {"file": "lippakioski_corner_glazed_lod2.glb", "triangles": 510, "sha256": "7bf058a1f8f60e64e35250b3ddc30a6dae52d494f1c8614f5ae92c179d5a9495"},
     {"file": "lippakioski_corner_glazed_lod3.glb", "triangles": 382, "sha256": "bcfd510e4e2be7190f57c01c866f799c358407c345063a7c7dfbb649447e7565"}
   ],
   "textures": {
-    "orm": {"file": "lippakioski_corner_glazed_orm.png", "sha256": "7fbcfb5cfbd131acd742137ccc7a85b438823c209b0b3801ba5d7d9d7d72fd4c"},
-    "normal": {"file": "lippakioski_corner_glazed_normal.png", "sha256": "536a66a7802113e58ee30e5f7af2b4f9d13d4786392acf645b984b72eee876b1"},
+    "orm": {"file": "lippakioski_corner_glazed_orm.png", "sha256": "a1e3781b1067375635008cc1e1c661ac624acec94d6021ab8d6a2d8a07033bc3"},
+    "normal": {"file": "lippakioski_corner_glazed_normal.png", "sha256": "42f3561d2070203b823947da5e3b3d2f36ad6caafa8beefe7844d5bf50e3f56b"},
     "emission": {"file": "lippakioski_corner_glazed_emission.png", "sha256": "cb2bbc9b03a6655a24efe14f1f6d5a5a0d231df388fdd691164164b9521e33de"}
   },
   "variants": [
-    {"id": "ochre_boards", "albedo": "lippakioski_corner_glazed_albedo_ochre_boards.png", "sha256": "879d7331a3cdb66893269929cbccb7992a5d37a65e989219d98df4161bbce5d3"},
-    {"id": "cream_boards", "albedo": "lippakioski_corner_glazed_albedo_cream_boards.png", "sha256": "e4fb4a184a3f3300cc2db489d0437f64b0068876eb6f6197000992ded73fd51e"},
-    {"id": "green_boards", "albedo": "lippakioski_corner_glazed_albedo_green_boards.png", "sha256": "4ff183b3a625acb5e443c95e6290db75017b9aff781bc7d123b18c2c304e5e98"},
-    {"id": "red_boards", "albedo": "lippakioski_corner_glazed_albedo_red_boards.png", "sha256": "24d1debd37924bb6a84fc8eff7a2fbbde4d43f81aada0b463965c7a91316f477"}
+    {"id": "ochre_boards", "albedo": "lippakioski_corner_glazed_albedo_ochre_boards.png", "sha256": "0c501fbc69983729c0a29ca9ae797df28329cbfa3c69a97c58e6299a7bfe5542"},
+    {"id": "cream_boards", "albedo": "lippakioski_corner_glazed_albedo_cream_boards.png", "sha256": "e27fea8e316ca26cc540090bb29b74994c1b1f4db540aeac3838c3ef2c3be37f"},
+    {"id": "green_boards", "albedo": "lippakioski_corner_glazed_albedo_green_boards.png", "sha256": "e2421c943320d0813e2b79073a99060fc14cc05113fb7af9dc332029389f5acd"},
+    {"id": "red_boards", "albedo": "lippakioski_corner_glazed_albedo_red_boards.png", "sha256": "1922bb0f5b5f17e33ad33b1ec861d8db653ec76e4d830a2ff4b8030161eb2679"}
   ],
   "default_variant": "ochre_boards",
-  "preview": {"file": "../preview.png", "sha256": "c039ab54a56f23e8d33edc93396ce78b3016557b268e3cf1a782fad22c4c394c"},
+  "preview": {"file": "../preview.png", "sha256": "ddcd43fe7f5a4d9ce73900054193a17869636b39bbf1492acfcbe274b4e24dc8"},
   "hero": false
 }
