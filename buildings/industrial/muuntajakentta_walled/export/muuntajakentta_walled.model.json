@@ -1,9 +1,9 @@
 {
   "schema": "metrum-model-facts",
-  "version": 1,
+  "version": 4,
   "name": "muuntajakentta_walled",
   "path": "buildings/industrial/muuntajakentta_walled",
-  "source": {"commit": "bf6024b3d003e1afca7ed9cc1a3d28652e400167", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "1dcec66a9bbabcda7c0d3b166bd30cb4457cc66c", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-10.0, 0.0, -6.0], "max": [10.0, 10.9, 6.0]},
   "footprint": [
@@ -17,7 +17,7 @@
   ],
   "dwellings": 0,
   "doors": [
-    {"id": "switchgear", "kind": "entrance", "position": [6.2525, 0.0, 5.94], "facing": [0.0, 0.0, 1.0], "width_m": 1.0, "height_m": 2.125, "main": true}
+    {"id": "switchgear", "kind": "entrance", "position": [6.2525, 0.0, 5.94], "facing": [0.0, 0.0, 1.0], "width_m": 1.0, "height_m": 2.125, "floor_y_m": 0.02, "storey": 0, "main": true}
   ],
   "lods": [
     {"file": "muuntajakentta_walled_lod0.glb", "triangles": 8794, "sha256": "8d631309990f7689619c4223ad416f0886f46a072993cbd3286f9404e59ccd48"},
