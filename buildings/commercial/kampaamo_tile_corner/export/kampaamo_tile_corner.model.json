@@ -3,7 +3,7 @@
   "version": 4,
   "name": "kampaamo_tile_corner",
   "path": "buildings/commercial/kampaamo_tile_corner",
-  "source": {"commit": "53983f995104b56a5ad3304f8953ff548cf35dba", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "dc0fd0324aa894b0d1c01e6ddfafe11ddbcdee95", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-5.0625, 0.0, -5.2], "max": [5.0625, 5.125, 5.2]},
   "footprint": [
@@ -31,23 +31,23 @@
     {"id": "staff", "kind": "service", "position": [-2.0, 0.0, -4.7], "facing": [0.0, 0.0, -1.0], "width_m": 0.9, "height_m": 2.1, "floor_y_m": 0.02, "storey": 0, "main": false}
   ],
   "lods": [
-    {"file": "kampaamo_tile_corner_lod0.glb", "triangles": 1150, "sha256": "31854d8cff97dc62ab203ad88a042bde148cd6f7b37ca763ee38085a734c1370"},
-    {"file": "kampaamo_tile_corner_lod1.glb", "triangles": 916, "sha256": "bc8c8573ea084dcb41e71ebcb26998f447bf7a376a49dc41d5797abc84fa91dd"},
-    {"file": "kampaamo_tile_corner_lod2.glb", "triangles": 512, "sha256": "c5a49c1de7a3a5cfca8317da177728cf6b9667610e0bbefbb41a0cfc8a82f795"},
-    {"file": "kampaamo_tile_corner_lod3.glb", "triangles": 272, "sha256": "6a83f746626beefcb714ef1fe778ce312dcc8fa38d911757dc2031589badb54f"}
+    {"file": "kampaamo_tile_corner_lod0.glb", "triangles": 1176, "sha256": "39ffbf3af26798b1938d53125429364df13e0dda42d43fea044167dfc6315048"},
+    {"file": "kampaamo_tile_corner_lod1.glb", "triangles": 920, "sha256": "5be2964b53ef37c7a01a85b69db12c4ee5a01b96a17d7aa61fb3ee64283614d5"},
+    {"file": "kampaamo_tile_corner_lod2.glb", "triangles": 494, "sha256": "7c6461dbc934af6b23204fbeea0547135e907bea7085c776ac62c06f616e4357"},
+    {"file": "kampaamo_tile_corner_lod3.glb", "triangles": 258, "sha256": "9e25045b0c395fdefba23d0d18d4c9b203be753d0628222e0a47745891079dbe"}
   ],
   "textures": {
-    "orm": {"file": "kampaamo_tile_corner_orm.png", "sha256": "095d5851753140bbd9a0707131824cc9b97fd2c795d7f69ac298550e2d93a054"},
-    "normal": {"file": "kampaamo_tile_corner_normal.png", "sha256": "255bca419daec127daec4654beb7394065b8dc3d2a3dc2f0c03f7bf70e5ff42d"},
+    "orm": {"file": "kampaamo_tile_corner_orm.png", "sha256": "7a5e200c0a973e8a754ff9fa24e3c1437fbd6eaf6452bc441a29ee2f54eb3cb1"},
+    "normal": {"file": "kampaamo_tile_corner_normal.png", "sha256": "13bb7f4dc4d8c70f1f0bfee9f6c643235139714d8283b576fbd71df3b634bcdf"},
     "emission": {"file": "kampaamo_tile_corner_emission.png", "sha256": "52ce8e3b6f7b3fd9c6c73fafeae6e2785db489ff024cb4c10a1e2d2c797e2422"}
   },
   "variants": [
-    {"id": "teal_tile", "albedo": "kampaamo_tile_corner_albedo_teal_tile.png", "sha256": "6b471af126680d4b27055c4a57a04d395e12cdecdef975982b159fd0e1e9da29"},
-    {"id": "rose_tile", "albedo": "kampaamo_tile_corner_albedo_rose_tile.png", "sha256": "63de91d905858bbbb22013fe4692a2eeffe7bd85fa67629680b4db4299f9d285"},
-    {"id": "blue_tile", "albedo": "kampaamo_tile_corner_albedo_blue_tile.png", "sha256": "6494784ce152f2ad52a1105633db738f5a2678d196ea693ba79af61bdf52a7c1"},
-    {"id": "brown_tile", "albedo": "kampaamo_tile_corner_albedo_brown_tile.png", "sha256": "b6d8a096c32f6747670584c0b5bf56a876cd4e4ab6efe195f4f1bc1c3ac6bc41"}
+    {"id": "teal_tile", "albedo": "kampaamo_tile_corner_albedo_teal_tile.png", "sha256": "18afdd164929aa52129539020034eb7946af282a9fa8ff2fbf211cd9a1b6c2b2"},
+    {"id": "rose_tile", "albedo": "kampaamo_tile_corner_albedo_rose_tile.png", "sha256": "08593b13cddbeea1d7784f783d394b9e8a6ec1421100fe86d0ea2a0bf25410b0"},
+    {"id": "blue_tile", "albedo": "kampaamo_tile_corner_albedo_blue_tile.png", "sha256": "1df03d34a7049b48034372060b55d54147ed0a6c43a70bb2aae7965f217bc0c0"},
+    {"id": "brown_tile", "albedo": "kampaamo_tile_corner_albedo_brown_tile.png", "sha256": "590c28d3ff683936cc15efa579e077fea77a5c0c140832335f4eae3fb9cdee8f"}
   ],
   "default_variant": "teal_tile",
-  "preview": {"file": "../preview.png", "sha256": "dbd47754d2fb0ae518662bbe46ac6027fadce23c530f47d3dfd8cb291f9b792e"},
+  "preview": {"file": "../preview.png", "sha256": "0951901aeaca934679a0dd2f9177cd98ee7bb07d67397e0621e65fa50be33c89"},
   "hero": false
 }

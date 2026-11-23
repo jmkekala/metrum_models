@@ -27,8 +27,10 @@ salon's lettering on the band over them, and the one shop door next to the
 corner under a thin steel canopy hung on two rods. The left side has two
 windows, the back a small window, the staff door under a small steel canopy
 and the wall ladder to the roof, and the right side a window, the meter cupboard and an exhaust louvre.
-Both doors' reveals and the corner recess stand on 0.02 m concrete floor
-slabs (scripts/door_floor.py).
+Both doors' reveals stand on 0.02 m concrete floor slabs
+(scripts/door_floor.py). The corner recess has none, by the owner's
+decision: a consumer paves the forecourt into it, so its ground is the
+consumer's.
 The roof drains inside the parapet, so there are no gutters or downpipes.
 
 Construction is a set of closed solids unioned with Blender's exact boolean:
@@ -94,11 +96,9 @@ SOFFIT_V = 3.125            # the corner soffit samples the white tile from here
 # Straight walls, walked anticlockwise seen from above so the outward face is
 # on the right, as every build.py walks them. *breaks* are heights where the
 # wall's vertical edge meets the corner recess.
-# The corner recess's floor slab puts a corner at its top (DF.T) on those
-# edges too.
 WALLS = {
-    "front": dict(p0=(-HX, -HY), p1=(CX, -HY), s_off=0.0, right=(DF.T, L.Z_HEAD), left=()),
-    "east": dict(p0=(HX, CY), p1=(HX, HY), s_off=S_EAST, right=(), left=(DF.T, L.Z_HEAD)),
+    "front": dict(p0=(-HX, -HY), p1=(CX, -HY), s_off=0.0, right=(L.Z_HEAD,), left=()),
+    "east": dict(p0=(HX, CY), p1=(HX, HY), s_off=S_EAST, right=(), left=(L.Z_HEAD,)),
     "rear": dict(p0=(HX, HY), p1=(-HX, HY), s_off=S_REAR, right=(), left=()),
     "west": dict(p0=(-HX, HY), p1=(-HX, -HY), s_off=S_WEST, right=(), left=()),
 }
@@ -253,18 +253,9 @@ def floor_for(kind, level):
     None. Both doors stand on the ground, so wherever their reveals are cut
     they are floored: a concrete slab DF.T over the ground, clear of the
     consumer's terrain at z = 0 (scripts/door_floor.py). The corner recess
-    has its own slab on every tier (build_corner())."""
+    has none (build_corner())."""
     name = FLOORED.get(kind)
     return L.FLOORS[name] if name and cut(level) else None
-
-
-def uv_corner_floor(co):
-    """The corner recess's slab, unfolded as the soffit over it: U round the
-    band's arc (R_OUT x angle), V up its nosing on the band's line and then
-    in from that line to the curved shopfront (facade_atlas.FLOORS["corner"])."""
-    f = L.FLOORS["corner"]
-    return (f.x + R_OUT * _theta(co) * PPM,
-            f.y + (co.z + max(0.0, R_OUT - _radius(co))) * PPM)
 
 
 def uv_arc_band(co):
@@ -372,27 +363,24 @@ def build_wall(B, name, level, z_top):
 def build_corner(B, n, z_top):
     """The curved corner: the band on the outer arc from the shopfront head
     up, its soffit back to the inner arc, the faceted shopfront on the inner
-    arc, and a tiled return at each end of the recess.
+    arc down to the ground, and a tiled return at each end of the recess.
 
-    The recess stands on a concrete floor slab (scripts/door_floor.py's
-    finish, on every tier, as the recess is): its nosing on the band's line
-    from the ground to DF.T, its top back to the shopfront, which stands on
-    it, as do the returns. The open rim the floor cap closes then runs round
-    the band's line, and the front and east walls take a corner at DF.T
-    where the nosing meets them."""
+    The recess has no floor slab, an exception to scripts/door_floor.py's
+    rule by the owner's decision: a consumer paves the forecourt into it, and
+    a slab would stand 0.02 m proud of that paving. Its ground is the
+    consumer's; a pack that does not pave there shows its terrain round the
+    column."""
     outer, inner = arc_pts(R_OUT, n), arc_pts(R_IN, n)
-    zh, zf = L.Z_HEAD, DF.T
+    zh = L.Z_HEAD
     for i in range(n):
         (a, b), (c, d) = (outer[i], outer[i + 1]), (inner[i], inner[i + 1])
         B.face([a + (zh,), b + (zh,), b + (z_top,), a + (z_top,)], uv_arc_band)
         B.face([a + (zh,), b + (zh,), d + (zh,), c + (zh,)], uv_soffit)
-        B.face([c + (zf,), d + (zf,), d + (zh,), c + (zh,)], uv_curve)
-        B.face([a + (0.0,), b + (0.0,), b + (zf,), a + (zf,)], uv_corner_floor)
-        B.face([a + (zf,), b + (zf,), d + (zf,), c + (zf,)], uv_corner_floor)
+        B.face([c + (0.0,), d + (0.0,), d + (zh,), c + (zh,)], uv_curve)
     front_ret = Frame((CX, -HY), (CX, -HY + L.RECESS))
     east_ret = Frame((HX - L.RECESS, CY), (HX, CY))
     for fr, s_off in ((front_ret, FRONT_L), (east_ret, S_EAST - L.RECESS)):
-        B.face([fr.P(0.0, zf), fr.P(fr.L, zf), fr.P(fr.L, zh), fr.P(0.0, zh)],
+        B.face([fr.P(0.0, 0.0), fr.P(fr.L, 0.0), fr.P(fr.L, zh), fr.P(0.0, zh)],
                uv_band(fr, s_off))
 
 
@@ -417,9 +405,6 @@ def build_top(B, n, z_top, coping):
 def close_floor(B):
     """Cap the shell's one open rim, on the ground, triangulated in plan (it
     is not convex: the recess bites into it).
-
-    The corner recess's slab is closed by it too: the rim runs round the
-    band's line under its nosing.
 
     Unrepaired: at LOD2 and LOD3 the front's foot runs through three
     collinear corners at the door and the triangulator joins them into two
@@ -480,20 +465,14 @@ def _mid_dir():
     return math.cos(a), math.sin(a)
 
 
-COLUMN_FOOT = DF.T / 2.0    # the column and its shoe start inside the corner's
-                            # slab, so their feet are buried, not coplanar
-                            # with the floor cap
-
-
 def column(level):
     """The slim round column under the band at the curve's middle, white,
-    from the corner's floor slab up into the band over the soffit; its foot
-    is buried in the slab (COLUMN_FOOT)."""
+    from the pavement up into the band over the soffit."""
     er = _mid_dir()
     px, py = CX + L.COLUMN_AT * er[0], CY + L.COLUMN_AT * er[1]
     c = uv_patch("column")
-    return round_bar(px, py, L.COLUMN_R, COLUMN_FOOT, L.Z_HEAD + 0.10, COLUMN_SIDES[level],
-                     c, c, uv_patch("blank"))
+    return round_bar(px, py, L.COLUMN_R, 0.0, L.Z_HEAD + 0.10, COLUMN_SIDES[level], c, c,
+                     uv_patch("blank"))
 
 
 def column_shoe(level):
@@ -503,8 +482,8 @@ def column_shoe(level):
     px, py = CX + L.COLUMN_AT * er[0], CY + L.COLUMN_AT * er[1]
     r, h = L.SHOE
     d = uv_patch("drip")
-    return round_bar(px, py, r, COLUMN_FOOT, h, COLUMN_SIDES[level], d,
-                     uv_patch("metal_edge"), uv_patch("blank"))
+    return round_bar(px, py, r, 0.0, h, COLUMN_SIDES[level], d, uv_patch("metal_edge"),
+                     uv_patch("blank"))
 
 
 def lightbox():
@@ -729,8 +708,7 @@ def check_layout():
     if abs(math.hypot(b[0] - a[0], b[1] - a[1]) - FRONT_L) > 1e-9:
         bad.append("the front wall is not FRONT_L long")
     # the floor slabs: each door's under an opening cut at grade, its region
-    # the opening's width and the reveal's depth; the corner's the band's arc
-    # and the recess
+    # the opening's width and the reveal's depth (the corner recess has none)
     for wall, items in ITEMS.items():
         for kind, s0, s1, z0, z1 in items:
             if kind in FLOORED:
@@ -742,10 +720,6 @@ def check_layout():
             elif z0 <= EPS and kind in DEPTH:
                 bad.append("%s: the %s stands on the ground without a floor slab"
                            % (wall, kind))
-    bad += DF.problems(L.FLOORS["corner"], "the corner recess",
-                       (0.0, L.ARC_OUT_LEN, 0.0, L.Z_HEAD), L.RECESS)
-    if not L.SHOE[1] > DF.T or COLUMN_FOOT <= 0.0 or COLUMN_FOOT >= DF.T:
-        bad.append("the column's foot is not buried in the corner's floor slab")
     # door and transom
     if not 2.0 <= L.Z_LEAF <= 2.4:
         bad.append("the shop door's leaf is %.2f m, outside 2.0-2.4" % L.Z_LEAF)

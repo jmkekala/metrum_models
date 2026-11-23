@@ -29,7 +29,7 @@ Everything singular -- the curved shopfront, the display windows, the shop
 door, the lettered stretch of the sign band, the light box, the awning
 fabric, the side and back windows, the back door, the meter cupboard, the
 louvre, the roof deck and the roof fan -- gets a region of its own above the
-bands, and so does each concrete floor slab (scripts/door_floor.py). atlas.pad() fills every sample no region claims from the nearest
+bands, and so does each door's concrete floor slab (scripts/door_floor.py). atlas.pad() fills every sample no region claims from the nearest
 region's own edge.
 
 Rasterising is scripts/atlas.py's: a canvas supersampled SS x SS per pixel
@@ -198,14 +198,11 @@ DECK_PPM = 32.0
 # nosing from the ground and then back across its top from the wall plane.
 # - "shop": the shop door's reveal, back to the door (SHOP_DEPTH);
 # - "staff": the staff door's reveal at the back, back to its door
-#   (SERVICE_DEPTH);
-# - "corner": the quarter-round recess under the band, U round the band's
-#   arc (R_OUT x angle, as the soffit over it), V up the nosing on the band's
-#   line and back RECESS to the curved shopfront's foot. No door opens onto
-#   it, so it has no worn path across.
+#   (SERVICE_DEPTH).
+# The corner recess has no slab, by the owner's decision: a consumer paves
+# the forecourt into it, so its ground is the consumer's.
 FLOORS = {"shop": DF.Floor(520, 760, DOOR_W, SHOP_DEPTH, falloff=0.06, spread=0.30),
-          "staff": DF.Floor(520, 790, SERVICE_DOOR[0], SERVICE_DEPTH),
-          "corner": DF.Floor(600, 760, ARC_OUT_LEN, RECESS, tread=-1e3)}
+          "staff": DF.Floor(520, 790, SERVICE_DOOR[0], SERVICE_DEPTH)}
 
 PATCH_NAMES = ("blank", "metal", "metal_edge", "drip", "soffit", "column",
                "fabric_under", "awn_cheek", "box_side", "felt", "galv")
