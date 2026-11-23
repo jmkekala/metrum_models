@@ -1,9 +1,9 @@
 {
   "schema": "metrum-model-facts",
-  "version": 1,
+  "version": 4,
   "name": "liikekeskus_pharmacy",
   "path": "buildings/commercial/liikekeskus_pharmacy",
-  "source": {"commit": "27b8d9f46c1ae8efcc32126cbcb2477c1a6e5160", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "f271c88686d2833df35713df52172f31919c16c2", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-12.99, 0.0, -9.24], "max": [12.99, 11.925, 9.24]},
   "footprint": [
@@ -17,8 +17,8 @@
   ],
   "dwellings": 0,
   "doors": [
-    {"id": "pharmacy", "kind": "entrance", "position": [0.09, 0.0, 8.0], "facing": [0.0, 0.0, 1.0], "width_m": 2.0, "height_m": 2.25, "main": true},
-    {"id": "maintenance", "kind": "service", "position": [1.09, 0.0, -8.0], "facing": [0.0, 0.0, -1.0], "width_m": 1.0, "height_m": 2.25, "main": false}
+    {"id": "pharmacy", "kind": "entrance", "position": [0.09, 0.0, 8.0], "facing": [0.0, 0.0, 1.0], "width_m": 2.0, "height_m": 2.25, "floor_y_m": 0.02, "storey": 0, "main": true},
+    {"id": "maintenance", "kind": "service", "position": [1.09, 0.0, -8.0], "facing": [0.0, 0.0, -1.0], "width_m": 1.0, "height_m": 2.25, "floor_y_m": 0.02, "storey": 0, "main": false}
   ],
   "lods": [
     {"file": "liikekeskus_pharmacy_lod0.glb", "triangles": 4028, "sha256": "06d339eaf7e5609b64a79c41be1e26651e3ba9fad84d1eca813f27d8ba03ca0a"},
