@@ -1,9 +1,9 @@
 {
   "schema": "metrum-model-facts",
-  "version": 1,
+  "version": 4,
   "name": "voimalaitos_brick_hall",
   "path": "buildings/industrial/voimalaitos_brick_hall",
-  "source": {"commit": "b1fd5edf4b84e701aefbdb334dc2ee4110ed2e0e", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "100f6226806e9d559718360c8961e2a661d38bd5", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-16.05, 0.0, -9.625], "max": [16.05, 24.75, 9.625]},
   "footprint": [
@@ -21,9 +21,9 @@
   ],
   "dwellings": 0,
   "doors": [
-    {"id": "entrance", "kind": "entrance", "position": [-9.0, 0.0, 8.375], "facing": [0.0, 0.0, 1.0], "width_m": 1.8125, "height_m": 2.3, "main": true},
-    {"id": "machinery", "kind": "vehicle", "position": [13.5625, 0.0, 7.875], "facing": [0.0, 0.0, 1.0], "width_m": 3.1875, "height_m": 3.8906, "main": false},
-    {"id": "service", "kind": "service", "position": [0.0, 0.0, -8.125], "facing": [0.0, 0.0, -1.0], "width_m": 1.0625, "height_m": 2.1, "main": false}
+    {"id": "entrance", "kind": "entrance", "position": [-9.0, 0.0, 8.375], "facing": [0.0, 0.0, 1.0], "width_m": 1.8125, "height_m": 2.3, "floor_y_m": 0.02, "storey": 0, "main": true},
+    {"id": "machinery", "kind": "vehicle", "position": [13.5625, 0.0, 7.875], "facing": [0.0, 0.0, 1.0], "width_m": 3.1875, "height_m": 3.8906, "floor_y_m": 0.02, "storey": 0, "main": false},
+    {"id": "service", "kind": "service", "position": [0.0, 0.0, -8.125], "facing": [0.0, 0.0, -1.0], "width_m": 1.0625, "height_m": 2.1, "floor_y_m": 0.02, "storey": 0, "main": false}
   ],
   "lods": [
     {"file": "voimalaitos_brick_hall_lod0.glb", "triangles": 4156, "sha256": "936bb9c1989548c316b1e5a92bd0e0b56484eae034bd0cd7619dba1df61f99a0"},
