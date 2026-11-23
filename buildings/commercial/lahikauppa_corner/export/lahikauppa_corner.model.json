@@ -3,7 +3,7 @@
   "version": 1,
   "name": "lahikauppa_corner",
   "path": "buildings/commercial/lahikauppa_corner",
-  "source": {"commit": "898d01334bfe6babc4b8f62bbac4e0202c6015d2", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "7945bbd26f64c2aeeb6856bc05be882e70807066", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-17.5, 0.0, -10.59], "max": [17.5, 5.7188, 10.59]},
   "footprint": [
