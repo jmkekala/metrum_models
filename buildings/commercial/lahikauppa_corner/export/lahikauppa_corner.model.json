@@ -1,9 +1,9 @@
 {
   "schema": "metrum-model-facts",
-  "version": 1,
+  "version": 4,
   "name": "lahikauppa_corner",
   "path": "buildings/commercial/lahikauppa_corner",
-  "source": {"commit": "27b8d9f46c1ae8efcc32126cbcb2477c1a6e5160", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "caadc8c84ff4dc1835299fd7d029825636b25e69", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-17.5, 0.0, -10.59], "max": [17.5, 5.7188, 10.59]},
   "footprint": [
@@ -20,10 +20,10 @@
   ],
   "dwellings": 0,
   "doors": [
-    {"id": "loading", "kind": "vehicle", "position": [-12.5, 0.0, 4.09], "facing": [0.0, 0.0, 1.0], "width_m": 3.2, "height_m": 3.2, "main": false},
-    {"id": "loading_staff", "kind": "service", "position": [-9.0, 0.0, 5.69], "facing": [-1.0, 0.0, 0.0], "width_m": 1.1, "height_m": 2.125, "main": false},
-    {"id": "main", "kind": "entrance", "position": [13.75, 0.0, 6.84], "facing": [0.7071, 0.0, 0.7071], "width_m": 2.4, "height_m": 2.3125, "main": true},
-    {"id": "staff", "kind": "service", "position": [-1.0, 0.0, -8.91], "facing": [0.0, 0.0, -1.0], "width_m": 1.1, "height_m": 2.125, "main": false}
+    {"id": "loading", "kind": "vehicle", "position": [-12.5, 0.0, 4.09], "facing": [0.0, 0.0, 1.0], "width_m": 3.2, "height_m": 3.2, "floor_y_m": 0.02, "storey": 0, "main": false},
+    {"id": "loading_staff", "kind": "service", "position": [-9.0, 0.0, 5.69], "facing": [-1.0, 0.0, 0.0], "width_m": 1.1, "height_m": 2.125, "floor_y_m": 0.02, "storey": 0, "main": false},
+    {"id": "main", "kind": "entrance", "position": [13.75, 0.0, 6.84], "facing": [0.7071, 0.0, 0.7071], "width_m": 2.4, "height_m": 2.3125, "floor_y_m": 0.02, "storey": 0, "main": true},
+    {"id": "staff", "kind": "service", "position": [-1.0, 0.0, -8.91], "facing": [0.0, 0.0, -1.0], "width_m": 1.1, "height_m": 2.125, "floor_y_m": 0.02, "storey": 0, "main": false}
   ],
   "lods": [
     {"file": "lahikauppa_corner_lod0.glb", "triangles": 1092, "sha256": "f786b23bbc1f6c317e13eb4339d5244d090295c072dd6dd6975c872bcc6cf080"},
