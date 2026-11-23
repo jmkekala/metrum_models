@@ -1,9 +1,9 @@
 {
   "schema": "metrum-model-facts",
-  "version": 1,
+  "version": 4,
   "name": "rintamamiestalo_porch",
   "path": "buildings/residential/rintamamiestalo_porch",
-  "source": {"commit": "749e8be8dc81faff4d0b08564fd3ae1e65572d90", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "5c422050c835b47c2de66c1deaebbe30027434fe", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-5.35, 0.0, -6.84], "max": [5.35, 9.5625, 6.84]},
   "footprint": [
@@ -22,8 +22,8 @@
   ],
   "dwellings": 1,
   "doors": [
-    {"id": "front", "kind": "entrance", "position": [-1.2, 0.7, 5.1], "facing": [0.0, 0.0, 1.0], "width_m": 0.9, "height_m": 2.1, "main": true},
-    {"id": "back", "kind": "service", "position": [1.5, 0.7, -5.1], "facing": [0.0, 0.0, -1.0], "width_m": 0.9, "height_m": 2.1, "main": false}
+    {"id": "front", "kind": "entrance", "position": [-1.2, 0.7, 5.1], "facing": [0.0, 0.0, 1.0], "width_m": 0.9, "height_m": 2.1, "floor_y_m": 0.7, "storey": 0, "main": true},
+    {"id": "back", "kind": "service", "position": [1.5, 0.7, -5.1], "facing": [0.0, 0.0, -1.0], "width_m": 0.9, "height_m": 2.1, "floor_y_m": 0.7, "storey": 0, "main": false}
   ],
   "lods": [
     {"file": "rintamamiestalo_porch_lod0.glb", "triangles": 2642, "sha256": "36378b19fbad06db9e00450fd81029a60427d97da0a892402b98cc9e7081aac2"},
