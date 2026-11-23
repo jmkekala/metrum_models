@@ -1,9 +1,9 @@
 {
   "schema": "metrum-model-facts",
-  "version": 1,
+  "version": 4,
   "name": "hiilenvastaanotto_brick_shed",
   "path": "buildings/industrial/hiilenvastaanotto_brick_shed",
-  "source": {"commit": "b1fd5edf4b84e701aefbdb334dc2ee4110ed2e0e", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "8cf2f9230517102944a8a69b9ff673a402e587f9", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-7.3, 0.0, -11.4], "max": [7.3, 18.8176, 11.4]},
   "footprint": [
@@ -25,8 +25,8 @@
   ],
   "dwellings": 0,
   "doors": [
-    {"id": "attendant", "kind": "entrance", "position": [4.6875, 0.0, 3.6], "facing": [1.0, 0.0, 0.0], "width_m": 0.9, "height_m": 2.1375, "main": true},
-    {"id": "elevator", "kind": "service", "position": [0.0625, 0.0, 0.6], "facing": [0.0, 0.0, -1.0], "width_m": 0.9, "height_m": 2.1375, "main": false}
+    {"id": "attendant", "kind": "entrance", "position": [4.6875, 0.0, 3.6], "facing": [1.0, 0.0, 0.0], "width_m": 0.9, "height_m": 2.1375, "floor_y_m": 0.02, "storey": 0, "main": true},
+    {"id": "elevator", "kind": "service", "position": [0.0625, 0.0, 0.6], "facing": [0.0, 0.0, -1.0], "width_m": 0.9, "height_m": 2.1375, "floor_y_m": 0.02, "storey": 0, "main": false}
   ],
   "passages": [
     {"id": "truck_lane", "position": [-7.0, 0.0, 7.8125], "forward": [1.0, 0.0, 0.0], "width_m": 5.575, "length_m": 14.0, "clear_height_m": 5.996, "through": true},
