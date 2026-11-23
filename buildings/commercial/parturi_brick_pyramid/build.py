@@ -34,8 +34,8 @@ with two downpipes at diagonally opposite corners.
 
 Construction: closed solids unioned with Blender's exact boolean
 (asset_build.union, snapped to 0.1 mm) -- the body (the wall ring with its
-recesses, the lobby's on a 0.02 m concrete floor slab, capped with a floor
-and a lid), the roof (hip slopes, fascia,
+recesses, the lobby's and the staff door's on 0.02 m concrete floor slabs,
+capped with a floor and a lid), the roof (hip slopes, fascia,
 soffit and underside as one solid), the hip and ridge flashings (to LOD2),
 the housing with its louvre blades, skirt and lid (to LOD2), the hood with its blades and
 cap, the fittings, the sign band, the light box and its arms, the canopy,
@@ -62,6 +62,7 @@ importlib.reload(L)       # an interactive session must not keep a stale layout
 ASSET = L.ASSET
 sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "scripts"))
 import asset_build  # noqa: E402
+import door_floor as DF  # noqa: E402
 import downpipes as DP  # noqa: E402
 import model_facts  # noqa: E402
 import roof_safety as RS  # noqa: E402
@@ -310,6 +311,21 @@ def build_item(B, fr, wall, kind, s, level):
         B.face([fr.P(l, ob), fr.P(r, ob), fr.P(r, ot), fr.P(l, ot)], fn)
         return [(l, ob), (r, ob), (r, ot), (l, ot)]
     d = L.ITEMS[kind]["depth"]
+    if kind in L.FLOORS:
+        # A door standing on the ground in a shallow reveal (the staff
+        # door): on the shared concrete slab (scripts/door_floor.py), its
+        # nosing on the wall plane, the recess starting on its top. The
+        # outline comes back with the nosing's corners for the wall's foot.
+        DF.recess(B, fr, (l, r, zb, zt), 0.0, -d, fn,
+                  [None, uv_patch("reveal"), uv_patch("reveal"), uv_patch("reveal")],
+                  L.FLOORS[kind])
+        if ot > zt + EPS:                               # the soldier course
+            B.face([fr.P(l, zt), fr.P(r, zt), fr.P(r, ot), fr.P(l, ot)], fn)
+        zf = zb + DF.T
+        ring = [(l, ob), (r, ob), (r, zf), (r, zt)]
+        if ot > zt + EPS:
+            ring += [(r, ot), (l, ot)]
+        return SB.dedupe(ring + [(l, zt), (l, zf)])
     foot = fn                                           # the sheet sill
     if kind == "screen":
         # The lobby is deep enough to see into, so it is floored: a concrete
@@ -328,8 +344,9 @@ def build_item(B, fr, wall, kind, s, level):
     else:
         side = (uv_patch("reveal"), uv_patch("reveal"))
         head, sill = uv_patch("reveal"), uv_patch("sill_top")
-    # A shallow opening standing on the ground (the service door) has no
-    # sill: its strip would lie on the floor the wall ring is capped with.
+    # Every opening standing on the ground is floored (the lobby here, the
+    # others on scripts/door_floor.py's slab above), so skip_z only guards a
+    # new one, which check_layout() refuses.
     SB.recess(B, fr, rect_poly((l, r, zb, zt)), 0.0, -d, fn, [sill, side[1], head, side[0]],
               skip_z=zb if zb < EPS else None)
     ring = [(l, ob), (r, ob)]
@@ -937,6 +954,20 @@ def check_layout():
     if abs(L.LOBBY_FLOOR[2] - scr["w"] * PPM) > 1e-6 or \
             abs(L.LOBBY_FLOOR[3] - (L.LOBBY_FLOOR_T + scr["depth"]) * PPM) > 1e-6:
         bad.append("the lobby floor's atlas region is not the slab's nosing and top")
+    # every other opening recessed on the ground stands on its slab
+    # (L.FLOORS, scripts/door_floor.py) on every tier that cuts it, and only
+    # those have one
+    for spec in WALLS:
+        for kind, s in spec["items"]:
+            if kind == "screen":
+                continue
+            (l, r, _b, _t), (zb, zt) = item_rect(kind, s)
+            grounded = item_mode(kind, 0) == "recess" and zb < EPS
+            if grounded != (kind in L.FLOORS):
+                bad.append("the %s %s a floor slab" % (kind, "lacks" if grounded else "has"))
+            elif grounded:
+                bad += DF.problems(L.FLOORS[kind], "the %s" % kind, (l, r, zb, zt),
+                                   L.ITEMS[kind]["depth"])
     # the eave and the roof
     if not 0.3 <= EO <= 0.6:
         bad.append("the eave projects %.3f m, outside 0.3-0.6" % EO)

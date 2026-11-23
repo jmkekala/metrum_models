@@ -148,8 +148,9 @@ Closed solids unioned with Blender's exact boolean
 Openings: LOD0–LOD2 recess the glass and doors 0.12 m (brick reveals, sheet
 sill) with the sheet sill and the soldier course flush on the wall; the lobby
 is a 0.88 m recess on every tier; LOD3 paints the windows and the service
-door flush (`item_mode()`). The service door, 0.12 m deep and standing on
-the ground, gets no floor of its own; the body's floor cap closes it.
+door flush (`item_mode()`). Both openings standing on the ground are
+floored on every tier that recesses them: the lobby on its own slab, the
+service door on the shared one (below).
 
 ### Lobby floor
 
@@ -164,12 +165,31 @@ body's floor cap runs straight under it. Four triangles on every tier. The
 screen, the cheeks and the ceiling light are as before, the screen's lowest
 0.02 m behind the slab. `check_layout()` keeps the slab 0.01–0.03 m thick,
 the lobby a ground-standing recess on every tier and the atlas region the
-slab's size. The entrance stays at grade: 0.02 m is no step.
+slab's size. The entrance stays at grade: 0.02 m is no step. This slab
+predates `scripts/door_floor.py` and keeps its own code (`uv_lobby_floor()`,
+`LOBBY_FLOOR`): the consumer already has its faces and texels, and the
+helper would reorder them.
+
+### Service door floor
+
+The service door (the sidecar's `staff`) stands on the ground in a 0.12 m
+reveal, so it stands on `scripts/door_floor.py`'s slab on every tier that
+recesses it (LOD0–LOD2; LOD3 paints the door flush and has no recess to
+floor): **1.0 x 0.12 m, its top 0.02 m over the ground** (`DF.T`), its
+nosing on the rear wall plane under the opening, nothing past the wall.
+`build_item()` builds every kind in `facade_atlas.FLOORS` with
+`DF.recess()` in place of the recess that stood on the ground, and the
+wall's foot detours round the nosing's corners. Four triangles on each of
+those tiers. `check_layout()` checks that every other opening recessed on
+the ground has a slab, that only those have one, and `DF.problems()` on its
+size. The door, its threshold and its facts are unchanged; the leaf's
+lowest 0.02 m is behind the slab.
 
 Authored parameters: `facade_atlas.py`'s plan, heights, pitch, `ITEMS`,
 the housing, louvre and fitting sizes and the regions; `build.py`'s `WALLS`,
 the light box, band, canopy, hood, vent, cap and fitting constants,
-`DOWNPIPES`, the kit, and the per-tier switches (`item_mode()`,
+`DOWNPIPES`, the kit, the floored openings (`facade_atlas.FLOORS`), and
+the per-tier switches (`item_mode()`,
 `caps_kept()`, `band_modelled()`, `arms()`, `canopy_kept()`,
 `housing_mode()`, `hood_mode()`, `fittings()`, `vent_kept()`).
 
@@ -243,15 +263,15 @@ Measured on the exported GLBs by `scripts/validate_asset.py`:
 
 | Tier | Triangles | Ceiling | Status |
 | --- | --- | --- | --- |
-| `LOD0` | 1,986 | 12,000 | far under |
-| `LOD1` | 1,646 | 4,000 | far under |
-| `LOD2` | 1,084 | 1,500 | under |
+| `LOD0` | 1,990 | 12,000 | far under |
+| `LOD1` | 1,650 | 4,000 | far under |
+| `LOD2` | 1,088 | 1,500 | under |
 | `LOD3` | 334 | 500 | under |
 
 Where they go at LOD0: the roof kit and the two bent downpipes (about 600
 together, mostly the ladders' rung holes and the pipes' bends), the body's
 cells round twelve openings with their reveals and the lobby (its floor
-slab four, on every tier), the roof solid
+slab four, on every tier; the service door's four, to LOD2), the roof solid
 with the five flashing caps cut into it, the housing with its 16 louvre
 blades, skirt and hipped lid (about 330 with the hood's four blades and cap),
 the hood, the five fittings (about 90 with their cuts in the brick), the
@@ -264,7 +284,8 @@ sign band, the light box and arms, the canopy and the vent.
   stays: the flashings, the sign band, the housing's blades, skirt and
   hipped lid, the hood's blades and cap, every fitting and every opening's
   reveal.
-- `LOD2` → `LOD3` (−750): windows and the service door paint flush; the
+- `LOD2` → `LOD3` (−754): windows and the service door paint flush (the
+  door's floor slab goes with its recess); the
   flashings, the sign band (painted on the wall), the housing's blades and
   skirt (its hipped lid for a plain slab), the hood's blades and cap, the
   canopy, the opening-hours board and the kit go (the wall ladder's bare
@@ -274,7 +295,7 @@ sign band, the light box and arms, the canopy and the vent.
 
 `LOD2` is the tier the consumer shows from 44 m, near enough that its
 reveals, flashings, blades and fittings still read, so it carries them at
-1,084 of its 1,500.
+1,088 of its 1,500.
 
 Between the catalog's sheds and shops (300–1,000) and its detached houses
 (about 2,600): a small box, but with a pitched roof, its safety kit and
@@ -300,7 +321,8 @@ below).
 | `LOD2` → `LOD3` | 120 m | Superseded likewise. |
 
 The `LOD0` → `LOD1` verdict still holds: since then those two tiers have
-gained only the lobby's floor slab, the same four triangles on every tier.
+gained only the lobby's and the service door's floor slabs, the same
+geometry on both.
 The far tiers were rebuilt for the consumer's nearer switches:
 
 ### Consumer switch pass (screen size)
@@ -326,10 +348,13 @@ At 87 m a 0.12 m reveal is under a pixel and the 0.18 m flashings about
 1.5 px; keeping them on `LOD3` would cost most of its remaining budget for
 edges the true-size renders do not show.
 
-The table's counts predate the lobby's floor slab. The slab is the same
+The table's counts predate the floor slabs. The lobby's is the same
 geometry and UVs on all four tiers, so it adds no difference at a switch;
 the pairs were not re-counted. It was reviewed on every tier from eye
-level at the mouth and at 12, 20 and 44 m (Review status).
+level at the mouth and at 12, 20 and 44 m (Review status). The service
+door's slab is on LOD0–LOD2 and goes with the door's recess at LOD3; the
+rear pairs at the 20 / 44 / 87 m switches were rendered before and after
+it (Review status).
 
 Kept on every tier: the pyramid roof and its eave line, the ridge housing and
 the front vent hood (the roofline), the light box (it also sets the front
@@ -350,8 +375,8 @@ time nor VRAM.
 Welded manifold check, all four tiers: **0 boundary edges, 0 edges with more
 than two faces, 0 loose vertices or edges**.
 
-Sampled hidden-surface test (40 rays per face): `LOD0` 51/1,986 (2.6 %),
-`LOD1` 42/1,646, `LOD2` 10/1,084, `LOD3` 2/334. Every candidate listed and
+Sampled hidden-surface test (40 rays per face): `LOD0` 51/1,990 (2.6 %),
+`LOD1` 42/1,650, `LOD2` 10/1,088, `LOD3` 2/334. Every candidate listed and
 located one by one (`review/older_audit_2026_11_22/fix_commercial_a/
 hidden_list.py`, not committed):
 
@@ -375,8 +400,9 @@ now winds both outward and none of them is a candidate. The union of closed soli
 volume's boundary, so there are no partitions or duplicate surfaces; the
 body's lid and the roof's underside inside the wall line are removed by it.
 The body's floor at z = 0 is kept as the closed shell's bottom; it runs
-under the lobby's floor slab too, whose top and nosing are exterior surface
-and no candidates (the counts above did not change with the slab).
+under the lobby's and the service door's floor slabs too, whose tops and
+nosings are exterior surface and no candidates (the counts above did not
+change with the slabs).
 
 ## Known simplifications
 
@@ -387,9 +413,9 @@ and no candidates (the counts above did not change with the slab).
   handle and kick rail, blinds, the meter cupboard and the wall louvre are
   painted**, all under the relief threshold. The housing's and hood's
   louvre blades are modelled to LOD2 and painted at LOD3.
-- The lobby's floor is a **plain concrete slab 0.02 m over the ground, with
-  no mat, grating or step**; the entrance is at grade. The forecourt in
-  front of it is the consumer's ground.
+- The lobby's and the service door's floors are **plain concrete slabs
+  0.02 m over the ground, with no mat, grating or step**; both doors are at
+  grade. The ground in front of them is the consumer's.
 - The **letter plate** in the door leaf and the opening-hours board's marks
   are painted; the board, lamps and house number are modelled boxes.
 - **Glass is opaque**; the salon is `glazing.py`'s room behind it.
@@ -434,8 +460,11 @@ opening-hours board). Over that row, at 64 px/m, the lobby's floor slab
 (144 x 57.6 px at x 4, y 900), unfolded: its 0.02 m nosing in the lowest
 1.3 rows, then its top from the mouth back to the screen; cast concrete
 (`ID_FLOOR`, sRGB 132, 130, 124, roughness 0.88, the catalog's floor
-concrete as on `hiilenvastaanotto_brick_shed`'s lane), the same in every
-variant.
+concrete as on `hiilenvastaanotto_brick_shed`'s lane, `door_floor.COLOUR`
+and `SURFACE`), the same in every variant. Beside it, the service door's
+slab (`FLOORS`, 64 x 8.96 px at x 156, y 900), `door_floor.paint()`'s
+unfold: the nosing's 1.3 rows, then its 0.12 m top back to the leaf, the
+same concrete with a worn path toward the leaf's centre.
 `check_regions()` fails the bake on overlap, run-off or a band collision,
 `check_bands()` on a stray id in a band.
 
@@ -520,7 +549,12 @@ region was added afterwards, into empty sheet 16 px over the 128 px/m row
 and 40 px under the patches: every older region's texels are byte-identical
 (only gutter rows 887–984 differ, and the emission map not at all), so the
 stress renders were not repeated; the floor itself, a flat grey field, was
-not mip-tested.
+not mip-tested. The service door's slab went into the same empty strip,
+8 px right of the lobby's: every other region's texels are again
+unchanged (the albedos, ORM and normal map differ only inside it and in the
+gutter x 149–284, rows 886–959 round it, by at most one level outside it;
+the emission map in three gutter texels), and it was not mip-tested
+either.
 **Pending:** the consumer's sampler and shipped mipmaps.
 
 ### Weathering
@@ -532,7 +566,8 @@ eave dirt on the roof band, runs under the gutter on the fascia, dirt on the
 sheet sills and frame feet, the screen's kick panels, the service door's
 foot and handle, runs on the housing's sides and the hood's front, dust on
 the meter cupboard's foot, blotchy trodden-in dirt on the lobby's floor
-(its occlusion deepening toward the cheeks and the screen). Glass, the
+(its occlusion deepening toward the cheeks and the screen) and on the
+service door's slab (`door_floor.weather()`). Glass, the
 light box, the letters, the house
 number and the opening-hours sheet stay clean.
 
@@ -710,6 +745,24 @@ Completed in this repository:
   and nothing else changed. `validate_asset.py` 0 FAIL, 1 WARN
   (`source.dirty`), 10 MANUAL; bounds, pivot, footprint, storeys and both
   doors as before. Mip stress and night renders not repeated (Texture set).
+- Service door floor slab (2026-11-23, `review/review_2026_11_23/
+  parturi_brick_pyramid_pass2/`, not committed): before and after with
+  `review_asset.py` (six views; tiers 0–3 front and oblique at 20, 35, 70
+  and 120 m by noon), the rear at the consumer's 20 / 44 / 87 m switches
+  with its 75° / 1080p camera (rear, rear corner, rear eye level, tier
+  pairs), and every tier over a green terrain plane at z = 0 round the
+  door (face-on at 4 and 2 m, from either side, grazing from 0.35 m,
+  looking down), 75° vertical FOV, noon and reversed sun, compared with
+  `review_compare.py`. Before, the terrain showed in the door's reveal on
+  LOD0–LOD2; after, the slab fills it jamb to jamb, reads as concrete, its
+  nosing on the wall plane, with no dark seam or stretched texels. No
+  pixel of the six views, the distance pairs or the switch pairs differs
+  by more than 24; LOD3 is byte-identical. A ray probe finds the slab's
+  top at 0.02 m across the reveal on LOD0–LOD2 and no face at grade; the
+  lobby's slab triangles (positions and UVs) are identical on every tier.
+  `validate_asset.py` 0 FAIL, 1 WARN (`source.dirty`), 11 MANUAL; bounds,
+  pivot, footprint, storeys and both doors as before. Mip stress and night
+  renders not repeated (Texture set).
 
 Pending, outside this repository:
 
@@ -732,6 +785,17 @@ Pending, outside this repository:
 
 ## Revision log
 
+- **2026-11-23, service door floor:** the service door (`staff`), standing
+  on the ground in its 0.12 m reveal, had no upward face under it, so a
+  consumer's terrain showed in the reveal. It now stands on
+  `scripts/door_floor.py`'s slab, 1.0 x 0.12 m, top 0.02 m over the
+  ground, nosing on the rear wall plane, on LOD0–LOD2 (LOD3 paints the
+  door flush), on a new 64 x 8.96 px region (`FLOORS`). The lobby's slab
+  is unchanged, faces and texels. Triangles 1,986 / 1,646 / 1,084 / 334 →
+  1,990 / 1,650 / 1,088 / 334; `LOD3` byte-identical. Albedos, ORM and
+  normal map changed only in the new region and the gutter round it, the
+  emission map in three gutter texels. Plan bounds, pivot, height,
+  footprint, storeys and both doors unchanged.
 - **2026-11-23, lobby floor:** the entrance lobby had no upward face under
   it (a ground-standing recess got no sill, and the body's floor cap faces
   down), so a consumer's terrain showed inside it. It now stands on a

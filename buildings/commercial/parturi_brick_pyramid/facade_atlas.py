@@ -26,8 +26,9 @@ for a window, the sheet sill under it), the meter cupboard, the louvre, the
 projecting light box's face, and the lettered sign band across the front;
 over the band, at 128 px/m, the ventilation housing's louvred sides, the
 front hood's louvred face and the small fittings (wall lamp, house number,
-opening-hours board), and over those the lobby's concrete floor slab. A row
-of flat 16 px patches serves faces that take one colour. atlas.pad() fills
+opening-hours board), and over those the lobby's and the staff door's
+concrete floor slabs. A row of flat 16 px patches serves faces that take one
+colour. atlas.pad() fills
 every sample no region claims.
 
 The brick is the catalog's module: 250 x 78.125 mm, joints included (a
@@ -54,6 +55,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "scripts"))
 import atlas  # noqa: E402
 import brickwork  # noqa: E402
+import door_floor as DF  # noqa: E402
 import glazing  # noqa: E402
 import lettering  # noqa: E402
 import weathering  # noqa: E402
@@ -215,6 +217,11 @@ HOURS = (480, 760, HOURS_M[0] * FIT_PPM, HOURS_M[1] * FIT_PPM)
 # then back across its top from the mouth to the screen.
 LOBBY_FLOOR = (4, 900, ITEMS["screen"]["w"] * PPM,
                (LOBBY_FLOOR_T + ITEMS["screen"]["depth"]) * PPM)
+# The other doors standing on the ground, by item kind, on the shared slab
+# (scripts/door_floor.py): the staff door's 0.12 m reveal. The lobby's slab
+# above predates the helper and keeps its own faces and texels.
+FLOORS = {"service_door": DF.Floor(156, 900, ITEMS["service_door"]["w"],
+                                   ITEMS["service_door"]["depth"])}
 
 PATCH_NAMES = ("blank", "reveal", "sill_top", "flashing", "lid", "sign_rim",
                "bracket", "band_edge", "canopy_top", "canopy_edge", "canopy_under",
@@ -228,7 +235,7 @@ ID_SIGN_W, ID_SIGN_INK, ID_SIGN_RIM, ID_LETTER, ID_METAL = 11, 12, 13, 14, 15
 ID_SEAL = 16                # black rubber and the dark gap round a leaf
 ID_PAPER = 17               # the opening-hours sheet: lit by nothing
 ID_PLATE = 18               # the house number's enamelled field, unlit
-ID_FLOOR = 19               # the lobby's cast concrete floor slab
+ID_FLOOR = 19               # the door slabs' cast concrete
 
 # (roughness, metallic). The roof, fascia, gutter and frames are factory
 # polyester-coated steel and aluminium: painted, so not metallic.
@@ -239,7 +246,7 @@ SURFACE = {
     ID_DOOR: (0.48, 0.0), ID_GUTTER: (0.40, 0.0), ID_SIGN_W: (0.22, 0.0),
     ID_SIGN_INK: (0.22, 0.0), ID_SIGN_RIM: (0.42, 0.0), ID_LETTER: (0.36, 0.0),
     ID_METAL: (0.50, 0.60), ID_SEAL: (0.70, 0.0), ID_PAPER: (0.30, 0.0),
-    ID_PLATE: (0.30, 0.0), ID_FLOOR: (0.88, 0.0),
+    ID_PLATE: (0.30, 0.0), ID_FLOOR: DF.SURFACE,
 }
 
 # ---------------------------------------------------------------- palettes
@@ -271,7 +278,7 @@ FIXED = {
     ID_SIGN_RIM: (52, 58, 72), ID_LETTER: (226, 212, 178),
     ID_METAL: (128, 126, 120), ID_SEAL: (34, 33, 32),
     ID_PAPER: (214, 212, 202), ID_PLATE: (34, 48, 104),
-    ID_FLOOR: (132, 130, 124),
+    ID_FLOOR: DF.COLOUR,
 }
 
 # The candidate-glazing mask doubles as the emission map. Glass is neutral
@@ -863,6 +870,7 @@ def check_regions():
                   "sign_box": SIGN_BOX, "sign_band": SIGN_BAND, "lamp_front": LAMP_FRONT,
                   "lamp_side": LAMP_SIDE, "number": NUMBER, "hours": HOURS,
                   "lobby_floor": LOBBY_FLOOR})
+    rects.update({"floor_" + k: f.rect for k, f in FLOORS.items()})
     rects.update(PATCHES)
     problems = atlas.region_problems(rects, ATLAS, bands_top=SOF_Y0 + SOF_H + PAD, band_gap=2)
     if ROOF_Y0 + ROOF_H + PAD > FASC_Y0 - PAD:
@@ -917,6 +925,8 @@ def weather(c):
     x, y, rw, rh = LOBBY_FLOOR
     w.add("D", x - PAD, x + rw + PAD, y - PAD, y + rh + PAD,
           lambda Y, X, nz: 0.08 + 0.10 * nz("blotch"), (ID_FLOOR,))
+    for f in FLOORS.values():
+        DF.weather(w, f, ID_FLOOR, bleed=PAD)
     return w
 
 
@@ -938,6 +948,8 @@ def paint(ss=atlas.SS):
     paint_housing(c)
     paint_fittings(c)
     paint_lobby_floor(c)
+    for f in FLOORS.values():
+        DF.paint(c, f, ID_FLOOR, bleed=PAD)
     paint_sign_box(c)
     paint_sign_band(c)
     paint_patches(c)
@@ -949,9 +961,7 @@ def paint(ss=atlas.SS):
     pores = atlas.noise(c, 9, 0.7)
     c.shade[masonry] *= 1.0 + 0.04 * pores[masonry]
     c.height[masonry] += 0.0006 * pores[masonry]
-    cast = c.mid == ID_FLOOR
-    c.shade[cast] *= 1.0 + 0.05 * pores[cast]
-    c.height[cast] += 0.0004 * pores[cast]
+    DF.grain(c, ID_FLOOR, pores)
     sheeted = np.isin(c.mid, (ID_ROOF, ID_FASCIA, ID_DOOR, ID_GUTTER))
     grain = atlas.noise(c, 5, 60.0, 0.35)
     c.shade[sheeted] *= 1.0 + 0.014 * grain[sheeted]

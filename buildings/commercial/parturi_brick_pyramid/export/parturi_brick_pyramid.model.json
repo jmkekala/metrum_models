@@ -3,7 +3,7 @@
   "version": 1,
   "name": "parturi_brick_pyramid",
   "path": "buildings/commercial/parturi_brick_pyramid",
-  "source": {"commit": "13a2cd13f13669bdbd9cdba379384b12e9a2a695", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "27b8d9f46c1ae8efcc32126cbcb2477c1a6e5160", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-5.4531, 0.0, -4.7415], "max": [5.4531, 5.9538, 4.7415]},
   "footprint": [
@@ -21,23 +21,23 @@
     {"id": "staff", "kind": "service", "position": [-2.0, 0.0, -4.1084], "facing": [0.0, 0.0, -1.0], "width_m": 0.94, "height_m": 2.0555, "main": false}
   ],
   "lods": [
-    {"file": "parturi_brick_pyramid_lod0.glb", "triangles": 1986, "sha256": "cb3c46896935324e32a23cd6a5f6e398186cafc0f25776cfece14a9509aeaaf5"},
-    {"file": "parturi_brick_pyramid_lod1.glb", "triangles": 1646, "sha256": "11901d4d19859cce4b35e0707feaece1cfd1b4536033c191edb92776853b2721"},
-    {"file": "parturi_brick_pyramid_lod2.glb", "triangles": 1084, "sha256": "d80dd680792e195da73f2b59820f697f7111248216d185ea8233d1c977c9e7e8"},
+    {"file": "parturi_brick_pyramid_lod0.glb", "triangles": 1990, "sha256": "acb6909a6a6c6e8c6ffaead9ab95d040b53b339b67d7f0da2bfa3bdd5ddb5594"},
+    {"file": "parturi_brick_pyramid_lod1.glb", "triangles": 1650, "sha256": "25fe96c42e5f72c4ee7d710cdeca784071c3f75831c3e922fa5c12c62c991c88"},
+    {"file": "parturi_brick_pyramid_lod2.glb", "triangles": 1088, "sha256": "72bf149920ba75eda7fe4f14400aa030bbdaac0e689c7ff34133dc71192424b1"},
     {"file": "parturi_brick_pyramid_lod3.glb", "triangles": 334, "sha256": "aec0e98a2a057520f8c567d59a932ef138597a7e36002153affe6abb3a83cc4f"}
   ],
   "textures": {
-    "orm": {"file": "parturi_brick_pyramid_orm.png", "sha256": "ef5c7f2e47256095359b60268f1448490fad3e63738d18296d6f59fa68693e4f"},
-    "normal": {"file": "parturi_brick_pyramid_normal.png", "sha256": "82cee5c4a205e0ec2b0c0e0dabeed81107ea48a700faca8dbda90d344e154bf8"},
-    "emission": {"file": "parturi_brick_pyramid_emission.png", "sha256": "cdc0af760f92e8176ac30476e172e15a57a53962a1f20af2ca2ca9a92797fd29"}
+    "orm": {"file": "parturi_brick_pyramid_orm.png", "sha256": "5b278e10840963be21227d6c5a9c7ee9c89d48971e141c5f19a1b2f477b5bf19"},
+    "normal": {"file": "parturi_brick_pyramid_normal.png", "sha256": "1ec294e2df16bbed1fbf559908a8e36bf6ad576659c4ad56b22b41c924766a17"},
+    "emission": {"file": "parturi_brick_pyramid_emission.png", "sha256": "bc0daf1caec7e5775be7e77f89406e803c32ea7f52c596442ffe1b70528af098"}
   },
   "variants": [
-    {"id": "yellow_brick", "albedo": "parturi_brick_pyramid_albedo_yellow_brick.png", "sha256": "f0943ecbd246b4fd602f548905d0b8032948416909448533867f3d01f045780f"},
-    {"id": "red_brick", "albedo": "parturi_brick_pyramid_albedo_red_brick.png", "sha256": "0446208070811e5383f17568ae482aa0b511f0e6b333c0866ac27e457a2b0c12"},
-    {"id": "brown_brick", "albedo": "parturi_brick_pyramid_albedo_brown_brick.png", "sha256": "3e880c1d8aa52b11d2cc89474cada7194432baa86b66bd4ee4ac9e3923b21a88"},
-    {"id": "white_brick", "albedo": "parturi_brick_pyramid_albedo_white_brick.png", "sha256": "06bcd0bdd4e3c25baad04478093c565909632d65dc20c6fe339a9f1dca06b54a"}
+    {"id": "yellow_brick", "albedo": "parturi_brick_pyramid_albedo_yellow_brick.png", "sha256": "9827c65f75df3e8d094b408de2ca002dcb56061cc23dd759177c5ac05df32b24"},
+    {"id": "red_brick", "albedo": "parturi_brick_pyramid_albedo_red_brick.png", "sha256": "0d8995b12d726f9cc8caaa1c3393c6a9ac75b99a9181b7347deba997cd83a031"},
+    {"id": "brown_brick", "albedo": "parturi_brick_pyramid_albedo_brown_brick.png", "sha256": "aab616157badfa5c734cb94bde97129acfc2897bd71c35223c18089498f9c4d2"},
+    {"id": "white_brick", "albedo": "parturi_brick_pyramid_albedo_white_brick.png", "sha256": "a5fbece6d304d4d72073e365cb1a1120eee8e100362de905a5238400dc822c60"}
   ],
   "default_variant": "yellow_brick",
-  "preview": {"file": "../preview.png", "sha256": "922c628c1adf8344d28933491f3358bc17c42caabf7c3293e58c3493611cffb1"},
+  "preview": {"file": "../preview.png", "sha256": "0ab0a03739b3252eace8401622a865f7683c147014bff1adc492299b8a173f30"},
   "hero": false
 }
