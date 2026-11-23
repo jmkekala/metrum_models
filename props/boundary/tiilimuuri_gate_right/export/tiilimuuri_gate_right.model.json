@@ -1,9 +1,9 @@
 {
   "schema": "metrum-model-facts",
-  "version": 1,
+  "version": 4,
   "name": "tiilimuuri_gate_right",
   "path": "props/boundary/tiilimuuri_gate_right",
-  "source": {"commit": "c92ea00140c23e1078f58786abe78fb30d398558", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "dd39a39eb545ef7d429e2a3b0b44a2ac8c3ad3c5", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [0.0, 0.0, -0.27], "max": [3.105, 2.6, 0.325]},
   "footprint": [
