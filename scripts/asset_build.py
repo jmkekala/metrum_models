@@ -315,6 +315,206 @@ def fit_camera(cam, obj, margin, res=PREVIEW_RES):
     return cam
 
 
+# ----------------------------------------------------------- door floors
+# What a sidecar door stands on, probed on a tier's mesh: write_facts()
+# measures each door's floor_y_m on LOD0 with threshold_floor(), and
+# scripts/validate_asset.py runs the same probe on the exported LOD0 and
+# door_floor_state() on every tier. Doors are sidecar entries (glTF frame:
+# threshold centre on the outer wall plane, outward facing, clear leaf); the
+# mesh is Blender's, Z up, pivot at the origin, which is the frame an
+# exported tier imports into.
+FLOOR_TOL = 0.006          # the slab's top within door_floor.T +- this
+FLOOR_GRADE = 0.004        # an upward face this near the ground lies at grade
+FLOOR_RAISED = 0.05        # a floor this high is a step, landing or sill
+REVEAL_MIN = 0.015         # a shallower reveal is a door painted flat
+REVEAL_MAX = 3.0           # deeper, or no closing face: an open bay or lane
+FLOOR_JAMB = 0.05          # samples keep this far inside the jambs
+THRESHOLD_IN = 0.03        # threshold samples this far behind the wall plane
+THRESHOLD_OUT = 0.03       # a flat door's, this far in front of it
+THRESHOLD_ABOVE = 0.5      # their rays start this far over the stated threshold
+UP = Vector((0.0, 0.0, 1.0))
+
+
+def mesh_bvh(obj):
+    """A BVH of *obj*'s evaluated mesh, triangulated, in world space."""
+    from mathutils.bvhtree import BVHTree
+    bm = bmesh.new()
+    bm.from_object(obj, bpy.context.evaluated_depsgraph_get())
+    bm.transform(obj.matrix_world)
+    bmesh.ops.triangulate(bm, faces=bm.faces[:])
+    bvh = BVHTree.FromBMesh(bm)
+    bm.free()
+    return bvh
+
+
+def _door_axes(door):
+    """(outward, sideways, threshold centre) of sidecar *door*, Z up."""
+    gx, gy, gz = door["position"]
+    f = Vector((door["facing"][0], -door["facing"][2], 0.0)).normalized()
+    return f, UP.cross(f).normalized(), Vector((gx, -gz, gy))
+
+
+def _door_lane(door, passages):
+    """The sidecar passage whose mouth *door* stands in, if any: a lane's
+    floor is the consumer's ground by design."""
+    px, _, pz = door["position"]
+    fx, _, fz = door["facing"]
+    for p in passages:
+        qx, _, qz = p["position"]
+        gx, _, gz = p["forward"]
+        if fx * gx + fz * gz < -0.7 and \
+                math.hypot(px - qx, pz - qz) <= p["width_m"] / 2.0 + 0.05:
+            return p["id"]
+    return None
+
+
+def reveal_depth(bvh, door):
+    """The depth of *door*'s reveal: the median of nine horizontal rays
+    across the leaf from just outside the wall plane to the closing face.
+    None when most rays meet no closing face within REVEAL_MAX (an open bay
+    or lane); under REVEAL_MIN the door is painted flat on this mesh."""
+    f, side, base = _door_axes(door)
+    w, h = door["width_m"], door["height_m"]
+    depths = []
+    for hz in (0.4, 1.0, max(0.5, min(1.6, h - 0.2))):
+        for s in (-0.3 * w, 0.0, 0.3 * w):
+            loc, nrm, _i, dist = bvh.ray_cast(base + f * 0.01 + side * s + UP * hz, -f)
+            if loc is not None and nrm.dot(-f) > 0.0:
+                depths.append(0.0)      # a back face: the wall stands proud here
+            elif loc is None or dist > REVEAL_MAX + 0.01:
+                depths.append(None)
+            else:
+                depths.append(max(0.0, dist - 0.01))
+    hits = sorted(d for d in depths if d is not None)
+    if len(hits) <= len(depths) // 2:
+        return None
+    return hits[len(hits) // 2]
+
+
+def door_floor_state(bvh, door, passages=()):
+    """What *door* stands on in the mesh whose BVH is *bvh*: (state, reveal
+    depth or None, detail), for the slab rule (CLAUDE.md, Geometry and
+    Construction, Openings; scripts/door_floor.py).
+
+    The reveal's depth is reveal_depth()'s; a door shallower than
+    REVEAL_MIN is flat on this mesh, and one with no closing face within
+    REVEAL_MAX opens onto a bay or lane. Inside a reveal, at three depths,
+    rays sideways from 0.3 m over the threshold find the jambs (a lobby
+    wider than the leaf, a cased leaf narrower than its casing), and rays
+    straight down at points between them, clear of the jambs, meet the
+    slab's top at door_floor.T, a step, landing or sill higher, an upward
+    face at grade, or nothing: the open rim the consumer's terrain shows
+    through.
+
+    state is "lane", "open", "flat", "floored", "raised", "missing" or
+    "unknown" (a probe that started inside the solid or met a slope).
+    """
+    import door_floor
+    lane = _door_lane(door, passages)
+    if lane:
+        return "lane", None, "opens onto passage %r" % lane
+    depth = reveal_depth(bvh, door)
+    if depth is None:
+        return "open", None, "no closing face within %.1f m" % REVEAL_MAX
+    if depth < REVEAL_MIN:
+        return "flat", depth, "no reveal"
+    f, side, base = _door_axes(door)
+    w, gy = door["width_m"], door["position"][1]
+
+    counts = {}
+    for t in (0.15, 0.5, 0.85):
+        c = base - f * min(max(t * depth, 0.01), depth - 0.01) + UP * 0.3
+        span = []
+        for sgn in (-1.0, 1.0):
+            loc, _n, _i, dist = bvh.ray_cast(c, side * sgn, 3.0 * w + 1.0)
+            span.append(sgn * (dist if loc is not None else w / 2.0))
+        lo, hi = span[0] + FLOOR_JAMB, span[1] - FLOOR_JAMB
+        n = 3 if hi - lo < 1.5 else 5
+        for k in range(n):
+            loc, nrm, _i, _d = bvh.ray_cast(c + side * (lo + (hi - lo) * (k + 0.5) / n),
+                                            -UP, gy + 1.3)
+            if loc is None:
+                key = "open"
+            elif nrm.z < 0.0:
+                key = "inside"
+            elif nrm.z < 0.9:
+                key = "sloped"
+            elif abs(loc.z) <= FLOOR_GRADE:
+                key = "grade"
+            elif abs(loc.z - door_floor.T) <= FLOOR_TOL:
+                key = "slab"
+            elif loc.z >= FLOOR_RAISED:
+                key = "raised"
+            else:
+                key = "at %.3f m" % loc.z
+            counts[key] = counts.get(key, 0) + 1
+    total = sum(counts.values())
+    if counts.get("open") or counts.get("grade"):
+        what = []
+        if counts.get("open"):
+            what.append("%d/%d points open to the terrain" % (counts["open"], total))
+        if counts.get("grade"):
+            what.append("%d/%d on an upward face at grade" % (counts["grade"], total))
+        return "missing", depth, "; ".join(what)
+    if set(counts) - {"slab", "raised"}:
+        return "unknown", depth, ", ".join("%d %s" % (v, k) for k, v in sorted(counts.items()))
+    if counts.get("slab"):
+        return "floored", depth, "%d/%d points on the slab" % (counts["slab"], total)
+    return "raised", depth, "on a step, landing or sill"
+
+
+def threshold_floor(bvh, door):
+    """The walking surface at *door*'s threshold, in metres over the ground
+    (y = 0): its floor_y_m. Returns (floor, face, detail); *face* is true
+    when the value is the top of a face of the mesh.
+
+    Three rays straight down across the leaf's middle, from THRESHOLD_ABOVE
+    over the stated threshold (position[1]): THRESHOLD_IN behind the wall
+    plane, on the reveal's foot where the leaf stands (half the reveal's
+    depth when it is shallower), or, for a door painted flat on this mesh
+    (reveal under REVEAL_MIN), THRESHOLD_OUT in front of it. The floor is
+    the median top of the upward faces they meet when most of them meet
+    one: door_floor.py's slab (door_floor.T, 0.02 m), a step, landing,
+    deck, sill or dock carried into the reveal, or, before a flat door, the
+    landing in front of it. When most meet nothing, the threshold stands
+    over the consumer's terrain: 0.0 for a door at grade (a reveal not yet
+    floored included; it measures door_floor.T once its slab is built),
+    the stated threshold for a door whose sill is FLOOR_RAISED or more over
+    the ground with nothing under it. Rays that start inside the solid
+    count for neither; when every one does, the stated threshold stands.
+    """
+    f, side, base = _door_axes(door)
+    w, gy = door["width_m"], door["position"][1]
+    depth = reveal_depth(bvh, door)
+    if depth is not None and depth < REVEAL_MIN:
+        off, where = THRESHOLD_OUT, "in front of the flat door"
+    else:
+        off = -min(THRESHOLD_IN, depth / 2.0) if depth else -THRESHOLD_IN
+        where = "behind the wall plane"
+    tops, inside = [], 0
+    for s in (-0.3 * w, 0.0, 0.3 * w):
+        loc, nrm, _i, _d = bvh.ray_cast(base + f * off + side * s + UP * THRESHOLD_ABOVE,
+                                        -UP, gy + THRESHOLD_ABOVE + 0.01)
+        if loc is None:
+            tops.append(None)
+        elif nrm.z <= 0.0:
+            inside += 1
+        else:
+            tops.append(max(0.0, loc.z))
+    faces = sorted(t for t in tops if t is not None)
+    if not tops:
+        return gy, False, "every sample starts inside the solid: the stated threshold"
+    if 2 * len(faces) > len(tops):
+        z = faces[len(faces) // 2]
+        spread = faces[-1] - faces[0]
+        return z, True, "%d/%d faces %s%s" % (
+            len(faces), len(tops) + inside, where,
+            "" if spread < 1e-3 else ", spread %.3f m" % spread)
+    if gy < FLOOR_RAISED:
+        return 0.0, False, "nothing under the threshold: the terrain"
+    return gy, False, "nothing under a sill %.3f m up: the stated threshold" % gy
+
+
 # ================================================================ asset
 class Asset:
     """One building: its name, folder, colour variants and reference lit tint.
@@ -674,6 +874,8 @@ class Asset:
         *facts* is the build.py's facts(), in the build frame; the pivot is
         applied here. Refuses when the scene's tiers are not the exported
         ones, since the doors and footprint would then describe other files.
+        Each door's floor_y_m is measured on LOD0 (threshold_floor()) unless
+        the build.py states it (model_facts.wall_door(..., floor=)).
         """
         if self.pivot is None:
             raise RuntimeError("write_facts() needs build_all() first: the "
@@ -682,10 +884,17 @@ class Asset:
         if problems:
             raise ValueError("the build does not match export/:\n  "
                              + "\n  ".join(problems))
+        bvh = []
+
+        def floor_of(door):
+            if not bvh:
+                bvh.append(mesh_bvh(self.lod(self.levels[0])))
+            return threshold_floor(bvh[0], door)[0]
+
         doc = model_facts.compose(
             self.name, self.here, self.variants, self.default_variant,
             self.levels, self.pivot, facts() if callable(facts) else facts,
-            bpy.app.version_string)
+            bpy.app.version_string, floor_of=floor_of)
         return model_facts.write(model_facts.sidecar_path(self.here, self.name), doc)
 
     # ---------------------------------------------------------------- main

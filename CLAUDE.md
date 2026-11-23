@@ -276,9 +276,9 @@ to `vehicle_build.VehicleAsset`, its subclass).
 | `lettering.py` | The catalog's one sign alphabet: stroked-centreline capitals and figures (`GLYPHS`) on a unit em, `text()`, `text_width()`, `centred_text()` (ink-gap tracking at any weight, opt-in `join=` ligatures) and `arc()`. A new sign adds its missing letters here; no asset keeps its own glyphs. numpy only. |
 | `weathering.py` | Weathering as per-sample fields (dirt, algae, rust, faded paint, rain runs, coal dust) that the canvas carries through `pad()` and `atlas.albedo()`/`orm()` resolve per variant, with helpers for a plinth, splash-back, a sheltered eave, runs under a drip, a roof band, a window and a door. Each atlas's `weather()` places them. |
 | `brickwork.py` | The catalog's facing brick on an `atlas.Canvas`: the module (0.25 m stretcher on a 0.078125 m course, 16 x 5 px at 64 texels/m), `bond()` (course, brick index and joint masks over sample grids, for a painter that tones its own bricks) and `paint()` (toned stretcher bond over a rect; `y_ref=` counts courses from another row such as a chimney's cap, the darker and mortar ids are each optional (joints then stay on the brick id), `tone=`, `joint_shade=`, and `arris=` for a rounded brick edge in the height channel). Called by texture generators and `boundary_wall.py`; a painter on another module stays with its asset. |
-| `asset_build.py` | The shared half of every `build.py`: `check_toolchain()`, the catalog preview constants, `open_stack()` (a chimney or stack open at the top round a sooted flue), `union()` (the exact boolean, which triangulates any keyhole face it returns round a hole before the build's weld can fold it; opt-in `snap=SNAP` first puts the operands on a 0.1 mm grid) and `difference()`, its subtracting twin, and an `Asset` (`night_lit=False` for one without lit regions; `pivot=` and `levels=` for a prop; `id_attribute`, set by `VehicleAsset`, exports a corner colour attribute as `COLOR_0`, compression off, rewritten as exact bytes) with `material()`, `build_all()`, `export_all()`, `render_preview()`, `render_variants()`, `write_facts()` and `main()`. Runs inside Blender only. |
+| `asset_build.py` | The shared half of every `build.py`: `check_toolchain()`, the catalog preview constants, `open_stack()` (a chimney or stack open at the top round a sooted flue), `union()` (the exact boolean, which triangulates any keyhole face it returns round a hole before the build's weld can fold it; opt-in `snap=SNAP` first puts the operands on a 0.1 mm grid) and `difference()`, its subtracting twin, and an `Asset` (`night_lit=False` for one without lit regions; `pivot=` and `levels=` for a prop; `id_attribute`, set by `VehicleAsset`, exports a corner colour attribute as `COLOR_0`, compression off, rewritten as exact bytes) with `material()`, `build_all()`, `export_all()`, `render_preview()`, `render_variants()`, `write_facts()` (each door's floor measured on `LOD0`) and `main()`; and the door probes the facts and the validator share: `reveal_depth()`, `door_floor_state()` (the slab rule) and `threshold_floor()` (a door's `floor_y_m`). Runs inside Blender only. |
 | `shell_build.py` | The mesh kit a building's `build.py` builds its closed solids with: `Builder` (a bmesh with a position-keyed vertex cache, faces with UVs in atlas pixels and a double-precision area test; `digits`, `snap`, `uv_point`), `Frame`/`InwardFrame` (a wall plane), `fill_planar()`/`fill_region()` (regions with holes, slivers repaired), `recess()`, `prism()`/`box()`/`circle()`, `rim_loops()`/`cap()`/`close_solid()`, `uv_patch()`/`uv_region()`, `rect_poly()`, `dedupe()`, `overlap()`, `item_rects()`, and `render_views()` (the six working views plus `orbit()`/`look()` views and a 1.8 m `figure()`). Face and vertex order match the copies it replaced, so a migrated asset exports byte-identically. Runs inside Blender only. |
-| `model_facts.py` | The facts sidecar `export/<asset_name>.model.json`: its schema, the build-frame to glTF conversion, `wall_door()`, `lane_passage()` and `roof_clear_width()` for a `build.py`'s `facts()`, `compose()`/`write()`, and `check()`, which `validate_asset.py` runs on the file: version 1 for buildings and boundary props; version 3 (`kind: vehicle`) with `compose_vehicle()`, `wheel_part()`, `lamp_lens()`, `glass_group()`, `cargo_box()`, `side_doors()`, `rear_door()` and `interior_file()` for vehicles. Pure Python (numpy for vehicles). |
+| `model_facts.py` | The facts sidecar `export/<asset_name>.model.json`: its schema, the build-frame to glTF conversion, `wall_door()` (`floor=` and `storey=` override a door's measured floor and derived storey), `lane_passage()` and `roof_clear_width()` for a `build.py`'s `facts()`, `compose()` (its `floor_of` measures each door's floor, `storey_of()` derives its storey)/`write()`, and `check()`, which `validate_asset.py` runs on the file: version 4 for buildings and boundary props; version 3 (`kind: vehicle`) with `compose_vehicle()`, `wheel_part()`, `lamp_lens()`, `glass_group()`, `cargo_box()`, `side_doors()`, `rear_door()` and `interior_file()` for vehicles. Pure Python (numpy for vehicles). |
 | `boundary_wall.py` | The brick perimeter wall pieces of `props/boundary/`: their shared 512 atlas (`export`, written into each piece's `export/`), the joint rule, `Run`/`Pier`/`Gate` and their four tiers, layout checks and facts; each piece's `build.py` names its piece and calls `piece_asset()`. |
 | `rintamamiestalo.py` | The four `buildings/residential/rintamamiestalo_*` houses' shared half: their atlas (`Layout`, each house's optional regions and band rows; `paint()`/`export()`, run by each house's `facade_atlas.py`) and, inside Blender, `Kit` (walls and openings from `Wall` tables, gable slabs, the open chimney, canopy, steps, `tier()` with the union and cleanup, the common layout checks, `door()` for `facts()`); the tier policy (`ITEM_MODES`, `CANOPY_LAST`, `RAMP_FROM`, `DISSOLVE_FROM`), the ORM table (`SURFACE`) and the night `TINT` live here once. Each house's `build.py` names its layout and keeps its own massing. |
 | `vehicle_ids.py` | The vehicle contract's numbers and the ids as they ship: class boxes, ceilings, atlas sizes, the part, lamp and glass tables, `encode()`/`decode()`, a GLB accessor reader (`tier()`), `convert_color0_to_ubyte()`, `steer()`, the lens axes, and `save_glass_texels()`/`load_glass_texels()`. numpy only; runs in Blender and in system Python. |
@@ -291,7 +291,7 @@ to `vehicle_build.VehicleAsset`, its subclass).
 | `window_emission.py` | Wires the emission mask into the material (`attach`, `set_state`), rewrites an exported GLB's emission factor (`rewrite_glb_emission`, which `asset_build` uses to ship it default-off), holds the reference `LIT_FACTOR`. |
 | `glb_images.py` | `strip_embedded_images()`: removes the `bufferView` the exporter leaves beside each image `uri`; `asset_build`'s export runs it on every tier (Texture Requirements). |
 | `variant_previews.py` | `render_sheet()`: the day/night (or, for unlit assets, day-only) `variants.png`, called by `asset_build`. |
-| `validate_asset.py` | Mechanical export checks (Validation Checklist), a building's door floors probed on every tier among them; the vehicle classes add `vehicle_checks.py`. |
+| `validate_asset.py` | Mechanical export checks (Validation Checklist), a building's door floors probed on every tier and each door's `floor_y_m` against `LOD0` among them; the vehicle classes add `vehicle_checks.py`. |
 | `vehicle_checks.py` | The vehicle checks on the exported files, for `validate_asset.py`: accessors, sidecar, PNGs and `glass_texels.png`, with exact point-to-triangle distances for steer clearance. numpy and Pillow. |
 | `review_asset.py` | Renders exported tiers in a disposable scene: day cycle, LOD distance pairs, views, light states, optional mip textures, another colour by `--variant`. Run in a separate background Blender. |
 | `review_atlas_mips.py` | Writes temporary atlas mips for filtering stress renders (`review_asset.py --texture-dir`). |
@@ -440,7 +440,7 @@ thumbnail, so the index is browsable without opening asset folders.
 - **Textures:** 1024 square; 2048 only for a documented hero/landmark exception.
   Target 64 texels/metre and record intentional local deviations.
 - **Facts sidecar:** every building ships `export/<asset_name>.model.json`,
-  version 1, written by `asset_build`'s `write_facts()` from the `build.py`'s
+  version 4, written by `asset_build`'s `write_facts()` from the `build.py`'s
   `facts()` (`scripts/model_facts.py` holds the schema; vehicles write
   version 3, Vehicles).
   - It is in the frame of the exported `.glb` files: metres, `+Y` up, `+Z`
@@ -450,11 +450,20 @@ thumbnail, so the index is browsable without opening asset folders.
     their floor areas (under a roof, only where the underside is 1.6 m or
     more over the floor), the dwellings, every door in an outer wall (its
     kind: entrance, service, vehicle, balcony or store; threshold centre on
-    the outer wall plane, outward facing, the leaf's clear size, and, where
+    the outer wall plane, outward facing, the leaf's clear size, the
+    walking surface's height at the threshold, `floor_y_m`, and the index
+    of the storey it opens to, `storey`, or `null` for none; and, where
     there are doors, the one `main` door, an entrance the `build.py` tags),
     the hero status, and the name, triangle count and SHA-256 of every
     exported file, with the commit and Blender version it was written from.
     A structure without doors or occupied floors (a chimney) states none.
+  - A door's `floor_y_m` is `LOD0`'s, measured by the build just behind
+    the wall plane where the leaf stands: 0.02 on a floor slab, 0.0 at
+    bare grade, the top of the step, landing, deck, sill or dock a raised
+    door stands on, and a sill's own height where nothing is under it. Its
+    `storey` is the listed storey whose floor is nearest, within 0.5 m;
+    `wall_door(..., floor=, storey=)` states either where the measure
+    cannot decide.
   - Optionally, every drivable lane through or under the building: one
     mouth's centre on the wall plane (under an overhanging part, on the edge
     of the plan bounds), the horizontal direction into the building, width,
@@ -843,7 +852,8 @@ orientation, budgets and variants differ:
     run's pier, a pier piece, a gate pier); so a closed lot gets one pier
     per joint and corner. The run beyond a gate is pierless.
   - Up to three brick variants, matching the buildings they enclose.
-  - They ship the facts sidecar, with no doors, storeys or dwellings; the
+  - They ship the buildings' facts sidecar, version 4, with no doors,
+    storeys or dwellings; the
     footprint is the plan outline at ground level.
 
 ## Vehicles
@@ -1076,7 +1086,8 @@ about 105 px long at 30 m, 32 at 100 m, 8 at 400 m.
 ### Facts sidecar
 
 `export/<asset_name>.model.json`, version 3 with `"kind": "vehicle"`
-(`scripts/model_facts.py`); buildings and boundary props stay version 1. The
+(`scripts/model_facts.py`); buildings and boundary props write version 4,
+the next number in the one sequence. The
 exported frame, geometry and files only. Version 3 is version 2 with the
 `doors` list added.
 
@@ -1267,7 +1278,8 @@ It checks required exports, GLB structure, image references, material count and
 transparency, triangle counts against the budgets, welded topology, pivot and
 bounds, PNG size and format, `notes.md` section order, the facts sidecar
 (schema, hashes, tier counts and bounds, door kinds, one `main` entrance
-where there are doors, doors on the footprint, passages within the bounds),
+where there are doors, doors on the footprint, each door's `floor_y_m` and
+`storey` well formed, passages within the bounds),
 every prop tier's plan bounds against `LOD0`'s, and a sampled
 hidden-surface test. On a building it probes every sidecar door on every
 tier: the reveal's depth from rays across the leaf, and, where it is
@@ -1276,7 +1288,11 @@ meet the slab's top at 0.02 m (a step, landing or sill higher passes; an
 upward face at grade or the open rim fails). A flat door, one onto a
 passage and one with no closing face within 3 m need none. Openings that
 are not doors (set-back glazing, a portal) are not in the sidecar and stay
-`MANUAL`. Where a normal or emission PNG exists, on any class,
+`MANUAL`. On `LOD0` the build's own threshold probe must find each door's
+`floor_y_m` within 1 mm where a face lies under the threshold (a value
+over no face is a `WARN`, an override to confirm); a door more than
+0.25 m from its storey's floor is a `WARN`, and one opening to no listed
+storey is printed. Where a normal or emission PNG exists, on any class,
 it checks the binding on every tier (emission: its UV attribute and
 default-off factor) and measures the albedo under the mask's neutral
 pixels against the glazing band; coloured pixels are reported as luminous
@@ -1359,7 +1375,8 @@ is exterior surface.
   contrast.
 - Every tier faces `-Y` and shares the authored ground-level origin.
 - The facts sidecar passes the validator with `source.dirty` false, and its
-  doors, footprint, storeys and dwellings describe the building as built.
+  doors (their floors and storeys too), footprint, storeys and dwellings
+  describe the building as built.
 - Geometry and Construction defaults followed, or exceptions carry comparison
   evidence and cost. Opaque glass and door closures; no exposed interior;
   roof-hiding parapets on every tier.

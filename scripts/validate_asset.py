@@ -39,6 +39,7 @@ from mathutils import Vector
 from mathutils.bvhtree import BVHTree
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import asset_build  # noqa: E402
 import door_floor  # noqa: E402
 import model_facts  # noqa: E402
 import vehicle_checks  # noqa: E402
@@ -124,14 +125,10 @@ RAYS = 40
 # recessed at grade stands on door_floor.py's slab, its top door_floor.T over
 # the ground. Each tier is probed from the sidecar's doors (threshold centre on
 # the outer wall plane, outward facing, clear leaf), so the reveal is measured
-# where it ships: a tier that paints the door flat needs no slab.
-FLOOR_TOL = 0.006          # the slab's top within T +- this
-FLOOR_GRADE = 0.004        # an upward face this near the ground lies at grade
-FLOOR_RAISED = 0.05        # a floor this high is a step, landing or sill
-REVEAL_MIN = 0.015         # a shallower reveal is a door painted flat
-REVEAL_MAX = 3.0           # deeper, or no closing face: an open bay or lane
-FLOOR_JAMB = 0.05          # samples keep this far inside the jambs
-UP = Vector((0.0, 0.0, 1.0))
+# where it ships: a tier that paints the door flat needs no slab. The probes
+# are asset_build's (door_floor_state(), threshold_floor()), the ones the
+# build measures each door's floor_y_m with.
+THRESHOLD_TOL = 1e-3       # a door's floor_y_m against LOD0's threshold
 
 
 def _pot(n):
@@ -215,125 +212,20 @@ def mesh_health(obj, weld=1e-5):
     return out
 
 
-def _door_lane(door, passages):
-    """The sidecar passage whose mouth *door* stands in, if any: a lane's
-    floor is the consumer's ground by design."""
-    px, _, pz = door["position"]
-    fx, _, fz = door["facing"]
-    for p in passages:
-        qx, _, qz = p["position"]
-        gx, _, gz = p["forward"]
-        if fx * gx + fz * gz < -0.7 and \
-                math.hypot(px - qx, pz - qz) <= p["width_m"] / 2.0 + 0.05:
-            return p["id"]
-    return None
-
-
-def door_floor_state(bvh, door, passages=()):
-    """What *door* (a sidecar entry, glTF frame) stands on in the tier whose
-    BVH (imported, Z up) is *bvh*: (state, reveal depth or None, detail).
-
-    The reveal's depth is the median of nine horizontal rays across the leaf
-    from just outside the wall plane to the closing face; a door shallower
-    than REVEAL_MIN is flat on this tier, and one with no closing face
-    within REVEAL_MAX opens onto a bay or lane. Inside a reveal, at three
-    depths, rays sideways from 0.3 m over the threshold find the jambs (a
-    lobby wider than the leaf, a cased leaf narrower than its casing), and
-    rays straight down at points between them, clear of the jambs, meet the
-    slab's top at door_floor.T, a step, landing or sill higher, an upward
-    face at grade, or nothing: the open rim the consumer's terrain shows
-    through.
-
-    state is "lane", "open", "flat", "floored", "raised", "missing" or
-    "unknown" (a probe that started inside the solid or met a slope).
-    """
-    lane = _door_lane(door, passages)
-    if lane:
-        return "lane", None, "opens onto passage %r" % lane
-    gx, gy, gz = door["position"]
-    f = Vector((door["facing"][0], -door["facing"][2], 0.0)).normalized()
-    side = UP.cross(f).normalized()
-    base = Vector((gx, -gz, gy))
-    w, h = door["width_m"], door["height_m"]
-
-    depths = []
-    for hz in (0.4, 1.0, max(0.5, min(1.6, h - 0.2))):
-        for s in (-0.3 * w, 0.0, 0.3 * w):
-            loc, nrm, _i, dist = bvh.ray_cast(base + f * 0.01 + side * s + UP * hz, -f)
-            if loc is not None and nrm.dot(-f) > 0.0:
-                depths.append(0.0)      # a back face: the wall stands proud here
-            elif loc is None or dist > REVEAL_MAX + 0.01:
-                depths.append(None)
-            else:
-                depths.append(max(0.0, dist - 0.01))
-    hits = sorted(d for d in depths if d is not None)
-    if len(hits) <= len(depths) // 2:
-        return "open", None, "no closing face within %.1f m" % REVEAL_MAX
-    depth = hits[len(hits) // 2]
-    if depth < REVEAL_MIN:
-        return "flat", depth, "no reveal"
-
-    counts = {}
-    for t in (0.15, 0.5, 0.85):
-        c = base - f * min(max(t * depth, 0.01), depth - 0.01) + UP * 0.3
-        span = []
-        for sgn in (-1.0, 1.0):
-            loc, _n, _i, dist = bvh.ray_cast(c, side * sgn, 3.0 * w + 1.0)
-            span.append(sgn * (dist if loc is not None else w / 2.0))
-        lo, hi = span[0] + FLOOR_JAMB, span[1] - FLOOR_JAMB
-        n = 3 if hi - lo < 1.5 else 5
-        for k in range(n):
-            loc, nrm, _i, _d = bvh.ray_cast(c + side * (lo + (hi - lo) * (k + 0.5) / n),
-                                            -UP, gy + 1.3)
-            if loc is None:
-                key = "open"
-            elif nrm.z < 0.0:
-                key = "inside"
-            elif nrm.z < 0.9:
-                key = "sloped"
-            elif abs(loc.z) <= FLOOR_GRADE:
-                key = "grade"
-            elif abs(loc.z - door_floor.T) <= FLOOR_TOL:
-                key = "slab"
-            elif loc.z >= FLOOR_RAISED:
-                key = "raised"
-            else:
-                key = "at %.3f m" % loc.z
-            counts[key] = counts.get(key, 0) + 1
-    total = sum(counts.values())
-    if counts.get("open") or counts.get("grade"):
-        what = []
-        if counts.get("open"):
-            what.append("%d/%d points open to the terrain" % (counts["open"], total))
-        if counts.get("grade"):
-            what.append("%d/%d on an upward face at grade" % (counts["grade"], total))
-        return "missing", depth, "; ".join(what)
-    if set(counts) - {"slab", "raised"}:
-        return "unknown", depth, ", ".join("%d %s" % (v, k) for k, v in sorted(counts.items()))
-    if counts.get("slab"):
-        return "floored", depth, "%d/%d points on the slab" % (counts["slab"], total)
-    return "raised", depth, "on a step, landing or sill"
-
-
-def check_door_floors(results, tag, obj, facts):
-    """Every door in the sidecar on this tier: a reveal at grade stands on
-    the door_floor.py slab (door_floor_state()). Openings that are not
-    doors (set-back glazing, a portal) are not in the sidecar, so they stay
-    a MANUAL item."""
+def check_door_floors(results, tag, bvh, facts):
+    """Every door in the sidecar on this tier, whose BVH is *bvh*: a reveal
+    at grade stands on the door_floor.py slab
+    (asset_build.door_floor_state()). Openings that are not doors
+    (set-back glazing, a portal) are not in the sidecar, so they stay a
+    MANUAL item."""
     doors = (facts or {}).get("doors") or []
     if not doors:
         return
-    bm = bmesh.new()
-    bm.from_mesh(obj.data)
-    bm.transform(obj.matrix_world)
-    bmesh.ops.triangulate(bm, faces=bm.faces[:])
-    bvh = BVHTree.FromBMesh(bm)
-    bm.free()
     passages = facts.get("passages") or []
     seen = {}
     for door in doors:
         try:
-            state, depth, detail = door_floor_state(bvh, door, passages)
+            state, depth, detail = asset_build.door_floor_state(bvh, door, passages)
         except (KeyError, TypeError, ValueError, IndexError):
             results.append(("WARN", tag, "door floor: door %r unreadable in the "
                                          "sidecar" % door.get("id")))
@@ -355,6 +247,43 @@ def check_door_floors(results, tag, obj, facts):
     if seen:
         results.append(("PASS", tag, "door floors: %s" % "; ".join(
             "%s %s" % (word, ", ".join(seen[k])) for k, word in words if k in seen)))
+
+
+def check_door_thresholds(results, tag, bvh, facts):
+    """Each sidecar door's floor_y_m against the walking surface the build
+    measures it from, probed the same way on the exported LOD0
+    (asset_build.threshold_floor()): within THRESHOLD_TOL where a face lies
+    at the threshold, a FAIL otherwise. Where none does, a value other than
+    the probe's (the terrain, or a raised sill's stated threshold) is a
+    build.py's override, a WARN to look at."""
+    doors = (facts or {}).get("doors") or []
+    if not doors:
+        return
+    good = []
+    for door in doors:
+        stated = door.get("floor_y_m")
+        if not isinstance(stated, (int, float)) or isinstance(stated, bool):
+            continue                    # reported by check_facts
+        try:
+            floor, face, detail = asset_build.threshold_floor(bvh, door)
+        except (KeyError, TypeError, ValueError, IndexError):
+            results.append(("WARN", tag, "door threshold: door %r unreadable in the "
+                                         "sidecar" % door.get("id")))
+            continue
+        if abs(stated - floor) <= THRESHOLD_TOL:
+            good.append("%s %.3f" % (door["id"], stated))
+        elif face:
+            results.append(("FAIL", tag, "door threshold: %r states floor_y_m %.4f, "
+                                         "the mesh's is %.4f (%s)"
+                            % (door["id"], stated, floor, detail)))
+        else:
+            results.append(("WARN", tag, "door threshold: %r states floor_y_m %.4f "
+                                         "over no face (%s, %.4f): a build.py "
+                                         "override to confirm"
+                            % (door["id"], stated, detail, floor)))
+    if good:
+        results.append(("PASS", tag, "door thresholds (floor_y_m) match the mesh: %s"
+                        % ", ".join(good)))
 
 
 def glb_json(path):
@@ -532,8 +461,11 @@ def check_tier(results, asset, adir, level, kind, hero, facts=None):
                        hs["hidden_vertical_area_m2"],
                        [c for _, c in hs["largest_hidden"][:3]])))
 
-    if kind == "building":
-        check_door_floors(results, tag, obj, facts)
+    if kind == "building" and (facts or {}).get("doors"):
+        bvh = asset_build.mesh_bvh(obj)
+        check_door_floors(results, tag, bvh, facts)
+        if level == 0:
+            check_door_thresholds(results, tag, bvh, facts)
 
     d = obj.data
     bpy.data.objects.remove(obj, do_unlink=True)
@@ -742,11 +674,14 @@ def check_facts(results, asset, adir, hero):
 
     Decides only what a file can: the schema, the hashes, the tiers' triangle
     counts and bounds, one main door and that an entrance where there are
-    doors, each door's kind one of DOOR_KINDS, doors on the footprint, storeys
-    lowest first, and any passages well formed
-    with their mouths and far ends inside the bounds. Whether a door, its
-    kind, a passage or a storey is what the building has stays with the
-    build.py's facts() and its reviewer.
+    doors, each door's kind one of DOOR_KINDS, doors on the footprint, each
+    door's floor_y_m and storey well formed, storeys lowest first, and any
+    passages well formed with their mouths and far ends inside the bounds.
+    A door whose floor_y_m is more than model_facts.STOREY_WARN from its
+    storey's is a WARN; a door that opens to no listed storey is printed.
+    Whether a door, its kind, a passage or a storey is what the building has
+    stays with the build.py's facts() and its reviewer; whether a door's
+    floor is the mesh's is check_door_thresholds()'.
     """
     path = model_facts.sidecar_path(adir, asset)
     problems = model_facts.check_file(path)
@@ -770,6 +705,20 @@ def check_facts(results, asset, adir, hero):
         results.append(("PASS", "facts", "%s: %s and %s consistent"
                         % (os.path.basename(path), ", ".join(parts[:-1]),
                            parts[-1])))
+        storeys = doc["storeys"]
+        for d in doc["doors"]:
+            if d["storey"] is not None:
+                gap = d["floor_y_m"] - storeys[d["storey"]]["floor_y_m"]
+                if abs(gap) > model_facts.STOREY_WARN:
+                    results.append(("WARN", "facts", "door %r: floor_y_m %.3f is %.3f m "
+                                                     "from storey %d's floor %.3f"
+                                    % (d["id"], d["floor_y_m"], gap, d["storey"],
+                                       storeys[d["storey"]]["floor_y_m"])))
+        loose = ["%s at %.3f" % (d["id"], d["floor_y_m"])
+                 for d in doc["doors"] if d["storey"] is None]
+        if loose and storeys:
+            results.append(("MANUAL", "facts", "door%s opening to no listed storey: %s"
+                            % ("" if len(loose) == 1 else "s", ", ".join(loose))))
         if doc["source"]["dirty"]:
             results.append(("WARN", "facts", "source.dirty is true: rewrite the "
                                              "sidecar from a committed tree "

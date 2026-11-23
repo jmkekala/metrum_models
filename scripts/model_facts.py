@@ -29,7 +29,11 @@ A build.py declares:
         }
 
 Every door names its kind, one of DOOR_KINDS, and exactly one door, an
-entrance, is main. A structure with no door (a chimney stack) lists none and
+entrance, is main. Each door also states the walking surface at its
+threshold, floor_y_m, and the storey it opens to, storey: compose() takes
+the floor from its floor_of (asset_build measures it on LOD0) and derives
+the storey from it (storey_of()); wall_door(..., floor=, storey=) states
+either for a door the measurement cannot decide. A structure with no door (a chimney stack) lists none and
 so has no main door; one with no occupied floor lists no storeys. A building
 with a drivable lane through it lists it under passages; without one, it
 leaves the key out, and so does the sidecar.
@@ -39,9 +43,13 @@ read from the .glb files themselves, so the sidecar describes what ships.
 
 Pure Python, no bpy: scripts/validate_asset.py runs check() on what is on disk.
 
-Vehicles write version 3 with "kind": "vehicle" (compose_vehicle(), the
-helpers under "vehicles" below); buildings and boundary props stay version
-1, unchanged. dumps(), write() and check() take either version. A vehicle
+Buildings and boundary props write version 4: version 1 with floor_y_m and
+storey in every door. Vehicles write version 3 with "kind": "vehicle"
+(compose_vehicle(), the helpers under "vehicles" below). The versions are
+one sequence for the one schema (1 buildings, 2 and 3 vehicles, 4
+buildings), so a number names one document shape whatever its kind.
+dumps(), write() and check() take either kind; check() refuses any other
+version. A vehicle
 build.py's facts() is completed by scripts/vehicle_build.py's VehicleAsset,
 which measures the wheels, lamps, glass and body from the LOD0 build.
 """
@@ -54,14 +62,27 @@ import struct
 import subprocess
 
 SCHEMA = "metrum-model-facts"
-VERSION = 1
+VERSION = 4                      # buildings and boundary props; vehicles: VEHICLE_VERSION
 LICENSE = "CC-BY-4.0"
 DECIMALS = 4                     # 0.1 mm; the build's own weld is 0.01 mm
 DOOR_TOL = 0.05                  # a door's distance from a footprint edge, metres
 KEYS = ("schema", "version", "name", "path", "source", "license", "bounds",
         "footprint", "storeys", "dwellings", "doors", "lods", "textures",
         "variants", "default_variant", "preview", "hero")
-DOOR_KEYS = ("id", "kind", "position", "facing", "width_m", "height_m", "main")
+DOOR_KEYS = ("id", "kind", "position", "facing", "width_m", "height_m",
+             "floor_y_m", "storey", "main")
+# A build.py's door (wall_door()): the sidecar's keys but the two compose()
+# fills in, and optionally "floor" (build-frame z of the walking surface)
+# and "storey" (an index, or None) where the build.py states them.
+BUILD_DOOR_KEYS = ("id", "kind", "position", "facing", "width_m", "height_m", "main")
+BUILD_DOOR_OPTIONAL = ("floor", "storey")
+# storey_of(): a door opens to the listed storey whose floor is nearest its
+# own, within STOREY_TOL (three or so risers, well under half a storey);
+# none within it, to no listed storey. validate_asset.py warns where a
+# door's floor and its storey's differ by more than STOREY_WARN, which the
+# catalog's stepped entrances (0.156 m) and balcony sills (0.08 m) stay under.
+STOREY_TOL = 0.5
+STOREY_WARN = 0.25
 # entrance: a pedestrian door people use to enter the occupied space from the
 # ground. service: a staff or back pedestrian door at ground level. vehicle:
 # loading and goods doors. balcony: any door not reachable from the ground,
@@ -101,7 +122,11 @@ def sidecar_path(here, name):
 
 
 # ------------------------------------------------------------ build frame
-def wall_door(door_id, kind, p0, p1, s, z, width, height, main=False):
+DERIVE = "derive"                # wall_door()'s storey: left to compose()
+
+
+def wall_door(door_id, kind, p0, p1, s, z, width, height, main=False,
+              floor=None, storey=DERIVE):
     """A door of *kind* (DOOR_KINDS) in the wall from plan point *p0* to *p1*,
     in the build frame. The one *main* door is the entrance a visitor uses,
     tagged by the build.py; in a row of equal units, the unit just to the +X
@@ -112,14 +137,38 @@ def wall_door(door_id, kind, p0, p1, s, z, width, height, main=False):
     wall from p0 and *z* its threshold; the position is on the outer wall
     plane whatever the reveal's depth. *width* and *height* are the leaf's
     (or the pair's) clear opening, without casing, fanlight or transom.
+
+    *floor* and *storey* are overrides, for a door the shared code cannot
+    decide: *floor* the build-frame z of the walking surface at the
+    threshold (None: measured on LOD0, see compose()), *storey* the index
+    of the listed storey the door opens to, or None for none (DERIVE:
+    storey_of()).
     """
     dx, dy = p1[0] - p0[0], p1[1] - p0[1]
     length = math.hypot(dx, dy)
     tx, ty = dx / length, dy / length
-    return {"id": door_id, "kind": kind,
+    door = {"id": door_id, "kind": kind,
             "position": (p0[0] + tx * s, p0[1] + ty * s, z),
             "facing": (ty, -tx),
             "width_m": width, "height_m": height, "main": bool(main)}
+    if floor is not None:
+        door["floor"] = floor
+    if storey != DERIVE:
+        door["storey"] = storey
+    return door
+
+
+def storey_of(floor_y, floors):
+    """The index of the storey in *floors* (their floor_y_m, lowest first)
+    that a door whose walking surface is at *floor_y* opens to: the one
+    whose floor is nearest, the lower on a tie, if within STOREY_TOL; None
+    when none is, or none is listed."""
+    best = None
+    for i, y in enumerate(floors):
+        d = abs(y - floor_y)
+        if d <= STOREY_TOL + 1e-9 and (best is None or d < best[0] - 1e-9):
+            best = (d, i)
+    return None if best is None else best[1]
 
 
 def lane_passage(passage_id, mouth, direction, width, length, clear_height,
@@ -226,13 +275,33 @@ def source(here, name, blender):
 
 
 # ----------------------------------------------------------------- compose
-def compose(name, here, variants, default_variant, levels, pivot, facts, blender):
+def compose(name, here, variants, default_variant, levels, pivot, facts, blender,
+            floor_of=None):
     """The sidecar's document, from the build's facts and the files on disk.
 
     *pivot* is the build's pivot offset (asset_build.pivot_offset of LOD0,
     before it was applied) and *facts* the build.py's facts() in the build
     frame. Raises on a fact that is missing or malformed; check() then judges
     the finished document.
+
+    A door's floor_y_m is the walking surface at its threshold, in metres
+    over the ground (y = 0), at the outer wall plane where its position is
+    stated; one value, LOD0's. It is the door's own "floor" where the
+    build.py states one; otherwise *floor_of*(door), called with the
+    door's entry in the exported frame, which asset_build.Asset.write_facts()
+    passes as a probe of the built LOD0 (asset_build.threshold_floor()):
+    door_floor.T (0.02) for a door on its scripts/door_floor.py slab; 0.0
+    for a door at grade with nothing under it (a recess not yet floored
+    included, which measures 0.02 once its slab is built); the top of the
+    step, landing, deck, sill or dock the leaf stands on for a raised door,
+    as far as it reaches into the reveal (the landing in front of a door
+    painted flat); a sill above grade with nothing under it, the stated
+    threshold, position[1]. Without *floor_of*, position[1].
+
+    A door's storey is the index into storeys of the storey it opens to:
+    its own "storey" where the build.py states one (None for no listed
+    storey), otherwise storey_of() its floor_y_m. Always None when no
+    storeys are listed.
     """
     px, py, pz = pivot
     edir = os.path.join(here, "export")
@@ -254,17 +323,37 @@ def compose(name, here, variants, default_variant, levels, pivot, facts, blender
     footprint = [plan((x, y, 0.0)) for x, y in facts["footprint"]]
     if _area(footprint) < 0.0:
         footprint.reverse()              # one winding for every asset
+    storeys = [{"floor_y_m": _r(z - pz), "area_m2": round(float(a), 2)}
+               for z, a in facts["storeys"]]
     doors = []
     for d in facts["doors"]:
-        if set(d) != set(DOOR_KEYS):
+        if not set(BUILD_DOOR_KEYS) <= set(d) or \
+                set(d) - set(BUILD_DOOR_KEYS) - set(BUILD_DOOR_OPTIONAL):
             raise ValueError("door %r: keys %s" % (d.get("id"), sorted(d)))
         fx, fy = d["facing"]
         n = math.hypot(fx, fy)
-        doors.append({"id": d["id"], "kind": d["kind"],
-                      "position": point(d["position"]),
-                      "facing": [_r(fx / n), 0.0, _r(-fy / n)],
-                      "width_m": _r(d["width_m"]), "height_m": _r(d["height_m"]),
-                      "main": bool(d["main"])})
+        door = {"id": d["id"], "kind": d["kind"],
+                "position": point(d["position"]),
+                "facing": [_r(fx / n), 0.0, _r(-fy / n)],
+                "width_m": _r(d["width_m"]), "height_m": _r(d["height_m"])}
+        if d.get("floor") is not None:
+            floor = d["floor"] - pz
+        elif floor_of is not None:
+            floor = floor_of(door)
+        else:
+            floor = door["position"][1]
+        door["floor_y_m"] = _r(max(0.0, floor))
+        if "storey" in d:
+            storey = d["storey"]
+            if storey is not None and (isinstance(storey, bool) or not isinstance(
+                    storey, int) or not 0 <= storey < len(storeys)):
+                raise ValueError("door %r: storey %r is not an index into the %d "
+                                 "storeys, nor None" % (d["id"], storey, len(storeys)))
+        else:
+            storey = storey_of(door["floor_y_m"], [s["floor_y_m"] for s in storeys])
+        door["storey"] = storey
+        door["main"] = bool(d["main"])
+        doors.append(door)
     passages = []
     for p in facts.get("passages") or ():
         if set(p) != set(PASSAGE_KEYS):
@@ -300,8 +389,7 @@ def compose(name, here, variants, default_variant, levels, pivot, facts, blender
         "bounds": {"min": [_r(v) for v in lod0["min"]],
                    "max": [_r(v) for v in lod0["max"]]},
         "footprint": footprint,
-        "storeys": [{"floor_y_m": _r(z - pz), "area_m2": round(float(a), 2)}
-                    for z, a in facts["storeys"]],
+        "storeys": storeys,
         "dwellings": int(facts["dwellings"]),
         "doors": doors,
         "lods": lods,
@@ -399,7 +487,10 @@ def check(doc, export_dir):
     one main door and that one an entrance where there are doors at all, and
     every door of a DOOR_KINDS kind, on a footprint edge
     (within DOOR_TOL) or inside the outline, facing out along a unit
-    horizontal normal. Passages, when present, are checked by _passages().
+    horizontal normal, its floor_y_m a number of 0 or more and its storey
+    None or an index into storeys (None where none are listed). Whether the
+    floor is the mesh's is scripts/validate_asset.py's, on LOD0. Passages,
+    when present, are checked by _passages().
     A vehicle document is checked by check_vehicle().
     """
     if isinstance(doc, dict) and doc.get("kind") == VEHICLE_KIND:
@@ -410,7 +501,9 @@ def check(doc, export_dir):
                         % (list(doc), list(schema_keys(doc))))
         return problems
     if doc["schema"] != SCHEMA or doc["version"] != VERSION:
-        problems.append("schema %r version %r" % (doc["schema"], doc["version"]))
+        problems.append("schema %r version %r, not %r version %d: rewrite it "
+                        "(build.py -- facts)" % (doc["schema"], doc["version"],
+                                                 SCHEMA, VERSION))
     name = doc["name"]
     if os.path.basename(doc["path"]) != name:
         problems.append("path %r does not end in the name %r" % (doc["path"], name))
@@ -527,6 +620,14 @@ def check(doc, export_dir):
                             % (d["id"], d["kind"]))
         if not (d["width_m"] > 0 and d["height_m"] > 0 and d["position"][1] >= 0):
             problems.append("door %r: size or threshold height is not positive" % d["id"])
+        if not (_number(d["floor_y_m"]) and d["floor_y_m"] >= 0):
+            problems.append("door %r: floor_y_m %r is not a number of 0 or more"
+                            % (d["id"], d["floor_y_m"]))
+        s = d["storey"]
+        if s is not None and (isinstance(s, bool) or not isinstance(s, int)
+                              or not 0 <= s < len(doc["storeys"])):
+            problems.append("door %r: storey %r is not null or an index into the %d "
+                            "storeys" % (d["id"], s, len(doc["storeys"])))
     if "passages" in doc:
         problems += _passages(doc["passages"], lo, hi)
     return problems
@@ -610,7 +711,7 @@ def check_file(path):
 # Version 3, "kind": "vehicle" (CLAUDE.md, Vehicles): version 2 with the
 # doors list added after cargo and nothing else changed. The field order is
 # the contract's example's. numpy and scripts/vehicle_ids.py are imported inside
-# the functions that need them, so the version 1 path stays standard-library.
+# the functions that need them, so the building path stays standard-library.
 VEHICLE_VERSION = 3
 VEHICLE_KIND = "vehicle"
 VEHICLE_KEYS = ("schema", "version", "kind", "name", "path", "source", "license",
