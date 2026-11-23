@@ -32,7 +32,8 @@ steel legs.
 The display windows and the door stand 0.18 m back in their openings, on the
 ground, and the door 0.43 m back from the pier's face: each set-back stands on
 a 0.02 m concrete floor slab (scripts/door_floor.py), the windows' and the
-door's in the wall, the portal's in the pier, so no terrain shows inside.
+door's in the wall, the portal's in the pier, so no terrain shows inside. So
+does the maintenance door on the rear gable, in its 0.12 m reveal.
 
 Construction is a set of closed solids unioned with Blender's exact boolean:
 the wall ring, the roof, the ridge crest, the middle pier, the plaque over the
@@ -145,12 +146,13 @@ def opening_mode(level, where):
     return "cut" if level < 2 else "flush"
 
 
-def floored(level):
-    """Whether the shopfront's and the door's set-backs stand on their floor
-    slabs at *level*: on every tier that cuts them (opening_mode()); a flush
-    opening has no reveal to floor. The portal's slab is the pier's, on every
-    tier that keeps the pier."""
-    return opening_mode(level, "front") == "cut"
+def floored(level, where="front"):
+    """Whether the openings at grade on *where* stand on their floor slabs
+    at *level*: the shopfront's and the entrance's set-backs ("front") and
+    the maintenance door's reveal ("side", the rear's), on every tier that
+    cuts them (opening_mode()); a flush opening has no reveal to floor. The
+    portal's slab is the pier's, on every tier that keeps the pier."""
+    return opening_mode(level, where) == "cut"
 
 
 def pier_kept(level):
@@ -444,9 +446,17 @@ def item_rects(kind, s, z):
     return SB.item_rects(L.OPENINGS[kind], s, z)
 
 
-def place_item(B, fr, kind, rect, region, level, skip_z=None):
-    """A cut opening while it reads, the same rectangle painted flat after."""
+def place_item(B, fr, kind, rect, region, level, skip_z=None, floor=None):
+    """A cut opening while it reads, the same rectangle painted flat after.
+    One standing on the ground with a *floor* (a door_floor.Floor) is cut on
+    its concrete slab instead (door_floor.recess()), on every tier that cuts
+    it (floored()); the wall round it takes door_floor.notch()."""
     poly = rect_poly(rect)
+    if floor is not None and floored(level, "side"):
+        DF.recess(B, fr, rect, 0.0, -L.REVEAL_DEPTH[kind],
+                  uv_region(fr, region, rect[0], rect[2]),
+                  [uv_reveal(fr, edge) for edge in SB.edges(poly)], floor)
+        return
     out = 0.0
     if opening_mode(level, "side") == "cut":
         reveal(B, fr, poly, L.REVEAL_DEPTH[kind], skip_z=skip_z)
@@ -596,13 +606,20 @@ def build_front(B, fr, level):
 
 
 def build_rear(B, fr, level):
+    """The rear gable. The maintenance door's cased opening stands on the
+    ground, a notch in the wall's foot; while it is cut its 0.12 m reveal
+    stands on a concrete floor slab (place_item(), L.FLOORS["maint"]), and
+    the notch carries the nosing's top corners (door_floor.notch())."""
     door, _ = item_rects("maint_door", L.MAINT_DOOR_S, 0.0)
     d0, d1, _, dz1 = door
     span = 2.0 * HX
-    fill_region(B, fr, [(0.0, 0.0), (d0, 0.0), (d0, dz1), (d1, dz1), (d1, 0.0),
-                        (span, 0.0), (span, CUT), (0.0, CUT)], [],
+    notch = (DF.notch(door) if floored(level, "side") else
+             [(d0, 0.0), (d0, dz1), (d1, dz1), (d1, 0.0)])
+    fill_region(B, fr, [(0.0, 0.0)] + notch
+                + [(span, 0.0), (span, CUT), (0.0, CUT)], [],
                 uv_stone(fr, 0.0))
-    place_item(B, fr, "maint_door", door, L.MAINT_DOOR, level, skip_z=0.0)
+    place_item(B, fr, "maint_door", door, L.MAINT_DOOR, level, skip_z=0.0,
+               floor=L.FLOORS["maint"])
 
     vents = [(s - L.LOUVRE_WH[0] / 2.0, s + L.LOUVRE_WH[0] / 2.0,
               z, z + L.LOUVRE_WH[1]) for s, z in L.LOUVRES]
@@ -1066,6 +1083,9 @@ def check_layout():
     bad += DF.problems(L.DOOR_FLOOR, "the entrance", DOOR_RECT, L.GLAZE_DEPTH)
     bad += DF.problems(L.FLOORS["portal"], "the portal", PORTAL_RECT,
                        PIER_OUT + L.GLAZE_DEPTH)
+    bad += DF.problems(L.FLOORS["maint"], "the maintenance door",
+                       item_rects("maint_door", L.MAINT_DOOR_S, 0.0)[0],
+                       L.REVEAL_DEPTH["maint_door"])
     if not 0.0 < PIER_IN < L.GLAZE_DEPTH:
         bad.append("the pier's portal slab does not end inside the door's reveal")
     portal_floor = L.FLOORS["portal"]

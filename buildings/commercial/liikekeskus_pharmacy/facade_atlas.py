@@ -23,9 +23,10 @@ seam samples the artwork that actually continues there rather than a neighbour.
 
 Everything singular -- the entrance doors, the two sign boards, the gable
 curtain wall, the roof, the plant -- gets a region of its own above the bands,
-and so do the concrete floor slabs at the foot of the shopfront and through
-the entrance's portal (scripts/door_floor.py). atlas.pad() fills every sample
-no region claims from the nearest region's own edge.
+and so do the concrete floor slabs at the foot of the shopfront, through the
+entrance's portal and in the maintenance door's reveal (scripts/door_floor.py).
+atlas.pad() fills every sample no region claims from the nearest region's own
+edge.
 
 Rasterising is scripts/atlas.py's: a canvas supersampled SS x SS per pixel,
 with a height channel the normal map is derived from, so the sign board's
@@ -252,9 +253,13 @@ ROOF_PPM = 13.0
 #   through DOOR_FLOOR, a window on the same region PORTAL_REBATE in from its
 #   left and PIER_OUT back, so the two meet without a seam. DOOR_FLOOR is
 #   never painted on its own.
+# - "maint": the maintenance door's 0.12 m reveal on the rear gable, its cased
+#   opening's 1.20 m wide, with a worn path down the middle to the leaf.
+MAINT_OPENING_W = OPENINGS["maint_door"][0] + 2.0 * OPENINGS["maint_door"][2]
 FLOORS = {"shop": DF.Floor(254, 932, SHOP_W, GLAZE_DEPTH, tread=-1e3),
           "portal": DF.Floor(254, 954, PORTAL_W, PIER_OUT + GLAZE_DEPTH,
-                             tread=PORTAL_W / 2.0)}
+                             tread=PORTAL_W / 2.0),
+          "maint": DF.Floor(396, 954, MAINT_OPENING_W, REVEAL_DEPTH["maint_door"])}
 DOOR_FLOOR = DF.Floor(FLOORS["portal"].x + PORTAL_REBATE * PPM,
                       FLOORS["portal"].y + PIER_OUT * PPM, ENTRANCE_W, GLAZE_DEPTH)
 

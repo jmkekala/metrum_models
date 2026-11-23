@@ -75,7 +75,9 @@ bounding box.
   ladder, 0.5 m wide, its rails 1.02 - 1.08 m off the wall, on every tier;
   the 0.9 m eaves overhead.
 - **Rear:** nothing on the ground; the maintenance door and the louvres are
-  in the wall plane. The 1.2 m rake overhead.
+  in the wall plane, the door's 0.12 m reveal floored with a 0.02 m concrete
+  slab, its nosing on the wall plane (Construction). The 1.2 m rake
+  overhead.
 
 ## Story height
 
@@ -169,30 +171,37 @@ Five details are worth knowing before changing anything:
 ### Floor slabs
 
 The door and both display windows stand 0.18 m back in openings on the
-ground, and the door 0.43 m back from the middle pier's face. None of those
-set-backs had an upward face under it (the ring's floor cap faces down), so
-a consumer's terrain showed inside: grass across the door and the portal,
-and a thin line of it along the foot of the whole shopfront glazing. Each is
-now floored with a concrete slab from the shared `scripts/door_floor.py`:
+ground, and the door 0.43 m back from the middle pier's face; the
+maintenance door on the rear gable stands 0.12 m back in its cased opening.
+Without a floor none of those set-backs has an upward face under it (the
+ring's floor cap faces down), so a consumer's terrain shows inside: grass
+across the doors and the portal, and a thin line of it along the foot of
+the whole shopfront glazing. Each is floored with a concrete slab from the
+shared `scripts/door_floor.py`:
 
 | Set-back | Built by | Slab, width x depth | Tiers |
 | --- | --- | --- | --- |
 | the door's reveal (`pharmacy`) | the wall, `door_floor.recess()` | 2.0 x 0.18 m | `LOD0`, `LOD1` |
 | the portal through the middle pier | the pier's solid, `door_floor.recess()` | 2.10 x 0.35 m | `LOD0` - `LOD2`, with the pier |
 | each display window's set-back | the wall, `door_floor.recess()` | 9.0 x 0.18 m | `LOD0`, `LOD1` |
+| the maintenance door's reveal (`maintenance`) | the rear wall, `door_floor.recess()` through `place_item()` | 1.20 x 0.12 m | `LOD0`, `LOD1` |
 
 - **Top 0.02 m over the ground** (`door_floor.T`), clear of terrain at
   z = 0 and too low to read as a step.
 - **A nosing on the front plane** of whatever stands frontmost: the wall
-  plane under each window, the pier's face under the portal. Nothing
+  plane under each window and the maintenance door, the pier's face under
+  the portal. Nothing
   projects past it, so the bounds, the pivot, the footprint and the door's
   threshold in the sidecar are as they were.
 - **The reveals start on the slab's top:** the jambs, the heads' cheeks and
   the closing faces (glass and door) begin at z 0.02, and the piers' edges
-  carry the nosings' top corners (`door_floor.notch()` round the door), so
-  wall, nosing, slab and cheeks meet on shared vertices and the floor cap
-  runs straight along the wall line. The door's and the kick panel's
-  artwork keep their place, so each slab covers their bottom 1.3 px.
+  carry the nosings' top corners (`door_floor.notch()` round the door, and
+  round the maintenance door in the rear wall's foot), so wall, nosing,
+  slab and cheeks meet on shared vertices and the floor cap runs straight
+  along the wall line. The doors' and the kick panel's artwork keep their
+  place, so each slab covers their bottom 1.3 px. The maintenance door's
+  slab fills its whole cased opening, 1.20 m, the casing's legs standing on
+  it either side of the 1.0 m leaf.
 - **Door and portal are one floor.** The pier's slab runs through the whole
   depth of its solid, to 0.10 m behind the wall line, inside the door's
   reveal; there its top is coplanar with the door's slab top, which the
@@ -200,15 +209,17 @@ now floored with a concrete slab from the shared `scripts/door_floor.py`:
   each other's slab. Both sample one atlas region, the door's
   (`DOOR_FLOOR`) as a window on the portal's, so the floor is continuous
   from the pier's face to the leaves (Texture set).
-- `floored()` gives the door and the windows their slabs on every tier that
-  cuts them (`opening_mode()`); `LOD2` and `LOD3` paint them flat on the
-  wall with no reveal. The portal's slab is the pier's, so it stays to
+- `floored(level, where)` gives the door, the windows (`"front"`) and the
+  maintenance door (`"side"`, the rear's openings) their slabs on every tier
+  that cuts them (`opening_mode()`); `LOD2` and `LOD3` paint them flat on
+  the wall with no reveal. The portal's slab is the pier's, so it stays to
   `LOD2` and goes with the pier at `LOD3`, where the door is flat on a flat
-  wall. `check_layout()` runs `door_floor.problems()` on all four, and
+  wall. `check_layout()` runs `door_floor.problems()` on all five, and
   checks that the pier's slab ends inside the door's reveal and that
   `DOOR_FLOOR` continues the portal's region.
-- The maintenance door at the back is a service door and keeps its 0.12 m
-  reveal on the ground with no floor (Known simplifications).
+- No other opening stands on the ground: the side windows' sills are at
+  1.1 m, the louvres and the gable curtain wall are above 4 m, and the
+  buttresses and the air handler are solids, not recesses.
 
 ### Rainwater goods
 
@@ -268,17 +279,18 @@ pivot hold on every tier.
 
 | Tier | Triangles | Ceiling | Note |
 | --- | --- | --- | --- |
-| `LOD0` | 4,020 | 12,000 | shell 1,042, downpipes 320, roof kit 2,658 |
-| `LOD1` | 2,002 | 4,000 | shell 1,006, downpipes 160, roof kit 836 |
+| `LOD0` | 4,028 | 12,000 | shell 1,050, downpipes 320, roof kit 2,658 |
+| `LOD1` | 2,010 | 4,000 | shell 1,014, downpipes 160, roof kit 836 |
 | `LOD2` | 800 | 1,500 | shell 432, downpipes 72, roof kit 296 |
 | `LOD3` | 484 | 500 | shell 368, downpipes 56, roof kit 60 (bare rails, ridge plank) |
 
-The floor slabs (Construction) cost `LOD0` 18 triangles, `LOD1` 30 and
-`LOD2` 4, and `LOD3` none (4,002 / 1,972 / 796 / 484 before): the nosings
-and tops, with the piers' regions and the floor cap re-triangulating round
-the nosings' corners and the union cutting the door's and the portal's
-slabs where they meet; `LOD1` re-triangulates more than `LOD0`. At `LOD2`
-it is the portal's nosing and top alone.
+The floor slabs (Construction) cost `LOD0` 26 triangles, `LOD1` 38 and
+`LOD2` 4, and `LOD3` none (4,002 / 1,972 / 796 / 484 without them): the
+nosings and tops, with the piers' regions, the rear wall and the floor cap
+re-triangulating round the nosings' corners and the union cutting the
+door's and the portal's slabs where they meet; `LOD1` re-triangulates more
+than `LOD0`. The maintenance door's is 8 of those on `LOD0` and `LOD1`
+alike. At `LOD2` it is the portal's nosing and top alone.
 
 Every tier is under its ceiling and nothing has been padded. The
 building is a rectangular box with a single unbroken gable over it: there are
@@ -390,9 +402,10 @@ once stopped at `LOD0`, and three dark posts disappearing off the ridge was
 the one change caught at the first switch, so they carry to `LOD1`.
 
 **The floor slabs (2026-11-23)** add no transition of their own. The
-door's and the windows' go with their 0.18 m reveals at the `LOD1`/`LOD2`
-switch, where the door and the glass are already painted flat: a 0.02 m
-nosing and 0.18 m of slab are under a pixel at 104 m. The portal's goes with
+door's, the windows' and the maintenance door's go with their 0.18 m and
+0.12 m reveals at the `LOD1`/`LOD2` switch, where the doors and the glass
+are already painted flat: a 0.02 m nosing and 0.18 m of slab are under a
+pixel at 104 m. The portal's goes with
 the pier at the `LOD2`/`LOD3` switch. Checked from a standing eye and from
 0.35 m over a terrain plane, every tier (Review status).
 
@@ -404,8 +417,8 @@ taken here.
 
 ## Interior geometry
 
-`scripts/validate_asset.py`'s sampled test reports 307 of 4,020 triangles
-hidden at `LOD0` (7.6 %, 0.1 m2 of it vertical), 66 of 2,002 at `LOD1`
+`scripts/validate_asset.py`'s sampled test reports 307 of 4,028 triangles
+hidden at `LOD0` (7.6 %, 0.1 m2 of it vertical), 66 of 2,010 at `LOD1`
 (3.3 %), 25 of 800 at `LOD2` (3.1 %) and 9 of 484 at `LOD3` (1.9 %, 0.0 m2
 vertical); the floor slabs added none. Before the roof kit the shell alone gave 1, 1, 0 and 1, slivers the
 exact boolean leaves where a gable panel's raking head meets the rake and in
@@ -421,8 +434,8 @@ outside, seen from the low oblique views of the kit; none is buried. They are in
 not proof either way; no buried partition was found. The wall ring is a
 single closed solid capped with a floor and a two-plane lid, so there is no
 interior to bury anything in. Its floor cap runs straight along the front
-wall line under the slabs' nosings, so no face lies at grade inside any
-set-back; the slabs are exterior surface, and where the door's and the
+and rear wall lines under the slabs' nosings, so no face lies at grade
+inside any set-back; the slabs are exterior surface, and where the door's and the
 portal's meet, the union leaves one top and buries the door's nosing and
 the pier slab's back face.
 
@@ -453,9 +466,8 @@ What the shell does not model, and what carries the feature instead:
 - **The entrance has no step, ramp or canopy.** A flat 0.02 m concrete
   slab, with no mat, drain or threshold strip, runs from the pier's face
   through the portal to the threshold (Construction), and the 1.2 m rake
-  overhangs it. The display windows' set-backs have the same slab.
-- **The maintenance door's 0.12 m reveal has no floor**: a service door,
-  it stands on the consumer's ground as before.
+  overhangs it. The display windows' set-backs and the maintenance door's
+  reveal have the same slab; the maintenance door has no step either.
 - **The sign's stand is four plain legs.** No rails, braces or fixing plates:
   at 80 mm they span under three pixels at the 35 m switch, and anything
   finer is open framework that no texture could carry.
@@ -553,8 +565,8 @@ takes the same region on its 1.2 m face, so it is drawn at 85 texels/metre
 rather than 64: a third deviation, sharper rather than blurrier, on one small
 sign.
 
-The concrete floor slabs (Construction) take two regions at 64 texels/metre
-under the right sign board (`FLOORS`, `scripts/door_floor.py`), each the
+The concrete floor slabs (Construction) take three regions at 64
+texels/metre under the right sign board (`FLOORS`, `scripts/door_floor.py`), each the
 slab unfolded: U along the wall, V the nosing's 0.02 m (1.28 px) and then
 the top back from the front plane.
 
@@ -569,6 +581,27 @@ the top back from the front plane.
   (257.2, 970)), which is never painted on its own, so the floor shows no
   seam at the wall line. Its occlusion deepens toward the portal's jambs
   and the door and the worn path runs down its middle.
+- `maint`, 76.8 x 9.0 px at (396, 954), right of `portal`: the maintenance
+  door's 1.20 x 0.12 m reveal, the whole cased opening, with the default
+  worn path down its middle to the leaf (`MAINT_OPENING_W`).
+
+**Floor regions on mips (2026-11-23).** Whole-atlas mips 1 - 4
+(`scripts/review_atlas_mips.py`), sampled bilinearly just inside each
+floor region's edges, against the region's own mean. `maint` has concrete
+or its own padding on all four sides and drifts only with its own
+occlusion (about 6 sRGB darker at the jambs and the back) at every level.
+`shop` and `portal` take a foreign colour at their left end from mip 3: the
+roof region ends 6 px to their left (x 248), so their first 0.1 - 0.25 m
+darkens by about 15 sRGB at mip 3 and 30 at mip 4, neutral grey; at mip 4
+the `shop` region's nosing rows also pick up the right sign board's green
+from 6 px below (about -25 R, -13 B). The other way, the slabs lighten the
+roof region's last mip-4 texel (x 240 - 256, the end of a slope at a
+rake) from about 53 to 83 sRGB; nothing else outside the floors moves by
+more than 3 sRGB at mips 2 - 4 against the atlas before any floor region
+existed, bar 1 - 7 sRGB of the slabs' grey in the sign board's top mip-2
+row. Renders (Review status) show none of it at the switch distances: the
+slabs are a few pixels wide and under a pixel deep there. Moving `shop` and
+`portal` clear would change `LOD2`'s portal UVs; left as found.
 
 The two sign boards are 9.0 x 0.75 m each, 576 x 48 px at 64 texels/metre,
 one region per board (`FASCIA`). To make room for them the roof stacks'
@@ -681,14 +714,19 @@ K sit at the same 0.16 em ink gap as every other pair.
   `weather()`), as the catalog's other entrance slabs: float-finished cast
   concrete, `ID_FLOOR`, sRGB **(132, 130, 124)** in every variant, roughness
   **0.88**, nonmetallic; occlusion toward the jambs and the door within
-  0.072 m (the shopfront's) and 0.12 m (the portal's), pores at 5 % shade
+  0.072 m (the shopfront's), 0.12 m (the portal's) and 0.048 m (the
+  maintenance door's), pores at 5 % shade
   and 0.4 mm of height, blotchy trodden-in dirt. Each region bleeds 2 px
   into its gutter. Adding them changed the normal map and the emission mask
   only in their own block and its padding (x 251 - 1023, y 902 - 1023,
   where the gutters now pad from the slabs instead of the right sign board
   and the roof), and the albedos and the ORM there too, plus by 1/255 in a
   few texels at the roof region's right edge (x 246 - 247), which the
-  cavity filter reaches from the slabs.
+  cavity filter reaches from the slabs. The maintenance door's region,
+  added after, changed the albedos and the ORM in x 389 - 524,
+  y 946 - 1023 only (the region and the gutters round it, which pad from it
+  now instead of the portal's slab), the normal map in x 394 - 474,
+  y 952 - 964, and the emission mask not at all.
 - **Kept clean:** the two sign boards, the plaque and the ridge sign, which
   the shop keeps, and every pane.
 - The level was chosen on `rintamamiestalo_porch` (see its notes); this
@@ -985,6 +1023,37 @@ Checked here, in Blender:
     the sidecar written from an uncommitted tree, to be rewritten with
     `build.py -- facts` once committed.
 
+- The maintenance door's slab (2026-11-23; Construction), from a snapshot
+  in `review/review_2026_11_23/liikekeskus_pharmacy_pass2/before_src/`:
+  - **Door views** (`door_views.py` in that folder, every tier, noon and
+    reversed sun, 75 degree vertical FOV, over a green terrain plane, every
+    camera behind the rear wall): the door from 6 m, 2.6 m, both sides,
+    0.35 m up and from above. Before, grass filled the 0.12 m reveal on
+    `LOD0` and `LOD1`; after, concrete fills it jamb to jamb, its nosing a
+    light line on the wall plane with nothing past it and the casing and
+    leaf standing on it, no dark seam, no stretched texels. `LOD2` and
+    `LOD3` render identically.
+  - **`review_asset.py`** from both: the six orthographic views and every
+    tier front and oblique at 20, 35, 70 and 120 m under noon, unchanged
+    (no pixel moves by more than 24/255); `review_compare.py` sheets in
+    `compare/` beside them.
+  - **Floor regions on mips:** whole-atlas mips 2 - 4
+    (`scripts/review_atlas_mips.py`) through `review_asset.py
+    --texture-dir`, under noon: `LOD0`/`LOD1` at 35 and 47 m on mip 2,
+    `LOD1`/`LOD2` at 70, 104 and 120 m on mip 3, `LOD2`/`LOD3` at 120 and
+    208 m on mip 4; front, oblique, back and rear-oblique. The slabs read as
+    the same thin light line at the windows', the door's and the
+    maintenance door's feet as on the full-resolution atlas, with no
+    foreign colour; the numeric leaks (Texture set) do not show at those
+    distances.
+  - Bounds, pivot, footprint, storeys and both doors in the sidecar
+    unchanged against the committed one; `probe_floors.py` (that folder)
+    found an upward face at 0.020 m under 45 of 45 plan points in the
+    maintenance door's reveal on `LOD0` and `LOD1` and no open edge after a
+    weld on any tier; `LOD2` and `LOD3` are byte-identical.
+  - `scripts/validate_asset.py`: 0 FAIL, `door floors` passing on every
+    tier for both doors; the one WARN is `source.dirty`.
+
 Pending, and outside this repository:
 
 - Anisotropic appearance, the emission mask's mips at night, the
@@ -1014,6 +1083,16 @@ files, not newer ones. The `.glb` and PNG exports are unaffected.
 
 ## Revision log
 
+- **2026-11-23 — maintenance door floored.** The maintenance door's 0.12 m
+  reveal on the rear gable stood on the ground with no upward face, so the
+  consumer's terrain showed in it; it now stands on a 1.20 x 0.12 m
+  concrete slab from `scripts/door_floor.py` on `LOD0` and `LOD1`, through
+  `place_item(..., floor=)` and `door_floor.notch()` in the rear wall's
+  foot, on a new region `maint` (Construction, Texture set). `floored()`
+  takes the openings' side. Triangles 4,028 / 2,010 / 800 / 484 (were
+  4,020 / 2,002 / 800 / 484). Bounds, pivot, footprint, storeys and doors
+  unchanged; the `LOD2` and `LOD3` GLBs are byte-identical. First mip
+  review of the floor regions (Texture set).
 - **2026-11-23 — floor slabs.** The door's reveal, the portal through the
   middle pier and both display windows' 0.18 m set-backs had no upward face
   under them, so a consumer's terrain showed inside: grass across the door
