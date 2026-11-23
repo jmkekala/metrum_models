@@ -1,9 +1,9 @@
 {
   "schema": "metrum-model-facts",
-  "version": 1,
+  "version": 4,
   "name": "hiilisiilo_drive_through",
   "path": "buildings/industrial/hiilisiilo_drive_through",
-  "source": {"commit": "27b8d9f46c1ae8efcc32126cbcb2477c1a6e5160", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "e69849f5e53f34e358c494e3ad6e0a6142227dcf", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-10.325, 0.0, -4.35], "max": [10.325, 13.08, 4.35]},
   "footprint": [
@@ -25,8 +25,8 @@
   ],
   "dwellings": 0,
   "doors": [
-    {"id": "control", "kind": "entrance", "position": [-2.125, 0.0, 4.05], "facing": [0.0, 0.0, 1.0], "width_m": 0.95, "height_m": 2.1, "main": true},
-    {"id": "intake", "kind": "vehicle", "position": [8.575, 0.0, -0.25], "facing": [0.0, 0.0, 1.0], "width_m": 2.4, "height_m": 2.6, "main": false}
+    {"id": "control", "kind": "entrance", "position": [-2.125, 0.0, 4.05], "facing": [0.0, 0.0, 1.0], "width_m": 0.95, "height_m": 2.1, "floor_y_m": 0.02, "storey": 0, "main": true},
+    {"id": "intake", "kind": "vehicle", "position": [8.575, 0.0, -0.25], "facing": [0.0, 0.0, 1.0], "width_m": 2.4, "height_m": 2.6, "floor_y_m": 0.02, "storey": 0, "main": false}
   ],
   "passages": [
     {"id": "truck_lane", "position": [-5.925, 0.0, 4.35], "forward": [0.0, 0.0, -1.0], "width_m": 5.0, "length_m": 8.7, "clear_height_m": 4.6, "through": true}
