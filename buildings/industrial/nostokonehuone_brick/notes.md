@@ -78,7 +78,8 @@ not hold. There is no upper floor: the facts sidecar lists one storey of
   glazing, lit at night.
 
 Both thresholds are at ground level, onto the hall floor, so there are no
-steps or handrails.
+steps or handrails. The entrance's 0.02 m floor slab (Construction) is a
+floor finish, not a step.
 
 ## Window sills
 
@@ -153,7 +154,9 @@ door) or 0.15 m (louvres):
   coursing and the plinth run on into them.
 - The sill is a concrete patch.
 - A head under the lintel band is the band's concrete.
-- Doors have no threshold cheek; the floor cap covers the recess.
+- The entrance screen's reveal stands on a concrete floor slab (Entrance
+  floor slab below). The machinery door has no threshold cheek; the floor
+  cap covers its recess.
 
 At `LOD3` the windows and the entrance screen are the same rectangles,
 flush; the two louvres and the machinery door stay recessed, since their
@@ -161,6 +164,39 @@ deep shade is how they read. `LOD2` keeps every recess: flattened there, at
 the consumer's screen-size switch (about 48 m), the frames and glass
 brightened, the gable louvre turned from a dark recess into a light patch
 and the machinery door lightened (LOD review).
+
+### Entrance floor slab
+
+The entrance stands on the ground in a 0.20 m reveal that had no upward face
+under it (the ring's floor cap faces down), so a consumer's terrain showed
+inside: grass across the foot of the screen. The reveal is floored with a
+concrete slab from the shared `scripts/door_floor.py` (`build_opening()`
+calls `door_floor.recess()`; `outline_with_notches()` takes
+`door_floor.notch()`):
+
+| Entrance | Sidecar door | Slab, width x depth | Tiers |
+| --- | --- | --- | --- |
+| the entrance screen, east wall | `entrance` | 1.625 x 0.20 m | `LOD0`, `LOD1`, `LOD2` |
+
+- **Top 0.02 m over the ground** (`door_floor.T`), clear of terrain at
+  z = 0 and too low to read as a step.
+- **A nosing on the wall plane** between the jambs. Nothing projects past
+  the wall, so the bounds, the pivot, the footprint and the door's threshold
+  in the sidecar are as they were.
+- **The reveal starts on the slab's top:** the cheeks and the closing face
+  begin at z 0.02, and the wall's notch carries the nosing's two top
+  corners, so wall, nosing, slab and cheeks meet on shared vertices. Under
+  the nosing the floor cap runs straight along the wall line instead of
+  round the reveal. The screen's artwork keeps its place, so the slab covers
+  the bottom 1.3 px of its threshold.
+- **Its own atlas region** (Texture set).
+
+`floor_for()` gives the entrance its slab on every tier that cuts its recess
+(`opening_mode()`): `LOD0`-`LOD2`, since `LOD3` paints the screen flat on
+the wall with no reveal. The machinery door, a vehicle door, keeps its
+0.25 m reveal on the ground with no floor (Known simplifications).
+`check_layout()` adds `door_floor.problems()`: the slab's region the
+opening's width and the reveal's depth, the door at grade.
 
 ### Roof joins
 
@@ -190,10 +226,16 @@ so CLAUDE.md requires no roof safety kit.
 
 | Tier | Triangles | Ceiling |
 | --- | --- | --- |
-| `LOD0` | 540 | 12,000 |
-| `LOD1` | 444 | 4,000 |
-| `LOD2` | 328 | 1,500 |
+| `LOD0` | 544 | 12,000 |
+| `LOD1` | 448 | 4,000 |
+| `LOD2` | 332 | 1,500 |
 | `LOD3` | 232 | 500 |
+
+The entrance's floor slab costs 4 triangles, the nosing and the top, on
+each tier that keeps it (`LOD0`-`LOD2`): measured against the tiers before
+it, +4 on each and nothing else: the east wall's re-triangulation round the
+nosing's corners and the floor cap's straighter rim come out even. `LOD3`,
+with the screen flat, is byte-identical to before.
 
 The building is one box with a gable roof and thirteen openings, so the counts
 are low and are not padded. They sit beside the catalog's houses and under the
@@ -254,6 +296,12 @@ Results (mean |difference| per view, of 255):
 The windows' dark glass and light frames, the concrete band and plinth, and
 the dark roof hold on every tier.
 
+**The entrance floor slab (2026-11-23)** adds no transition of its own: it
+goes with the screen's 0.20 m reveal at the `LOD2`/`LOD3` switch (about
+97 m), where a 0.02 m nosing and 0.2 m of slab are well under a pixel.
+Checked from a standing eye and from 0.35 m over a terrain plane at z = 0,
+every tier (Review status).
+
 These are authoring comparisons. Consumer switching, filtering and
 performance are pending.
 
@@ -262,7 +310,10 @@ performance are pending.
 The validator's hidden-surface test reports **0 hidden triangles on every
 tier**. The only closure faces are the buried wall-ring floor and lid and the
 buried tops of the pipes. The union removes all of them. Recessed glass, door
-leaves and louvres are exterior surfaces.
+leaves and louvres are exterior surfaces. The wall ring's floor, at z = 0 and
+facing the ground, runs straight along the east wall line under the
+entrance's floor slab, so no face lies at grade inside its reveal; the slab
+is exterior surface and adds no face inside the shell.
 
 ## Known simplifications
 
@@ -276,6 +327,9 @@ leaves and louvres are exterior surfaces.
   any lintel over the machinery door (plain brick above it), and the plinth
   step (flush with the brick).
 - No headframe, ropes, sheaves, ground slab, apron or yard furniture.
+- **Floors:** only the entrance's reveal has one, a flat concrete slab with
+  no mat, drain or threshold strip (Construction). The machinery door's
+  0.25 m reveal stands on the consumer's ground.
 - The rope slot is closed by a louvre, so no unmodelled interior shows.
 
 ## Texture set
@@ -297,7 +351,7 @@ That is six unique 1024² PNGs.
 | 0–376 | BRICK | z 0–5.875 m: plinth, brick, the concrete lintel band at 4.25–4.5625 m |
 | 384–552 | ROOF | standing seam, V stretched (168 rows over the 5.28 m slope, 31.8 rows/m) |
 | 558–574 | EAVE | the fascia (0.25 m) with the half-round gutter across its top 9 rows |
-| 586–1020 | unique | the two window regions, the entrance screen, the machinery door, the louvre, the vent pipe and its open end, flat patches |
+| 586–1020 | unique | the two window regions, the entrance screen, the machinery door, the louvre, the vent pipe and its open end, the entrance's floor slab, flat patches |
 
 `PIPE_STRIP` is rows 567–572, the gutter's middle. The downpipes sample it and
 measure sRGB 130/133/133 in every variant. That is the galvanised steel of the
@@ -312,6 +366,12 @@ metallic. Painted or coated steel is dielectric, metallic 0: the roof sheet
 Two window regions (`window`, `window_b`) are alternated along each wall, so
 neighbours show different rooms behind the glass. The bands have 6–8 px
 gutters. `pad()` fills every unclaimed texel from the nearest region's edge.
+
+The entrance's floor slab has its own region at 64 px/m, right of the vent
+pipe's open end (`FLOORS`, `scripts/door_floor.py`): 104 x 14.08 px at
+(740, 586). It is the slab unfolded: U along the wall from the opening's
+left side, V the nosing's 0.02 m (1.28 px) and then the top from the wall
+plane to the screen.
 
 ### Texel density
 
@@ -348,6 +408,7 @@ The normal map is derived from a painted height channel, in metres:
 | Standing seams | 0.040 |
 | Gutter radius | 0.070 |
 | Snow-guard tubes | 0.045 |
+| Floor slab pores | 0.0004 |
 
 Relief that varies in V on the roof band is scaled by its rows per metre over
 64. Glass is flat. Seams, frames and bars read raised in sun from both
@@ -374,9 +435,20 @@ Weathering is `scripts/weathering.py` at its moderate level:
 - the gutter's dirty belly and runs down the fascia;
 - dirt on the windows' bottom rails;
 - kicked-up dirt and handle grime on both doors;
-- soot runs on the louvres and the vent pipes.
+- soot runs on the louvres and the vent pipes;
+- trodden-in dirt on the entrance's floor slab.
 
 Cavity dust settles in the mortar joints. Glass stays clean.
+
+### The entrance floor slab
+
+Painted by `scripts/door_floor.py` (`paint()`, `grain()`, `weather()`), as
+the catalog's other entrance slabs are: float-finished cast concrete,
+`ID_FLOOR`, sRGB **(132, 130, 124)** in every variant, roughness **0.88**,
+nonmetallic. Occlusion deepens toward the jambs and the screen (within
+0.08 m), a slightly paler path is worn toward the leaf, the pores are the
+plinth's noise at 5 % shade and 0.4 mm of height, and blotchy trodden-in
+dirt lies over it. The region bleeds 2 px into its gutter.
 
 ## Glazing treatment
 
@@ -530,6 +602,40 @@ Checked here, in Blender:
   `scripts/review_compare.py`): the roof, fascia and vent pipes lose their
   metallic sheen and read as painted sheet; nothing else changed.
 - The variant sheet (`variants.png`): day and night for all three colours.
+- The entrance floor slab (Construction, Revision log), from a snapshot in
+  `review/review_2026_11_23/nostokonehuone_brick/before/`:
+  - **Door views** (`review/review_2026_11_23/nostokonehuone_brick/door_views.py`,
+    every tier, noon and reversed sun, over a green terrain plane at
+    z = 0): the entrance from 5 m and 2.5 m, both sides, 0.35 m up and from
+    above; the machinery door from eye level and 0.35 m up.
+    Before, grass ran into the entrance's reveal up to the screen on
+    `LOD0`-`LOD2`; after, concrete fills it jamb to jamb, its nosing a
+    light line on the wall plane with nothing past it, the brick cheeks
+    and the plinth standing on it, no dark seam or stretched texels.
+    `LOD3`'s flat screen is unchanged. The machinery door's reveal still
+    shows grass, as a vehicle door's may. Every camera stands outside the
+    plan bounds.
+  - **`review_asset.py`** from both: the day cycle on `LOD0`, the six
+    orthographic views, and every tier front and oblique at 20, 35, 70 and
+    120 m under noon; `review_compare.py` sheets in
+    `review/review_2026_11_23/nostokonehuone_brick/compare/`. Every one
+    of those sheets differs by 0.00-0.01/255 mean (the slab is a few
+    pixels in the 20 m views); of the door views only the entrance's on
+    `LOD0`-`LOD2` change.
+  - Bounds, pivot, footprint, storeys and both doors in the sidecar
+    unchanged; the entrance measured on `LOD0`-`LOD2` with an upward face
+    at 0.020 m under 9 of 9 sample points of its reveal (none before);
+    upward faces under 0.1 m are only the slab's top, and none lies at
+    grade, on every tier; every tier closed and manifold when welded.
+  - Textures: the emission map is the same file; the normal map differs
+    only in the slab's region and its 2 px bleed; the albedos and the ORM
+    differ in the free block round the region (x 733-997, y 575-1023),
+    whose padding `pad()` now fills from the slab instead of the vent
+    pipe's open end, by 1/255 in a few texels of the eave band's top bleed
+    rows (y 575-576), and nowhere else.
+  - `scripts/validate_asset.py`: 0 FAIL; the one WARN is `source.dirty`,
+    the sidecar written from an uncommitted tree, to be rewritten with
+    `build.py -- facts` once committed.
 
 Pending, and outside this repository:
 
@@ -550,6 +656,14 @@ These are recorded as known-good markers, not requirements.
 
 ## Revision log
 
+- **2026-11-23 — entrance floor slab.** The entrance's 0.20 m reveal had
+  no upward face under it, so a consumer's terrain showed inside. It now
+  stands on a 1.625 x 0.20 m concrete slab 0.02 m over the ground, nosing
+  on the wall plane, on its own atlas region, from the shared
+  `scripts/door_floor.py`, on `LOD0`-`LOD2`, where the reveal is cut.
+  Tiers 540/444/328/232 to 544/448/332/232; bounds, pivot, footprint and
+  doors unchanged; the emission map unchanged. The machinery door, a
+  vehicle door, is left as it was.
 - **2026-11-22:** audit fixes: painted roof, fascia, barge flashing and vent
   pipes made dielectric in the ORM (metallic 0); `LOD2` keeps all thirteen
   recessed openings (216 -> 328 triangles), and `LOD3` keeps the louvres

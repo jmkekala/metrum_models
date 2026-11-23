@@ -20,7 +20,8 @@ standing-seam gable, with a cast concrete lintel band round the building at
 the window heads. Gable end to the front: a steel machinery door between two
 tall windows, a ventilation louvre high in the gable above. Each long wall carries four tall steel multi-pane windows in a
 2.75 m rhythm; on the east wall the front bay is the entrance, the window's
-frame brought down to the ground round a steel leaf. The rear gable has one
+frame brought down to the ground round a steel leaf, its reveal standing on a
+0.02 m concrete floor slab (scripts/door_floor.py). The rear gable has one
 tall window and, high up under the apex, the louvred slot the winding ropes
 would pass through toward the headframe. Gutters are painted on both eave
 fascias, with a downpipe from each and a snow guard above; two plain vent
@@ -55,6 +56,7 @@ ASSET = L.ASSET
 EXPORT_DIR = os.path.join(HERE, "export")
 sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "scripts"))
 import asset_build  # noqa: E402
+import door_floor as DF  # noqa: E402
 import downpipes as DP  # noqa: E402
 import model_facts  # noqa: E402
 import shell_build as SB  # noqa: E402
@@ -105,6 +107,9 @@ EAST_ITEMS = [("screen", BAYS[0], 0.0), ("window_b", BAYS[1], SILL),
 REAR_ITEMS = [("window", 0.0, SILL), ("slot", 0.0, L.Z_SLOT)]
 WEST_ITEMS = [("window", BAYS[3], SILL), ("window_b", BAYS[2], SILL),
               ("window", BAYS[1], SILL), ("window_b", BAYS[0], SILL)]
+# The entrance's floor slab, by wall and kind (facade_atlas.FLOORS). The
+# machinery door keeps its reveal on the ground with no floor.
+FLOORED = {"east": {"screen": L.FLOORS["entrance"]}}
 
 # Vent pipes on the slopes: (x, y, diameter, height above the sheet). Plain
 # vents, not serviced plant, so no roof safety kit (CLAUDE.md).
@@ -127,6 +132,16 @@ def opening_mode(level, kind):
     At about 97 m, LOD3's switch, a window's 0.2 m reveal shadow is about a
     pixel and a half."""
     return "cut" if level < 3 or kind in LOD3_CUT else "flush"
+
+
+def floor_for(wall, kind, level):
+    """The floor slab under *kind*'s reveal on *wall* at *level*, or None:
+    the entrance's, on every tier that cuts its recess (LOD0-2; LOD3 paints
+    it flat, with no reveal to floor)."""
+    floor = FLOORED.get(wall, {}).get(kind)
+    if floor is None or opening_mode(level, kind) != "cut":
+        return None
+    return floor
 
 
 def vent_sides(level, dia):
@@ -187,15 +202,19 @@ def item_rect(fr, kind, centre, z0):
     return (s - w / 2.0, s + w / 2.0, z0, z0 + h)
 
 
-def build_opening(B, fr, kind, rect, level, u_off, shift=0.0):
+def build_opening(B, fr, kind, rect, level, u_off, shift=0.0, floor=None):
     """One opening: brick reveals round it and the closing plane set back in
     it while it is cut, the same rectangle painted flat after. Returns its
     outline in (s, z), which the wall region takes as a hole or a notch.
 
     The sill is a concrete patch; a head that stands under the lintel band
-    is the band's soffit. An opening on the ground gets no cheek along its
-    threshold: the strip would lie at z = 0 on top of the floor the wall ring
-    is capped with, and the two coplanar faces would leave the export
+    is the band's soffit. The entrance (*floor*, a door_floor.Floor) stands
+    on a concrete slab: its nosing on the wall plane under the opening, its
+    top 0.02 m over the ground and the reveal's foot, so the consumer's
+    terrain cannot show inside. The recess starts on that top; the screen's
+    art keeps its place. Any other opening on the ground gets no cheek along
+    its threshold: the strip would lie at z = 0 on top of the floor the wall
+    ring is capped with, and the two coplanar faces would leave the export
     non-manifold at the doorway. Left out, the rim detours round the recess
     and the floor cap covers it.
     """
@@ -209,20 +228,24 @@ def build_opening(B, fr, kind, rect, level, u_off, shift=0.0):
               uv_patch("conc") if k == 2 and abs(z1 - L.Z_HEAD) < EPS else
               uv_reveal(fr, edge, u_off, shift)
               for k, edge in enumerate(SB.edges(poly))]
+    if floor is not None:
+        return DF.recess(B, fr, rect, 0.0, -L.REVEAL[kind], closing, cheeks, floor)
     SB.recess(B, fr, poly, 0.0, -L.REVEAL[kind], closing, cheeks,
               skip_z=z0 if z0 < EPS else None)
     return poly
 
 
-def wall_region(B, fr, outline, items, level, u_off, shift=0.0):
+def wall_region(B, fr, outline, items, level, u_off, shift=0.0, floors=None):
     """One planar region of wall: every opening inside it built and holed.
 
     Openings standing on the region's foot are notches in *outline* already
-    (see outline_with_notches); the rest are holes.
+    (see outline_with_notches); the rest are holes. *floors* maps a kind to
+    the floor slab its reveal stands on at this level (floor_for()).
     """
     holes = []
     for kind, rect in items:
-        poly = build_opening(B, fr, kind, rect, level, u_off, shift)
+        poly = build_opening(B, fr, kind, rect, level, u_off, shift,
+                             (floors or {}).get(kind))
         if rect[2] > outline[0][1] + EPS:
             holes.append(poly)
     fill_region(B, fr, outline, holes, uv_brick(fr, u_off, shift))
@@ -230,9 +253,14 @@ def wall_region(B, fr, outline, items, level, u_off, shift=0.0):
 
 def outline_with_notches(s0, s1, z0, notches):
     """The foot of a region from s0 to s1 at z0, detouring up round every
-    door that stands on it; returns the points from (s0, z0) to (s1, z0)."""
+    door that stands on it; returns the points from (s0, z0) to (s1, z0).
+    A notch (a, b, top, True) is a floored entrance: its detour carries the
+    slab's nosing corners (door_floor.notch())."""
     pts = [(s0, z0)]
-    for a, b, top in sorted(notches):
+    for a, b, top, *floored in sorted(notches):
+        if floored and floored[0]:
+            pts += DF.notch((a, b, z0, top))
+            continue
         pts += [(a, z0), (a, top), (b, top), (b, z0)]
     pts.append((s1, z0))
     return SB.dedupe(pts)
@@ -261,11 +289,12 @@ def build_long(B, name, level):
     into the roof slab. Its ends carry Z_GABLE, where the gables meet it."""
     fr = Frame(*MAIN_WALLS[name])
     items = rects_for(fr, WALL_ITEMS[name])
-    notches = [(r[0], r[1], r[3]) for k, r in items if r[2] < EPS]
+    floors = {k: floor_for(name, k, level) for k, r in items}
+    notches = [(r[0], r[1], r[3], floors[k] is not None) for k, r in items if r[2] < EPS]
     foot = outline_with_notches(0.0, fr.L, 0.0, notches)
     outline = foot + [(fr.L, L.Z_GABLE), (fr.L, L.Z_WALL_TOP),
                       (0.0, L.Z_WALL_TOP), (0.0, L.Z_GABLE)]
-    wall_region(B, fr, outline, items, level, U_OFF[name])
+    wall_region(B, fr, outline, items, level, U_OFF[name], floors=floors)
 
 
 def build_gable(B, name, level):
@@ -465,6 +494,14 @@ def check_layout():
         bad.append("door leaf %.3f m is outside 2.0-2.4" % L.Z_LEAF)
     if not 0.9 <= LEAF_W["screen"] <= 1.0:
         bad.append("the entrance leaf is %.3f m wide" % LEAF_W["screen"])
+    # the entrance's reveal on its floor slab (scripts/door_floor.py): the
+    # slab's region the reveal's width and depth, under a door at grade
+    for wall, kinds in FLOORED.items():
+        fr = Frame(*MAIN_WALLS[wall])
+        for kind, floor in kinds.items():
+            (c, z), = [(c, z) for k, c, z in WALL_ITEMS[wall] if k == kind]
+            bad += DF.problems(floor, "the %s wall's %s" % (wall, kind),
+                               item_rect(fr, kind, c, z), L.REVEAL[kind])
     # the roof the atlas was painted for
     slope = (HX + L.EAVE_OUT) * L.SLOPE_F
     if abs(slope - L.SLOPE_LEN) > 1e-6:

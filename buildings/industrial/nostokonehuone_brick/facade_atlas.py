@@ -20,7 +20,8 @@ The atlas is a trim sheet. Three bands run the full width and tile in U:
     y  558 ..  574   EAVE    the eave fascia with its gutter
     y  586 .. 1020   unique  the two tall steel windows, the entrance screen,
                              the machinery door, the rope-slot louvre, the vent
-                             pipes and the flat patches
+                             pipes, the entrance's floor slab and the flat
+                             patches
 
 The brick band stops at the wall head. The two gable triangles above Z_GABLE
 sample the same band GABLE_SHIFT metres lower, a whole tone period of
@@ -40,6 +41,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "scripts"))
 import atlas  # noqa: E402
 import brickwork  # noqa: E402
+import door_floor as DF  # noqa: E402
 import glazing  # noqa: E402
 import weathering  # noqa: E402
 
@@ -120,6 +122,11 @@ SLOT = (564, UNI_Y, 96, 48)              # 1.5 x 0.75 m
 VENT = (668, UNI_Y, 32, 96)              # a pipe's side: across x 1.5 m up
 PIPE_TOP = (708, UNI_Y, 24, 24)          # a pipe's open end, planar
 
+# The concrete floor slab in the entrance's reveal (scripts/door_floor.py),
+# unfolded at 64 px/m: U across the opening, V up the nosing and back to the
+# screen. 1.625 m wide and 0.20 m deep.
+FLOORS = {"entrance": DF.Floor(740, UNI_Y, OPENINGS["screen"][0], REVEAL["screen"])}
+
 REGION = {"screen": SCREEN, "bigdoor": BIGDOOR, "window": WINDOW,
           "window_b": WINDOW_B, "slot": SLOT}
 
@@ -135,6 +142,7 @@ ID_BLANK, ID_PLINTH, ID_BRICK, ID_BRICK2, ID_MORTAR = 0, 1, 2, 3, 4
 ID_FRAME, ID_GLASS, ID_ROOF, ID_FLASH, ID_CONC = 5, 6, 7, 8, 9
 ID_DOOR, ID_GUTTER, ID_HANDLE, ID_DARK, ID_PIPE = 10, 11, 12, 13, 14
 ID_SOFFIT, ID_SEAL = 15, 16
+ID_FLOOR = 17           # the cast concrete floor slab in the entrance's reveal
 
 # (roughness, metallic). Painted or coated steel is dielectric -- the paint is
 # what the light sees: the roof sheet, the fascia and barge flashing, the
@@ -147,6 +155,7 @@ SURFACE = {
     ID_FLASH: (0.46, 0.0), ID_CONC: (0.90, 0.0), ID_DOOR: (0.52, 0.0),
     ID_GUTTER: (0.48, 0.60), ID_HANDLE: (0.35, 0.80), ID_DARK: (0.96, 0.0),
     ID_PIPE: (0.55, 0.0), ID_SOFFIT: (0.74, 0.0), ID_SEAL: (0.90, 0.0),
+    ID_FLOOR: DF.SURFACE,
 }
 
 # ---------------------------------------------------------------- palettes
@@ -170,7 +179,7 @@ FIXED = {
     ID_GLASS: glazing.BASE, ID_PLINTH: (150, 148, 142), ID_CONC: (170, 168, 160),
     ID_GUTTER: (134, 137, 137), ID_HANDLE: (150, 150, 148), ID_DARK: (24, 24, 24),
     ID_PIPE: (62, 62, 64), ID_SOFFIT: (176, 174, 168), ID_SEAL: (34, 34, 34),
-    ID_BLANK: (52, 52, 52),
+    ID_BLANK: (52, 52, 52), ID_FLOOR: DF.COLOUR,
 }
 
 # A stray pixel in a tiling band is not a local blemish: every surface that
@@ -498,6 +507,7 @@ def check_regions():
     rects = {"screen": SCREEN, "bigdoor": BIGDOOR, "window": WINDOW,
              "window_b": WINDOW_B, "slot": SLOT, "vent": VENT,
              "pipe_top": PIPE_TOP}
+    rects.update({"floor_" + k: f.rect for k, f in FLOORS.items()})
     rects.update(PATCHES)
     problems = atlas.region_problems(rects, ATLAS, bands_top=EAVE_Y0 + EAVE_H + PAD)
     for kind, (w, h) in OPENINGS.items():
@@ -582,6 +592,9 @@ def weather(c):
     # the louvre: soot and dirt from the hall's air on its blades
     x, y, rw, rh = SLOT
     w.runs(x, x + rw, y, y + rh, (ID_FRAME, ID_CONC), 0.16, fall=rh / 2.0)
+    # the entrance's floor slab: trodden-in dirt
+    for f in FLOORS.values():
+        DF.weather(w, f, ID_FLOOR, bleed=PAD)
     # the vent pipes: soot and rust runs down from the open end
     x, y, rw, rh = VENT
     w.runs(x, x + rw, y, y + rh, (ID_PIPE,), 0.14, fall=rh / 2.0)
@@ -605,6 +618,8 @@ def paint(ss=atlas.SS):
     paint_bigdoor(c)
     paint_slot(c)
     paint_vent(c)
+    for f in FLOORS.values():
+        DF.paint(c, f, ID_FLOOR, bleed=PAD)
     paint_patches(c)
 
     # Tone wear, grain and pores. Every field is periodic, so the bands wrap.
@@ -625,6 +640,7 @@ def paint(ss=atlas.SS):
     pores = atlas.noise(c, 9, 0.8)
     c.shade[mineral] *= 1.0 + 0.03 * pores[mineral]
     c.height[mineral] += 0.0006 * pores[mineral]
+    DF.grain(c, ID_FLOOR, pores)
     weather(c)
     c.pad()
     return c
