@@ -20,7 +20,8 @@ The atlas is a trim sheet. Five bands run the full width and tile in U:
     y  658 ..  682   FLASH   sheet flashing: wing fascias, canopy edges
     y  690 .. 1022   unique  doors, the stair glazing, the loading door, the
                              pillar, the felt deck, the vent pipes, LOD3's
-                             wing lids, window bay and stair column, patches
+                             wing lids, window bay and stair column, the
+                             entrances' floor slabs, patches
 
 The brick band stops at the wall head. The two gable triangles above Z_GABLE
 sample the same band GABLE_SHIFT metres lower, a whole number of courses, so
@@ -30,7 +31,8 @@ Every ribbon window samples the one WINDOW band from its start: a 2 m cell is
 a fixed light and an opening casement, the cells alternate so a 4 m window
 has a casement at each end, and a window is a whole number of cells. The
 singular things -- the entrance screen, the doors, the stair glazing, the
-loading door -- get regions of their own.
+loading door -- get regions of their own, and so does the concrete floor slab
+in each entrance's reveal (scripts/door_floor.py).
 
 Rasterising is scripts/atlas.py's: a canvas supersampled SS x SS per pixel,
 with a height channel the normal map is derived from (numpy and scipy; Pillow
@@ -51,6 +53,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "scripts"))
 import atlas  # noqa: E402
 import brickwork  # noqa: E402
+import door_floor as DF  # noqa: E402
 import glazing  # noqa: E402
 import weathering  # noqa: E402
 
@@ -177,6 +180,14 @@ LOD3_BAY_PPM = 16.0
 LOD3_BAY = (4, 870, 64, 76)              # 4.0 x 4.75 m
 LOD3_STAIR = (204, 868, 20, 104)         # 1.25 x 6.5 m, the same density
 
+# The concrete floor slabs in the three entrances' reveals (scripts/
+# door_floor.py), each unfolded at 64 px/m: U across the opening, V up the
+# nosing and back to the door. The lobby's is 3.0 x 1.52 m, the stair door's
+# and the porch entrance's 0.22 m deep.
+FLOORS = {"front": DF.Floor(820, 690, OPENINGS["entrance"][0], LOBBY_DEPTH),
+          "stair": DF.Floor(820, 796, OPENINGS["glazed_door"][0], REVEAL["glazed_door"]),
+          "porch": DF.Floor(820, 816, OPENINGS["entrance"][0], REVEAL["entrance"])}
+
 REGION = {"entrance": ENTRANCE, "glazed_door": GLAZED_DOOR,
           "service_door": SERVICE_DOOR, "loading_door": LOADING_DOOR,
           "stair": STAIR, "lod3_bay": LOD3_BAY, "lod3_stair": LOD3_STAIR}
@@ -192,6 +203,7 @@ ID_BLANK, ID_PLINTH, ID_BRICK, ID_BRICK2, ID_MORTAR = 0, 1, 2, 3, 4
 ID_FRAME, ID_GLASS, ID_ROOF, ID_FLASH, ID_FELT = 5, 6, 7, 8, 9
 ID_CONC, ID_DOOR, ID_LOAD, ID_STEEL, ID_PIPE = 10, 11, 12, 13, 14
 ID_SOFFIT, ID_GUTTER, ID_HANDLE, ID_DARK, ID_SEAL = 15, 16, 17, 18, 19
+ID_FLOOR = 20           # the cast concrete floor slabs in the entrances' reveals
 
 # (roughness, metallic). Painted sheet stays mostly dielectric -- the paint is
 # what the light sees; the ladders, handles and roof ladder are galvanised or
@@ -204,6 +216,7 @@ SURFACE = {
     ID_DOOR: (0.50, 0.0), ID_LOAD: (0.46, 0.0), ID_STEEL: (0.38, 0.75),
     ID_PIPE: (0.55, 0.20), ID_SOFFIT: (0.72, 0.0), ID_GUTTER: (0.40, 0.30),
     ID_HANDLE: (0.30, 0.85), ID_DARK: (0.96, 0.0), ID_SEAL: (0.90, 0.0),
+    ID_FLOOR: DF.SURFACE,
 }
 
 # ---------------------------------------------------------------- palettes
@@ -234,6 +247,7 @@ FIXED = {
     ID_CONC: (184, 182, 176), ID_STEEL: (150, 152, 150), ID_PIPE: (62, 62, 64),
     ID_SOFFIT: (198, 196, 190), ID_HANDLE: (168, 168, 166),
     ID_DARK: (24, 24, 24), ID_SEAL: (34, 34, 34), ID_BLANK: (52, 52, 52),
+    ID_FLOOR: DF.COLOUR,
 }
 
 # A stray pixel in a tiling band is not a local blemish: every surface that
@@ -728,6 +742,7 @@ def check_regions():
              "pipe_top": PIPE_TOP, "lod3_fw_deck": LOD3_FW_DECK,
              "lod3_bw_deck": LOD3_BW_DECK, "lod3_bay": LOD3_BAY,
              "lod3_stair": LOD3_STAIR}
+    rects.update({"floor_" + k: f.rect for k, f in FLOORS.items()})
     rects.update(PATCHES)
     problems = atlas.region_problems(rects, ATLAS, bands_top=FLASH_Y0 + FLASH_H + PAD)
     for rect, wing in ((LOD3_FW_DECK, FRONT_WING), (LOD3_BW_DECK, BACK_WING)):
@@ -803,6 +818,9 @@ def weather(c):
     # the pillars stand in the porch's splash
     x, y, rw, rh = PILLAR
     w.splash(x, x + rw, y, y + rh, (ID_CONC,), amount=0.26, fall=0.22)
+    # the entrances' floor slabs: trodden-in dirt
+    for f in FLOORS.values():
+        DF.weather(w, f, ID_FLOOR, bleed=PAD)
     # the felt deck: dirt where it ponds
     x, y, rw, rh = DECK
     w.add("D", x, x + rw, y, y + rh, lambda Y, X, nz: 0.10 * nz("big")
@@ -837,6 +855,8 @@ def paint(ss=atlas.SS):
     paint_deck(c)
     paint_lod3_decks(c)
     paint_vent(c)
+    for f in FLOORS.values():
+        DF.paint(c, f, ID_FLOOR, bleed=PAD)
     paint_patches(c)
 
     # Tone wear, grain and pores. Every field is periodic, so the bands wrap.
@@ -855,6 +875,7 @@ def paint(ss=atlas.SS):
     pores = atlas.noise(c, 9, 0.8)
     c.shade[mineral] *= 1.0 + 0.03 * pores[mineral]
     c.height[mineral] += 0.0006 * pores[mineral]
+    DF.grain(c, ID_FLOOR, pores)
     weather(c)
     c.pad()
     return c

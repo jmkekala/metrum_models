@@ -19,7 +19,8 @@ shallow profiled-steel gable. The main block is 42 x 12 m and two storeys, with
 long ribbon windows in white frames on both floors. Two single-storey wings
 with dark felt roofs are built onto its long sides: one on the front beside the
 main entrance, which is set back into a lobby under a flat canopy, and a larger
-one behind.
+one behind. Each entrance's reveal (the lobby, the stair door, the porch's
+entrance) stands on a 0.02 m concrete floor slab (scripts/door_floor.py).
 
 At the east end the ground storey stops 3 m short of the gable and the upper
 storey runs on over four concrete pillars, sheltering the second entrance. At
@@ -64,6 +65,7 @@ sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "scripts"))
 import asset_build  # noqa: E402
 import model_facts  # noqa: E402
 from asset_build import pivot_offset, to_object, union  # noqa: E402,F401
+import door_floor as DF  # noqa: E402
 import downpipes as DP  # noqa: E402
 import roof_safety as RS  # noqa: E402
 import shell_build as SB  # noqa: E402
@@ -116,6 +118,11 @@ WEST_ITEMS = [("loading_door", 1.5, 0.0), ("service_door", -3.5, 0.0),
 EAST_ITEMS = [("ribbon4", 0.0, UP)]
 PORCH_ITEMS = [("entrance", -1.5, 0.0), ("ribbon2", 3.0, GF)]
 LOBBY = "entrance"          # the front entrance's kind; the porch's is shallow
+# The entrances' floor slabs, by wall and kind (facade_atlas.FLOORS): the
+# front lobby, the stair door and the porch's entrance. The service doors and
+# the loading door keep their reveals on the ground with no floor.
+FLOORED = {"front": {"entrance": L.FLOORS["front"], "glazed_door": L.FLOORS["stair"]},
+           "porch": {"entrance": L.FLOORS["porch"]}}
 
 # Pillars under the east end's upper storey: 0.40625 m square, their outer
 # faces 0.15 m inside the upper walls, evenly across the gable.
@@ -190,6 +197,29 @@ def lobby_kept(level):
     """The entrance lobby is 1.5 m deep and 3 m wide: a real hole in the front
     at every distance, and three faces, so it stays on every tier."""
     return True
+
+
+def reveal_depth(kind, lobby=None):
+    """How far *kind*'s closing face stands back: the lobby's depth for the
+    wall's *lobby* kind, its reveal otherwise."""
+    return L.LOBBY_DEPTH if (lobby is not None and kind == lobby) else L.REVEAL[kind]
+
+
+def is_cut(level, kind, depth):
+    """Whether the opening is recessed at *level*: opening_mode()'s cut, and
+    the front lobby on every tier that keeps it."""
+    return opening_mode(level, kind) == "cut" or (
+        kind == LOBBY and depth > 1.0 and lobby_kept(level))
+
+
+def floor_for(wall, kind, level, lobby=None):
+    """The floor slab under *kind*'s reveal on *wall* at *level*, or None:
+    an entrance's, on every tier that cuts its recess (a flush door has no
+    reveal to floor)."""
+    floor = FLOORED.get(wall, {}).get(kind)
+    if floor is None or not is_cut(level, kind, reveal_depth(kind, lobby)):
+        return None
+    return floor
 
 
 def canopy_kept(level, i):
@@ -325,42 +355,49 @@ def item_rect(fr, kind, centre, z0):
     return (s - w / 2.0, s + w / 2.0, z0, z0 + h)
 
 
-def build_opening(B, fr, kind, rect, level, u_off, depth):
+def build_opening(B, fr, kind, rect, level, u_off, depth, floor=None):
     """One opening: brick reveals round it and the closing plane set back in
     it while it is cut, the same rectangle painted flat after. Returns its
     outline in (s, z), which the wall region takes as a hole or a notch.
 
-    An opening on the ground gets no cheek along its threshold: the strip
-    would lie at z = 0 inside the building's footprint, on top of the floor
-    the wall ring is capped with, and the two coplanar faces would leave the
-    export non-manifold at the doorway. Left out, the rim detours round the
-    recess and the floor cap covers it.
+    An entrance (*floor*, a door_floor.Floor) stands on a concrete slab:
+    its nosing on the wall plane under the opening, its top 0.02 m over the
+    ground and the reveal's foot, so the consumer's terrain cannot show
+    inside. The recess starts on that top; the door's art keeps its place.
+    Any other opening on the ground gets no cheek along its threshold: the
+    strip would lie at z = 0 inside the building's footprint, on top of the
+    floor the wall ring is capped with, and the two coplanar faces would
+    leave the export non-manifold at the doorway. Left out, the rim detours
+    round the recess and the floor cap covers it.
     """
     s0, s1, z0, z1 = rect
     poly = SB.rect_poly(rect)
     closing = uv_closing(fr, kind, s0, z0, level)
-    if opening_mode(level, kind) == "flush" and not (kind == LOBBY and depth > 1.0
-                                               and lobby_kept(level)):
+    if not is_cut(level, kind, depth):
         B.face([fr.P(s, z) for s, z in poly], closing)
         return poly
     cheeks = [uv_patch("sill") if k == 0 else
               uv_patch("ceiling") if k == 2 and depth > 1.0 else
               uv_reveal(fr, edge, u_off)
               for k, edge in enumerate(SB.edges(poly))]
+    if floor is not None:
+        return DF.recess(B, fr, rect, 0.0, -depth, closing, cheeks, floor)
     SB.recess(B, fr, poly, 0.0, -depth, closing, cheeks, skip_z=0.0)
     return poly
 
 
-def wall_region(B, fr, outline, items, level, u_off, uvfn, lobby=None):
+def wall_region(B, fr, outline, items, level, u_off, uvfn, lobby=None, floors=None):
     """One planar region of wall: every opening inside it built and holed.
 
     Openings standing on the region's foot are notches in *outline* already
-    (see outline_with_notches); the rest are holes.
+    (see outline_with_notches); the rest are holes. *floors* maps a kind to
+    the floor slab its reveal stands on at this level (floor_for()).
     """
     holes = []
     for kind, rect in items:
-        depth = L.LOBBY_DEPTH if (lobby is not None and kind == lobby) else L.REVEAL[kind]
-        poly = build_opening(B, fr, kind, rect, level, u_off, depth)
+        depth = reveal_depth(kind, lobby)
+        poly = build_opening(B, fr, kind, rect, level, u_off, depth,
+                             (floors or {}).get(kind))
         if rect[2] > EPS:
             holes.append(poly)
     fill_region(B, fr, outline, holes, uvfn)
@@ -368,9 +405,14 @@ def wall_region(B, fr, outline, items, level, u_off, uvfn, lobby=None):
 
 def outline_with_notches(s0, s1, z0, notches):
     """The foot of a region from s0 to s1 at z0, detouring up round every
-    door that stands on it; returns the points from (s0, z0) to (s1, z0)."""
+    door that stands on it; returns the points from (s0, z0) to (s1, z0).
+    A notch (a, b, top, True) is a floored entrance: its detour carries the
+    slab's nosing corners (door_floor.notch())."""
     pts = [(s0, z0)]
-    for a, b, top in sorted(notches):
+    for a, b, top, *floored in sorted(notches):
+        if floored and floored[0]:
+            pts += DF.notch((a, b, z0, top))
+            continue
         pts += [(a, z0), (a, top), (b, top), (b, z0)]
     pts.append((s1, z0))
     return SB.dedupe(pts, EPS)
@@ -399,11 +441,13 @@ def build_front(B, level):
     uo = U_OFF["front"]
     L_ = fr.L
     sp = fr.s_at(PX)                                # 39: the porch's corner
-    notches = [(r[0], r[1], r[3]) for k, r in items if r[2] < EPS]
+    floors = {k: floor_for("front", k, level, LOBBY) for k, r in items}
+    notches = [(r[0], r[1], r[3], floors[k] is not None) for k, r in items if r[2] < EPS]
     foot = outline_with_notches(0.0, sp, 0.0, notches)
     outline = foot + [(sp, L.Z_PORCH), (L_, L.Z_PORCH), (L_, L.Z_GABLE),
                       (L_, L.Z_WALL_TOP), (0.0, L.Z_WALL_TOP), (0.0, L.Z_GABLE)]
-    wall_region(B, fr, outline, items, level, uo, uv_brick(fr, uo), lobby=LOBBY)
+    wall_region(B, fr, outline, items, level, uo, uv_brick(fr, uo), lobby=LOBBY,
+                floors=floors)
 
 
 def build_rear(B, level):
@@ -441,10 +485,11 @@ def build_porch(B, level):
     fr = Frame(*MAIN_WALLS["porch"])
     items = rects_for(fr, PORCH_ITEMS)
     uo = U_OFF["porch"]
-    notches = [(r[0], r[1], r[3]) for k, r in items if r[2] < EPS]
+    floors = {k: floor_for("porch", k, level) for k, r in items}
+    notches = [(r[0], r[1], r[3], floors[k] is not None) for k, r in items if r[2] < EPS]
     foot = outline_with_notches(0.0, fr.L, 0.0, notches)
     outline = foot + [(fr.L, L.Z_PORCH), (0.0, L.Z_PORCH)]
-    wall_region(B, fr, outline, items, level, uo, uv_brick(fr, uo))
+    wall_region(B, fr, outline, items, level, uo, uv_brick(fr, uo), floors=floors)
     z = L.Z_PORCH
     B.face([(PX, -HY, z), (PX, HY, z), (HX, HY, z), (HX, -HY, z)],
            uv_patch("soffit"))
@@ -839,6 +884,14 @@ def check_layout():
         bad.append("door leaf %.3f m is outside 2.0-2.4" % L.Z_LEAF)
     if not 2.0 <= L.OPENINGS["service_door"][1] - 0.0625 <= 2.4:
         bad.append("the service door's leaf is outside 2.0-2.4")
+    # every entrance's reveal on its floor slab (scripts/door_floor.py): the
+    # slab's region the reveal's width and depth, under a door at grade
+    for wall, lobby, spec in (("front", LOBBY, FRONT_ITEMS), ("porch", None, PORCH_ITEMS)):
+        fr = Frame(*MAIN_WALLS[wall])
+        for kind, floor in FLOORED[wall].items():
+            (c, z), = [(c, z) for k, c, z in spec if k == kind]
+            bad += DF.problems(floor, "the %s wall's %s" % (wall, kind),
+                               item_rect(fr, kind, c, z), reveal_depth(kind, lobby))
     # canopies clear of what they shelter, and of the windows above
     if L.Z_CAN0 < L.Z_DOOR + 0.1:
         bad.append("the canopies sit on the door heads")
