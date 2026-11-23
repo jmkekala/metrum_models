@@ -24,8 +24,8 @@ bands and a set of unique regions:
     regions       the soffit and the roof deck (plan-mapped), the glazing
                   band, the doors, the posters, the shutter stack's front
                   and side, the rack, the bench, the wall lamp's face, the
-                  sign board's face and the concrete floor slab in the
-                  customer door's reveal (scripts/door_floor.py).
+                  sign board's face and the concrete floor slabs in the
+                  two doors' reveals (scripts/door_floor.py).
 
 Rasterising is scripts/atlas.py's (supersampled canvas, height channel for
 the normal map); weathering is scripts/weathering.py's; the panes are
@@ -163,11 +163,13 @@ BENCH_TOP = (722.0, 406.0, m(BENCH[0]), m(BENCH[1]))                       # 128
 LAMP_FACE = (722.0, 432.0, m(0.16), m(0.14))                              # 10.2 x 9.0
 SIGN = (4.0, 576.0, SIGN_W * SIGN_PPM, SIGN_H * SIGN_PPM)                  # 358.4 x 53.8
 
-# The concrete floor slab in the customer door's reveal (scripts/
-# door_floor.py), unfolded at 64 px/m: U across the casing's 1.04 m opening,
-# V up the 0.02 m nosing and back 0.10 m to the door. 66.6 x 7.7 px, right of
-# the patches.
-FLOORS = {"kiosk": DF.Floor(284.0, 690.0, DOOR_SIZE[0], DOOR_DEPTH)}
+# The concrete floor slabs in the two doors' reveals (scripts/door_floor.py),
+# unfolded at 64 px/m: U across the casing's 1.04 m opening, V up the 0.02 m
+# nosing and back to the door, 0.10 m for the customer door (66.6 x 7.7 px)
+# and 0.06 m for the staff door (66.6 x 5.1 px), side by side right of the
+# patches.
+FLOORS = {"kiosk": DF.Floor(284.0, 690.0, DOOR_SIZE[0], DOOR_DEPTH),
+          "staff": DF.Floor(356.0, 690.0, STAFF_SIZE[0], STAFF_DEPTH)}
 
 PATCH_NAMES = ("blank", "reveal", "flash", "steel", "bin", "post", "lamp",
                "lens", "timber", "shutter_top", "sign_edge", "light", "fitting")
@@ -183,7 +185,7 @@ REGIONS = {"soffit": SOFFIT, "deck": DECK, "band": BAND, "door": DOOR,
  ID_GLASS, ID_DOOR, ID_STEEL, ID_SIGN, ID_SIGN_T, ID_LIGHT, ID_POSTER,
  ID_POSTER_A, ID_POSTER_B, ID_POSTER_C, ID_SHUTTER, ID_TIMBER, ID_BIN,
  ID_MAG_A, ID_MAG_B, ID_MAG_C, ID_LAMP, ID_SEAL, ID_FITTING, ID_SIGN_LIT,
- ID_HINGE, ID_FLOOR) = range(29)          # ID_FLOOR: the door's cast concrete floor slab
+ ID_HINGE, ID_FLOOR) = range(29)          # ID_FLOOR: the doors' cast concrete floor slabs
 
 # (roughness, metallic). Powder-coated frames, painted boards and steel are
 # dielectric; galvanised flashing and the stainless counter are metal.
@@ -721,7 +723,7 @@ def weather(c):
     # the glazing band: dust on the sill frame and the pass rail
     x, y, rw, rh = BAND
     w.add("D", x, x + rw, y, y + m(0.06), 0.10, (ID_FRAME, ID_STEEL))
-    # the door's floor slab: trodden-in dirt
+    # the doors' floor slabs: trodden-in dirt
     for f in FLOORS.values():
         DF.weather(w, f, ID_FLOOR, bleed=PAD)
     x, y, rw, rh = BENCH_TOP

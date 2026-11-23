@@ -1,9 +1,9 @@
 {
   "schema": "metrum-model-facts",
-  "version": 1,
+  "version": 4,
   "name": "lippakioski_corner_glazed",
   "path": "buildings/commercial/lippakioski_corner_glazed",
-  "source": {"commit": "eb64bc6aeac1487aafcf92047e0302584855a065", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "a35fb176c0f0e8561e0314e9af2f15becc90d877", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-3.375, 0.0, -2.675], "max": [3.375, 3.67, 2.675]},
   "footprint": [
@@ -21,27 +21,27 @@
   ],
   "dwellings": 0,
   "doors": [
-    {"id": "kiosk", "kind": "entrance", "position": [-2.275, 0.0, 1.075], "facing": [0.0, 0.0, 1.0], "width_m": 0.9, "height_m": 2.1, "main": true},
-    {"id": "staff", "kind": "service", "position": [0.275, 0.0, -2.325], "facing": [0.0, 0.0, -1.0], "width_m": 0.9, "height_m": 2.1, "main": false}
+    {"id": "kiosk", "kind": "entrance", "position": [-2.275, 0.0, 1.075], "facing": [0.0, 0.0, 1.0], "width_m": 0.9, "height_m": 2.1, "floor_y_m": 0.02, "storey": 0, "main": true},
+    {"id": "staff", "kind": "service", "position": [0.275, 0.0, -2.325], "facing": [0.0, 0.0, -1.0], "width_m": 0.9, "height_m": 2.1, "floor_y_m": 0.02, "storey": 0, "main": false}
   ],
   "lods": [
-    {"file": "lippakioski_corner_glazed_lod0.glb", "triangles": 1084, "sha256": "96e1ab5ecdefc664931580de6c97febd30e8f49d6c0734139f1b68a0e9224fc2"},
-    {"file": "lippakioski_corner_glazed_lod1.glb", "triangles": 894, "sha256": "4055c0165a492209c3b9e90deaa448edc341099fcfc8f3c39d1ecc51cbc5bf37"},
-    {"file": "lippakioski_corner_glazed_lod2.glb", "triangles": 510, "sha256": "7bf058a1f8f60e64e35250b3ddc30a6dae52d494f1c8614f5ae92c179d5a9495"},
+    {"file": "lippakioski_corner_glazed_lod0.glb", "triangles": 1088, "sha256": "15319becb6242c43f2da055a2db21d65c5bfb4dd4f2fe0f0e34e3682b56decbb"},
+    {"file": "lippakioski_corner_glazed_lod1.glb", "triangles": 898, "sha256": "d09a56abe47c252edcf9e8fe34aa0b3235e2be73cfb7ae7d62e9fcc49a1e95cb"},
+    {"file": "lippakioski_corner_glazed_lod2.glb", "triangles": 522, "sha256": "413359249f784e6818a19a7945a6309f7c6c1476ffda1eb3e80cedc290dbde77"},
     {"file": "lippakioski_corner_glazed_lod3.glb", "triangles": 382, "sha256": "bcfd510e4e2be7190f57c01c866f799c358407c345063a7c7dfbb649447e7565"}
   ],
   "textures": {
-    "orm": {"file": "lippakioski_corner_glazed_orm.png", "sha256": "a1e3781b1067375635008cc1e1c661ac624acec94d6021ab8d6a2d8a07033bc3"},
-    "normal": {"file": "lippakioski_corner_glazed_normal.png", "sha256": "42f3561d2070203b823947da5e3b3d2f36ad6caafa8beefe7844d5bf50e3f56b"},
+    "orm": {"file": "lippakioski_corner_glazed_orm.png", "sha256": "5917e24a241f1e633bd9304eb2d339c015a33abc699477a286bace3da728ff5a"},
+    "normal": {"file": "lippakioski_corner_glazed_normal.png", "sha256": "4a6968710a250f7f15c9d1c590557fa2f82af65e3125b248b91094c7ecee4498"},
     "emission": {"file": "lippakioski_corner_glazed_emission.png", "sha256": "cb2bbc9b03a6655a24efe14f1f6d5a5a0d231df388fdd691164164b9521e33de"}
   },
   "variants": [
-    {"id": "ochre_boards", "albedo": "lippakioski_corner_glazed_albedo_ochre_boards.png", "sha256": "0c501fbc69983729c0a29ca9ae797df28329cbfa3c69a97c58e6299a7bfe5542"},
-    {"id": "cream_boards", "albedo": "lippakioski_corner_glazed_albedo_cream_boards.png", "sha256": "e27fea8e316ca26cc540090bb29b74994c1b1f4db540aeac3838c3ef2c3be37f"},
-    {"id": "green_boards", "albedo": "lippakioski_corner_glazed_albedo_green_boards.png", "sha256": "e2421c943320d0813e2b79073a99060fc14cc05113fb7af9dc332029389f5acd"},
-    {"id": "red_boards", "albedo": "lippakioski_corner_glazed_albedo_red_boards.png", "sha256": "1922bb0f5b5f17e33ad33b1ec861d8db653ec76e4d830a2ff4b8030161eb2679"}
+    {"id": "ochre_boards", "albedo": "lippakioski_corner_glazed_albedo_ochre_boards.png", "sha256": "440daeb614650ff67240678c02941e75cbdc331cd2bae9b963e8bd5f907268fa"},
+    {"id": "cream_boards", "albedo": "lippakioski_corner_glazed_albedo_cream_boards.png", "sha256": "f773237002a3c9acfc56fbc5d53de68fea366e4f6c46ac3222c5048db0e19594"},
+    {"id": "green_boards", "albedo": "lippakioski_corner_glazed_albedo_green_boards.png", "sha256": "fee6ee7346eeecac563fe51acc3f8d827cbce560f2481fdbb9317556e93fbf6c"},
+    {"id": "red_boards", "albedo": "lippakioski_corner_glazed_albedo_red_boards.png", "sha256": "5898c8b7a0f3e473f083739f5db20a38ee9074518765f536c33fb53b970e74cf"}
   ],
   "default_variant": "ochre_boards",
-  "preview": {"file": "../preview.png", "sha256": "ddcd43fe7f5a4d9ce73900054193a17869636b39bbf1492acfcbe274b4e24dc8"},
+  "preview": {"file": "../preview.png", "sha256": "2cb9b44a04ff6863309bfabf5997b401eae6a07ddb76fd369b5f13e2e61b0dfc"},
   "hero": false
 }

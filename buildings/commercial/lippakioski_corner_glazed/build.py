@@ -23,10 +23,10 @@ left. A glazing band runs from a stainless counter at 1.05 m up to the
 soffit along the right half of the front, round the corner in facets and
 along the front of the serving side, with folding shutter leaves stacked open
 at each end. The customer door is at the left end of the front, a glazed
-leaf with a transom light over it, its reveal on a 0.02 m concrete floor
-slab (scripts/door_floor.py); the staff door is at the rear under a wall
-lamp. A lit KIOSKI board stands on two short posts over the canopy's front
-edge; three drum downlights hang under the soffit. A
+leaf with a transom light over it; the staff door is at the rear under a wall
+lamp. Each door's reveal stands on a 0.02 m concrete floor slab
+(scripts/door_floor.py). A lit KIOSKI board stands on two short posts over
+the canopy's front edge; three drum downlights hang under the soffit. A
 newspaper rack, two poster cases, a wall bench and a litter bin on a post
 dress it, all under the canopy.
 
@@ -102,10 +102,11 @@ def wall_facets(level):
 
 
 def recessed(level, what="band"):
-    """LOD0/LOD1 set the glass, the doors and the staff door back in their
-    openings; LOD2 keeps the customer door's recess, whose sunlit jamb
-    pops at 25 m when it goes, and paints the band and the staff door flat
-    on the wall plane, as LOD3 paints all three."""
+    """LOD0/LOD1 set the glass and both doors back in their openings; LOD2
+    keeps the doors' recesses (what="door"), each on its floor slab: the
+    customer door's sunlit jamb and the staff door's slab nosing, a light
+    line across its foot, pop at 25 m when they go. LOD2 paints the band
+    flat on the wall plane, as LOD3 paints all three."""
     return level < (3 if what == "door" else 2)
 
 
@@ -206,6 +207,12 @@ def door_rect():
     return (s0, s0 + L.DOOR_SIZE[0], 0.0, L.Z_HEAD)
 
 
+def staff_rect():
+    """The staff door's casing on the rear wall, (s0, s1, z0, z1)."""
+    s0 = L.WX1 - STAFF_X - L.STAFF_SIZE[0] / 2.0
+    return (s0, s0 + L.STAFF_SIZE[0], 0.0, L.Z_MID)
+
+
 def segments(level):
     """The wall ring's segments with their openings, posters and band."""
     pts, total = wall_outline(level)
@@ -249,12 +256,12 @@ def segments(level):
     side = segs[n + 1]
     sb = band_s("side", y=L.WALL_C[1])
     side.items.append(Item(0.0, L.SIDE_RUN, bz0, bz1, d_band, band_uv(sb), cont0=True))
-    # rear: the staff door
+    # rear: the staff door, on its floor slab while it is recessed
     rear = segs[n + 2]
-    sw = L.STAFF_SIZE[0]
-    ss0 = L.WX1 - STAFF_X - sw / 2.0
-    rear.items.append(Item(ss0, ss0 + sw, 0.0, L.Z_MID,
-                           L.STAFF_DEPTH if rec else 0.0, region_uv(L.STAFF, ss0, 0.0)))
+    ss0, ss1, sz0, sz1 = staff_rect()
+    rear.items.append(Item(ss0, ss1, sz0, sz1,
+                           L.STAFF_DEPTH if recessed(level, "door") else 0.0,
+                           region_uv(L.STAFF, ss0, 0.0), floor=L.FLOORS["staff"]))
     # left: two poster cases, flat on the wall on every tier
     left = segs[n + 3]
     pw = L.POSTER_SIZE[0]
@@ -279,16 +286,14 @@ def build_ring(B, segs):
     L.WALL_Z, shared by every segment so the vertical edges at the corners
     carry the same vertices from both sides.
 
-    A recess on the ground with a *floor* (the customer door's) stands on a
+    A recess on the ground with a *floor* (either door's) stands on a
     concrete slab (scripts/door_floor.py): a nosing on the wall plane from
     the ground to T across the opening, and the slab's top at T from the
     wall plane back to the closing face, where the threshold cheek would be.
     The recess (its back, its jambs) starts at T, and the wall cell on
     either side of the opening carries a corner at (s, T), so wall, nosing,
     slab and jambs meet on shared vertices and the open rim the floor cap
-    closes runs straight along the wall line under the nosing. The other
-    door on the ground (the staff door) gets no threshold cheek: its rim
-    detours round the recess and the floor cap covers it."""
+    closes runs straight along the wall line under the nosing."""
     zs = L.WALL_Z
     T = DF.T
     for i, seg in enumerate(segs):
@@ -360,10 +365,9 @@ def build_ring(B, segs):
 
 
 def main_body(level):
-    """The wall ring, capped by a floor on the ground (round the staff
-    door's recess, straight under the customer door's slab) and a lid at
-    Z_BODY, buried in the canopy. Each cap is triangulated, collinear
-    corners and all, its slivers repaired."""
+    """The wall ring, capped by a floor on the ground (straight under the
+    doors' slabs) and a lid at Z_BODY, buried in the canopy. Each cap is
+    triangulated, collinear corners and all, its slivers repaired."""
     B = Builder()
     build_ring(B, segments(level))
     for loop in SB.rim_loops(B, 2):
@@ -763,9 +767,10 @@ def check_layout():
             or min(t0 for _i, t0, _t1 in L.SHUTTER_LAYERS) != -0.02
             or max(i for i, _t0, _t1 in L.SHUTTER_LAYERS) * 2 >= L.SHUTTER[0]):
         bad.append("the shutter leaves' layers leave the stack's box")
-    # the customer door's reveal on its floor slab (scripts/door_floor.py):
-    # the slab's region the casing's width and the reveal's depth, at grade
+    # each door's reveal on its floor slab (scripts/door_floor.py): the
+    # slab's region the casing's width and the reveal's depth, at grade
     bad += DF.problems(L.FLOORS["kiosk"], "the customer door", door_rect(), L.DOOR_DEPTH)
+    bad += DF.problems(L.FLOORS["staff"], "the staff door", staff_rect(), L.STAFF_DEPTH)
     zb, zl = L.DOWNLIGHT_Z
     if not zb < zl < L.Z_SOFFIT or zb < L.Z_HEAD - 0.10:
         bad.append("the downlights' heights are out of order")
