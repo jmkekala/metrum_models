@@ -25,6 +25,14 @@ file name (..._lod0_NAME.png) and recorded in the settings JSON. With
 --texture-dir the substituted names are then looked up there in turn:
     blender -b -t 8 -P scripts/review_asset.py -- ASSET_DIR OUTPUT_DIR \
         --six-views --variant yellow_brick
+
+Cycles renders on the GPU by default: the AMD HIP device(s), set in the
+running process only (no saved preference). Where there is none it stops with
+an error instead of falling back; --device cpu renders on the CPU. GPU frames
+differ slightly from CPU frames, so render both runs of a before/after
+comparison on one device (the settings JSON records it as 'renderer'):
+    blender -b -P scripts/review_asset.py -- ASSET_DIR OUTPUT_DIR \
+        --day-cycle --device cpu
 """
 
 import argparse
@@ -65,12 +73,51 @@ def aim(obj, target):
     obj.rotation_euler = (Vector(target) - obj.location).to_track_quat('-Z', 'Y').to_euler()
 
 
+GPU_BACKEND = 'HIP'
+
+
+def use_device(scene, device):
+    """Choose the Cycles render device for *scene*: 'cpu' changes nothing,
+    'gpu' (the scripts' default) enables the HIP devices alone, in this
+    process only. Returns the renderer's name for the settings record; raises
+    where 'gpu' has no HIP device, so a review never falls back to the CPU
+    unannounced. Call it
+    after read_factory_settings(), which resets the preferences.
+    review_vehicle.py uses it too."""
+    if device == 'cpu':
+        print('REVIEW DEVICE Cycles CPU', flush=True)
+        return 'Cycles CPU'
+    addon = bpy.context.preferences.addons.get('cycles')
+    if addon is None:
+        raise RuntimeError('--device gpu: the Cycles add-on is not enabled')
+    prefs = addon.preferences
+    try:
+        prefs.compute_device_type = GPU_BACKEND
+    except TypeError as exc:
+        raise RuntimeError(f'--device gpu: this Blender build has no {GPU_BACKEND} '
+                           f'backend ({exc})') from None
+    prefs.get_devices()
+    names = []
+    for dev in prefs.devices:
+        dev.use = dev.type == GPU_BACKEND
+        if dev.use:
+            names.append(dev.name)
+    if not names:
+        raise RuntimeError(f'--device gpu: no {GPU_BACKEND} device found; '
+                           'render with --device cpu')
+    scene.cycles.device = 'GPU'
+    renderer = f'Cycles GPU ({GPU_BACKEND}: {", ".join(names)})'
+    print('REVIEW DEVICE', renderer, flush=True)
+    return renderer
+
+
 def setup(args):
     if not bpy.app.background:
         raise RuntimeError('Use a separate background process; this replaces its scene.')
     bpy.ops.wm.read_factory_settings(use_empty=True)
     scene = bpy.context.scene
     scene.render.engine = 'CYCLES'
+    args.renderer = use_device(scene, args.device)
     scene.cycles.samples = args.samples
     scene.cycles.use_denoising = True
     scene.cycles.seed = 42
@@ -311,7 +358,7 @@ def main(args):
                                     'camera': list(cam.location), 'crop_px_bottom_left': crop})
                     print('REVIEW', name, flush=True)
     settings = {'asset': str(args.asset), 'blender': bpy.app.version_string,
-                'renderer': 'Cycles CPU', 'samples': args.samples, 'denoising': True,
+                'renderer': args.renderer, 'samples': args.samples, 'denoising': True,
                 'vertical_fov_degrees': 50, 'resolution': args.resolution,
                 'exposure': 0, 'view_transform': 'AgX', 'lights': LIGHTS,
                 'projection': cam.data.type, 'orthographic_size': cam.data.ortho_scale,
@@ -334,6 +381,9 @@ if __name__ == '__main__':
     p.add_argument('--lights', nargs='+', choices=LIGHTS, default=['noon', 'reverse'])
     p.add_argument('--resolution', type=int, nargs=2, default=[1920, 1080])
     p.add_argument('--samples', type=int, default=24)
+    p.add_argument('--device', choices=['cpu', 'gpu'], default='gpu',
+                   help='Cycles device; gpu (the default) is the AMD HIP device and fails '
+                        'where there is none.')
     p.add_argument('--texture-dir', type=Path)
     p.add_argument('--variant', help='Render this colour variant (export/ASSET_albedo_VARIANT.png) '
                                      'instead of the default the tiers reference.')

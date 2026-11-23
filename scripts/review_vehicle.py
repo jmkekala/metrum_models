@@ -5,6 +5,12 @@
 Run in a separate background Blender, never in an authoring session:
 
     blender -b -P scripts/review_vehicle.py -- ASSET_DIR OUTPUT_DIR [--variant NAME]
+    blender -b -P scripts/review_vehicle.py -- ASSET_DIR OUTPUT_DIR --cycles \
+        [--samples N] [--device cpu]
+
+The sheet renders in EEVEE; --cycles renders it in Cycles instead, on the AMD
+HIP device unless --device cpu asks for the CPU (review_asset.use_device():
+this process only, and an error where there is no HIP device).
 
 OUTPUT_DIR belongs under the git-ignored review/ folder: the sheet is for the
 owner's look and is never committed. It receives every frame as a PNG,
@@ -48,6 +54,7 @@ from mathutils import Vector
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import vehicle_ids as vi  # noqa: E402
+from review_asset import use_device  # noqa: E402
 
 RES = (960, 540)
 TILE = (480, 270)
@@ -417,7 +424,11 @@ def main(args):
         if not (edir / variant_file).is_file():
             raise RuntimeError("no %s" % variant_file)
     engine = 'CYCLES' if args.cycles else 'BLENDER_EEVEE'
+    if args.device and not args.cycles:
+        raise RuntimeError("--device applies to --cycles; EEVEE has no device choice")
     scn, bg, sun, cam = setup(engine, args.samples)
+    # After setup(): read_factory_settings() resets the preferences.
+    renderer = use_device(scn, args.device or "gpu") if args.cycles else None
     tiers, mats, objs = {}, {}, {}
     for lv in vi.LEVELS:
         t = vi.tier(edir / ("%s_lod%d.glb" % (name, lv)))
@@ -617,6 +628,8 @@ def main(args):
                 "lamp_gain": LAMP_GAIN, "cabin_gain": CABIN_GAIN, "night_set": NIGHT_SET,
                 "tier_fov_deg": TIER_FOV, "tier_resolution": [1920, 1080],
                 "bay_m": [bw, bl], "figure_m": 1.8, "frames": frames, "sheet": spath.name}
+    if renderer:
+        settings["renderer"] = renderer
     (out / ("%s_review.json" % name)).write_text(json.dumps(settings, indent=1) + "\n")
     print("SHEET", spath)
 
@@ -630,4 +643,7 @@ if __name__ == "__main__":
     p.add_argument("--variant")
     p.add_argument("--cycles", action="store_true", help="Cycles instead of EEVEE")
     p.add_argument("--samples", type=int, default=32)
+    p.add_argument("--device", choices=["cpu", "gpu"],
+                   help="with --cycles: gpu (the default) renders on the AMD HIP "
+                        "device and fails where there is none; cpu on the CPU")
     main(p.parse_args(sys.argv[sys.argv.index("--") + 1:]))
