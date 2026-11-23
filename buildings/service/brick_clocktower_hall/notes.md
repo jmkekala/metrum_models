@@ -558,7 +558,7 @@ not change at a switch.
   exports, renders `preview.png` and `variants.png`, saves and writes the
   sidecar. `build.py -- facts` rewrites the sidecar alone from a committed
   tree.
-- Facts sidecar, version 1: footprint the wall outline; storeys at 0.156 and
+- Facts sidecar, version 4: footprint the wall outline; storeys at 0.156 and
   5.547 m, 1,024.25 m² each; no dwellings; three doors (the entrance, main;
   the balcony door; the service door); hero.
 - `preview.png`: the catalog setup with this asset's pinned camera

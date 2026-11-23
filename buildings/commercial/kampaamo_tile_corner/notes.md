@@ -648,7 +648,7 @@ validator measures min z 0 and centre (0.000, 0.000) on all four tiers.
 
 ### Facts sidecar
 
-`export/kampaamo_tile_corner.model.json`, version 1:
+`export/kampaamo_tile_corner.model.json`, version 4:
 
 - `footprint`: the ground-level outline with the recess (`LOD0` facets);
 - `storeys`: one storey at floor 0, 86.57 m²;

@@ -906,7 +906,7 @@ strips the placeholder `bufferView` keep-originals leaves.
 
 ### Facts sidecar
 
-`export/liikekeskus_pharmacy.model.json`, schema version 1, glTF frame
+`export/liikekeskus_pharmacy.model.json`, schema version 4, glTF frame
 (metres, +Y up, +Z street front, origin at the pivot): bounds
 `[-12.99, 0, -9.24]` - `[12.99, 11.925, 9.24]`, the -X side set by the wall
 ladder; footprint the 24 x 16 m wall ring, `[-11.91, -8]` - `[12.09, 8]`,

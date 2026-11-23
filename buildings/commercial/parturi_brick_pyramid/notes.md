@@ -661,7 +661,7 @@ Pivot on the ground at the centre of `LOD0`'s plan bounds, (0, -0.108) m from
 the wall plan's centre in the build frame; every tier's bounds centred on it.
 Front `-Y` in Blender, `+Z` in the export.
 
-Facts sidecar `export/parturi_brick_pyramid.model.json`, version 1: the wall
+Facts sidecar `export/parturi_brick_pyramid.model.json`, version 4: the wall
 rectangle as footprint (the lobby is a recess in the front wall and leaves
 the outline straight), one storey of 78.02 m² (the rectangle less the lobby),
 0 dwellings, hero false, two doors:

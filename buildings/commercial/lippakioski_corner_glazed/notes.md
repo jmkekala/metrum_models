@@ -824,7 +824,7 @@ The first line bakes the textures (system Python with scipy and Pillow). The
 second builds the tiers, exports, renders the previews and writes the
 sidecar. The third rewrites the sidecar alone, from a committed tree.
 
-The facts sidecar (version 1) holds:
+The facts sidecar (version 4) holds:
 
 - the wall outline at ground level as the footprint (eight points, with
   `LOD0`'s corner chords);
