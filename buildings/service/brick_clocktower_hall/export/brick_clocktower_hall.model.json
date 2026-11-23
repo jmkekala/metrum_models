@@ -1,9 +1,9 @@
 {
   "schema": "metrum-model-facts",
-  "version": 1,
+  "version": 4,
   "name": "brick_clocktower_hall",
   "path": "buildings/service/brick_clocktower_hall",
-  "source": {"commit": "27b8d9f46c1ae8efcc32126cbcb2477c1a6e5160", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "fd06daacd0701936b95b86da5f005d9161824c17", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-24.825, 0.0, -14.185], "max": [24.825, 24.6, 14.185]},
   "footprint": [
@@ -34,9 +34,9 @@
   ],
   "dwellings": 0,
   "doors": [
-    {"id": "front", "kind": "entrance", "position": [0.0, 0.1562, 13.015], "facing": [0.0, 0.0, 1.0], "width_m": 2.0, "height_m": 2.3438, "main": true},
-    {"id": "balcony", "kind": "balcony", "position": [0.0, 5.625, 13.015], "facing": [0.0, 0.0, 1.0], "width_m": 1.25, "height_m": 2.2656, "main": false},
-    {"id": "rear", "kind": "service", "position": [18.875, 0.1562, -13.735], "facing": [0.0, 0.0, -1.0], "width_m": 1.375, "height_m": 2.3438, "main": false}
+    {"id": "front", "kind": "entrance", "position": [0.0, 0.1562, 13.015], "facing": [0.0, 0.0, 1.0], "width_m": 2.0, "height_m": 2.3438, "floor_y_m": 0.1562, "storey": 0, "main": true},
+    {"id": "balcony", "kind": "balcony", "position": [0.0, 5.625, 13.015], "facing": [0.0, 0.0, 1.0], "width_m": 1.25, "height_m": 2.2656, "floor_y_m": 5.625, "storey": 1, "main": false},
+    {"id": "rear", "kind": "service", "position": [18.875, 0.1562, -13.735], "facing": [0.0, 0.0, -1.0], "width_m": 1.375, "height_m": 2.3438, "floor_y_m": 0.1562, "storey": 0, "main": false}
   ],
   "lods": [
     {"file": "brick_clocktower_hall_lod0.glb", "triangles": 6956, "sha256": "0cf60fbc0cdca63079068015f55b33c740e3c1faae8cdce3aebc3a3d1f848901"},
