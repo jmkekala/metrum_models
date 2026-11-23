@@ -1,9 +1,9 @@
 {
   "schema": "metrum-model-facts",
-  "version": 1,
+  "version": 4,
   "name": "parturi_brick_pyramid",
   "path": "buildings/commercial/parturi_brick_pyramid",
-  "source": {"commit": "27b8d9f46c1ae8efcc32126cbcb2477c1a6e5160", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "045d6417f170449696f5e9a01b0f1ccc8508657a", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-5.4531, 0.0, -4.7415], "max": [5.4531, 5.9538, 4.7415]},
   "footprint": [
@@ -17,8 +17,8 @@
   ],
   "dwellings": 0,
   "doors": [
-    {"id": "barber", "kind": "entrance", "position": [-3.465, 0.0, 3.8916], "facing": [0.0, 0.0, 1.0], "width_m": 0.95, "height_m": 2.1, "main": true},
-    {"id": "staff", "kind": "service", "position": [-2.0, 0.0, -4.1084], "facing": [0.0, 0.0, -1.0], "width_m": 0.94, "height_m": 2.0555, "main": false}
+    {"id": "barber", "kind": "entrance", "position": [-3.465, 0.0, 3.8916], "facing": [0.0, 0.0, 1.0], "width_m": 0.95, "height_m": 2.1, "floor_y_m": 0.02, "storey": 0, "main": true},
+    {"id": "staff", "kind": "service", "position": [-2.0, 0.0, -4.1084], "facing": [0.0, 0.0, -1.0], "width_m": 0.94, "height_m": 2.0555, "floor_y_m": 0.02, "storey": 0, "main": false}
   ],
   "lods": [
     {"file": "parturi_brick_pyramid_lod0.glb", "triangles": 1990, "sha256": "acb6909a6a6c6e8c6ffaead9ab95d040b53b339b67d7f0da2bfa3bdd5ddb5594"},
