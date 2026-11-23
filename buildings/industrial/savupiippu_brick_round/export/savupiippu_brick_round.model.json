@@ -1,9 +1,9 @@
 {
   "schema": "metrum-model-facts",
-  "version": 1,
+  "version": 4,
   "name": "savupiippu_brick_round",
   "path": "buildings/industrial/savupiippu_brick_round",
-  "source": {"commit": "d6c26a8115f7e3b0681c499f4a7318d6629d9d3f", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "27a40b1dae2cb4aa180467fa025f8004febca8b4", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-3.4, 0.0, -3.4], "max": [3.4, 47.5, 3.4]},
   "footprint": [
