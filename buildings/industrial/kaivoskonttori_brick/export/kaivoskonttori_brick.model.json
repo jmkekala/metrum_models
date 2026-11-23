@@ -1,9 +1,9 @@
 {
   "schema": "metrum-model-facts",
-  "version": 1,
+  "version": 4,
   "name": "kaivoskonttori_brick",
   "path": "buildings/industrial/kaivoskonttori_brick",
-  "source": {"commit": "0fbc373621991d9a98b0df8293666d1a124d735c", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "54b283733473ac28854614ff8aefda2522cd6c79", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-8.3, 0.0, -5.25], "max": [8.3, 5.6937, 5.25]},
   "footprint": [
@@ -17,8 +17,8 @@
   ],
   "dwellings": 0,
   "doors": [
-    {"id": "entrance", "kind": "entrance", "position": [0.9, 0.3125, 3.95], "facing": [0.0, 0.0, 1.0], "width_m": 1.0, "height_m": 2.125, "main": true},
-    {"id": "shift", "kind": "service", "position": [-1.5, 0.3125, -4.05], "facing": [0.0, 0.0, -1.0], "width_m": 1.0, "height_m": 2.125, "main": false}
+    {"id": "entrance", "kind": "entrance", "position": [0.9, 0.3125, 3.95], "facing": [0.0, 0.0, 1.0], "width_m": 1.0, "height_m": 2.125, "floor_y_m": 0.3125, "storey": 0, "main": true},
+    {"id": "shift", "kind": "service", "position": [-1.5, 0.3125, -4.05], "facing": [0.0, 0.0, -1.0], "width_m": 1.0, "height_m": 2.125, "floor_y_m": 0.3125, "storey": 0, "main": false}
   ],
   "lods": [
     {"file": "kaivoskonttori_brick_lod0.glb", "triangles": 896, "sha256": "fb92008dd7165506fa10e4df837bb3ef79df25b9858f6ee3dd72b1039a65134e"},
