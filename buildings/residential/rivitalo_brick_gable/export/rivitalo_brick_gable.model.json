@@ -1,9 +1,9 @@
 {
   "schema": "metrum-model-facts",
-  "version": 1,
+  "version": 4,
   "name": "rivitalo_brick_gable",
   "path": "buildings/residential/rivitalo_brick_gable",
-  "source": {"commit": "5bf03e9985913d6a204d06aed149383504d6cac8", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "af72cc0530180546ac97d55b63908f00bbc40566", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-15.69, 0.0, -7.72], "max": [15.69, 8.8475, 7.72]},
   "footprint": [
@@ -34,18 +34,18 @@
   ],
   "dwellings": 4,
   "doors": [
-    {"id": "unit_1", "kind": "entrance", "position": [-11.16, 0.3125, 7.12], "facing": [0.0, 0.0, 1.0], "width_m": 1.0, "height_m": 2.1, "main": false},
-    {"id": "unit_2", "kind": "entrance", "position": [-3.66, 0.3125, 7.12], "facing": [0.0, 0.0, 1.0], "width_m": 1.0, "height_m": 2.1, "main": false},
-    {"id": "unit_3", "kind": "entrance", "position": [3.84, 0.3125, 7.12], "facing": [0.0, 0.0, 1.0], "width_m": 1.0, "height_m": 2.1, "main": true},
-    {"id": "unit_4", "kind": "entrance", "position": [11.34, 0.3125, 7.12], "facing": [0.0, 0.0, 1.0], "width_m": 1.0, "height_m": 2.1, "main": false},
-    {"id": "unit_1_back", "kind": "service", "position": [-12.81, 0.3125, -0.18], "facing": [1.0, 0.0, 0.0], "width_m": 1.0, "height_m": 2.1, "main": false},
-    {"id": "unit_2_back", "kind": "service", "position": [-5.31, 0.3125, -0.18], "facing": [1.0, 0.0, 0.0], "width_m": 1.0, "height_m": 2.1, "main": false},
-    {"id": "unit_3_back", "kind": "service", "position": [2.19, 0.3125, -0.18], "facing": [1.0, 0.0, 0.0], "width_m": 1.0, "height_m": 2.1, "main": false},
-    {"id": "unit_4_back", "kind": "service", "position": [9.69, 0.3125, -0.18], "facing": [1.0, 0.0, 0.0], "width_m": 1.0, "height_m": 2.1, "main": false},
-    {"id": "unit_1_balcony", "kind": "balcony", "position": [-8.61, 3.4375, -0.88], "facing": [0.0, 0.0, -1.0], "width_m": 1.0, "height_m": 2.1, "main": false},
-    {"id": "unit_2_balcony", "kind": "balcony", "position": [-1.11, 3.4375, -0.88], "facing": [0.0, 0.0, -1.0], "width_m": 1.0, "height_m": 2.1, "main": false},
-    {"id": "unit_3_balcony", "kind": "balcony", "position": [6.39, 3.4375, -0.88], "facing": [0.0, 0.0, -1.0], "width_m": 1.0, "height_m": 2.1, "main": false},
-    {"id": "unit_4_balcony", "kind": "balcony", "position": [13.89, 3.4375, -0.88], "facing": [0.0, 0.0, -1.0], "width_m": 1.0, "height_m": 2.1, "main": false}
+    {"id": "unit_1", "kind": "entrance", "position": [-11.16, 0.3125, 7.12], "facing": [0.0, 0.0, 1.0], "width_m": 1.0, "height_m": 2.1, "floor_y_m": 0.3125, "storey": 0, "main": false},
+    {"id": "unit_2", "kind": "entrance", "position": [-3.66, 0.3125, 7.12], "facing": [0.0, 0.0, 1.0], "width_m": 1.0, "height_m": 2.1, "floor_y_m": 0.3125, "storey": 0, "main": false},
+    {"id": "unit_3", "kind": "entrance", "position": [3.84, 0.3125, 7.12], "facing": [0.0, 0.0, 1.0], "width_m": 1.0, "height_m": 2.1, "floor_y_m": 0.3125, "storey": 0, "main": true},
+    {"id": "unit_4", "kind": "entrance", "position": [11.34, 0.3125, 7.12], "facing": [0.0, 0.0, 1.0], "width_m": 1.0, "height_m": 2.1, "floor_y_m": 0.3125, "storey": 0, "main": false},
+    {"id": "unit_1_back", "kind": "service", "position": [-12.81, 0.3125, -0.18], "facing": [1.0, 0.0, 0.0], "width_m": 1.0, "height_m": 2.1, "floor_y_m": 0.3125, "storey": 0, "main": false},
+    {"id": "unit_2_back", "kind": "service", "position": [-5.31, 0.3125, -0.18], "facing": [1.0, 0.0, 0.0], "width_m": 1.0, "height_m": 2.1, "floor_y_m": 0.3125, "storey": 0, "main": false},
+    {"id": "unit_3_back", "kind": "service", "position": [2.19, 0.3125, -0.18], "facing": [1.0, 0.0, 0.0], "width_m": 1.0, "height_m": 2.1, "floor_y_m": 0.3125, "storey": 0, "main": false},
+    {"id": "unit_4_back", "kind": "service", "position": [9.69, 0.3125, -0.18], "facing": [1.0, 0.0, 0.0], "width_m": 1.0, "height_m": 2.1, "floor_y_m": 0.3125, "storey": 0, "main": false},
+    {"id": "unit_1_balcony", "kind": "balcony", "position": [-8.61, 3.4375, -0.88], "facing": [0.0, 0.0, -1.0], "width_m": 1.0, "height_m": 2.1, "floor_y_m": 3.5, "storey": 1, "main": false},
+    {"id": "unit_2_balcony", "kind": "balcony", "position": [-1.11, 3.4375, -0.88], "facing": [0.0, 0.0, -1.0], "width_m": 1.0, "height_m": 2.1, "floor_y_m": 3.5, "storey": 1, "main": false},
+    {"id": "unit_3_balcony", "kind": "balcony", "position": [6.39, 3.4375, -0.88], "facing": [0.0, 0.0, -1.0], "width_m": 1.0, "height_m": 2.1, "floor_y_m": 3.5, "storey": 1, "main": false},
+    {"id": "unit_4_balcony", "kind": "balcony", "position": [13.89, 3.4375, -0.88], "facing": [0.0, 0.0, -1.0], "width_m": 1.0, "height_m": 2.1, "floor_y_m": 3.5, "storey": 1, "main": false}
   ],
   "lods": [
     {"file": "rivitalo_brick_gable_lod0.glb", "triangles": 5652, "sha256": "c2f41bee357cb9e84df373feb36c6048b51f8df9fe7881d1517484b7e866c7c8"},
