@@ -1,9 +1,9 @@
 {
   "schema": "metrum-model-facts",
-  "version": 1,
+  "version": 4,
   "name": "kampaamo_tile_corner",
   "path": "buildings/commercial/kampaamo_tile_corner",
-  "source": {"commit": "27b8d9f46c1ae8efcc32126cbcb2477c1a6e5160", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "53983f995104b56a5ad3304f8953ff548cf35dba", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-5.0625, 0.0, -5.2], "max": [5.0625, 5.125, 5.2]},
   "footprint": [
@@ -27,8 +27,8 @@
   ],
   "dwellings": 0,
   "doors": [
-    {"id": "salon", "kind": "entrance", "position": [1.75, 0.0, 4.3], "facing": [0.0, 0.0, 1.0], "width_m": 0.94, "height_m": 2.1, "main": true},
-    {"id": "staff", "kind": "service", "position": [-2.0, 0.0, -4.7], "facing": [0.0, 0.0, -1.0], "width_m": 0.9, "height_m": 2.1, "main": false}
+    {"id": "salon", "kind": "entrance", "position": [1.75, 0.0, 4.3], "facing": [0.0, 0.0, 1.0], "width_m": 0.94, "height_m": 2.1, "floor_y_m": 0.02, "storey": 0, "main": true},
+    {"id": "staff", "kind": "service", "position": [-2.0, 0.0, -4.7], "facing": [0.0, 0.0, -1.0], "width_m": 0.9, "height_m": 2.1, "floor_y_m": 0.02, "storey": 0, "main": false}
   ],
   "lods": [
     {"file": "kampaamo_tile_corner_lod0.glb", "triangles": 1150, "sha256": "31854d8cff97dc62ab203ad88a042bde148cd6f7b37ca763ee38085a734c1370"},
