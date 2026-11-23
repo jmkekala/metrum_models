@@ -148,8 +148,23 @@ Closed solids unioned with Blender's exact boolean
 Openings: LOD0–LOD2 recess the glass and doors 0.12 m (brick reveals, sheet
 sill) with the sheet sill and the soldier course flush on the wall; the lobby
 is a 0.88 m recess on every tier; LOD3 paints the windows and the service
-door flush (`item_mode()`). Ground-standing
-openings get no floor of their own; the body's floor cap closes them.
+door flush (`item_mode()`). The service door, 0.12 m deep and standing on
+the ground, gets no floor of its own; the body's floor cap closes it.
+
+### Lobby floor
+
+The lobby is deep enough to look into, so it is floored on every tier: a
+cast concrete slab filling its plan, **2.25 x 0.88 m, its top 0.02 m over
+the ground** (`facade_atlas.LOBBY_FLOOR_T`), clear of a consumer's terrain
+at z = 0. Its front edge is a 0.02 m nosing on the front wall plane under
+the mouth; nothing projects past the wall. It is part of the body, not a
+unioned solid: `build_item()` starts the lobby's recess on the slab's top
+and puts the nosing on the wall plane, as a window's sheet sill is, so the
+body's floor cap runs straight under it. Four triangles on every tier. The
+screen, the cheeks and the ceiling light are as before, the screen's lowest
+0.02 m behind the slab. `check_layout()` keeps the slab 0.01–0.03 m thick,
+the lobby a ground-standing recess on every tier and the atlas region the
+slab's size. The entrance stays at grade: 0.02 m is no step.
 
 Authored parameters: `facade_atlas.py`'s plan, heights, pitch, `ITEMS`,
 the housing, louvre and fitting sizes and the regions; `build.py`'s `WALLS`,
@@ -228,14 +243,15 @@ Measured on the exported GLBs by `scripts/validate_asset.py`:
 
 | Tier | Triangles | Ceiling | Status |
 | --- | --- | --- | --- |
-| `LOD0` | 1,982 | 12,000 | far under |
-| `LOD1` | 1,642 | 4,000 | far under |
-| `LOD2` | 1,080 | 1,500 | under |
-| `LOD3` | 330 | 500 | under |
+| `LOD0` | 1,986 | 12,000 | far under |
+| `LOD1` | 1,646 | 4,000 | far under |
+| `LOD2` | 1,084 | 1,500 | under |
+| `LOD3` | 334 | 500 | under |
 
 Where they go at LOD0: the roof kit and the two bent downpipes (about 600
 together, mostly the ladders' rung holes and the pipes' bends), the body's
-cells round twelve openings with their reveals and the lobby, the roof solid
+cells round twelve openings with their reveals and the lobby (its floor
+slab four, on every tier), the roof solid
 with the five flashing caps cut into it, the housing with its 16 louvre
 blades, skirt and hipped lid (about 330 with the hood's four blades and cap),
 the hood, the five fittings (about 90 with their cuts in the brick), the
@@ -252,12 +268,13 @@ sign band, the light box and arms, the canopy and the vent.
   flashings, the sign band (painted on the wall), the housing's blades and
   skirt (its hipped lid for a plain slab), the hood's blades and cap, the
   canopy, the opening-hours board and the kit go (the wall ladder's bare
-  rails stay), downpipes 3-sided. The lobby stays a recess, and the three
-  lamps and the house number, which light at night, stay.
+  rails stay), downpipes 3-sided. The lobby stays a recess on its floor
+  slab, and the three lamps and the house number, which light at night,
+  stay.
 
 `LOD2` is the tier the consumer shows from 44 m, near enough that its
 reveals, flashings, blades and fittings still read, so it carries them at
-1,080 of its 1,500.
+1,084 of its 1,500.
 
 Between the catalog's sheds and shops (300–1,000) and its detached houses
 (about 2,600): a small box, but with a pitched roof, its safety kit and
@@ -282,8 +299,9 @@ below).
 | `LOD1` → `LOD2` | 70 m | Superseded by the consumer pass below: `LOD2` now keeps what this switch used to drop. |
 | `LOD2` → `LOD3` | 120 m | Superseded likewise. |
 
-The `LOD0` → `LOD1` verdict still holds: those two files are unchanged
-since. The far tiers were rebuilt for the consumer's nearer switches:
+The `LOD0` → `LOD1` verdict still holds: since then those two tiers have
+gained only the lobby's floor slab, the same four triangles on every tier.
+The far tiers were rebuilt for the consumer's nearer switches:
 
 ### Consumer switch pass (screen size)
 
@@ -308,10 +326,16 @@ At 87 m a 0.12 m reveal is under a pixel and the 0.18 m flashings about
 1.5 px; keeping them on `LOD3` would cost most of its remaining budget for
 edges the true-size renders do not show.
 
+The table's counts predate the lobby's floor slab. The slab is the same
+geometry and UVs on all four tiers, so it adds no difference at a switch;
+the pairs were not re-counted. It was reviewed on every tier from eye
+level at the mouth and at 12, 20 and 44 m (Review status).
+
 Kept on every tier: the pyramid roof and its eave line, the ridge housing and
 the front vent hood (the roofline), the light box (it also sets the front
 plan bound), the sign band's PARTURI, brick and plinth, window rhythm and
-dark glass, the downpipes, the lobby recess and the lit fittings. A
+dark glass, the downpipes, the lobby recess with its floor slab and the lit
+fittings. A
 consumer switching by screen size shows `LOD3` from about 87 m: it still
 has every opening, both signs, the roof features with a lidded housing and
 every light, but flush windows. One origin for all four tiers
@@ -326,8 +350,8 @@ time nor VRAM.
 Welded manifold check, all four tiers: **0 boundary edges, 0 edges with more
 than two faces, 0 loose vertices or edges**.
 
-Sampled hidden-surface test (40 rays per face): `LOD0` 51/1,982 (2.6 %),
-`LOD1` 42/1,642, `LOD2` 10/1,080, `LOD3` 2/330. Every candidate listed and
+Sampled hidden-surface test (40 rays per face): `LOD0` 51/1,986 (2.6 %),
+`LOD1` 42/1,646, `LOD2` 10/1,084, `LOD3` 2/334. Every candidate listed and
 located one by one (`review/older_audit_2026_11_22/fix_commercial_a/
 hidden_list.py`, not committed):
 
@@ -350,7 +374,9 @@ them unrecalculated): all eight of its triangles faced into it. The script
 now winds both outward and none of them is a candidate. The union of closed solids leaves one
 volume's boundary, so there are no partitions or duplicate surfaces; the
 body's lid and the roof's underside inside the wall line are removed by it.
-The body's floor at z = 0 is kept as the closed shell's bottom.
+The body's floor at z = 0 is kept as the closed shell's bottom; it runs
+under the lobby's floor slab too, whose top and nosing are exterior surface
+and no candidates (the counts above did not change with the slab).
 
 ## Known simplifications
 
@@ -361,7 +387,9 @@ The body's floor at z = 0 is kept as the closed shell's bottom.
   handle and kick rail, blinds, the meter cupboard and the wall louvre are
   painted**, all under the relief threshold. The housing's and hood's
   louvre blades are modelled to LOD2 and painted at LOD3.
-- The lobby has **no mat or step**; the entrance is at grade.
+- The lobby's floor is a **plain concrete slab 0.02 m over the ground, with
+  no mat, grating or step**; the entrance is at grade. The forecourt in
+  front of it is the consumer's ground.
 - The **letter plate** in the door leaf and the opening-hours board's marks
   are painted; the board, lamps and house number are modelled boxes.
 - **Glass is opaque**; the salon is `glazing.py`'s room behind it.
@@ -402,7 +430,12 @@ face is 112 x 112 px at **160 px/m**. At **128 px/m**, in the row over the
 sign band: the housing's two side widths (128 x 122 and 102 x 122 px) and the
 hood's front (115 x 83), where the louvres' 75 mm blades and 25 mm slots need
 the texels, and the fittings' faces (lamp front and side, house number,
-opening-hours board).
+opening-hours board). Over that row, at 64 px/m, the lobby's floor slab
+(144 x 57.6 px at x 4, y 900), unfolded: its 0.02 m nosing in the lowest
+1.3 rows, then its top from the mouth back to the screen; cast concrete
+(`ID_FLOOR`, sRGB 132, 130, 124, roughness 0.88, the catalog's floor
+concrete as on `hiilenvastaanotto_brick_shed`'s lane), the same in every
+variant.
 `check_regions()` fails the bake on overlap, run-off or a band collision,
 `check_bands()` on a stray id in a band.
 
@@ -482,7 +515,12 @@ plinth, roof, fascia and glass keep their colours; no roof brown leaks into
 the brick or the band; the gutter line holds; the fitting and housing art
 in its new 128 px/m row leaks into nothing. At mip 4 the band's letters
 (about 1.4 texels tall) smear into a lighter strip and the housing's painted
-louvres into an even darker brown, expected and accepted.
+louvres into an even darker brown, expected and accepted. The lobby floor's
+region was added afterwards, into empty sheet 16 px over the 128 px/m row
+and 40 px under the patches: every older region's texels are byte-identical
+(only gutter rows 887–984 differ, and the emission map not at all), so the
+stress renders were not repeated; the floor itself, a flat grey field, was
+not mip-tested.
 **Pending:** the consumer's sampler and shipped mipmaps.
 
 ### Weathering
@@ -493,7 +531,9 @@ shelter dust under the eave, dirt in the joints (cavity), long runs and
 eave dirt on the roof band, runs under the gutter on the fascia, dirt on the
 sheet sills and frame feet, the screen's kick panels, the service door's
 foot and handle, runs on the housing's sides and the hood's front, dust on
-the meter cupboard's foot. Glass, the light box, the letters, the house
+the meter cupboard's foot, blotchy trodden-in dirt on the lobby's floor
+(its occlusion deepening toward the cheeks and the screen). Glass, the
+light box, the letters, the house
 number and the opening-hours sheet stay clean.
 
 ## Glazing treatment
@@ -658,8 +698,23 @@ Completed in this repository:
   is byte-identical); every hidden-surface candidate located (Interior
   geometry); `validate_asset.py` 0 FAIL, 1 WARN (`source.dirty`),
   10 MANUAL.
+- Lobby floor slab (2026-11-23, `review/lobby_floor_2026_11_23/
+  parturi_brick_pyramid/`, not committed): before and after with
+  `review_asset.py`, tiers 0–3, front and oblique at 12, 20 and 44 m by
+  noon and reversed sun (`review_compare.py`), and every tier over a green
+  terrain plane at z = 0 from a 1.7 m eye at the mouth (face-on at 2.3 and
+  5 m, oblique, from the left, grazing from 0.35 m, and looking down), 75°
+  vertical FOV, both suns. Before, the terrain showed through the lobby;
+  after, the concrete floor is there on every tier, with no z-fighting
+  against the plane, no dark seam at the cheeks, the screen or the nosing,
+  and nothing else changed. `validate_asset.py` 0 FAIL, 1 WARN
+  (`source.dirty`), 10 MANUAL; bounds, pivot, footprint, storeys and both
+  doors as before. Mip stress and night renders not repeated (Texture set).
 
 Pending, outside this repository:
+
+- The lobby floor in the consumer: over real terrain, and its stopgap pad
+  removed.
 
 - Consumer import, LOD switching and runtime emission control.
 - Consumer mipmap and anisotropic filtering.
@@ -677,6 +732,15 @@ Pending, outside this repository:
 
 ## Revision log
 
+- **2026-11-23, lobby floor:** the entrance lobby had no upward face under
+  it (a ground-standing recess got no sill, and the body's floor cap faces
+  down), so a consumer's terrain showed inside it. It now stands on a
+  concrete slab, 2.25 x 0.88 m, top 0.02 m over the ground, nosing on the
+  front wall plane, on every tier, on a new 144 x 57.6 px atlas region
+  (`ID_FLOOR`). Triangles 1,982 / 1,642 / 1,080 / 330 → 1,986 / 1,646 /
+  1,084 / 334. Albedos, ORM and normal map changed only in that region and
+  the gutter round it; the emission map is byte-identical. Plan bounds,
+  pivot, height, footprint, storeys and both doors unchanged.
 - **2026-11-23, kit normals from the shared script:**
   `scripts/roof_safety.py` now builds the mirrored bare rail outward
   itself, so `kit()` no longer recalculates their normals. Every export

@@ -26,8 +26,9 @@ for a window, the sheet sill under it), the meter cupboard, the louvre, the
 projecting light box's face, and the lettered sign band across the front;
 over the band, at 128 px/m, the ventilation housing's louvred sides, the
 front hood's louvred face and the small fittings (wall lamp, house number,
-opening-hours board). A row of flat 16 px patches serves faces that take one
-colour. atlas.pad() fills every sample no region claims.
+opening-hours board), and over those the lobby's concrete floor slab. A row
+of flat 16 px patches serves faces that take one colour. atlas.pad() fills
+every sample no region claims.
 
 The brick is the catalog's module: 250 x 78.125 mm, joints included (a
 16 px stretcher, 64 across the 16 m atlas, and a 5 px course), so its bricks
@@ -118,6 +119,7 @@ ITEMS = {
     "meter": dict(w=0.625, z0=course(7), z1=course(21), cb=0.0, ct=0.0, depth=0.0),
     "louvre": dict(w=0.5, z0=course(27), z1=course(31), cb=0.0, ct=0.0, depth=0.0),
 }
+LOBBY_FLOOR_T = 0.02        # the lobby's floor slab, its top over the ground
 SCREEN_FRAME = 0.06         # the lobby screen's frame and mullion
 DOOR_LEAF_W = 0.95          # the entrance leaf, stiles included
 DOOR_S0 = SCREEN_FRAME      # the leaf's left edge, from the screen's left
@@ -208,6 +210,11 @@ LAMP_FRONT = (372, 760, LAMP_M[0] * FIT_PPM, LAMP_M[1] * FIT_PPM)
 LAMP_SIDE = (400, 760, LAMP_M[2] * FIT_PPM, LAMP_M[1] * FIT_PPM)
 NUMBER = (428, 760, NUMBER_M[0] * FIT_PPM, NUMBER_M[1] * FIT_PPM)
 HOURS = (480, 760, HOURS_M[0] * FIT_PPM, HOURS_M[1] * FIT_PPM)
+# The lobby's floor slab, unfolded: U along the front wall from the lobby's
+# left cheek, V up the slab's nosing from the ground (LOBBY_FLOOR_T) and
+# then back across its top from the mouth to the screen.
+LOBBY_FLOOR = (4, 900, ITEMS["screen"]["w"] * PPM,
+               (LOBBY_FLOOR_T + ITEMS["screen"]["depth"]) * PPM)
 
 PATCH_NAMES = ("blank", "reveal", "sill_top", "flashing", "lid", "sign_rim",
                "bracket", "band_edge", "canopy_top", "canopy_edge", "canopy_under",
@@ -221,6 +228,7 @@ ID_SIGN_W, ID_SIGN_INK, ID_SIGN_RIM, ID_LETTER, ID_METAL = 11, 12, 13, 14, 15
 ID_SEAL = 16                # black rubber and the dark gap round a leaf
 ID_PAPER = 17               # the opening-hours sheet: lit by nothing
 ID_PLATE = 18               # the house number's enamelled field, unlit
+ID_FLOOR = 19               # the lobby's cast concrete floor slab
 
 # (roughness, metallic). The roof, fascia, gutter and frames are factory
 # polyester-coated steel and aluminium: painted, so not metallic.
@@ -231,7 +239,7 @@ SURFACE = {
     ID_DOOR: (0.48, 0.0), ID_GUTTER: (0.40, 0.0), ID_SIGN_W: (0.22, 0.0),
     ID_SIGN_INK: (0.22, 0.0), ID_SIGN_RIM: (0.42, 0.0), ID_LETTER: (0.36, 0.0),
     ID_METAL: (0.50, 0.60), ID_SEAL: (0.70, 0.0), ID_PAPER: (0.30, 0.0),
-    ID_PLATE: (0.30, 0.0),
+    ID_PLATE: (0.30, 0.0), ID_FLOOR: (0.88, 0.0),
 }
 
 # ---------------------------------------------------------------- palettes
@@ -263,6 +271,7 @@ FIXED = {
     ID_SIGN_RIM: (52, 58, 72), ID_LETTER: (226, 212, 178),
     ID_METAL: (128, 126, 120), ID_SEAL: (34, 33, 32),
     ID_PAPER: (214, 212, 202), ID_PLATE: (34, 48, 104),
+    ID_FLOOR: (132, 130, 124),
 }
 
 # The candidate-glazing mask doubles as the emission map. Glass is neutral
@@ -631,6 +640,25 @@ def louvre_face(c, rect, z0, z1, lid=True):
         c.mul(x, x + w, y + h - 4, y + h, 0.80, ao=0.78)       # under the lid
 
 
+def paint_lobby_floor(c):
+    """The lobby's floor slab (LOBBY_FLOOR): float-finished cast concrete,
+    one bay, flat. The first rows are its nosing on the wall plane. Occlusion
+    deepens toward the cheeks and the screen, where the floor sees least
+    sky; the tread wears a little paler from the mouth to the leaf."""
+    x, y, w, h = LOBBY_FLOOR
+    c.paint(x - PAD, x + w + PAD, y - PAD, y + h + PAD, ID_FLOOR, 1.0, 1.0, height=0.0)
+    sy, sx, Y, X = c.field(x - PAD, x + w + PAD, y - PAD, y + h + PAD)
+    u = np.clip((X - x) / PPM, 0.0, ITEMS["screen"]["w"])
+    v = np.clip((Y - y) / PPM - LOBBY_FLOOR_T, 0.0, ITEMS["screen"]["depth"])
+    side = np.minimum(u, ITEMS["screen"]["w"] - u)
+    edge = np.minimum(side, ITEMS["screen"]["depth"] - v)
+    corner = np.exp(-edge / 0.12)
+    leaf = DOOR_S0 + DOOR_LEAF_W / 2.0
+    tread = np.exp(-((u - leaf) / 0.40) ** 2)
+    c.shade[sy, sx] = (1.0 - 0.14 * corner) * (1.0 + 0.05 * tread)
+    c.ao[sy, sx] = 1.0 - 0.30 * corner
+
+
 def paint_housing(c):
     """The ventilation housing's sides (two widths) and the front hood's
     louvred face, all at HOUSING_PPM."""
@@ -833,7 +861,8 @@ def check_regions():
     rects = dict(ITEM_REGION)
     rects.update({"housing_x": HOUSING_X, "housing_y": HOUSING_Y, "hood": HOOD,
                   "sign_box": SIGN_BOX, "sign_band": SIGN_BAND, "lamp_front": LAMP_FRONT,
-                  "lamp_side": LAMP_SIDE, "number": NUMBER, "hours": HOURS})
+                  "lamp_side": LAMP_SIDE, "number": NUMBER, "hours": HOURS,
+                  "lobby_floor": LOBBY_FLOOR})
     rects.update(PATCHES)
     problems = atlas.region_problems(rects, ATLAS, bands_top=SOF_Y0 + SOF_H + PAD, band_gap=2)
     if ROOF_Y0 + ROOF_H + PAD > FASC_Y0 - PAD:
@@ -884,6 +913,10 @@ def weather(c):
         w.runs(x, x + rw, y, y + rh, (ID_FASCIA,), 0.16, fall=10.0)
     x, y, rw, rh = ITEM_REGION["meter"]
     w.add("D", x, x + rw, y, y + m(0.3), 0.08, (ID_METAL,))
+    # the lobby's floor: trodden-in dirt, blotchy, most along its edges
+    x, y, rw, rh = LOBBY_FLOOR
+    w.add("D", x - PAD, x + rw + PAD, y - PAD, y + rh + PAD,
+          lambda Y, X, nz: 0.08 + 0.10 * nz("blotch"), (ID_FLOOR,))
     return w
 
 
@@ -904,6 +937,7 @@ def paint(ss=atlas.SS):
     paint_louvre(c)
     paint_housing(c)
     paint_fittings(c)
+    paint_lobby_floor(c)
     paint_sign_box(c)
     paint_sign_band(c)
     paint_patches(c)
@@ -915,6 +949,9 @@ def paint(ss=atlas.SS):
     pores = atlas.noise(c, 9, 0.7)
     c.shade[masonry] *= 1.0 + 0.04 * pores[masonry]
     c.height[masonry] += 0.0006 * pores[masonry]
+    cast = c.mid == ID_FLOOR
+    c.shade[cast] *= 1.0 + 0.05 * pores[cast]
+    c.height[cast] += 0.0004 * pores[cast]
     sheeted = np.isin(c.mid, (ID_ROOF, ID_FASCIA, ID_DOOR, ID_GUTTER))
     grain = atlas.noise(c, 5, 60.0, 0.35)
     c.shade[sheeted] *= 1.0 + 0.014 * grain[sheeted]
