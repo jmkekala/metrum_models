@@ -1,9 +1,9 @@
 {
   "schema": "metrum-model-facts",
-  "version": 1,
+  "version": 4,
   "name": "rintamamiestalo_side_entry",
   "path": "buildings/residential/rintamamiestalo_side_entry",
-  "source": {"commit": "c4acd2a9ea2f69ec626d57681e165f5805f8933b", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "6f50a273335ab6c167c9fcad7b620cadcc28653f", "dirty": false, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-5.35, 0.0, -6.22], "max": [5.35, 9.5625, 6.22]},
   "footprint": [
@@ -20,8 +20,8 @@
   ],
   "dwellings": 1,
   "doors": [
-    {"id": "front", "kind": "entrance", "position": [-2.6, 0.7, 4.72], "facing": [1.0, 0.0, 0.0], "width_m": 0.9, "height_m": 2.1, "main": true},
-    {"id": "back", "kind": "service", "position": [3.9, 0.7, -4.48], "facing": [0.0, 0.0, -1.0], "width_m": 0.9, "height_m": 2.1, "main": false}
+    {"id": "front", "kind": "entrance", "position": [-2.6, 0.7, 4.72], "facing": [1.0, 0.0, 0.0], "width_m": 0.9, "height_m": 2.1, "floor_y_m": 0.7, "storey": 0, "main": true},
+    {"id": "back", "kind": "service", "position": [3.9, 0.7, -4.48], "facing": [0.0, 0.0, -1.0], "width_m": 0.9, "height_m": 2.1, "floor_y_m": 0.7, "storey": 0, "main": false}
   ],
   "lods": [
     {"file": "rintamamiestalo_side_entry_lod0.glb", "triangles": 2624, "sha256": "0144a7b4802a3b2e62d824c8fa0f0252fa6b1d5bf886935c6cc5726e2633211a"},
