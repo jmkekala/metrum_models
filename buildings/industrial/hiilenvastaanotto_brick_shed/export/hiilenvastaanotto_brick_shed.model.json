@@ -3,7 +3,7 @@
   "version": 1,
   "name": "hiilenvastaanotto_brick_shed",
   "path": "buildings/industrial/hiilenvastaanotto_brick_shed",
-  "source": {"commit": "eb64bc6aeac1487aafcf92047e0302584855a065", "dirty": true, "blender": "5.3.0"},
+  "source": {"commit": "b1fd5edf4b84e701aefbdb334dc2ee4110ed2e0e", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-7.3, 0.0, -11.4], "max": [7.3, 18.8176, 11.4]},
   "footprint": [
@@ -33,9 +33,9 @@
     {"id": "under_gallery", "position": [-7.3, 0.0, -4.4], "forward": [1.0, 0.0, 0.0], "width_m": 10.0, "length_m": 14.6, "clear_height_m": 8.683, "through": true}
   ],
   "lods": [
-    {"file": "hiilenvastaanotto_brick_shed_lod0.glb", "triangles": 1966, "sha256": "b26f04d8b609910b4ba2a630ed4c05d323683c8211022063ac27d68fb598d9d6"},
-    {"file": "hiilenvastaanotto_brick_shed_lod1.glb", "triangles": 1726, "sha256": "25f93a574531f3f0632a614fca78b8de9af54cce515fbd3775d2ab224d71b7b1"},
-    {"file": "hiilenvastaanotto_brick_shed_lod2.glb", "triangles": 1220, "sha256": "dd3db631d40f8dc2ef40cb28fd27276e1843385651476233158114a1b484eba6"},
+    {"file": "hiilenvastaanotto_brick_shed_lod0.glb", "triangles": 1970, "sha256": "4ca9cf554f61db843ac690a46cec9bbcf62f3dca50c3c214cfe885aa837c3c33"},
+    {"file": "hiilenvastaanotto_brick_shed_lod1.glb", "triangles": 1730, "sha256": "e81edf6d201c37025137242f4f492819296fd2ac875272902e98731cf545e2bd"},
+    {"file": "hiilenvastaanotto_brick_shed_lod2.glb", "triangles": 1226, "sha256": "27196f3a732a378706723d4fea872e74c731ecaa1f08a19e45a0a2ee4700b53f"},
     {"file": "hiilenvastaanotto_brick_shed_lod3.glb", "triangles": 498, "sha256": "9eb1d2d95b317dc3b909cdf7ab4db7004ca825efae3e196a27683a5095f10eb2"}
   ],
   "textures": {
@@ -49,6 +49,6 @@
     {"id": "brown_brick", "albedo": "hiilenvastaanotto_brick_shed_albedo_brown_brick.png", "sha256": "db9beb2705d074c4ce0bf2e9ee72f038427ff03b0821e4ff911b8b59e81f1b61"}
   ],
   "default_variant": "red_brick",
-  "preview": {"file": "../preview.png", "sha256": "483cff946f6081cd223723c25746a4cc7c78a34400316e3449ec731a35e605fb"},
+  "preview": {"file": "../preview.png", "sha256": "5b46ba38df120e0af22bfcf23a3c97d774785b7652fc89903567cf1f8ab5c34e"},
   "hero": false
 }

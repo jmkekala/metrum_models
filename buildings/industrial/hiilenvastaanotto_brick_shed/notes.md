@@ -147,7 +147,8 @@ fitter, not an occupied floor.
   half stretchers and the door 8, so it cannot be centred: it stands a
   sixteenth of a metre east of the shaft's axis. It gives access to the
   elevator's boot room and the tower's stair, and it opens onto the clear
-  strip under the gallery (Construction).
+  strip under the gallery (Construction). Its reveal has the same 0.02 m
+  floor slab as the attendant's (Construction).
 - **Loading hatch: 1.20 × 1.20 m** on the head house's east face, sill
   11.60 m (0.27 m over its floor), under the hoist beam. It is a hatch, not
   a door: nothing walks out of it.
@@ -424,37 +425,38 @@ as an elevator tower rather than a stair or water tower:
 The rear (+Y) is therefore **the side that faces the boiler and turbine
 hall's coal side.**
 
-### Entrance floor slab
+### Door floor slabs
 
-The attendant's door stands on the ground in a 0.20 m brick reveal that had
-no upward face under it (the floor cap faces down), so a consumer's terrain
-showed inside, across the door's foot. The reveal is floored with a
-concrete slab from the shared `scripts/door_floor.py` (`build_opening()`
-calls `door_floor.recess()`; the wall's notch is `door_floor.notch()`):
+Both doors stand on the ground in 0.20 m brick reveals that had no upward
+face under them (the floor cap faces down), so a consumer's terrain showed
+inside, across each door's foot. Each reveal is floored with a concrete
+slab from the shared `scripts/door_floor.py` (`build_opening()` calls
+`door_floor.recess()`; the wall's notch is `door_floor.notch()`):
 
-| Entrance | Sidecar door | Slab, width x depth | Tiers |
-| --- | --- | --- | --- |
-| the attendant's door | `attendant` | 1.00 x 0.20 m | `LOD0`, `LOD1`, `LOD2` |
+| Door | Sidecar door | Wall | Slab, width x depth | Tiers |
+| --- | --- | --- | --- | --- |
+| the attendant's door | `attendant` (entrance) | the lean-to's east end (`a_east`) | 1.00 x 0.20 m | `LOD0`, `LOD1`, `LOD2` |
+| the elevator's door | `elevator` (service) | the shaft's rear face (`t_rear`) | 1.00 x 0.20 m | `LOD0`, `LOD1`, `LOD2` |
 
 - **Top 0.02 m over the ground** (`door_floor.T`), clear of terrain at
   z = 0 and too low to read as a step.
 - **A nosing on the wall plane** across the 1.0 m opening in the brick.
   Nothing projects past the wall, so the bounds, the pivot, the footprint
-  and the door's threshold in the sidecar are as they were.
+  and the doors' thresholds in the sidecar are as they were.
 - **The reveal starts on the slab's top:** the brick cheeks and the door's
   closing face begin at z 0.02, and the wall's notch carries the nosing's
   top corners, so wall, nosing, slab and cheeks meet on shared vertices.
-  Under the nosing the lean-to's floor cap runs straight along the wall
-  line instead of round the reveal. The door's artwork keeps its place, so
-  the slab covers the bottom 1.3 px of the leaf's foot.
-- **Follows the openings' tier mode** (`opening_mode()`): the reveal is cut
-  on `LOD0`–`LOD2` and the slab with it; `LOD3` paints the door flat on the
-  wall, with no reveal to floor.
-- **Its own atlas region** (Texture set).
+  Under the nosing the lean-to's and shaft's floor cap runs straight along
+  the wall line instead of round the reveal. The door's artwork keeps its
+  place, so the slab covers the bottom 1.3 px of the leaf's foot.
+- **Follows the openings' tier mode** (`opening_mode()`): the reveals are
+  cut on `LOD0`–`LOD2` and the slabs with them; `LOD3` paints both doors
+  flat on the wall, with no reveal to floor.
+- **One atlas region for both** (Texture set): the two doors are the same
+  1.0 m opening in the same 0.20 m reveal, so `FLOORS["door"]` serves both.
 
-`floor_for()` gives the door its slab on every tier that cuts its recess.
-The elevator's service door, the same 0.20 m reveal on the shaft's rear
-face, keeps it on the ground with no floor (Known simplifications).
+`FLOORED` names the floored doors by wall and kind, and `floor_for()` gives
+each its slab on every tier that cuts its recess.
 
 ### Walls, frame and band
 
@@ -558,9 +560,9 @@ face, keeps it on the ground with no floor (Known simplifications).
   the hatch;
 - the attendant's window is inside the attendant's room and clear of the
   frames;
-- `door_floor.problems()` finds the attendant door's floor slab region the
-  opening's width and the reveal's depth, under a door at grade, and the
-  atlas's `check_regions()` keeps that region clear of the others;
+- `door_floor.problems()` finds the doors' floor slab region the width of
+  each floored opening and the depth of its reveal, under a door at grade,
+  and the atlas's `check_regions()` keeps that region clear of the others;
 - the downpipes are placed correctly;
 - the lean-to is not steeper than 1:8;
 - every brick wall's brick stays inside the band and inside the clean
@@ -570,9 +572,9 @@ face, keeps it on the ground with no floor (Known simplifications).
 
 | Tier | Triangles | Ceiling | What changes |
 | --- | --- | --- | --- |
-| `LOD0` | 1966 | 12,000 | openings recessed with brick or sheet reveals; gallery end plate recessed in its collar; two tie beams; attendant's window recessed; two struts, two roof ventilators, the hoist beam and its trolley; the trestle's H-section legs, pad footings, cross-head and bracing; eight-sided downpipes with swan-necks and shoes |
-| `LOD1` | 1726 | 4,000 | downpipes four-sided, bent |
-| `LOD2` | 1220 | 1,500 | openings still recessed, the attendant's window too; the gallery's end plate flush; tie beams dropped; the ventilators and the trestle's pad footings kept, its legs and cross-head one portal solid with the bracing; coplanar boolean subdivisions dissolved (UV seams kept); downpipes straight, four-sided |
+| `LOD0` | 1970 | 12,000 | openings recessed with brick or sheet reveals; gallery end plate recessed in its collar; two tie beams; attendant's window recessed; two struts, two roof ventilators, the hoist beam and its trolley; the trestle's H-section legs, pad footings, cross-head and bracing; eight-sided downpipes with swan-necks and shoes |
+| `LOD1` | 1730 | 4,000 | downpipes four-sided, bent |
+| `LOD2` | 1226 | 1,500 | openings still recessed, the attendant's window too; the gallery's end plate flush; tie beams dropped; the ventilators and the trestle's pad footings kept, its legs and cross-head one portal solid with the bracing; coplanar boolean subdivisions dissolved (UV seams kept); downpipes straight, four-sided |
 | `LOD3` | 498 | 500 | openings flush; **downpipes, hoist beam and trolley, ventilators, footings and the trestle's cross-head dropped**; the struts kept as three-sided prisms, the trestle as two three-sided legs and one X of three-sided bars, all separate closed solids; the gallery bare to its end plane (no collar), one flat end face; the lane one box at the mouths' section, without the attendant's window; the lean-to, shaft, head house, gallery box and every other opening's paint kept |
 
 The counts are not padded. The massing is a box with a tunnel, a lean-to, a
@@ -595,10 +597,12 @@ Where the triangles go at `LOD0`:
   triangulation round them: most of the rest;
 - the lane's void, its two beams and the attendant's window recess: about
   120;
-- the attendant door's floor slab: its nosing and its top, with the wall's
-  notch carrying the nosing's corners and the floor cap losing the
-  reveal's detour, 6 more on `LOD0` and `LOD1`; on `LOD2`, whose coplanar
-  dissolve retriangulates the lean-to's walls, 2 fewer; `LOD3` unchanged.
+- the two doors' floor slabs: each its nosing and its top, with the
+  wall's notch carrying the nosing's corners and the floor cap losing the
+  reveal's detour. The attendant's added 6 on `LOD0` and `LOD1` and, on
+  `LOD2`, whose coplanar dissolve retriangulates the lean-to's walls, 2
+  fewer; the elevator's 4 on `LOD0` and `LOD1` and 6 on `LOD2`. `LOD3`
+  unchanged.
 
 The 12 m gallery costs the same as the 6.5 m one: its length is texture.
 The collar costs 16 triangles (its back ring and four faces).
@@ -606,7 +610,7 @@ The collar costs 16 triangles (its back ring and four faces).
 `LOD2` has the budget to keep what used to go at its switch: the recessed
 openings (+about 150 over flush, with the wall triangulation round them),
 the two ventilators and the two pad footings with their cuts round the
-portal's legs (+about 90); 1220 of 1,500.
+portal's legs (+about 90); 1226 of 1,500.
 
 `LOD3` sits at its ceiling, so what it keeps of the steel was paid for in
 places nothing shows past 160 m:
@@ -704,11 +708,11 @@ the six views and a 40 m rear three-quarter.
 - **Coal dust and traffic paint** are texture only, the same on every tier.
   The legs' bands stay legible as yellow and black to 75 m and blend to a
   dull ochre at mip4.
-- **The attendant door's floor slab (2026-11-23)** adds no transition of
-  its own. It goes with the door's 0.20 m reveal at the `LOD2`/`LOD3`
-  switch (182 m), where a 0.02 m nosing and 0.20 m of slab are well under a
+- **The doors' floor slabs (2026-11-23)** add no transition of their
+  own. Each goes with its door's 0.20 m reveal at the `LOD2`/`LOD3` switch
+  (182 m), where a 0.02 m nosing and 0.20 m of slab are well under a
   pixel. Checked from a standing eye (1.7 m, 75° vertical FOV, 1280 × 720)
-  and from 0.35 m over a terrain plane at z = 0, 2–5 m from the door,
+  and from 0.35 m over a terrain plane at z = 0, 1–5 m from each door,
   face-on, from both sides and from above, noon and reversed sun, every
   tier (Review status).
 
@@ -730,10 +734,10 @@ buried. `LOD3`'s box-shaped lane has no such faces.
   no interior is modelled.
 - The kept closure faces are:
   - the floor caps under the shed, the lean-to and the tower. The
-    lean-to's runs straight along the wall line under the attendant door's
-    floor slab on `LOD0`–`LOD2`, so the only face at grade in that reveal
-    is the cap facing down under the slab, closed by it; the slab is
-    exterior surface and adds no face inside the shell;
+    lean-to's and the tower's run straight along the wall line under the
+    two doors' floor slabs on `LOD0`–`LOD2`, so the only face at grade in
+    either reveal is the cap facing down under the slab, closed by it; the
+    slabs are exterior surface and add no face inside the shell;
   - the downpipes' shoe mouths.
 - The walls' lids, the lean-to slab's buried end, the shaft's lid inside
   the head house, the gallery's start inside it, the struts', ventilators'
@@ -771,10 +775,8 @@ buried. `LOD3`'s box-shaped lane has no such faces.
 - **Painted detail:** the frame's columns, the ring beam and lintels, the
   impact wall, purlins and rafters, sheet ribs, the bond, the snow guard,
   the dark coal runs on the gallery and the lane's traffic paint.
-- **Floors:** only the attendant door's reveal has one, a flat concrete
-  slab with no mat, drain or threshold strip (Construction). The elevator's
-  service door's 0.20 m reveal stands on the consumer's ground on
-  `LOD0`–`LOD2`, as before.
+- **Floors:** both doors' reveals have one, a flat concrete slab with no
+  mat, drain or threshold strip (Construction).
 - **Ground:** the asset has no ground. The coal spilt round the grate and
   at the walls' feet is carried by the floor slab, the lane's walls and the
   walls' plinths.
@@ -789,7 +791,7 @@ One 1024² trim-sheet atlas, rasterised by `scripts/atlas.py` at `atlas.SS`
 | 0–422 | BRICK (x 0–944), column strip (x 952, 0.40 m) and the portal legs' strip `PIER` (x 984, 0.40 m) | U along the wall, V = height 0–6.5625 m, 64 px/m: plinth to 0.625, the catalog bond (`scripts/brickwork.py`), band 6.016–6.5625; `PIER` adds the traffic bands to 2.0 m |
 | 428–547 | `ROOF` (x 4–471), with `GAL_SIDE` (x 480–844, 364 × 106, 30 px/m along it), `GAL_END` (x 852, 83 × 90, 32 px/m) and the hatch (x 943) beside it | ROOF: U = x from the west rake's edge, V up the slope from the eave's edge, both 32 px/m (119 rows over 3.71 m); ridge cap at the main slope's top |
 | 555–575 | EAVE, full width | the fascia (0.25 m) with the gutter, U = x at 64 px/m |
-| 580–1018 | unique | lane side walls (448 × 246, with the jambs' bands, the stop mark, the tipping height and the entry signal), ceiling (448 × 90) and floor with the grate, its border and the stop line (448 × 178) at 32 px/m; the gallery's roof `GAL_ROOF` (419 × 83, 32 px/m); the head house's cladding `CLAD` (224 × 127, 32 px/m); the windows, door and louvre at 64 px/m; `LOD3`'s two windows with their reveals' occlusion (`REGION3`, 32 px/m); flat patches; the attendant door's floor slab (64 × 14.08 at x 850, y 950) at 64 px/m |
+| 580–1018 | unique | lane side walls (448 × 246, with the jambs' bands, the stop mark, the tipping height and the entry signal), ceiling (448 × 90) and floor with the grate, its border and the stop line (448 × 178) at 32 px/m; the gallery's roof `GAL_ROOF` (419 × 83, 32 px/m); the head house's cladding `CLAD` (224 × 127, 32 px/m); the windows, door and louvre at 64 px/m; `LOD3`'s two windows with their reveals' occlusion (`REGION3`, 32 px/m); flat patches; the doors' shared floor slab (64 × 14.08 at x 850, y 950) at 64 px/m |
 
 **Deviations from 64 px/m**, each isotropic but `GAL_SIDE`:
 
@@ -907,7 +909,7 @@ lies:
   steel and the collar (the `strut` patch);
 - **the lane's traffic paint and signal:** 0.12–0.18, more at the foot;
 - **the roof:** light, 0.05–0.13;
-- **the attendant door's floor slab:** 0.35 plus 0.15 in blotches, over
+- **the doors' floor slab:** 0.35 plus 0.15 in blotches, over
   `door_floor.weather()`'s trodden-in dirt, so it reads with the coal-dark
   plinth and the door's foot beside it (the same film as the plant's coal
   silo's door slab).
@@ -923,7 +925,7 @@ Measured albedo, sRGB band means:
 | Column strip 2–5 m | 119 | 119 | 119 |
 | Portal legs' yellow, 1–2 m | 168/141/74 | 168/141/74 | 168/141/74 |
 
-The attendant door's floor slab measures ~89/87/83 in every variant,
+The doors' floor slab measures ~89/87/83 in every variant,
 lighter than the plinth beside it (49), as a trodden threshold.
 
 The clean upper wall is within 3 sRGB levels of the plant hall's
@@ -934,10 +936,10 @@ variants alike, `red_brick` figures): side walls ~45 at mid-length; floor
 gallery's sides ~119. The plant reads as working, not abandoned: the dust darkens and
 mattes, with no rust streaks, peeling or growth.
 
-### The entrance floor slab
+### The doors' floor slab
 
 Painted by `scripts/door_floor.py` (`paint()`, `grain()`, `weather()`), as
-the catalog's other entrance slabs are: float-finished cast concrete,
+the catalog's other door slabs are: float-finished cast concrete,
 `ID_DOOR_FLOOR` (the lane's own `ID_FLOOR` keeps its pores and dust), sRGB
 **(132, 130, 124)** in every variant, roughness **0.88**, nonmetallic;
 the coal over it raises the roughness and darkens it as on the plinth.
@@ -947,7 +949,9 @@ noise at 5 % shade and 0.4 mm of height, and trodden-in dirt and the coal
 above lie over it. The region is 64 × 14.08 px at (850, 950), in the free
 block under the louvre: U across the opening's 1.0 m from its left side, V
 the nosing's 0.02 m (1.28 px) and then the top from the wall plane to the
-door. It bleeds 2 px into its gutter.
+door. It bleeds 2 px into its gutter. The attendant's door and the
+elevator's share it (`FLOORS["door"]`): the same 1.0 m opening in the same
+0.20 m reveal; flooring the elevator's door changed no texel.
 
 Adding it changed only that free block (x 815–970, y 920–988: the region
 and the padding round it, which now carries the slab's edges instead of
@@ -1250,6 +1254,30 @@ Checked here, in Blender, after the revision:
   review predates the 2026-11-22 repack and was not re-run on it.
 - **Before/after:** the review set rendered from the copy taken before the
   revision and again after, compared with `scripts/review_compare.py`.
+- **The elevator door's floor slab** (Construction, Revision log), from a
+  snapshot in `review/review_2026_11_23/hiilenvastaanotto_brick_shed_pass2/
+  before_src/`:
+  - **Door views** (`.../hiilenvastaanotto_brick_shed_pass2/door_views.py`,
+    every tier, noon and reversed sun, over a green terrain plane at
+    z = 0): the elevator door from 4.6 m and 2.5 m face-on, from both
+    sides, 0.35 m up and from above, and the attendant's door from 4.9 m
+    and 0.35 m up. Before, grass filled the elevator door's reveal between
+    its brick cheeks on `LOD0`–`LOD2`; after, concrete fills it wall to
+    wall, mid-grey under its coal like the attendant's, its nosing a light
+    line on the wall plane with nothing past it, no dark seam or stretched
+    texels. The `LOD3` views and every view of the attendant's door are
+    unchanged (no pixel over 1/255).
+  - **`review_asset.py`** from both: the six orthographic views and every
+    tier front and oblique at 20, 35, 70 and 120 m under noon; at most 57
+    pixels change, by at most 5/255 (the back view, at the door).
+    `review_compare.py` sheets in `review/review_2026_11_23/
+    hiilenvastaanotto_brick_shed_pass2/compare/`.
+  - The sidecar's bounds, pivot, footprint, storeys, both doors and both
+    passages are unchanged; `LOD3` is byte-identical, and every PNG in
+    `export/` is byte-identical (the shared region was already painted).
+  - `scripts/validate_asset.py`: 0 FAIL; the one WARN is `source.dirty`.
+    Door floors on the slab for both doors on `LOD0`–`LOD2`, flat on
+    `LOD3`. Hidden surface 8/8/8/0, as before.
 - **The entrance floor slab** (Construction, Revision log), from a snapshot
   in `review/review_2026_11_23/hiilenvastaanotto_brick_shed/before/`:
   - **Door views** (`review/review_2026_11_23/hiilenvastaanotto_brick_shed/
@@ -1272,7 +1300,8 @@ Checked here, in Blender, after the revision:
     passages are unchanged; `LOD3` is byte-identical. Measured on the
     exported `LOD0`–`LOD2`, an upward face at 0.020 m under 9 of 9 sample
     points of the reveal, and at grade only the floor cap facing down
-    under it; the elevator's reveal has no face, as before.
+    under it; the elevator's reveal had no face at that pass (floored
+    since, above).
   - The texture change is confined to the slab's region and the unclaimed
     gutter round it (Texture set); the emission map is unchanged.
   - `scripts/validate_asset.py`: 0 FAIL; the one WARN is `source.dirty`,
@@ -1312,6 +1341,14 @@ with numpy, scipy and Pillow.
 
 ## Revision log
 
+- **2026-11-23 — elevator door floor slab.** The elevator's service door
+  had no upward face in its 0.20 m reveal either, so a consumer's terrain
+  showed inside. It now stands on the same concrete slab as the
+  attendant's door (`FLOORED`, `floor_for()`), on the same atlas region,
+  renamed `FLOORS["door"]` for both, on `LOD0`–`LOD2`. Tiers
+  1966/1726/1220/498 to 1970/1730/1226/498; bounds, pivot, footprint,
+  doors and both passages unchanged; every texture and `LOD3`
+  byte-identical.
 - **2026-11-23 — entrance floor slab.** The attendant's door had no upward
   face in its 0.20 m reveal, so a consumer's terrain showed inside. It now
   stands on a concrete slab 0.02 m over the ground, nosing on the wall

@@ -38,10 +38,9 @@ tall steel windows light the shed high on its front (-Y) wall.
 
 Behind it (+Y), the side that faces the hall's coal side: a brick lean-to
 with the attendant's room (a window onto the lane, its door in the lean-to's
-east end, whose reveal stands on a 0.02 m concrete floor slab,
-scripts/door_floor.py) and the drive room, and through it the elevator tower: a slim
+east end) and the drive room, and through it the elevator tower: a slim
 brick shaft 2.625 x 4.125 m with its stair's windows stacked up its east
-face, under a sheet-clad head house 4.0 x 4.8 x 4.2 m (floor 11.33 m) that
+face and its service door in its rear face, under a sheet-clad head house 4.0 x 4.8 x 4.2 m (floor 11.33 m) that
 oversails it on three sides, a loading hatch and a hoist beam with its
 trolley on its east face. From the head house's rear face the inclined
 conveyor gallery rises at 20 degrees away from the building, 12.0 m in plan
@@ -62,7 +61,9 @@ the gables' inner faces over them, with the void's UVs. Then the lean-to and
 shaft (one hand-built solid), the head house, the two roof slabs, the head
 house's slab, the gallery with its collar, its struts and roof vents, the
 trestle, the hoist beam and trolley, the tie beams and the downpipes are
-unioned in (asset_build.union).
+unioned in (asset_build.union). Both doors, the attendant's and the
+elevator's, stand in their reveals on 0.02 m concrete floor slabs
+(scripts/door_floor.py) on every tier that cuts them.
 """
 
 import functools
@@ -230,9 +231,9 @@ def opening_mode(level):
 
 
 def floor_for(wall, kind, level):
-    """The floor slab under *kind*'s reveal on *wall* at *level*, or None: an
-    entrance's, on every tier that cuts its recess (opening_mode()); a flush
-    door has no reveal to floor."""
+    """The floor slab under *kind*'s reveal on *wall* at *level*, or None: a
+    door's (FLOORED), on every tier that cuts its recess (opening_mode()); a
+    flush door has no reveal to floor."""
     floor = FLOORED.get(wall, {}).get(kind)
     if floor is None or opening_mode(level) != "cut":
         return None
@@ -243,13 +244,13 @@ def build_opening(B, fr, kind, rect, level, u_off, shift, floor=None):
     """One opening: brick reveals round it and the closing plane set back in
     it while it is cut, the same rectangle flat after. Returns its outline.
 
-    An entrance (*floor*, a door_floor.Floor) stands on a concrete slab: its
+    A door (*floor*, a door_floor.Floor) stands on a concrete slab: its
     nosing on the wall plane under the opening, its top 0.02 m over the
     ground and the reveal's foot, so the consumer's terrain cannot show
     inside. The recess starts on that top; the door's art keeps its place.
-    Any other door on the ground gets no cheek along its threshold: that
-    strip would lie on the floor cap; left out, the rim detours round the
-    recess."""
+    An opening on the ground without one would get no cheek along its
+    threshold: that strip would lie on the floor cap; left out, the rim
+    detours round the recess."""
     s0, s1, z0, z1 = rect
     poly = [(s0, z0), (s1, z0), (s1, z1), (s0, z1)]
     closing = uv_region(fr, kind, s0, z0, level)
@@ -582,10 +583,11 @@ ANNEX_WALLS = [
 ]
 
 
-# The entrances' floor slabs, by wall and kind (facade_atlas.FLOORS): the
-# attendant's door. The elevator's service door keeps its reveal on the
-# ground with no floor.
-FLOORED = {"a_east": {"door": L.FLOORS["attendant"]}}
+# The doors' floor slabs, by wall and kind (facade_atlas.FLOORS): the
+# attendant's door in the lean-to's east end and the elevator's service door
+# in the shaft's rear face, the same opening in the same reveal on one region.
+FLOORED = {"a_east": {"door": L.FLOORS["door"]},
+           "t_rear": {"door": L.FLOORS["door"]}}
 
 
 def annex_body(level):
@@ -1469,7 +1471,7 @@ def check_layout():
     # the void and the floor slab, the window recesses inside the walls
     if L.REVEAL["win"] > L.WALL_T - 0.15 or LANE_WIN_DEPTH > L.WALL_T - 0.15:
         bad.append("a recess comes within 0.15 m of the lane or the wall's face")
-    # every entrance's reveal on its floor slab (scripts/door_floor.py): the
+    # every door's reveal on its floor slab (scripts/door_floor.py): the
     # slab's region the opening's width and the reveal's depth, under a door
     # at grade
     for spec in walls:

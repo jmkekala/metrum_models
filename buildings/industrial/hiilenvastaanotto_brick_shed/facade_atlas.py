@@ -33,8 +33,8 @@ A trim sheet. Rows from the bottom:
                              tipping grate (32 px/m), the gallery's roof sheet
                              (GAL_ROOF, 32 px/m), the head house's cladding
                              (CLAD, 32 px/m), the windows, the doors, the
-                             louvre, flat patches, the attendant door's
-                             floor slab; the lane's traffic paint (jamb
+                             louvre, flat patches, the doors' floor slab;
+                             the lane's traffic paint (jamb
                              bands, stop mark, tipping height, the entry
                              signal) is painted into its own regions
 
@@ -387,18 +387,19 @@ PATCH_NAMES = ("blank", "soffit", "sill", "conc", "barge", "lintel", "beam",
                "felt", "coping", "slab_under", "reveal", "hh_soffit", "gal_under",
                "strut", "clad_rev", "hoist")
 PATCHES = {n: (642.0 + 20.0 * i, 1002.0, 16.0, 16.0) for i, n in enumerate(PATCH_NAMES)}
-# The concrete floor slab in the attendant door's reveal (scripts/door_floor.py),
+# The concrete floor slab in a door's reveal (scripts/door_floor.py),
 # unfolded at 64 px/m in the free block under the louvre: U across the
 # opening, V up the nosing and back to the door. 1.0 x 0.22 m, 64 x 14.08 px.
-# The elevator's service door has none.
-FLOORS = {"attendant": DF.Floor(850.0, 950.0, OPENINGS["door"][0], REVEAL["door"])}
+# One region for both doors, the attendant's and the elevator's: the same
+# opening (OPENINGS["door"]) in the same 0.20 m reveal.
+FLOORS = {"door": DF.Floor(850.0, 950.0, OPENINGS["door"][0], REVEAL["door"])}
 
 # ----------------------------------------------------------- material ids
 (ID_BLANK, ID_PLINTH, ID_BRICK, ID_BRICK2, ID_MORTAR, ID_CONC, ID_FRAME,
  ID_GLASS, ID_ROOF, ID_FLASH, ID_DOOR, ID_GUTTER, ID_HANDLE, ID_DARK,
  ID_SOFFIT, ID_SEAL, ID_STEEL, ID_COAL, ID_FLOOR, ID_SHEET, ID_FELT,
  ID_CLAD, ID_HAZ_Y, ID_HAZ_K, ID_LENS_R, ID_LENS_G) = range(26)
-ID_DOOR_FLOOR = 26      # the cast concrete floor slab in the attendant door's reveal
+ID_DOOR_FLOOR = 26      # the cast concrete floor slab in the doors' reveals
 HAZ = (ID_HAZ_Y, ID_HAZ_K)       # the lane's painted markings
 
 # (roughness, metallic). Painted steel stays mostly dielectric; the gutter,
@@ -1474,8 +1475,8 @@ def weather(c):
                     ("hh_soffit", 0.30), ("clad_rev", 0.25)):
         px, py, pw, ph = PATCHES[name]
         w.coal(px - 2, px + pw + 2, py - 2, py + ph + 2, k)
-    # the attendant door's floor slab: trodden-in dirt, and the coal the
-    # door's foot carries, as the plinth beside it
+    # the doors' floor slab: trodden-in dirt, and the coal the doors' feet
+    # carry, as the plinth beside them
     for f in FLOORS.values():
         DF.weather(w, f, ID_DOOR_FLOOR, bleed=PAD)
         x, y, rw, rh = f.rect
