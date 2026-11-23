@@ -33,8 +33,9 @@ A trim sheet. Rows from the bottom:
                              tipping grate (32 px/m), the gallery's roof sheet
                              (GAL_ROOF, 32 px/m), the head house's cladding
                              (CLAD, 32 px/m), the windows, the doors, the
-                             louvre, flat patches; the lane's traffic paint
-                             (jamb bands, stop mark, tipping height, the entry
+                             louvre, flat patches, the attendant door's
+                             floor slab; the lane's traffic paint (jamb
+                             bands, stop mark, tipping height, the entry
                              signal) is painted into its own regions
 
 Every wall above the band's top (6.5625 m) samples the brick rows again,
@@ -56,6 +57,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "scripts"))
 import atlas  # noqa: E402
 import brickwork  # noqa: E402
+import door_floor as DF  # noqa: E402
 import glazing  # noqa: E402
 import weathering  # noqa: E402
 
@@ -385,12 +387,18 @@ PATCH_NAMES = ("blank", "soffit", "sill", "conc", "barge", "lintel", "beam",
                "felt", "coping", "slab_under", "reveal", "hh_soffit", "gal_under",
                "strut", "clad_rev", "hoist")
 PATCHES = {n: (642.0 + 20.0 * i, 1002.0, 16.0, 16.0) for i, n in enumerate(PATCH_NAMES)}
+# The concrete floor slab in the attendant door's reveal (scripts/door_floor.py),
+# unfolded at 64 px/m in the free block under the louvre: U across the
+# opening, V up the nosing and back to the door. 1.0 x 0.22 m, 64 x 14.08 px.
+# The elevator's service door has none.
+FLOORS = {"attendant": DF.Floor(850.0, 950.0, OPENINGS["door"][0], REVEAL["door"])}
 
 # ----------------------------------------------------------- material ids
 (ID_BLANK, ID_PLINTH, ID_BRICK, ID_BRICK2, ID_MORTAR, ID_CONC, ID_FRAME,
  ID_GLASS, ID_ROOF, ID_FLASH, ID_DOOR, ID_GUTTER, ID_HANDLE, ID_DARK,
  ID_SOFFIT, ID_SEAL, ID_STEEL, ID_COAL, ID_FLOOR, ID_SHEET, ID_FELT,
  ID_CLAD, ID_HAZ_Y, ID_HAZ_K, ID_LENS_R, ID_LENS_G) = range(26)
+ID_DOOR_FLOOR = 26      # the cast concrete floor slab in the attendant door's reveal
 HAZ = (ID_HAZ_Y, ID_HAZ_K)       # the lane's painted markings
 
 # (roughness, metallic). Painted steel stays mostly dielectric; the gutter,
@@ -405,7 +413,7 @@ SURFACE = {
     ID_COAL: (0.92, 0.0), ID_FLOOR: (0.88, 0.0), ID_SHEET: (0.58, 0.25),
     ID_FELT: (0.90, 0.0), ID_CLAD: (0.56, 0.10),
     ID_HAZ_Y: (0.62, 0.0), ID_HAZ_K: (0.60, 0.0),
-    ID_LENS_R: (0.18, 0.0), ID_LENS_G: (0.18, 0.0),
+    ID_LENS_R: (0.18, 0.0), ID_LENS_G: (0.18, 0.0), ID_DOOR_FLOOR: DF.SURFACE,
 }
 
 # ---------------------------------------------------------------- palettes
@@ -449,6 +457,7 @@ FIXED = {
     # lenses, dark red over dark green (not emissive)
     ID_HAZ_Y: (190, 156, 52), ID_HAZ_K: (38, 38, 36),
     ID_LENS_R: (92, 30, 26), ID_LENS_G: (30, 70, 50),
+    ID_DOOR_FLOOR: DF.COLOUR,
 }
 
 # A stray pixel in a tiling band repeats under every surface sampling it. The
@@ -1178,6 +1187,7 @@ def check_regions():
                   "lane_floor": LANE_FLOOR, "clad": CLAD, "gal_side": GAL_SIDE,
                   "gal_end": GAL_END, "gal_roof": GAL_ROOF, "roof": ROOF,
                   "win3": REGION3["win"], "win_s3": REGION3["win_s"]})
+    rects.update({"floor_" + k: f.rect for k, f in FLOORS.items()})
     problems = atlas.region_problems(rects, ATLAS, bands_top=BRICK_H + PAD)
     for name, (x, y, w, h) in rects.items():
         # each region lies wholly beside the roof or wholly over the eave band
@@ -1464,6 +1474,13 @@ def weather(c):
                     ("hh_soffit", 0.30), ("clad_rev", 0.25)):
         px, py, pw, ph = PATCHES[name]
         w.coal(px - 2, px + pw + 2, py - 2, py + ph + 2, k)
+    # the attendant door's floor slab: trodden-in dirt, and the coal the
+    # door's foot carries, as the plinth beside it
+    for f in FLOORS.values():
+        DF.weather(w, f, ID_DOOR_FLOOR, bleed=PAD)
+        x, y, rw, rh = f.rect
+        w.coal(x - PAD, x + rw + PAD, y - PAD, y + rh + PAD,
+               lambda Y, X, nz: 0.35 + 0.15 * nz("blotch"), (ID_DOOR_FLOOR,))
     return w
 
 
@@ -1496,6 +1513,8 @@ def paint(ss=atlas.SS):
     paint_gal_side(c)
     paint_gal_end(c)
     paint_patches(c)
+    for f in FLOORS.values():
+        DF.paint(c, f, ID_DOOR_FLOOR, bleed=PAD)
 
     wear = 0.025 * atlas.noise(c, 3, 40.0) + 0.015 * atlas.noise(c, 4, 8.0)
     c.shade *= 1.0 + wear
@@ -1509,6 +1528,7 @@ def paint(ss=atlas.SS):
     pores = atlas.noise(c, 9, 0.8)
     c.shade[mineral] *= 1.0 + 0.03 * pores[mineral]
     c.height[mineral] += 0.0006 * pores[mineral]
+    DF.grain(c, ID_DOOR_FLOOR, pores)
     weather(c)
     c.pad()
     return c

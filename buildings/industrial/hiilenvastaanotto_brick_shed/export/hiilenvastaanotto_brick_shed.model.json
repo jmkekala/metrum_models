@@ -3,7 +3,7 @@
   "version": 1,
   "name": "hiilenvastaanotto_brick_shed",
   "path": "buildings/industrial/hiilenvastaanotto_brick_shed",
-  "source": {"commit": "d0250cbf516a51fc19bb5110709d7eb7797a691a", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "eb64bc6aeac1487aafcf92047e0302584855a065", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-7.3, 0.0, -11.4], "max": [7.3, 18.8176, 11.4]},
   "footprint": [
@@ -33,22 +33,22 @@
     {"id": "under_gallery", "position": [-7.3, 0.0, -4.4], "forward": [1.0, 0.0, 0.0], "width_m": 10.0, "length_m": 14.6, "clear_height_m": 8.683, "through": true}
   ],
   "lods": [
-    {"file": "hiilenvastaanotto_brick_shed_lod0.glb", "triangles": 1960, "sha256": "b802d2b05744a857b336f3e4624a087172fce474796879df8a2fd816eaec6b51"},
-    {"file": "hiilenvastaanotto_brick_shed_lod1.glb", "triangles": 1720, "sha256": "287c2e7d11d62c96487314a653eaebe5059911cc1570792533d6f0619324b1fd"},
-    {"file": "hiilenvastaanotto_brick_shed_lod2.glb", "triangles": 1222, "sha256": "383e6739e555190ebbaf3df3f4c5e9b17e5771a42f1992a6ff0f4827f6e5f312"},
+    {"file": "hiilenvastaanotto_brick_shed_lod0.glb", "triangles": 1966, "sha256": "b26f04d8b609910b4ba2a630ed4c05d323683c8211022063ac27d68fb598d9d6"},
+    {"file": "hiilenvastaanotto_brick_shed_lod1.glb", "triangles": 1726, "sha256": "25f93a574531f3f0632a614fca78b8de9af54cce515fbd3775d2ab224d71b7b1"},
+    {"file": "hiilenvastaanotto_brick_shed_lod2.glb", "triangles": 1220, "sha256": "dd3db631d40f8dc2ef40cb28fd27276e1843385651476233158114a1b484eba6"},
     {"file": "hiilenvastaanotto_brick_shed_lod3.glb", "triangles": 498, "sha256": "9eb1d2d95b317dc3b909cdf7ab4db7004ca825efae3e196a27683a5095f10eb2"}
   ],
   "textures": {
-    "orm": {"file": "hiilenvastaanotto_brick_shed_orm.png", "sha256": "8ef88e109c1b42ef04f07904db4b6e70c3f9fddc9ab52f6aa17ad96188a80b57"},
-    "normal": {"file": "hiilenvastaanotto_brick_shed_normal.png", "sha256": "81e6c6e766e2b8751a25f262f70259185100bbbd31f52c728174aa5ea52082ea"},
+    "orm": {"file": "hiilenvastaanotto_brick_shed_orm.png", "sha256": "dad9458ded913418666d0593be168b07e0e3a0004efc06a2ac4887f0ffdb8bbb"},
+    "normal": {"file": "hiilenvastaanotto_brick_shed_normal.png", "sha256": "f463551ce017c3b27497f587db850ff6f52ddf0084860c31a885cf47d2cd3867"},
     "emission": {"file": "hiilenvastaanotto_brick_shed_emission.png", "sha256": "0aa2f6b9cc57db94f664c38dabeeb9d1a2cced3aa781cda1893bfeea8150839f"}
   },
   "variants": [
-    {"id": "red_brick", "albedo": "hiilenvastaanotto_brick_shed_albedo_red_brick.png", "sha256": "2d4959b3e42a64003e35dbf03e490e3a3192a3de49f4b499533fae6319fe6e0e"},
-    {"id": "yellow_brick", "albedo": "hiilenvastaanotto_brick_shed_albedo_yellow_brick.png", "sha256": "b10a885d0f16783d717a4034c1b7188f1071ea5106d92b2db33c3308710783b6"},
-    {"id": "brown_brick", "albedo": "hiilenvastaanotto_brick_shed_albedo_brown_brick.png", "sha256": "e9d3be2b772c74fd7e2f48304498a3c2f593717f18f91a693d923f8409c8e99e"}
+    {"id": "red_brick", "albedo": "hiilenvastaanotto_brick_shed_albedo_red_brick.png", "sha256": "2016c5a060da28ff4dba827b957d2009fae9c1339b803675ba994eb54bea1945"},
+    {"id": "yellow_brick", "albedo": "hiilenvastaanotto_brick_shed_albedo_yellow_brick.png", "sha256": "ff2ba4a6654990ce011ea8b10aa2c979473d44016da96d1597c2badf3bb1aa43"},
+    {"id": "brown_brick", "albedo": "hiilenvastaanotto_brick_shed_albedo_brown_brick.png", "sha256": "db9beb2705d074c4ce0bf2e9ee72f038427ff03b0821e4ff911b8b59e81f1b61"}
   ],
   "default_variant": "red_brick",
-  "preview": {"file": "../preview.png", "sha256": "6c6ec84999b5c21907918a23d5b35a07d0daf117ebb94a84fa8ff4ba8a0e9a23"},
+  "preview": {"file": "../preview.png", "sha256": "483cff946f6081cd223723c25746a4cc7c78a34400316e3449ec731a35e605fb"},
   "hero": false
 }

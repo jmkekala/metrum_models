@@ -38,7 +38,8 @@ tall steel windows light the shed high on its front (-Y) wall.
 
 Behind it (+Y), the side that faces the hall's coal side: a brick lean-to
 with the attendant's room (a window onto the lane, its door in the lean-to's
-east end) and the drive room, and through it the elevator tower: a slim
+east end, whose reveal stands on a 0.02 m concrete floor slab,
+scripts/door_floor.py) and the drive room, and through it the elevator tower: a slim
 brick shaft 2.625 x 4.125 m with its stair's windows stacked up its east
 face, under a sheet-clad head house 4.0 x 4.8 x 4.2 m (floor 11.33 m) that
 oversails it on three sides, a loading hatch and a hoist beam with its
@@ -85,6 +86,7 @@ importlib.reload(L)       # an interactive session must not keep a stale layout
 ASSET = L.ASSET
 sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "scripts"))
 import asset_build  # noqa: E402
+import door_floor as DF  # noqa: E402
 import downpipes as DP  # noqa: E402
 import model_facts  # noqa: E402
 import shell_build as SB  # noqa: E402
@@ -227,11 +229,27 @@ def opening_mode(level):
     return "cut" if level < 3 else "flush"
 
 
-def build_opening(B, fr, kind, rect, level, u_off, shift):
+def floor_for(wall, kind, level):
+    """The floor slab under *kind*'s reveal on *wall* at *level*, or None: an
+    entrance's, on every tier that cuts its recess (opening_mode()); a flush
+    door has no reveal to floor."""
+    floor = FLOORED.get(wall, {}).get(kind)
+    if floor is None or opening_mode(level) != "cut":
+        return None
+    return floor
+
+
+def build_opening(B, fr, kind, rect, level, u_off, shift, floor=None):
     """One opening: brick reveals round it and the closing plane set back in
     it while it is cut, the same rectangle flat after. Returns its outline.
-    A door on the ground gets no cheek along its threshold: that strip would
-    lie on the floor cap; left out, the rim detours round the recess."""
+
+    An entrance (*floor*, a door_floor.Floor) stands on a concrete slab: its
+    nosing on the wall plane under the opening, its top 0.02 m over the
+    ground and the reveal's foot, so the consumer's terrain cannot show
+    inside. The recess starts on that top; the door's art keeps its place.
+    Any other door on the ground gets no cheek along its threshold: that
+    strip would lie on the floor cap; left out, the rim detours round the
+    recess."""
     s0, s1, z0, z1 = rect
     poly = [(s0, z0), (s1, z0), (s1, z1), (s0, z1)]
     closing = uv_region(fr, kind, s0, z0, level)
@@ -239,19 +257,18 @@ def build_opening(B, fr, kind, rect, level, u_off, shift):
         B.face([fr.P(s, z) for s, z in poly], closing)
         return poly
     depth = L.REVEAL[kind]
+    cheeks = []
     for k, edge in enumerate(zip(poly, poly[1:] + poly[:1])):
-        (a0, b0), (a1, b1) = edge
-        if k == 0 and z0 < EPS:
-            continue
         if k == 0:
             fn = uv_patch("sill")
         elif k == 2 and abs(z1 - L.Z_BAND0) < EPS:
             fn = uv_patch("conc")
         else:
             fn = uv_reveal(fr, edge, u_off, shift)
-        B.face([fr.P(a0, b0), fr.P(a1, b1), fr.P(a1, b1, -depth),
-                fr.P(a0, b0, -depth)], fn)
-    B.face([fr.P(s, z, -depth) for s, z in poly], closing)
+        cheeks.append(fn)
+    if floor is not None:
+        return DF.recess(B, fr, rect, 0.0, -depth, closing, cheeks, floor)
+    SB.recess(B, fr, poly, 0.0, -depth, closing, cheeks, skip_z=0.0)
     return poly
 
 
@@ -272,9 +289,15 @@ def build_wall(B, spec, level):
     (shifted above the splits)."""
     fr = Frame(spec["p0"], spec["p1"])
     items = [(k, item_rect(fr, k, c, z)) for k, c, z in spec["items"]]
-    notches = sorted((r[0], r[1], r[3]) for k, r in items if r[2] < EPS)
+    floors = [floor_for(spec["name"], k, level) if r[2] < EPS else None
+              for k, r in items]
+    notches = sorted((r[0], r[1], r[3], f is not None)
+                     for (k, r), f in zip(items, floors) if r[2] < EPS)
     foot = [(spec["s_lo"], 0.0)]
-    for a, b, top in notches:
+    for a, b, top, floored in notches:
+        if floored:                 # the slab's nosing corners (door_floor.notch())
+            foot += DF.notch((a, b, 0.0, top))
+            continue
         foot += [(a, 0.0), (a, top), (b, top), (b, 0.0)]
     foot.append((spec["s_hi"], 0.0))
     outline = _dedupe(foot + spec["top"])
@@ -307,7 +330,8 @@ def build_wall(B, spec, level):
                     continue
                 if min(xs_) - EPS <= r[0] and r[1] <= max(xs_) + EPS and \
                         min(zs_) - EPS <= r[2] and r[3] <= max(zs_) + EPS:
-                    poly = build_opening(B, fr, kind, r, level, spec["u_off"], shift)
+                    poly = build_opening(B, fr, kind, r, level, spec["u_off"], shift,
+                                         floors[i])
                     placed.add(i)
                     if r[2] > EPS:
                         holes.append(poly)
@@ -556,6 +580,12 @@ ANNEX_WALLS = [
     dict(name="a_west", p0=(AX0, AY1), p1=(AX0, AY0), s_lo=0.0, s_hi=AY1 - AY0,
          top=[(AY1 - AY0, AT0), (0.0, AT1)], items=[], u_off=5.625),
 ]
+
+
+# The entrances' floor slabs, by wall and kind (facade_atlas.FLOORS): the
+# attendant's door. The elevator's service door keeps its reveal on the
+# ground with no floor.
+FLOORED = {"a_east": {"door": L.FLOORS["attendant"]}}
 
 
 def annex_body(level):
@@ -1439,6 +1469,15 @@ def check_layout():
     # the void and the floor slab, the window recesses inside the walls
     if L.REVEAL["win"] > L.WALL_T - 0.15 or LANE_WIN_DEPTH > L.WALL_T - 0.15:
         bad.append("a recess comes within 0.15 m of the lane or the wall's face")
+    # every entrance's reveal on its floor slab (scripts/door_floor.py): the
+    # slab's region the opening's width and the reveal's depth, under a door
+    # at grade
+    for spec in walls:
+        fr = Frame(spec["p0"], spec["p1"])
+        for kind, floor in FLOORED.get(spec["name"], {}).items():
+            (c, z), = [(c, z) for k, c, z in spec["items"] if k == kind]
+            bad += DF.problems(floor, "the %s wall's %s" % (spec["name"], kind),
+                               item_rect(fr, kind, c, z), L.REVEAL[kind])
     # downpipes: clear of corners and openings
     for p, w in zip(DOWNPIPES, PIPE_WALLS):
         spec = next(s for s in walls if s["name"] == w)
