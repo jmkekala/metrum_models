@@ -17,7 +17,8 @@ The brick and the render bands each start at the ground and carry the concrete
 plinth in their own bottom 24 rows, so a wall is two courses of region rather
 than three and no opening has to straddle a band edge. Everything singular --
 the entrance and its lobby's concrete floor slab, the sign, the goods door,
-the roof deck, the plant -- gets a region of its own above them. Bands are separated by four
+the roof deck, the plant, the back doors' floor slabs -- gets a region of its
+own above them. Bands are separated by four
 rows of padding, and atlas.pad() fills every sample no region claims from the
 nearest region's own edge, so base-level and mip sampling stays on the right
 artwork.
@@ -49,6 +50,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "scripts"))
 import atlas  # noqa: E402
 import brickwork  # noqa: E402
+import door_floor as DF  # noqa: E402
 import glazing  # noqa: E402
 import lettering  # noqa: E402
 import weathering  # noqa: E402
@@ -143,6 +145,21 @@ LOBBY_FLOOR = (568, 948, DOOR_UNIT_W * PPM, (LOBBY_FLOOR_T + DOOR_DEPTH) * PPM)
 ITEM_REGION = {"staff_window": STAFF_WINDOW, "service_door": SERVICE_DOOR,
                "goods_door": GOODS_DOOR}
 
+# The back-of-house doors' floor slabs (scripts/door_floor.py), one region a
+# door kind, unfolded at 64 px/m in the free rows under the entrance unit: U
+# across the casing's width from its left side, V up the 0.02 m nosing and
+# back across the reveal to the leaf. LOD1 recesses the casing rectangle;
+# LOD0, inside its flush casing ring, samples the middle of the region. The
+# two service doors share theirs. The goods door is a van's, so its slab has
+# no trodden path down the middle. The entrance lobby keeps its own region
+# and paint (LOBBY_FLOOR, paint_lobby_floor()).
+DOOR_FLOORS = {
+    "goods_door": DF.Floor(8, 980, OPENINGS["goods_door"][0] + 2 * OPENINGS["goods_door"][2],
+                           REVEAL_DEPTH["goods_door"], tread=-1e3),
+    "service_door": DF.Floor(8, 1000, OPENINGS["service_door"][0]
+                             + 2 * OPENINGS["service_door"][2], REVEAL_DEPTH["service_door"]),
+}
+
 PATCH_NAMES = ("blank", "reveal_dark", "reveal_light", "cap", "parapet",
                "fascia", "column", "sign_edge", "deck_edge", "wall_top",
                "plinth_top")
@@ -167,6 +184,7 @@ ID_TRIM, ID_GLASS, ID_DOOR, ID_SIGN, ID_SIGN_M, ID_METAL, ID_STEEL = \
     6, 7, 8, 9, 10, 11, 12
 ID_FRAME = 13           # the shopfront's anodised aluminium, light not dark
 ID_FLOOR = 14           # the entrance lobby's cast concrete floor slab
+ID_DOOR_FLOOR = 15      # the back doors' slabs: door_floor's, with its relief
 
 # (roughness, metallic). Painted steel stays dielectric -- the paint is what
 # the light sees. The mullions are anodised aluminium and the roof plant is
@@ -177,7 +195,7 @@ SURFACE = {
     ID_TRIM: (0.36, 0.70), ID_GLASS: (glazing.ROUGHNESS, 0.0),
     ID_DOOR: (0.48, 0.0), ID_SIGN: (0.14, 0.0), ID_SIGN_M: (0.16, 0.0),
     ID_METAL: (0.46, 0.72), ID_STEEL: (0.44, 0.0),
-    ID_FRAME: (0.30, 0.75), ID_FLOOR: (0.88, 0.0),
+    ID_FRAME: (0.30, 0.75), ID_FLOOR: (0.88, 0.0), ID_DOOR_FLOOR: DF.SURFACE,
 }
 
 # ---------------------------------------------------------------- palettes
@@ -205,7 +223,7 @@ FIXED = {
     ID_SIGN: (206, 212, 218), ID_SIGN_M: (22, 56, 118),
     ID_METAL: (146, 150, 152), ID_STEEL: (92, 94, 96),
     ID_BLANK: (52, 52, 52), ID_FRAME: (148, 150, 152),
-    ID_FLOOR: (132, 130, 124),
+    ID_FLOOR: (132, 130, 124), ID_DOOR_FLOOR: DF.COLOUR,
 }
 
 # A stray pixel in a tiling band is not a local blemish: every surface that
@@ -657,6 +675,7 @@ def check_regions():
              "service_door": SERVICE_DOOR, "staff_window": STAFF_WINDOW,
              "ahu_side": AHU_SIDE, "ahu_top": AHU_TOP, "cowl": COWL,
              "pipe": PIPE, "lobby_floor": LOBBY_FLOOR}
+    rects.update({"floor_" + k: f.rect for k, f in DOOR_FLOORS.items()})
     rects.update(PATCHES)
     problems = atlas.region_problems(rects, ATLAS, bands_top=SOF_Y0 + SOF_H + PAD)
     if problems:
@@ -689,6 +708,8 @@ def weather(c):
     x, y, rw, rh = LOBBY_FLOOR
     w.add("D", x - PAD, x + rw + PAD, y - PAD, y + rh,
           lambda Y, X, nz: 0.08 + 0.10 * nz("blotch"), (ID_FLOOR,))
+    for f in DOOR_FLOORS.values():
+        DF.weather(w, f, ID_DOOR_FLOOR, bleed=PAD)
     # the staff window's sill and the runs below it; the doors' feet
     for kind in OPENINGS:
         x, y, rw, rh = ITEM_REGION[kind]
@@ -723,6 +744,8 @@ def paint(ss=atlas.SS):
     c.check_bands(BAND_IDS)
     paint_door_unit(c)
     paint_lobby_floor(c)
+    for f in DOOR_FLOORS.values():
+        DF.paint(c, f, ID_DOOR_FLOOR, bleed=PAD)
     paint_placard(c)
     for kind in OPENINGS:
         paint_item(c, kind)
@@ -753,6 +776,9 @@ def paint(ss=atlas.SS):
     # rows through the cavity filter.
     cast = c.mid == ID_FLOOR
     c.shade[cast] *= 1.0 + 0.05 * pores[cast]
+    # the back doors' slabs are door_floor's, pores in the height too: they
+    # stand well clear of their neighbours' edges
+    DF.grain(c, ID_DOOR_FLOOR, pores)
     weather(c)
     c.pad()
     return c

@@ -24,7 +24,9 @@ itself, and there is no separate canopy.
 The street elevation carries the whole public side of the shop. Its right-hand
 corner is cut off at 45 degrees and glazed, with a pair of sliding glass doors
 in the middle of the cut, set back into a lobby on a 0.02 m concrete floor
-slab, and a lit sign standing on the eave above them. At the
+slab, and a lit sign standing on the eave above them. The goods door and the
+two staff doors stand on slabs of their own in their reveals (scripts/
+door_floor.py). At the
 other end of the same wall the walls step back under the roof to make a covered
 loading bay deep enough to take all but the nose of a delivery van, with the
 goods door in its back wall and a column at the open corner.
@@ -68,6 +70,7 @@ ASSET = L.ASSET
 EXPORT_DIR = os.path.join(HERE, "export")
 sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "scripts"))
 import asset_build  # noqa: E402
+import door_floor as DF  # noqa: E402
 import model_facts  # noqa: E402
 import roof_safety as RS  # noqa: E402
 import shell_build as SB  # noqa: E402
@@ -217,6 +220,13 @@ def lobby_floor_top(spec, level):
     return 0.0
 
 
+def floored(kind, z, level):
+    """Whether the opening stands on a door_floor slab at *level*: a door on
+    the ground, on every tier that recesses it (ring or cut); a flush door has
+    no reveal to floor. The entrance lobby has its own (lobby_floor_top())."""
+    return kind.endswith("_door") and abs(z) < EPS and item_mode(level) != "flush"
+
+
 def plant_kept(level, kind):
     """Roof plant.
 
@@ -322,13 +332,11 @@ def uv_bay_ceiling(co):
 def recess(B, fr, rect, depth, fn, rev):
     """Push a rectangle *depth* back from the wall and close it.
 
-    A shallow opening that stands on the ground (a door's reveal) gets no
-    floor of its own: the strip it would lay at z = 0 is inside the building's
-    own footprint, so it would sit on top of the floor the wall ring is capped
-    with, and the two coplanar faces leave the export non-manifold at the
-    threshold. Left out, the rim simply detours round the recess and the floor
-    cap covers it. The entrance lobby is deep enough to see into and is
-    floored with a slab instead (build_glazing()).
+    Only openings off the ground come here with a foot face of their own: a
+    face at z = 0 would lie on the floor the wall ring is capped with and
+    leave the export non-manifold. The doors on the ground stand on
+    door_floor slabs instead (build_item(), floored()), the entrance lobby on
+    its own (build_glazing()); skip_z stays for safety.
     """
     SB.recess(B, fr, rect_poly(rect), 0.0, -depth, fn, rev,
               skip_z=None if rect[2] > EPS else rect[2])
@@ -339,24 +347,47 @@ def item_rects(kind, s, z):
 
 
 def build_item(B, fr, kind, s, z, level):
-    """Faces for one repeated opening; returns the hole it needs in its wall."""
+    """Faces for one repeated opening; returns the hole it needs in its wall.
+
+    A door on the ground stands on a concrete floor slab in its reveal
+    (scripts/door_floor.py, floored()): its nosing on the wall plane, its top
+    door_floor.T over the ground and the reveal's foot. LOD1's recess is the
+    casing's rectangle, and its notch in the wall (build_wall()) carries the
+    nosing's two top corners. LOD0's is the leaf's, inside the flush casing
+    ring: the ring's jambs carry those corners instead, and the slab samples
+    its kind's region from the casing's left side (u0), so both tiers share
+    the one region."""
     mode = item_mode(level)
     (ol, orr, ob, ot), (il, ir, ib, it) = item_rects(kind, s, z)
     fn = uv_item(fr, kind, ol, ob)
     depth = L.REVEAL_DEPTH[kind]
     rev = uv_patch("reveal_dark" if kind != "staff_window" else "reveal_light")
+    slab = floored(kind, z, level)
     o = [(ol, ob), (orr, ob), (orr, ot), (ol, ot)]
     if mode == "flush":
         B.face([fr.P(*p) for p in o], fn)
         return o
     if mode == "cut":
-        recess(B, fr, (ol, orr, ob, ot), depth, fn, rev)
+        if slab:
+            DF.recess(B, fr, (ol, orr, ob, ot), 0.0, -depth, fn, rev,
+                      L.DOOR_FLOORS[kind])
+        else:
+            recess(B, fr, (ol, orr, ob, ot), depth, fn, rev)
         return o
     i = [(il, ib), (ir, ib), (ir, it), (il, it)]
-    for k in range(4):
-        B.face([fr.P(*o[k]), fr.P(*o[(k + 1) % 4]),
-                fr.P(*i[(k + 1) % 4]), fr.P(*i[k])], fn)
-    recess(B, fr, (il, ir, ib, it), depth, fn, rev)
+    zf = ib + DF.T
+    for k in range(4):          # a door's bottom quad has no area and is skipped
+        ring = [o[k], o[(k + 1) % 4], i[(k + 1) % 4], i[k]]
+        if slab and k == 1:     # the jambs carry the nosing's top corners
+            ring.insert(3, (ir, zf))
+        elif slab and k == 3:
+            ring.insert(3, (il, zf))
+        B.face([fr.P(*p) for p in ring], fn)
+    if slab:
+        DF.recess(B, fr, (il, ir, ib, it), 0.0, -depth, fn, rev,
+                  L.DOOR_FLOORS[kind], u0=ol)
+    else:
+        recess(B, fr, (il, ir, ib, it), depth, fn, rev)
     if abs(ob - ib) < EPS:
         # A door has no bottom casing, so the threshold edge lies on the hole's
         # own bottom edge; the hole has to carry those two corners too.
@@ -543,6 +574,10 @@ def build_wall(B, fr, spec, level):
         features.append(dict(l=ol, r=orr, b=ob, t=ot,
                              build=lambda f=(kind, s, z): build_item(
                                  B, fr, f[0], f[1], f[2], level)))
+        if floored(kind, z, level) and item_mode(level) == "cut":
+            # the floor slab's nosing puts a corner on each side of the
+            # door's notch in the wall foot
+            features[-1]["notch"] = DF.notch((ol, orr, ob, ot))
     for s0, s1 in spec["glazing"]:
         f = dict(l=s0, r=s1, b=L.Z_SILL, t=L.Z_HEAD,
                  build=lambda a=s0, b=s1: build_glazing(B, fr, spec, a, b, level))
@@ -939,6 +974,19 @@ def check_layout():
     if abs(L.LOBBY_FLOOR[2] - L.DOOR_UNIT_W * PPM) > 1e-6 or \
             abs(L.LOBBY_FLOOR[3] - (L.LOBBY_FLOOR_T + L.DOOR_DEPTH) * PPM) > 1e-6:
         bad.append("the lobby floor's atlas region is not the slab's nosing and top")
+    # the back doors on their floor slabs (scripts/door_floor.py): each kind's
+    # region the casing's width and the reveal's depth, under a door at grade
+    # that every recessing tier floors
+    for spec in WALLS:
+        for k, s, z in spec["items"]:
+            if k in L.DOOR_FLOORS:
+                bad += DF.problems(L.DOOR_FLOORS[k], "%s's %s" % (spec["name"], k),
+                                   item_rects(k, s, z)[0], L.REVEAL_DEPTH[k])
+                bad += ["LOD%d leaves %s's %s unfloored" % (lv, spec["name"], k)
+                        for lv in LEVELS
+                        if item_mode(lv) != "flush" and not floored(k, z, lv)]
+            elif k.endswith("_door"):
+                bad.append("%s's %s has no floor slab region" % (spec["name"], k))
     if L.Z_EAVE_B >= L.Z_WALL:
         bad.append("the eave rises outward instead of falling; snow pushed off "
                    "the deck would have nowhere to go")

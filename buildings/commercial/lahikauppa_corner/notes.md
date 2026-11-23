@@ -268,13 +268,38 @@ slab, and are unchanged. `check_layout()` holds the slab's height to
 0.01–0.03 m, its atlas region to the slab's size, and the lobby to the tiers
 that cut the shopfront.
 
-A shallow opening that stands on the ground — the goods door (0.18 m) and
-the three staff and bay doors (0.12 m) — gets **no floor of its own**: these
-are plain door reveals. The strip it would lay at z = 0 is inside the
-building's own footprint and would sit on top of the floor the wall ring is
-capped with; the two coplanar faces left the export non-manifold at the
-threshold until `recess()` was given a `floor` flag. Left out, the rim simply
-detours round the recess and the floor cap covers it.
+The lobby's slab predates `scripts/door_floor.py` and keeps its own code,
+region and paint: it is in the consumer's game, and moving it to the helper
+would change its faces and texels.
+
+### The back doors' floor slabs
+
+The goods door's 0.18 m reveal and the two staff doors' 0.12 m reveals (the
+bay's side wall and the rear wall) stand on the ground too, and showed the
+consumer's terrain at the foot of each leaf. Each now stands on a concrete
+slab from `scripts/door_floor.py` (`floored()`, `build_item()`), on the tiers
+that recess the door, `LOD0` and `LOD1`:
+
+- top **0.02 m** over the ground, a **nosing on the wall plane** under the
+  opening, the slab back to the leaf; nothing projects past the wall, so the
+  bounds, pivot, footprint and each door's threshold are as they were;
+- `LOD1` recesses the **casing's rectangle**: the slab is the casing's width
+  (goods door 3.40 m, staff doors 1.30 m) by the reveal's depth, and the
+  wall's notch (`door_floor.notch()`) carries the nosing's two top corners;
+- `LOD0` keeps the casing as a flush ring and recesses the **leaf** (3.20 m,
+  1.10 m): the ring's jambs carry the nosing's corners, and the slab samples
+  the middle of the same region from the casing's left side (`u0`);
+- one atlas region a door kind, the two staff doors sharing theirs (Texture
+  set); the goods door's slab is a van's and has no trodden path down it.
+
+`LOD2` and `LOD3` paint the doors flat and are unchanged. `check_layout()`
+runs `door_floor.problems()` on each door, and fails a recessing tier that
+leaves one unfloored or a door kind without a region.
+
+The shopfront's glazing stands on the 0.375 m plinth, with a sill under it,
+and the staff windows are 1 m up: no other opening is set back at grade. The
+loading bay is open yard under the roof, outside the footprint, not a recess
+(Known simplifications).
 
 ### The wall ladder
 
@@ -317,8 +342,8 @@ Measured on the exported, triangulated GLBs by `scripts/validate_asset.py`:
 
 | Tier | Triangles | Ceiling | Status |
 | --- | --- | --- | --- |
-| `LOD0` | 1,080 | 12,000 | far under, explained |
-| `LOD1` | 840 | 4,000 | far under, explained |
+| `LOD0` | 1,092 | 12,000 | far under, explained |
+| `LOD1` | 868 | 4,000 | far under, explained |
 | `LOD2` | 502 | 1,500 | far under, explained |
 | `LOD3` | 434 | 500 | under |
 
@@ -337,7 +362,11 @@ door plane split at the sill line, and the wall's notched outline. The
 lobby's floor slab adds a net **4** at `LOD0` and `LOD1`: six of its own (the
 nosing and the top's two quads) and two in the chamfer wall for the nosing's
 corners on its notch, less four the ground cap saves now that its rim runs
-straight under the nosing instead of round the recess.
+straight under the nosing instead of round the recess. The three back doors'
+slabs add a net **12** at `LOD0` (each its nosing and top, and a corner on
+each of the casing ring's jambs, less what the ground cap saves) and **28** at
+`LOD1`, where the bay's two walls and the rear wall retriangulate round the
+notches' new corners and the ground cap with them.
 
 The low counts have one cause, and it is not
 under-modelling. The building is a box: one storey, one flat roof, four
@@ -417,6 +446,9 @@ new transition. Checked from a standing eye (1.7 m, 75°, 1280 x 720) over a
 terrain plane at z = 0, 5.7 m and 2.9 m from the entrance and obliquely, by
 noon and reversed sun, `LOD0` and `LOD1` alike (Review status).
 
+The back doors' slabs go with their reveals at the same switch, as flat:
+0.02 m seen edge-on, and the reveal itself already under a pixel there.
+
 Checked in both directions at each switch, and against `LOD0` directly at all
 three distances. Preserved at every tier: the overall silhouette, the level
 line of the eave, the loading bay recess, the chamfered corner, the sign, the
@@ -447,7 +479,8 @@ The lobby's floor slab is exterior surface: its top and nosing are seen from
 the pavement. Under it the wall ring's ground cap now runs straight along
 the chamfer's wall plane; the cap faces down, is the shell's closure on the
 ground and is kept, as on every tier. The slab adds no face inside the
-shell.
+shell. The back doors' slabs likewise: exterior tops and nosings, the cap's
+rim running straight under each nosing.
 
 The building's count was not always zero. The exact boolean had left one sliver of about a square
 millimetre at the top of the chamfer wall, where the eave's soffit crossed it at
@@ -474,13 +507,12 @@ edges**, all four tiers.
 - **The loading bay is open on two sides**, front and west, with a column at
   the free corner. That is the honest reading of an outer corner taken away
   from a building.
-- **Only the entrance lobby has a floor.** Its slab is a flat concrete bay
-  0.02 m over the ground: no mat well, drain or tactile strip, and no slab on
-  `LOD2`/`LOD3`, where the entrance is painted flat. The loading bay is open
-  yard under the roof, outside the footprint, and has no floor: the
-  consumer's ground runs through it. The goods door's 0.18 m reveal and the
-  staff and bay doors' 0.12 m reveals are plain door reveals and have none
-  either; a strip of ground that deep lies at each door's foot.
+- **The floor slabs are plain.** The lobby's and the three back doors' slabs
+  are flat concrete 0.02 m over the ground: no mat well, drain, tactile strip
+  or dock leveller, and none on `LOD2`/`LOD3`, where the doors are painted
+  flat. The loading bay is open yard under the roof, outside the footprint,
+  and has no floor: the consumer's ground runs through it up to the goods
+  door's slab.
 - **The eave over the entrance is sheeted, not glazed.** It was glazed at
   first, on the brief: the same slope and the same plane as the rest of the
   eave, reading as a clerestory over the lobby. Once the eave was turned over
@@ -554,7 +586,8 @@ stay welded to the wall.
 
 Everything singular gets a region of its own above the bands: the entrance,
 its lobby's floor slab, the sign panel, the goods door, the staff door, a staff window, the roof deck, the
-loading-bay ceiling, and four small plates for the roof plant.
+loading-bay ceiling, four small plates for the roof plant, and the back
+doors' two floor slabs.
 
 The **entrance region** is **205 x 208 px** at (4, 760), for the 3.203 m wide
 unit from the **ground to the shopfront head** (0–3.25 m) at 64 px/m: the
@@ -573,6 +606,16 @@ the doors. Cast concrete, sRGB (132, 130, 124), roughness 0.88, nonmetallic
 deepening toward the lobby's sides and the doors, a slightly paler tread down
 the middle where the leaves part. It took free space: every other region and
 band is byte-identical to the bake before it, in every map (below).
+The **back doors' floor regions** (`DOOR_FLOORS`, `scripts/door_floor.py`)
+are in the free rows under the entrance unit, at 64 px/m: the goods door's
+**217.6 x 12.8 px** at (8, 980), 3.40 m of casing width by the 0.02 m nosing
+and 0.18 m reveal, and the staff doors' shared **83.2 x 8.96 px** at (8, 1000),
+1.30 m by 0.02 + 0.12 m. Painted by `door_floor` (`ID_DOOR_FLOOR`): the same
+cast concrete colour and roughness as the lobby's, occlusion toward the jambs
+and the leaf, a paler tread down the staff doors' slab and none down the goods
+door's, pores in shade and 0.4 mm of height, trodden-in dirt. A separate id
+from the lobby's `ID_FLOOR`, so the lobby's texels, flat in height (Padding
+and filtering), stay as they were.
 `facade_atlas.py`'s `check_regions()` asserts that no two of
 them overlap, that none runs off the sheet, and that none collides with the
 bands; `check_bands()` asserts that no band contains an id it should not,
@@ -684,6 +727,13 @@ existing region's rectangle has a changed pixel, and the normal and emission
 maps are byte-identical (`texture_diff.py` in
 `review/recess_floor_2026_11_23/`, not committed).
 
+The back doors' floor regions stand 12 px under the entrance unit, clear of
+everything else, so their pores' relief reaches no other region through the
+cavity filter. As baked, every existing region's rectangle, the bands and the
+emission map are byte-identical to the bake before them; the albedos and ORM
+changed only in the two regions and the gutter round them (x 0–250 and the
+wrap at x 1021–1023, y 958–1023), the normal map only inside the two regions.
+
 The tiling bands are periodic in u, which is what a gutter cannot provide: the
 brick's perpend is wrapped back in at x = 0, the render's panel joints are at
 multiples of 256 px (4 m), the eave soffit's seams at multiples of 32 px
@@ -720,7 +770,8 @@ mipmaps, which this repository does not own.
   - the steel doors' frames and panel joints, and the roof plant's louvres, fan
     rings and pipe.
   The sign's printed face is flat; only its frame stands proud. The roof deck
-  (~10 px/m), the bay ceiling and the lobby's floor slab stay flat.
+  (~10 px/m), the bay ceiling and the lobby's floor slab stay flat; the back
+  doors' slabs carry `door_floor`'s 0.4 mm of pores.
   Glass stays flat. Regions painted coarser than 64 px/m (the goods door, the staff window,
   the plant) scale their relief by their px/m over 64.
 - **Albedo carries no directional light.** Highlights that faked a fixed sun
@@ -758,7 +809,8 @@ mipmaps, which this repository does not own.
   brick or render; the render under the deep eave stays dry and gathers a
   little dust instead; dust in the mortar and render joints, from the cavity.
 - **Elsewhere:** dirt on the shopfront's sill rail and on the entrance
-  threshold; trodden-in, blotchy dirt on the lobby's floor slab; the staff window's bottom rail with runs down the render below
+  threshold; trodden-in, blotchy dirt on the lobby's and the back doors'
+  floor slabs; the staff window's bottom rail with runs down the render below
   it; kicked-up dirt at the feet of the service and goods doors and grime at
   the service door's handle; dirt where the flat roof's membrane ponds; runs
   down the plant's casings.
@@ -923,7 +975,8 @@ Completed in this repository:
 
 - `scripts/validate_asset.py`: 0 FAIL, 1 WARN (the facts sidecar's
   `source.dirty`, which clears once the sidecar is rewritten from a committed
-  tree), 10 MANUAL.
+  tree), 11 MANUAL; `door floors` passes on every tier, the four doors on
+  their slabs on `LOD0`/`LOD1` and flat on `LOD2`/`LOD3`.
 - The entrance brought down to the ground, before against after with
   `scripts/review_compare.py`: `LOD0`/`LOD1` oblique, front and rear at 20 and
   40 m, `LOD2`/`LOD3` oblique and rear at 70 and 120 m, under noon and
@@ -1004,9 +1057,29 @@ Completed in this repository:
     sidecar's footprint, storeys and doors are unchanged (the sidecar
     differs in hashes, two triangle counts and `source`).
   - The texture bake against the previous one (Padding and filtering).
-  - The goods door's 0.18 m and the staff and bay doors' 0.12 m reveals,
-    and the open loading bay, were looked at in the same views and left
-    without floors (Known simplifications).
+  - The open loading bay was looked at in the same views and left without
+    a floor (Known simplifications).
+- The back doors' floor slabs (2026-11-23), before against after
+  (`review/review_2026_11_23/lahikauppa_corner_pass2/`, not committed):
+  - Standing-eye, low (0.35 m), looking-down and left/right oblique views of
+    the goods door and both staff doors over a terrain plane at z = 0 (75°,
+    960 x 540; `door_views.py`), every tier, by noon and reversed sun.
+    Before, the terrain ran to each leaf on `LOD0` and `LOD1`; after, a grey
+    concrete slab fills each reveal wall to wall, its nosing on the wall
+    plane, no seam at the jambs or the leaf and nothing past the wall: on
+    `LOD0` between the flush casing's legs, on `LOD1` across the casing's
+    recess. `LOD2`/`LOD3`, flat, are unchanged.
+  - `review_asset.py` six views and the tiers at 20, 35, 70 and 120 m front
+    and oblique by noon, compared with `review_compare.py`: the six views and
+    `LOD2`/`LOD3` identical, `LOD0`/`LOD1` differing by at most 0.01 (the
+    doors' feet).
+  - Triangles against the previous export: `LOD2`/`LOD3` byte-identical
+    files; on `LOD0`/`LOD1` changes only at the three doors, in the
+    downward ground cap and, on `LOD1`, in the retriangulated bay and rear
+    walls; the lobby's slab is unchanged. The sidecar's bounds, footprint,
+    storeys and doors are unchanged (it differs in hashes, two triangle
+    counts and `source`). The texture bake against the previous one
+    (Padding and filtering).
 
 Pending, and outside this repository:
 
@@ -1040,6 +1113,18 @@ Pending, and outside this repository:
   texture export.
 
 ## Revision log
+
+- **2026-11-23 — the back doors get floor slabs.** The goods door's 0.18 m
+  reveal and the two staff doors' 0.12 m reveals stood on the ground with no
+  upward face, so a consumer's terrain showed at each leaf's foot. On `LOD0`
+  and `LOD1` each now stands on a `scripts/door_floor.py` slab, top 0.02 m
+  over the ground, nosing on the wall plane: 3.40 / 1.30 m (the casing) on
+  `LOD1`, 3.20 / 1.10 m (the leaf, inside the flush ring) on `LOD0`, on two
+  new atlas regions, the staff doors sharing one (Construction, Texture set).
+  Triangles 1,080 / 840 / 502 / 434 → 1,092 / 868 / 502 / 434;
+  `LOD2`/`LOD3` byte-identical. Albedos, ORM and normal map rebaked, every
+  existing region byte-identical; emission byte-identical. The lobby's slab
+  is untouched. Bounds, pivot, footprint and doors unchanged.
 
 - **2026-11-23 — the entrance lobby gets a floor slab.** The 0.70 m deep,
   3.203 m wide lobby stood on the ground with no upward face under it, so a
