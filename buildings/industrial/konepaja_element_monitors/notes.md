@@ -101,7 +101,8 @@ than the fascia does east, and the canopy further out than the rear fascia.
 - **Personnel doors** (the staff door on the east wall, the stores door on
   the strip's front): **0.9375 x 2.125 m leaves**, steel with a small wired
   vision panel, in 1.0625 x 2.1875 m openings, the top 0.0625 m the frame's
-  head. Thresholds at the ground, no step.
+  head. Thresholds at the ground, no step; the leaves stand on the reveal's
+  0.02 m floor slab (Construction).
 - **Truck door: 3.3125 x 3.9 m**, a sectional door of six 0.65 m sections,
   a row of five small lights in the fifth (2.6-3.25 m). A vehicle door, so
   outside the 2.0-2.4 m leaf rule, which the personnel door beside it
@@ -143,8 +144,9 @@ Closed solids unioned with Blender's exact boolean (`asset_build.union`):
    from its foot or head, or a cut right through it, its outline carrying
    every breakpoint the zone's neighbours put on it. Openings are reveals
    round a closing plane split into its lights and modules on the cut
-   tiers, flat quads on the flush tiers. A ground face notched at every
-   recess that stands on the ground closes each box;
+   tiers, flat quads on the flush tiers. A ground face closes each box,
+   running straight along the wall line under the doors at grade (see
+   The doors at grade);
 2. **three fascia rings**: the hall's all round, the office's a U open to
    the hall, the strip's an L open to the hall and the office and flush with
    the east wall; each from its eave to 0.25 m over its deck, 0.094 m proud
@@ -193,6 +195,8 @@ which fails the build if:
 - the canopy does not cover the entrance bay within the office, crowds the
   ribbons, misses the spandrel or does not cover the landing;
 - the truck door comes within 0.6 m of the hall's corner;
+- a door at grade is off the ground, or its floor slab's region is not its
+  opening's width and its reveal's depth (`door_floor.problems()`);
 - the ladder or its cage crowds a corner or a window of the west wall
   (`roof_safety.problems()`).
 
@@ -234,6 +238,22 @@ A 2.5 m glazed bay at the office front's east end, from the threshold to
 glazing twice); the canopy at 3.03-3.28 m over it on the first floor's
 line; one step up (0.156 m), so no handrail.
 
+### The doors at grade
+
+The truck door (3.3125 m, 0.2 m reveal), the staff door and the stores
+door (1.0625 m openings, 0.15 m reveals) stand on the ground in their
+reveals, each on a cast concrete floor slab from `scripts/door_floor.py`
+on every tier that recesses it (`LOD0`-`LOD2`; `floor_for()`): a 0.02 m
+nosing quad on the wall plane across the opening, the slab's top 0.02 m
+over the ground back to the door, so the consumer's terrain cannot show
+inside. Nothing stands past the wall plane, so the truck lane's east-side
+check still passes. The jambs and the closing plane start on the slab's
+top (the door's art keeps its place, its bottom 0.02 m under the slab); the
+wall's foot carries the nosing's top corners (`door_floor.notch()`), and
+the ground face runs straight along the wall line under the nosing instead
+of notching into the reveal. The entrance stands on the landing step at
+0.156 m and needs none. `LOD3` paints every door flush.
+
 ### Rainwater
 
 Internal drainage: six outlets painted in the decks (four on the hall's,
@@ -246,13 +266,13 @@ Measured on the exported GLBs by `scripts/validate_asset.py`:
 
 | Tier | Triangles | Ceiling | Shell | Rooflights | Plant | Ladder and cage |
 | --- | --- | --- | --- | --- | --- | --- |
-| `LOD0` | 2428 | 12,000 | 734 | 616 | 442 | 636 |
-| `LOD1` | 2130 | 4,000 | 734 | about 616 | about 396 | 384 |
-| `LOD2` | 1484 | 1,500 | about 544 | about 616 | 164 | 160 |
+| `LOD0` | 2438 | 12,000 | 744 | 616 | 442 | 636 |
+| `LOD1` | 2138 | 4,000 | 742 | about 616 | about 396 | 384 |
+| `LOD2` | 1496 | 1,500 | about 556 | about 616 | 164 | 160 |
 | `LOD3` | 486 | 500 | 326 | 88 | 48 | 24 |
 
-Shell = the three bodies with their 23 openings, the fascia rings, the
-canopy and the landing; rooflights = the three monitors and eight domes;
+Shell = the three bodies with their 23 openings and the three doors' floor
+slabs, the fascia rings, the canopy and the landing; rooflights = the three monitors and eight domes;
 plant = the flue and its guys, the fans and the air handler (each share by
 rebuilding the tier without it; the kit's from its own solids, which are
 appended, so exact; the shares marked "about" were not re-measured after
@@ -268,8 +288,12 @@ with six sides and the fans with four, dropping the guys; `LOD3` flattens
 the openings, paints the domes, draws each monitor side as one face and
 each office ribbon as one face on a whole-ribbon region, the flue square,
 drops the fans and the landing, and keeps the ladder's bare rails and the
-cage's back strap, which set the plan's west extent. `LOD2` is 16 under its
-ceiling.
+cage's back strap, which set the plan's west extent. The three doors'
+floor slabs (2026-11-23) cost 10, 8 and 12 triangles on `LOD0`-`LOD2`:
+a slab is four (nosing and top), its wall foot's detour two more, and the
+ground face, no longer notched into the reveal, two fewer; the union's
+retriangulation moves `LOD0` and `LOD1` a little under that. `LOD2` is 4 under its
+ceiling, so it has no room left for another feature.
 
 ## LOD review
 
@@ -337,13 +361,13 @@ ceiling.
 The shell is the boundary of one unioned volume, so there are no partitions
 or duplicate surfaces. Hidden-surface test:
 
-- **`LOD0`:** 62 of 2428 triangles flagged (2.6%), 0.5 m2 vertical: the
+- **`LOD0`:** 62 of 2438 triangles flagged (2.5%), 0.5 m2 vertical: the
   lean kit's small faces in narrow gaps (bracket ends 1.5 mm off the wall,
   rung ends off the rails, hoop ends at the rails) and the fans' cowl
   undersides, 2 cm rings 0.6 m over the deck whose downward rays all meet
   the deck or the body. Exterior surface in narrow gaps, not buried faces.
-- **`LOD1`:** 26 of 2130 (1.2%), the same.
-- **`LOD2`:** 6 of 1484 (0.4%).
+- **`LOD1`:** 26 of 2138 (1.2%), the same.
+- **`LOD2`:** 6 of 1496 (0.4%).
 - **`LOD3`:** 2 of 486 (0.4%), 0.5 m2 vertical, at the same points as
   `LOD2`'s largest. The ladder's bare rails and the cage's strap add none:
   they are closed prisms wound outward (an earlier export had one rail and
@@ -356,7 +380,8 @@ as touching. The union now snaps its operands to a 0.1 mm grid
 (Construction); the faces between the three bodies are gone on every tier.
 
 Kept closure faces: none visible. The ground faces are on the ground; the
-bodies' faces against one another are removed by the union.
+bodies' faces against one another are removed by the union. The doors'
+floor slabs added no candidates.
 
 ## Known simplifications
 
@@ -369,7 +394,8 @@ bodies' faces against one another are removed by the union.
   level, their laps, outlets and the plant's flashings painted.
 - The hall's windows are recessed on `LOD0`/`LOD1` and painted in the wall
   band on `LOD2`/`LOD3`; the other openings are recessed to `LOD2` and flat
-  on `LOD3`.
+  on `LOD3`, the three doors at grade on their floor slabs wherever
+  recessed.
 - The domes are pyramids to `LOD2`, then painted; the
   monitors' ends are plain sheet; the air handler has no ducts, the fans no
   wiring; the flue no foundation or breeching (it rises from the deck).
@@ -380,8 +406,10 @@ bodies' faces against one another are removed by the union.
   RGB PNGs. Deviations, each on a surface seen at its own scale: the roof
   plan region at 8 texels/m (the decks and monitor tops, seen from above;
   felt laps a metre apart are 8 texels); the flue, the fans and the air
-  handler at 32; the dome's top at 24; on `LOD3` only, the monitor sides at
-  8 and the office's whole ribbons at 12.
+  handler at 32; the dome's top at 24; the truck door's floor slab at 48
+  (its 3.3125 x 0.22 m region does not fit the free space at 64 with its
+  gutters; flat concrete seen at the foot of the door); on `LOD3` only, the
+  monitor sides at 8 and the office's whole ribbons at 12.
 - **ORM:** painted steel is dielectric (the fascia sheet, the doors, the
   ladder, and the black-painted flue at roughness 0.55); the galvanised
   plant and louvres, the aluminium frames and the handles stay metallic.
@@ -421,7 +449,14 @@ bodies' faces against one another are removed by the union.
   for `LOD3` (105 x 14, 75 x 14), the flue (224 x 64: up it by round it),
   the fan's side and cowl, the air handler's side and end, the dome's top,
   the lettering (352 x 48: KONEPAJA on 5.5 m of the office fascia, its
-  sheet rib for rib the band's, its left edge on a rib), and flat patches.
+  sheet rib for rib the band's, its left edge on a rib), the doors' floor
+  slabs (`scripts/door_floor.py`, `FLOORS`: the staff and stores doors
+  share one 68 x 10.88 region at 64 texels/m at (820, 866); the truck
+  door's 159 x 10.56 at 48 texels/m at (602, 954), with no trodden path
+  down its middle), and flat patches. The slabs are one fixed concrete
+  colour in every variant (`door_floor.COLOUR`, roughness 0.88), their
+  occlusion deepening toward the jambs and the door, pores in shade and
+  height (0.4 mm), trodden-in dirt over them.
 - **Relief** for the normal map: stones 3 mm, sealed joints 8 mm deep,
   column covers' arrises 30 mm, plinth chamfer 12 mm, window frames and
   mullions 30 mm, vent sashes 42 mm, sill flashing 30 mm, fascia ribs
@@ -580,6 +615,17 @@ Completed in this repository:
 
 - `scripts/validate_asset.py`: 0 FAIL. One WARN: `source.dirty` on the
   sidecar, built from an uncommitted tree.
+- **The doors' floor slabs** (2026-11-23), from a snapshot in
+  `review/review_2026_11_23/konepaja_element_monitors_pass2/`: the six
+  views and `LOD0`-`LOD3` front and oblique at 20, 35, 70 and 120 m,
+  before and after (mean difference 0.00-0.01/255); eye-level, low, down
+  and left/right oblique views of each door on every tier at noon and
+  reversed sun over a green terrain plane: the grass that showed in all
+  three reveals is gone, each slab fills its reveal jamb to jamb, its
+  nosing on the wall plane, concrete, no seam and nothing standing proud;
+  the truck door's 48 texels/m slab reads as the personnel doors' do.
+- The validator's door-floor probe: `loading`, `staff` and `stores` on
+  their slabs on `LOD0`-`LOD2`, flat on `LOD3`; the entrance above grade.
 - `check_layout()`, `check_regions()` and `check_bands()` pass on every
   build; every tier passes the east-side check (nothing outside the east
   wall's plane under 3.5 m) and the kit's clash check.
@@ -638,6 +684,17 @@ Pending, outside this repository:
   texture bake.
 
 ## Revision log
+
+- **2026-11-23 — floor slabs under the doors at grade.** The truck door
+  (`loading`, 0.2 m reveal), the staff door and the stores door (0.15 m)
+  had no upward face in their reveals, so a consumer's terrain showed
+  inside. Each now stands on a `scripts/door_floor.py` concrete slab on
+  `LOD0`-`LOD2`, top 0.02 m over the ground, nosing on the wall plane, on
+  new atlas regions (the two personnel doors share one at 64 texels/m, the
+  truck door's at 48). Tiers 2428/2130/1484/486 to 2438/2138/1496/486;
+  `LOD3` byte-identical. Texture changes are the new regions, their padding
+  and at most 3/255 on the edge rows of neighbouring regions (cavity).
+  Bounds, pivot, footprint, storeys and doors unchanged.
 
 - **2026-11-23 — far kit wound outward.** `scripts/roof_safety.py` built
   one of the mirrored bare rails, and the cage's back strap in the eave's

@@ -28,7 +28,9 @@ The atlas is a trim sheet. Three bands run the full width and tile in U:
                               truck door's sections, the service door, the
                               ribbon and strip lights, the monitor lights, the
                               flue, the fans, the air handler, the lettering,
-                              the dome, patches
+                              the dome, the concrete floor slabs in the
+                              doors' reveals at grade (scripts/door_floor.py),
+                              patches
 
 The hall's windows are painted into the AGG band: every bay of the hall has
 one, at the same place in the bay, so the walls of the flat tiers are plain
@@ -51,6 +53,7 @@ import numpy as np
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "scripts"))
 import atlas  # noqa: E402
+import door_floor as DF  # noqa: E402
 import glazing  # noqa: E402
 import weathering  # noqa: E402
 
@@ -128,9 +131,11 @@ TD_W, TD_H = 3.3125, 3.9
 TD_SECS = 6
 TD_SEC = TD_H / TD_SECS
 TD_WIN_SEC = 4
+TD_REVEAL = 0.2         # the truck door's reveal
 # personnel doors: the opening, and its steel frame each side and over it
 SD_W, SD_H = 1.0625, 2.1875
 SD_FRAME = 0.0625
+SD_REVEAL = 0.15        # their reveal
 
 # monitors: three rooflights along the hall, on the column lines
 MON_X = (-2.0 * BAY, 0.0, 2.0 * BAY)
@@ -189,6 +194,20 @@ SERVICE = (952, 796, 68, 140)           # a personnel door, 1.0625 x 2.1875 m
 AHU_S = (832, 886, 104, 48)             # its side, at SPPM
 LETTERS = (602, 970, 352, 48)           # 5.5 x 0.75 m of the office fascia
 
+# The concrete floor slabs in the reveals of the three doors at grade
+# (scripts/door_floor.py), unfolded: U across the opening from its left side,
+# V up the 0.02 m nosing and back across the reveal to the door. The staff
+# door and the stores door, the same opening in the same reveal, share one
+# region at 64 px/m, 68 x 10.88 px, in the free block between the strip
+# light and the air handler. The truck door's 3.3125 x 0.22 m does not fit
+# the sheet's free space at 64 px/m with its gutters, so it is painted at
+# FPPM, 159 x 10.56 px, between the flue and the lettering; it has no
+# trodden path down its middle (tread far off the slab), as a vehicle
+# door's floor has none.
+FPPM = 48.0
+FLOORS = {"loading": DF.Floor(602, 954, TD_W, TD_REVEAL, ppm=FPPM, tread=-1e3),
+          "service": DF.Floor(820, 866, SD_W, SD_REVEAL)}
+
 REGION = {"ent_a": ENT_A, "ent_b": ENT_B, "ent_c": ENT_C, "off_l": OFF_L,
           "mon_l": MON_L, "strip_l": STRIP_L, "truck": TRUCK, "service": SERVICE}
 
@@ -238,6 +257,7 @@ ID_DECK, ID_LAP, ID_DOOR, ID_SDOOR, ID_HANDLE, ID_DARK = 12, 13, 14, 15, 16, 17
 ID_DOME, ID_KERB, ID_STACK, ID_SOOT, ID_GALV, ID_LOUVRE = 18, 19, 20, 21, 22, 23
 ID_LETTER, ID_CONC, ID_GROUT, ID_SOFFIT, ID_RUBBER, ID_SPANDREL = 24, 25, 26, 27, 28, 29
 ID_LADDER, ID_MONTOP, ID_ALU = 30, 31, 32
+ID_FLOOR = 33           # the cast concrete floor slabs in the doors' reveals
 
 # (roughness, metallic). Painted steel is dielectric: the fascia sheet, the
 # doors, the ladder and the black-painted flue (ID_STACK). Bare metal stays
@@ -255,6 +275,7 @@ SURFACE = {
     ID_LETTER: (0.40, 0.0), ID_CONC: (0.90, 0.0), ID_GROUT: (0.92, 0.0),
     ID_SOFFIT: (0.70, 0.0), ID_RUBBER: (0.90, 0.0), ID_SPANDREL: (0.55, 0.0),
     ID_LADDER: (0.55, 0.0), ID_MONTOP: (0.90, 0.0), ID_ALU: (0.38, 0.70),
+    ID_FLOOR: DF.SURFACE,
 }
 
 # ---------------------------------------------------------------- palettes
@@ -291,7 +312,7 @@ FIXED = {
     ID_SOOT: (22, 21, 20), ID_GALV: (148, 150, 148), ID_LOUVRE: (128, 130, 129),
     ID_LETTER: (222, 220, 212), ID_CONC: (160, 158, 152), ID_GROUT: (176, 174, 168),
     ID_SOFFIT: (176, 174, 168), ID_RUBBER: (30, 30, 30), ID_SPANDREL: (46, 46, 48),
-    ID_LADDER: (150, 152, 150), ID_ALU: (168, 170, 170),
+    ID_LADDER: (150, 152, 150), ID_ALU: (168, 170, 170), ID_FLOOR: DF.COLOUR,
 }
 
 BAND_IDS = {
@@ -1029,6 +1050,7 @@ def check_regions():
              "strip_l": STRIP_L, "ahu_e": AHU_E, "service": SERVICE, "ahu_s": AHU_S,
              "letters": LETTERS}
     rects.update({"patch_" + k: r for k, r in PATCHES.items()})   # "stack" is both
+    rects.update({"floor_" + k: f.rect for k, f in FLOORS.items()})
     problems = atlas.region_problems(rects, ATLAS, bands_top=UNI_Y, band_gap=0)
     if AGG_H != m(Z_EAVE):
         problems.append("the AGG band is not the hall's wall to the fascia")
@@ -1144,6 +1166,9 @@ def weather(c):
     w.door(x + 4, x + rw - 4, y, y + rh - 4, (ID_SDOOR,), handle=(x + rw - 12, y + m(1.0)))
     x, y, rw, rh = TRUCK
     w.splash(x, x + rw, y, y + m(TD_SEC), (ID_DOOR,), amount=0.16, fall=0.2)
+    # the floor slabs in their reveals: trodden-in dirt
+    for f in FLOORS.values():
+        DF.weather(w, f, ID_FLOOR, bleed=PAD)
     x, y, rw, rh = ENT_A
     w.door(x + 30, x + rw - 30, y, y + m(Z_LEAF), (ID_FRAME, ID_ALU),
            handle=(x + rw / 2.0, y + m(1.15)))
@@ -1192,6 +1217,8 @@ def paint(ss=atlas.SS):
     paint_ahu(c)
     paint_letters(c)
     paint_plan(c)
+    for f in FLOORS.values():
+        DF.paint(c, f, ID_FLOOR, bleed=PAD)
     paint_patches(c)
 
     wear = 0.02 * atlas.noise(c, 3, 40.0) + 0.012 * atlas.noise(c, 4, 8.0)
@@ -1208,6 +1235,7 @@ def paint(ss=atlas.SS):
     pores = atlas.noise(c, 9, 0.8)
     c.shade[mineral] *= 1.0 + 0.03 * pores[mineral]
     c.height[mineral] += 0.0005 * pores[mineral]
+    DF.grain(c, ID_FLOOR, pores)
     weather(c)
     c.pad()
     return c

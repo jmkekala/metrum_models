@@ -29,7 +29,9 @@ strip in the hall's panels with two windows and a door. The truck door, 3.3 x
 3.9 m, is in the hall's east wall close behind the strip, with a personnel
 door beyond it: a truck drives in from the street along the east side, stands
 beside the door and backs out. Nothing of the building stands on the ground
-on that side.
+on that side. The three doors at grade (the truck door, the staff door and
+the stores door) stand in their reveals on 0.02 m concrete floor slabs
+(scripts/door_floor.py), so a consumer's terrain cannot show inside.
 
 Construction is a set of closed solids unioned with Blender's exact boolean:
 three plain bodies (the hall, the office, the strip), each a box from the
@@ -63,6 +65,7 @@ ASSET = L.ASSET
 EXPORT_DIR = os.path.join(HERE, "export")
 sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "scripts"))
 import asset_build  # noqa: E402
+import door_floor as DF  # noqa: E402
 import model_facts  # noqa: E402
 from asset_build import to_object, union  # noqa: E402
 import roof_safety as RS  # noqa: E402
@@ -180,10 +183,13 @@ class Opening:
     up z), its reveal depth, and its UVs. *cell(fr, s_lo, s_hi, z_lo, z_hi)*
     returns the closing-plane mapping of one cell; *sill*, *jamb* and *head*
     the reveals'. *band* openings (the hall's high windows) are painted into
-    the wall band: on the flat tiers they are not built at all."""
+    the wall band: on the flat tiers they are not built at all. *floor* is
+    the door_floor.Floor a door at grade stands on while its reveal is cut
+    (floor_for())."""
 
     def __init__(self, kind, s0, s1, a0, a1, vcuts, hcuts, depth, cell,
-                 sill="sill", jamb="reveal", head="reveal", band=False, lo=None):
+                 sill="sill", jamb="reveal", head="reveal", band=False, lo=None,
+                 floor=None):
         self.kind, self.s0, self.s1, self.a0, self.a1 = kind, s0, s1, a0, a1
         self.vcuts = sorted(set([s0, s1] + list(vcuts)))
         self.hcuts = sorted(set([a0, a1] + list(hcuts)))
@@ -191,6 +197,7 @@ class Opening:
         self.sill, self.jamb, self.head = sill, jamb, head
         self.band, self.lo = band, lo
         self.ground = a0 < EPS
+        self.floor = floor
         self.bs = self.jz = None
 
 
@@ -255,14 +262,17 @@ def truck_door(s0):
         off = sec * PPM if j == L.TD_WIN_SEC else 0.0
         return lambda co: (x + (fr.s_of(co) - s0) * PPM, y + off + (co.z - j * sec) * PPM)
     return Opening("truck", s0, s0 + L.TD_W, 0.0, L.TD_H, [],
-                   [k * sec for k in range(L.TD_SECS + 1)], 0.2, cell,
-                   sill="conc", jamb="door_reveal", head="door_reveal")
+                   [k * sec for k in range(L.TD_SECS + 1)], L.TD_REVEAL, cell,
+                   sill="conc", jamb="door_reveal", head="door_reveal",
+                   floor=L.FLOORS["loading"])
 
 
 def service_door(s0):
-    return Opening("service", s0, s0 + L.SD_W, 0.0, L.SD_H, [], [], 0.15,
+    """A personnel door: the staff door and the stores door, one opening on
+    one floor region."""
+    return Opening("service", s0, s0 + L.SD_W, 0.0, L.SD_H, [], [], L.SD_REVEAL,
                    _region_cell(L.SERVICE, s0, 0.0), sill="conc", jamb="door_reveal",
-                   head="door_reveal")
+                   head="door_reveal", floor=L.FLOORS["service"])
 
 
 # ================================================================== walls
@@ -345,8 +355,20 @@ def op_mode(o, level):
     return opening_mode(level)
 
 
+def floor_for(o, level):
+    """The floor slab under opening *o*'s reveal at *level*, or None: a door
+    at grade (the truck door, the staff and stores doors) on every tier
+    that cuts its recess (opening_mode(): LOD0-LOD2); a flush door has no
+    reveal to floor."""
+    if o.floor is None or not o.ground or op_mode(o, level) != "cut":
+        return None
+    return o.floor
+
+
 def build_wall(B, wall, level):
-    """One wall, ground to its deck, every opening in it built and holed."""
+    """One wall, ground to its deck, every opening in it built and holed.
+    A floored door's jambs carry the slab's top (door_floor.T), so the
+    wall's foot detours round it as door_floor.notch() does."""
     fr = wall.fr
     zlines = [z0 for z0, _z1, _mk in wall.zones[1:]]
     ops = [whole(o) if o.lo and ribbon_whole(level) else o for o in wall.items
@@ -354,26 +376,41 @@ def build_wall(B, wall, level):
     for o in ops:
         mode = op_mode(o, level)
         o.jz = sorted(set([o.a0, o.a1] + [z for z in zlines if o.a0 + EPS < z < o.a1 - EPS]
-                          + (o.hcuts if mode == "flush" else [])))
+                          + (o.hcuts if mode == "flush" else [])
+                          + ([o.a0 + DF.T] if floor_for(o, level) else [])))
         o.bs = o.vcuts if mode == "flush" else [o.s0, o.s1]
     for z0, z1, mk in wall.zones:
         uv = mk(fr, wall.u_off)
         for outline, holes in _zone_polys(fr.L, z0, z1, ops):
             fill_planar(B, [outline] + holes, lambda s, z: fr.P(s, z), uv)
     for o in ops:
-        build_opening(B, fr, o, op_mode(o, level))
+        build_opening(B, fr, o, op_mode(o, level), floor_for(o, level))
     return ops
 
 
-def build_opening(B, fr, o, mode):
+def build_opening(B, fr, o, mode, floor=None):
     """The opening's closing plane, split into its cells, set back o.depth
     behind reveals on the cut tiers and in the wall's plane on the flat
     ones. Each reveal is one planar face whose outer edge carries the wall's
-    breakpoints and its inner edge the closing plane's."""
+    breakpoints and its inner edge the closing plane's.
+
+    A door at grade on *floor* (a door_floor.Floor) stands on a concrete
+    slab: its nosing on the wall plane across the opening, its top
+    door_floor.T over the ground and the reveal's foot, back to the door,
+    so the consumer's terrain cannot show inside. The jambs and the door
+    start on that top; the door's art keeps its place."""
     if mode == "flush":
         hs, vs, d = o.jz, o.bs, 0.0
     else:
         hs, vs, d = o.hcuts, o.vcuts, o.depth
+    zr = o.a0                   # the reveal's foot: the slab's top, if floored
+    if floor is not None:
+        zr = o.a0 + DF.T
+        hs = [zr] + hs[1:]
+        fn = DF.uv(fr, floor, o.s0, o.a0)
+        B.face([fr.P(o.s0, o.a0), fr.P(o.s1, o.a0), fr.P(o.s1, zr), fr.P(o.s0, zr)], fn)
+        fill_planar(B, [[(o.s0, 0.0), (o.s1, 0.0)] + [(s, -d) for s in reversed(vs)]],
+                    lambda s, w: fr.P(s, zr, w), fn)
     for i in range(len(vs) - 1):
         for j in range(len(hs) - 1):
             a, b, z0, z1 = vs[i], vs[i + 1], hs[j], hs[j + 1]
@@ -388,14 +425,16 @@ def build_opening(B, fr, o, mode):
     fill_planar(B, [[(o.s0, 0.0), (o.s1, 0.0)] + [(s, -d) for s in reversed(o.vcuts)]],
                 lambda s, w: fr.P(s, o.a1, w), _patch(o.head))
     for s in (o.s0, o.s1):
-        fill_planar(B, [[(z, 0.0) for z in o.jz] + [(z, -d) for z in reversed(o.hcuts)]],
+        fill_planar(B, [[(z, 0.0) for z in o.jz if z > zr - EPS]
+                        + [(z, -d) for z in reversed(hs)]],
                     lambda z, w, s=s: fr.P(s, z, w), _patch(o.jamb))
 
 
 def body(walls, z_top, level):
     """A closed box from the ground to its deck: the walls with their
     openings, the deck on the roof plan, and a ground face with a notch for
-    every recess that stands on the ground."""
+    every recess that stands on the ground but a floored door's, whose
+    nosing's foot the ground runs straight along."""
     B = Builder()
     ground = []
     for w in walls:
@@ -403,7 +442,9 @@ def body(walls, z_top, level):
         fr = w.fr
         ground.append(fr.P(0.0, 0.0)[:2])
         for o in sorted([o for o in ops if o.ground], key=lambda o: o.s0):
-            if op_mode(o, level) == "cut":
+            if floor_for(o, level):
+                ground += [fr.P(o.s0, 0.0)[:2], fr.P(o.s1, 0.0)[:2]]
+            elif op_mode(o, level) == "cut":
                 ground += [fr.P(o.s0, 0.0)[:2]] + [fr.P(s, 0.0, -o.depth)[:2] for s in o.vcuts]
                 ground.append(fr.P(o.s1, 0.0)[:2])
             else:
@@ -987,6 +1028,13 @@ def check_layout():
     # ground on that side
     if TRUCK_S - L.TD_W / 2.0 < 0.6:
         bad.append("the truck door is within 0.6 m of the hall's corner")
+    # the doors at grade on their floor slabs (scripts/door_floor.py): each
+    # slab's region the opening's width and the reveal's depth
+    for w in walls:
+        for o in w.items:
+            if o.floor is not None:
+                bad += DF.problems(o.floor, "%s's %s door" % (w.name, o.kind),
+                                   (o.s0, o.s1, o.a0, o.a1), o.depth)
     # the ladder and its cage clear of the west wall's windows and corners
     avoid = [("window", k * BAY + L.HWIN_IN, k * BAY + L.HWIN_IN + L.HWIN_W) for k in range(3)]
     bad += RS.problems(WALL_LADDER, "the wall ladder", avoid)

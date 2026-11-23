@@ -3,7 +3,7 @@
   "version": 1,
   "name": "konepaja_element_monitors",
   "path": "buildings/industrial/konepaja_element_monitors",
-  "source": {"commit": "d3b2157ff90a056a17aca7c880cbc1abd9c47346", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "b1fd5edf4b84e701aefbdb334dc2ee4110ed2e0e", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-16.4838, 0.0, -12.7969], "max": [16.4838, 15.25, 12.7969]},
   "footprint": [
@@ -24,22 +24,22 @@
     {"id": "stores", "kind": "service", "position": [8.39, 0.0, 11.2969], "facing": [0.0, 0.0, 1.0], "width_m": 0.9375, "height_m": 2.125, "main": false}
   ],
   "lods": [
-    {"file": "konepaja_element_monitors_lod0.glb", "triangles": 2428, "sha256": "44750f0ef63d3b18fd36d6b197f3b35063ec5b328b278177ee893d69e9d49637"},
-    {"file": "konepaja_element_monitors_lod1.glb", "triangles": 2130, "sha256": "dfbdac6c20d6421e8ff68678e01aa9400e2dc8e4dfec479cf48e81640fac792b"},
-    {"file": "konepaja_element_monitors_lod2.glb", "triangles": 1484, "sha256": "79307bb8ce405bdca57f7b04e79179963c9db3f95483c97fde5f732606b77223"},
+    {"file": "konepaja_element_monitors_lod0.glb", "triangles": 2438, "sha256": "bfa3731b79480182dc381329b5a73ef749b59cbc86d25fc46e6ff7d702ae6675"},
+    {"file": "konepaja_element_monitors_lod1.glb", "triangles": 2138, "sha256": "ffa86954b55f67a2de09d5f530ce00b943d6684492ac6e0f0a9b74e7c1d738fa"},
+    {"file": "konepaja_element_monitors_lod2.glb", "triangles": 1496, "sha256": "81f4a62af53a5c21a15f313aa7dad18320c6ec008d92c71fad412b71f5899c60"},
     {"file": "konepaja_element_monitors_lod3.glb", "triangles": 486, "sha256": "412412226ff1a7cc95b0dc0efe85b1221e0ae10a7b83d2c91efe0d13b18a4a55"}
   ],
   "textures": {
-    "orm": {"file": "konepaja_element_monitors_orm.png", "sha256": "be03392463b010e89d61d9bb75db83f33b37764111bf8b29335fce7210c624dc"},
-    "normal": {"file": "konepaja_element_monitors_normal.png", "sha256": "460893a35eb8dffd3bddf30cddae4cf731a0a988a5d27b7cd327aece75e70cbd"},
+    "orm": {"file": "konepaja_element_monitors_orm.png", "sha256": "032a962e05c20aebde83090778346dc59e9ddfb606643d3f9bfc41d064a5243a"},
+    "normal": {"file": "konepaja_element_monitors_normal.png", "sha256": "9f99e3cc5ca125cc1a364dee2297ec307ea6ac3e6c9360b912cb713d6fdfcf78"},
     "emission": {"file": "konepaja_element_monitors_emission.png", "sha256": "46af74a7d8c53406af569cfd08bf775a6601843190c5c64c19c3d0e6524a7b5a"}
   },
   "variants": [
-    {"id": "grey_aggregate", "albedo": "konepaja_element_monitors_albedo_grey_aggregate.png", "sha256": "45b415302adf0ae955635c8c2539d73745ff1795355c2bc2149015787414476e"},
-    {"id": "beige_aggregate", "albedo": "konepaja_element_monitors_albedo_beige_aggregate.png", "sha256": "e17fe9eb710be668e0055a397bacc745bdc2945ee3722ac387fefe7731078689"},
-    {"id": "red_aggregate", "albedo": "konepaja_element_monitors_albedo_red_aggregate.png", "sha256": "32fab5c6321f085ce07eb63bfb59b42915445faf4f1b3a36c6dcce2affb40e48"}
+    {"id": "grey_aggregate", "albedo": "konepaja_element_monitors_albedo_grey_aggregate.png", "sha256": "d067d843b030b7bb2b2fefbaeddf6713d5101c9181afa0ed217cdac5c9f456c1"},
+    {"id": "beige_aggregate", "albedo": "konepaja_element_monitors_albedo_beige_aggregate.png", "sha256": "6ecda551c49d31eab1cd5039ed71691732ceadb1e4a94a304e3b4e3fe065f011"},
+    {"id": "red_aggregate", "albedo": "konepaja_element_monitors_albedo_red_aggregate.png", "sha256": "993dd87af99066013b866b5794e9a2e34701063f8d3e1c1b849b5c190c61c2d0"}
   ],
   "default_variant": "grey_aggregate",
-  "preview": {"file": "../preview.png", "sha256": "36b842a22e1f754edb51beed26430deb9d9461e705c0462d24cb3a6365c659b7"},
+  "preview": {"file": "../preview.png", "sha256": "7e059f0e07bfbec0f77abc32e9bce4317f71728731d00dc4c8c92e3743aac8d1"},
   "hero": false
 }
