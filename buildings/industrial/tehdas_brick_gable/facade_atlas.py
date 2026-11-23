@@ -21,7 +21,7 @@ The atlas is a trim sheet. Five bands run the full width and tile in U:
     y  690 .. 1022   unique  doors, the stair glazing, the loading door, the
                              pillar, the felt deck, the vent pipes, LOD3's
                              wing lids, window bay and stair column, the
-                             entrances' floor slabs, patches
+                             doors' floor slabs, patches
 
 The brick band stops at the wall head. The two gable triangles above Z_GABLE
 sample the same band GABLE_SHIFT metres lower, a whole number of courses, so
@@ -32,7 +32,7 @@ a fixed light and an opening casement, the cells alternate so a 4 m window
 has a casement at each end, and a window is a whole number of cells. The
 singular things -- the entrance screen, the doors, the stair glazing, the
 loading door -- get regions of their own, and so does the concrete floor slab
-in each entrance's reveal (scripts/door_floor.py).
+in each door's reveal (scripts/door_floor.py).
 
 Rasterising is scripts/atlas.py's: a canvas supersampled SS x SS per pixel,
 with a height channel the normal map is derived from (numpy and scipy; Pillow
@@ -180,13 +180,19 @@ LOD3_BAY_PPM = 16.0
 LOD3_BAY = (4, 870, 64, 76)              # 4.0 x 4.75 m
 LOD3_STAIR = (204, 868, 20, 104)         # 1.25 x 6.5 m, the same density
 
-# The concrete floor slabs in the three entrances' reveals (scripts/
-# door_floor.py), each unfolded at 64 px/m: U across the opening, V up the
-# nosing and back to the door. The lobby's is 3.0 x 1.52 m, the stair door's
-# and the porch entrance's 0.22 m deep.
+# The concrete floor slabs in every door's reveal (scripts/door_floor.py),
+# each unfolded at 64 px/m: U across the opening, V up the nosing and back to
+# the door. The lobby's is 3.0 x 1.52 m, the stair door's and the porch
+# entrance's 0.22 m deep. The four service doors share one opening and one
+# 0.15 m reveal, so one region (0.17 m deep). The loading door's is 4.0 m
+# across and 0.27 m deep, with no trodden path: vehicles, not feet, cross it.
 FLOORS = {"front": DF.Floor(820, 690, OPENINGS["entrance"][0], LOBBY_DEPTH),
           "stair": DF.Floor(820, 796, OPENINGS["glazed_door"][0], REVEAL["glazed_door"]),
-          "porch": DF.Floor(820, 816, OPENINGS["entrance"][0], REVEAL["entrance"])}
+          "porch": DF.Floor(820, 816, OPENINGS["entrance"][0], REVEAL["entrance"]),
+          "service": DF.Floor(820, 840, OPENINGS["service_door"][0],
+                              REVEAL["service_door"]),
+          "loading": DF.Floor(700, 912, OPENINGS["loading_door"][0],
+                              REVEAL["loading_door"], tread=-1e3)}
 
 REGION = {"entrance": ENTRANCE, "glazed_door": GLAZED_DOOR,
           "service_door": SERVICE_DOOR, "loading_door": LOADING_DOOR,
@@ -203,7 +209,7 @@ ID_BLANK, ID_PLINTH, ID_BRICK, ID_BRICK2, ID_MORTAR = 0, 1, 2, 3, 4
 ID_FRAME, ID_GLASS, ID_ROOF, ID_FLASH, ID_FELT = 5, 6, 7, 8, 9
 ID_CONC, ID_DOOR, ID_LOAD, ID_STEEL, ID_PIPE = 10, 11, 12, 13, 14
 ID_SOFFIT, ID_GUTTER, ID_HANDLE, ID_DARK, ID_SEAL = 15, 16, 17, 18, 19
-ID_FLOOR = 20           # the cast concrete floor slabs in the entrances' reveals
+ID_FLOOR = 20           # the cast concrete floor slabs in the doors' reveals
 
 # (roughness, metallic). Painted sheet stays mostly dielectric -- the paint is
 # what the light sees; the ladders, handles and roof ladder are galvanised or
@@ -818,7 +824,7 @@ def weather(c):
     # the pillars stand in the porch's splash
     x, y, rw, rh = PILLAR
     w.splash(x, x + rw, y, y + rh, (ID_CONC,), amount=0.26, fall=0.22)
-    # the entrances' floor slabs: trodden-in dirt
+    # the doors' floor slabs: trodden-in dirt
     for f in FLOORS.values():
         DF.weather(w, f, ID_FLOOR, bleed=PAD)
     # the felt deck: dirt where it ponds

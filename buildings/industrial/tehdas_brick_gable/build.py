@@ -19,8 +19,9 @@ shallow profiled-steel gable. The main block is 42 x 12 m and two storeys, with
 long ribbon windows in white frames on both floors. Two single-storey wings
 with dark felt roofs are built onto its long sides: one on the front beside the
 main entrance, which is set back into a lobby under a flat canopy, and a larger
-one behind. Each entrance's reveal (the lobby, the stair door, the porch's
-entrance) stands on a 0.02 m concrete floor slab (scripts/door_floor.py).
+one behind. Every door's reveal (the lobby, the stair door, the porch's
+entrance, the four service doors and the loading door) stands on a 0.02 m
+concrete floor slab (scripts/door_floor.py).
 
 At the east end the ground storey stops 3 m short of the gable and the upper
 storey runs on over four concrete pillars, sheltering the second entrance. At
@@ -118,11 +119,16 @@ WEST_ITEMS = [("loading_door", 1.5, 0.0), ("service_door", -3.5, 0.0),
 EAST_ITEMS = [("ribbon4", 0.0, UP)]
 PORCH_ITEMS = [("entrance", -1.5, 0.0), ("ribbon2", 3.0, GF)]
 LOBBY = "entrance"          # the front entrance's kind; the porch's is shallow
-# The entrances' floor slabs, by wall and kind (facade_atlas.FLOORS): the
-# front lobby, the stair door and the porch's entrance. The service doors and
-# the loading door keep their reveals on the ground with no floor.
+# Every door's floor slab, by wall and kind (facade_atlas.FLOORS): the front
+# lobby, the stair door and the porch's entrance; the four service doors, which
+# share one opening and one region; and the loading door.
 FLOORED = {"front": {"entrance": L.FLOORS["front"], "glazed_door": L.FLOORS["stair"]},
-           "porch": {"entrance": L.FLOORS["porch"]}}
+           "porch": {"entrance": L.FLOORS["porch"]},
+           "rear": {"service_door": L.FLOORS["service"]},
+           "west": {"service_door": L.FLOORS["service"],
+                    "loading_door": L.FLOORS["loading"]},
+           "fw_east": {"service_door": L.FLOORS["service"]},
+           "bw_east": {"service_door": L.FLOORS["service"]}}
 
 # Pillars under the east end's upper storey: 0.40625 m square, their outer
 # faces 0.15 m inside the upper walls, evenly across the gable.
@@ -214,7 +220,7 @@ def is_cut(level, kind, depth):
 
 def floor_for(wall, kind, level, lobby=None):
     """The floor slab under *kind*'s reveal on *wall* at *level*, or None:
-    an entrance's, on every tier that cuts its recess (a flush door has no
+    every door's, on every tier that cuts its recess (a flush door has no
     reveal to floor)."""
     floor = FLOORED.get(wall, {}).get(kind)
     if floor is None or not is_cut(level, kind, reveal_depth(kind, lobby)):
@@ -360,7 +366,7 @@ def build_opening(B, fr, kind, rect, level, u_off, depth, floor=None):
     it while it is cut, the same rectangle painted flat after. Returns its
     outline in (s, z), which the wall region takes as a hole or a notch.
 
-    An entrance (*floor*, a door_floor.Floor) stands on a concrete slab:
+    A door (*floor*, a door_floor.Floor) stands on a concrete slab:
     its nosing on the wall plane under the opening, its top 0.02 m over the
     ground and the reveal's foot, so the consumer's terrain cannot show
     inside. The recess starts on that top; the door's art keeps its place.
@@ -406,7 +412,7 @@ def wall_region(B, fr, outline, items, level, u_off, uvfn, lobby=None, floors=No
 def outline_with_notches(s0, s1, z0, notches):
     """The foot of a region from s0 to s1 at z0, detouring up round every
     door that stands on it; returns the points from (s0, z0) to (s1, z0).
-    A notch (a, b, top, True) is a floored entrance: its detour carries the
+    A notch (a, b, top, True) is a floored door: its detour carries the
     slab's nosing corners (door_floor.notch())."""
     pts = [(s0, z0)]
     for a, b, top, *floored in sorted(notches):
@@ -456,11 +462,12 @@ def build_rear(B, level):
     uo = U_OFF["rear"]
     L_ = fr.L
     sp = fr.s_at(PX)                                # 3
-    notches = [(r[0], r[1], r[3]) for k, r in items if r[2] < EPS]
+    floors = {k: floor_for("rear", k, level) for k, r in items}
+    notches = [(r[0], r[1], r[3], floors[k] is not None) for k, r in items if r[2] < EPS]
     foot = outline_with_notches(sp, L_, 0.0, notches)
     outline = foot + [(L_, L.Z_GABLE), (L_, L.Z_WALL_TOP), (0.0, L.Z_WALL_TOP),
                       (0.0, L.Z_GABLE), (0.0, L.Z_PORCH), (sp, L.Z_PORCH)]
-    wall_region(B, fr, outline, items, level, uo, uv_brick(fr, uo))
+    wall_region(B, fr, outline, items, level, uo, uv_brick(fr, uo), floors=floors)
 
 
 def build_gable(B, name, z_foot, items_spec, level):
@@ -470,10 +477,12 @@ def build_gable(B, name, z_foot, items_spec, level):
     items = rects_for(fr, items_spec)
     uo = U_OFF[name]
     L_ = fr.L
-    notches = [(r[0], r[1], r[3]) for k, r in items if r[2] < z_foot + EPS]
+    floors = {k: floor_for(name, k, level) for k, r in items}
+    notches = [(r[0], r[1], r[3], floors[k] is not None)
+               for k, r in items if r[2] < z_foot + EPS]
     foot = outline_with_notches(0.0, L_, z_foot, notches)
     outline = foot + [(L_, L.Z_GABLE), (0.0, L.Z_GABLE)]
-    wall_region(B, fr, outline, items, level, uo, uv_brick(fr, uo))
+    wall_region(B, fr, outline, items, level, uo, uv_brick(fr, uo), floors=floors)
     tri = [(0.0, L.Z_GABLE), (L_, L.Z_GABLE), (L_, L.Z_WALL_TOP),
            (L_ / 2.0, gtop(L_ / 2.0)), (0.0, L.Z_WALL_TOP)]
     fill_region(B, fr, tri, [], uv_brick(fr, uo, L.GABLE_SHIFT))
@@ -546,11 +555,12 @@ def wing_body(walls, level, lid=None):
     for name, p0, p1, spec in walls:
         fr = Frame(p0, p1)
         items = rects_for(fr, spec)
-        notches = [(r[0], r[1], r[3]) for k, r in items if r[2] < EPS]
+        floors = {k: floor_for(name, k, level) for k, r in items}
+        notches = [(r[0], r[1], r[3], floors[k] is not None) for k, r in items if r[2] < EPS]
         foot = outline_with_notches(0.0, fr.L, 0.0, notches)
         zb = L.Z_WING_SOF if boxed else top
         outline = foot + [(fr.L, zb), (0.0, zb)]
-        wall_region(B, fr, outline, items, level, uo, uv_brick(fr, uo))
+        wall_region(B, fr, outline, items, level, uo, uv_brick(fr, uo), floors=floors)
         if boxed:
             fill_region(B, fr, [(0.0, zb), (fr.L, zb), (fr.L, top), (0.0, top)],
                         [], lambda co, fr=fr: (fr.s_of(co) * PPM,
@@ -884,14 +894,23 @@ def check_layout():
         bad.append("door leaf %.3f m is outside 2.0-2.4" % L.Z_LEAF)
     if not 2.0 <= L.OPENINGS["service_door"][1] - 0.0625 <= 2.4:
         bad.append("the service door's leaf is outside 2.0-2.4")
-    # every entrance's reveal on its floor slab (scripts/door_floor.py): the
-    # slab's region the reveal's width and depth, under a door at grade
-    for wall, lobby, spec in (("front", LOBBY, FRONT_ITEMS), ("porch", None, PORCH_ITEMS)):
-        fr = Frame(*MAIN_WALLS[wall])
-        for kind, floor in FLOORED[wall].items():
-            (c, z), = [(c, z) for k, c, z in spec if k == kind]
-            bad += DF.problems(floor, "the %s wall's %s" % (wall, kind),
+    # every door's reveal on its floor slab (scripts/door_floor.py): the
+    # slab's region the reveal's width and depth, under a door at grade; and
+    # no door at grade without one
+    for wall, ((p0, p1), spec, zlo, _zhi) in walls.items():
+        fr = Frame(p0, p1)
+        lobby = LOBBY if wall == "front" else None
+        floored = FLOORED.get(wall, {})
+        for kind, c, z in spec:
+            if kind not in floored:
+                if z < zlo + EPS:
+                    bad.append("%s: %s at %.2f stands at grade with no floor slab"
+                               % (wall, kind, c))
+                continue
+            bad += DF.problems(floored[kind], "the %s wall's %s" % (wall, kind),
                                item_rect(fr, kind, c, z), reveal_depth(kind, lobby))
+    if set(FLOORED) - set(walls):
+        bad.append("FLOORED names a wall that does not exist")
     # canopies clear of what they shelter, and of the windows above
     if L.Z_CAN0 < L.Z_DOOR + 0.1:
         bad.append("the canopies sit on the door heads")

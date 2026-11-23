@@ -69,7 +69,7 @@ the front one.
 
 **3.3125 m** floor to floor (212 texels), inside the 3.0-3.3 m band to within
 a centimetre. The ground floor is at grade, with no raised threshold, so the
-loading door opens onto the yard; the entrances' 0.02 m floor slabs
+loading door opens onto the yard; the doors' 0.02 m floor slabs
 (Construction) are a floor finish, not a step. The roof's underside meets the side walls
 at **7.0 m**: the upper storey has 3.69 m to the eave, the extra 0.38 m being
 its roof structure. The wings' felt decks are at 3.75 m, the coping at
@@ -137,8 +137,8 @@ About thirty closed solids unioned with Blender's exact boolean:
 The union trims the wall tops into the roofs, the wings into the block and
 the pillars into the upper floor, and leaves the boundary of one empty volume.
 Every opening is built into its own wall region as brick reveals round a
-closing plane; the three entrances' reveals stand on concrete floor slabs
-(Entrance floor slabs below). The wall regions carry their neighbours'
+closing plane; every door's reveal stands on a concrete floor slab (Door
+floor slabs below). The wall regions carry their neighbours'
 breakpoints explicitly, so all four corners and the porch meet on shared
 vertices.
 
@@ -168,8 +168,9 @@ and vent positions, and `check_layout()`. That check fails the build if:
   0.2 m of wall between it and an opening, a canopy or the wall ladder (the
   shared limits in `scripts/downpipes.py`), or would come down on a wing or
   into the porch;
-- `door_floor.problems()` finds an entrance's floor slab region not its
-  opening's width and its reveal's depth, or the door off the ground.
+- `door_floor.problems()` finds a door's floor slab region not its
+  opening's width and its reveal's depth, or the door off the ground, or a
+  door stands at grade on a wall with no slab for it in `FLOORED`.
 
 ### Two construction lessons from the weld
 
@@ -270,20 +271,29 @@ window in its back wall. The two wings end 0.6 m short of the porch line
 and no wing wall is coplanar with the porch wall, which is the case a union
 does not survive.
 
-### Entrance floor slabs
+### Door floor slabs
 
-The three entrances stand on the ground in reveals that had no upward face
-under them (the ring's floor cap faces down), so a consumer's terrain showed
-inside: grass across the doors and, in the front lobby, along both side
+Every door stands on the ground in a reveal that would have no upward face
+under it (the rings' floor caps face down), so a consumer's terrain would
+show inside: grass across the door and, in the front lobby, along both side
 walls. Each reveal is floored with a concrete slab from the shared
 `scripts/door_floor.py` (`build_opening()` calls `door_floor.recess()`;
-`outline_with_notches()` takes `door_floor.notch()`):
+`outline_with_notches()` takes `door_floor.notch()`), listed by wall and
+kind in `FLOORED`:
 
-| Entrance | Sidecar door | Slab, width x depth | Tiers |
-| --- | --- | --- | --- |
-| the front lobby | `front` | 3.0 x 1.5 m | every tier, as the lobby |
-| the stair door | `stair` | 1.1875 x 0.20 m | `LOD0`, `LOD1` |
-| the porch's entrance | `east_porch` | 3.0 x 0.20 m | `LOD0`, `LOD1` |
+| Door | Sidecar door | Slab, width x depth | Region | Tiers |
+| --- | --- | --- | --- | --- |
+| the front lobby | `front` | 3.0 x 1.5 m | `front` | every tier, as the lobby |
+| the stair door | `stair` | 1.1875 x 0.20 m | `stair` | `LOD0`, `LOD1` |
+| the porch's entrance | `east_porch` | 3.0 x 0.20 m | `porch` | `LOD0`, `LOD1` |
+| the rear service door | `rear` | 1.125 x 0.15 m | `service` | `LOD0`, `LOD1` |
+| the west service door | `west` | 1.125 x 0.15 m | `service` | `LOD0`, `LOD1` |
+| the front wing's service door | `front_wing` | 1.125 x 0.15 m | `service` | `LOD0`, `LOD1` |
+| the back wing's service door | `back_wing` | 1.125 x 0.15 m | `service` | `LOD0`, `LOD1` |
+| the loading door | `loading` | 4.0 x 0.25 m | `loading` | `LOD0`, `LOD1` |
+
+The four service doors share one opening size and one 0.15 m reveal, so one
+region.
 
 - **Top 0.02 m over the ground** (`door_floor.T`), clear of terrain at
   z = 0 and too low to read as a step.
@@ -298,11 +308,11 @@ walls. Each reveal is floored with a concrete slab from the shared
   place, so each slab covers the bottom 1.3 px of its threshold bar.
 - **Its own atlas region** for each slab (Texture set).
 
-`floor_for()` gives an entrance its slab on every tier that cuts its recess
-(`is_cut()`): the lobby on all four, the stair door and the porch's entrance
-on `LOD0` and `LOD1`, since `LOD2` and `LOD3` paint them flat on the wall
-with no reveal. The service doors and the loading door keep their reveals on
-the ground with no floor (Known simplifications).
+`floor_for()` gives a door its slab on every tier that cuts its recess
+(`is_cut()`): the lobby on all four, every other door on `LOD0` and `LOD1`,
+since `LOD2` and `LOD3` paint them flat on the wall with no reveal. The
+porch's undercroft, the 3 m covered ground between the porch wall and the
+pillars, is not a reveal and stays the consumer's terrain.
 
 ## Per-tier triangle counts
 
@@ -310,19 +320,22 @@ Measured on the exported, triangulated GLBs by `scripts/validate_asset.py`:
 
 | Tier | Triangles | Ceiling | Status |
 | --- | --- | --- | --- |
-| `LOD0` | 3850 | 12,000 | under |
-| `LOD1` | 2842 | 4,000 | under |
+| `LOD0` | 3868 | 12,000 | under |
+| `LOD1` | 2860 | 4,000 | under |
 | `LOD2` | 1476 | 1,500 | under |
 | `LOD3` | 496 | 500 | under |
 
-The entrance floor slabs cost 4 triangles each, the nosing and the top, on
-every tier that keeps them: three on `LOD0` and `LOD1`, the lobby's alone on
-`LOD2` and `LOD3`. The front and porch walls re-triangulate round the
-nosings' corners, the floor cap loses the corners that went round the
-reveals, and the union cuts the front wing and the canopies along the new
-triangles' edges. Measured against the tiers before them: `LOD0` and `LOD1`
-+14, `LOD2` -12 (the slab's 4 against 16 fewer where the front wall meets
-the front wing and the canopies after the coplanar dissolve), `LOD3` +8.
+The floor slabs cost 4 triangles each, the nosing and the top, on every
+tier that keeps them: eight on `LOD0` and `LOD1`, the lobby's alone on
+`LOD2` and `LOD3`. The walls re-triangulate round the nosings' corners, the
+floor caps lose the corners that went round the reveals, and the union cuts
+the front wing and the canopies along the new triangles' edges. The three
+entrances' slabs moved `LOD0` and `LOD1` +14, `LOD2` -12 (the slab's 4
+against 16 fewer where the front wall meets the front wing and the canopies
+after the coplanar dissolve) and `LOD3` +8. The five service and loading
+doors' slabs then added 18 to `LOD0` and `LOD1` (20 for the slabs, net of
+the walls' and floor caps' retriangulation) and left `LOD2` and `LOD3` byte-identical, since those
+tiers paint the doors flat.
 
 Where they go, by the atlas area each triangle samples:
 
@@ -453,11 +466,11 @@ sheets in `review/older_audit_2026_11_22/fix_stale_three/tehdas_brick_gable/`.
 | `LOD1` → `LOD2` | 170 m | Nothing seen. Until 2026-11-22 the ribbons went flush here, and all 28 lightened at once as the glass lost its reveal's shade, the building's clearest pop; they now keep their recesses on `LOD2`. The three 0.16 m vents still go, under a pixel wide (0.7 px) and two tall: not found in the pair at native size. Rungs halve and the brackets go. |
 | `LOD2` → `LOD3` | 341 m | The ribbons' recess flattens to a painted quad. The painted reveal occlusion keeps their tone close; up close a faint lightening of the frames remains, and at night the lit panes grow by the reveal's width on oblique views. The downpipes, the ladders and the boxed wings' parapets go, each about a pixel. Left as is: `LOD3` is 4 under its ceiling. |
 
-**The entrance floor slabs (2026-11-23)** add no transition of their own.
-The lobby's is on every tier, as the lobby is. The stair door's and the
-porch entrance's go with their 0.2 m reveals at the `LOD1`/`LOD2` switch,
-where the doors are already painted flat: a 0.02 m nosing and 0.2 m of slab
-are under a pixel at 70 m, and at the consumer's 170 m. Checked from a
+**The door floor slabs (2026-11-23)** add no transition of their own.
+The lobby's is on every tier, as the lobby is. Every other door's goes with
+its 0.15-0.25 m reveal at the `LOD1`/`LOD2` switch, where the doors are
+already painted flat: a 0.02 m nosing and 0.15-0.25 m of slab are under a
+pixel at 70 m, and at the consumer's 170 m. Checked from a
 standing eye (1.7 m, 75 degree vertical FOV, 1280 x 720) and from 0.35 m
 over a terrain plane at z = 0, 2-5 m from each door, obliquely and from
 above, noon and reversed sun, every tier (Review status).
@@ -472,8 +485,8 @@ Sampled hidden-surface test (`scripts/validate_asset.py`, 40 rays per face):
 
 | Tier | Hidden | Where |
 | --- | --- | --- |
-| `LOD0` | 85 / 3850 (2.2 %) | ladder rungs and downpipe backs, below |
-| `LOD1` | 75 / 2842 (2.6 %) | the same, fewer rungs |
+| `LOD0` | 86 / 3868 (2.2 %) | ladder rungs and downpipe backs, below |
+| `LOD1` | 76 / 2860 (2.7 %) | the same, fewer rungs |
 | `LOD2` | 18 / 1476 (1.2 %) | the same |
 | `LOD3` | 0 / 496 | - |
 
@@ -495,9 +508,9 @@ of closed solids, which has no interior by definition.
 Closure faces kept deliberately:
 
 - the floors of the three wall rings, at z = 0 and facing the ground. The
-  main ring's runs straight along the wall line under the entrances' floor
-  slabs, so no face lies at grade inside any entrance's reveal; the slabs
-  are exterior surface and add no face inside the shell;
+  rings' run straight along the wall line under the doors' floor slabs, so
+  no face lies at grade inside any door's reveal; the slabs are exterior
+  surface and add no face inside the shell;
 - the pillars' feet;
 - the rails' feet at the ground.
 
@@ -532,10 +545,9 @@ with more than two faces, 0 loose vertices or edges**.
   but the wings' set-in east faces. Its ground, between the porch wall and
   the pillars, is the consumer's terrain; only the entrance's 0.2 m reveal
   in the porch wall has a floor slab.
-- **Floors:** only the three entrances' reveals have one, a flat concrete
-  slab with no mat, drain or threshold strip (Construction). The service
-  doors' 0.15 m reveals and the loading door's 0.25 m one stand on the
-  consumer's ground, as before.
+- **Floors:** only the doors' reveals have one, a flat concrete slab with
+  no mat, drain or threshold strip (Construction); the loading door's has
+  no tyre wear painted on it.
 
 ## Texture set
 
@@ -574,13 +586,14 @@ Everything singular gets a region above the bands (rows 690-1020):
 - the felt deck, and for `LOD3` the two wing lids, the two-storey window
   bay and the stair column;
 - a vent pipe's side and its open end;
-- the three entrances' floor slabs, at 64 px/m in the free block right of
-  the vent pipe (`FLOORS`, `scripts/door_floor.py`): the lobby's
-  192 x 97.28 px at (820, 690), the stair door's 76 x 14.08 px at
-  (820, 796) and the porch entrance's 192 x 14.08 px at (820, 816). Each is
-  the slab unfolded: U along the wall from the opening's left side, V the
-  nosing's 0.02 m (1.28 px) and then the top from the wall plane to the
-  door;
+- the doors' floor slabs, at 64 px/m (`FLOORS`, `scripts/door_floor.py`):
+  in the free block right of the vent pipe the lobby's 192 x 97.28 px at
+  (820, 690), the stair door's 76 x 14.08 px at (820, 796), the porch
+  entrance's 192 x 14.08 px at (820, 816) and the four service doors' shared
+  72 x 10.88 px at (820, 840); and the loading door's 256 x 17.28 px at
+  (700, 912), above the `LOD3` back-wing lid. Each is the slab unfolded: U
+  along the wall from the opening's left side, V the nosing's 0.02 m
+  (1.28 px) and then the top from the wall plane to the door;
 - eleven flat patches.
 
 `check_regions()` asserts that no two regions overlap, that none runs off the
@@ -698,30 +711,36 @@ Glass, the felt and the patches stay flat.
   - dirt on the thresholds, and grime round the service door's handle;
   - kicked-up dirt across the loading door's foot and rust at its guides;
   - splash on the pillars;
-  - trodden-in dirt on the entrances' floor slabs;
+  - trodden-in dirt on the doors' floor slabs;
   - dirt where the felt ponds;
   - soot and rust runs down the vent pipes.
 - **Glass never weathers.**
 
-### The entrance floor slabs
+### The door floor slabs
 
 Painted by `scripts/door_floor.py` (`paint()`, `grain()`, `weather()`), as
-the catalog's other entrance slabs are: float-finished cast concrete,
+the catalog's other door slabs are: float-finished cast concrete,
 `ID_FLOOR`, sRGB **(132, 130, 124)** in every variant, roughness **0.88**,
 nonmetallic. Occlusion deepens toward the jambs and the door (within 0.12 m
-in the lobby, 0.08 m in the shallow reveals), a slightly paler path is worn
-toward the leaves, the pores are the plinth's noise at 5 % shade and 0.4 mm
-of height, and blotchy trodden-in dirt lies over it. Each region bleeds 2 px
-into its gutter.
+in the lobby, 0.06-0.10 m in the shallow reveals), a slightly paler path is
+worn toward the leaves, the pores are the plinth's noise at 5 % shade and
+0.4 mm of height, and blotchy trodden-in dirt lies over it. The loading
+door's slab has no worn path (`tread` off the slab): vehicles cross it, not
+feet. Each region bleeds 2 px into its gutter.
 
-Adding them changed only the free block they stand in: the normal map
-differs nowhere else, the emission map is the same file, and the albedos and
-the ORM differ elsewhere only in that block's padding (x 799-1023,
-y 685-1023), which now carries the slabs' edges instead of the vent pipe's
-and the `LOD3` deck's; by up to 3/255 in the padding at the sheet's left
-edge (x 0-5), which the cavity filter's wrap in U reaches from the block;
-and by 1/255 in a few dozen texels of the flashing band's top gutter and of
-`LOD3_BAY` (working diff in `review/review_2026_11_23/`, not committed).
+Adding the entrances' three slabs changed only the free block they stand
+in: the normal map differs nowhere else, the emission map is the same file,
+and the albedos and the ORM differ elsewhere only in that block's padding
+(x 799-1023, y 685-1023), which now carries the slabs' edges instead of the
+vent pipe's and the `LOD3` deck's; by up to 3/255 in the padding at the
+sheet's left edge (x 0-5), which the cavity filter's wrap in U reaches from
+the block; and by 1/255 in a few dozen texels of the flashing band's top
+gutter and of `LOD3_BAY`. Adding the service and loading slabs changed the
+normal map only within 6 px of the two new regions; the emission map is the
+same file; the albedos and the ORM differ outside the new regions only in
+unclaimed padding of the free space above y 831, whose nearest region is now
+a slab, and by 1/255 in one ORM texel of `LOD3_BAY` (working diffs in
+`review/review_2026_11_23/`, not committed).
 
 ## Glazing treatment
 
@@ -922,6 +941,32 @@ Completed in this repository:
     the sidecar written from an uncommitted tree, to be rewritten with
     `build.py -- facts` once committed.
 
+- The service and loading doors' floor slabs (Construction, Revision log),
+  from a snapshot in `review/review_2026_11_23/tehdas_brick_gable_pass2/`:
+  - **Door views** (`door_views.py` there, every tier, noon and reversed
+    sun, over a green terrain plane at z = 0, every camera outside the
+    building): each of the five doors from 3.5 m at eye level, from 0.35 m
+    up, from above and obliquely from both sides (the loading door's views
+    1.75 times farther). Before, grass ran into each reveal up to the door;
+    after, concrete fills each reveal wall to wall on `LOD0` and `LOD1`, its
+    nosing a light line on the wall plane with nothing past it, no dark seam
+    or stretched texels.
+  - **`review_asset.py`** from both: the six orthographic views, and every
+    tier front and oblique at 20, 35, 70 and 120 m under noon; mean
+    difference 0.00/255 in every view, no pixel over 24/255.
+  - `LOD2` and `LOD3` are byte-identical GLBs. Their door views still differ
+    by up to 31/255 in a one-pixel line along the wall foot: the brick band
+    starts at the atlas's bottom edge, so the foot's bilinear sample wraps
+    to the sheet's top row, unclaimed padding whose nearest region is now
+    the loading door's slab. The wrapped colour is now nearer the plinth's
+    (mean sRGB about 120-177 against 199-220 before in x 512-1023);
+    confirmed by rendering the old GLBs with the new PNGs, which reproduces
+    the new renders exactly.
+  - Bounds, pivot, footprint, storeys and all eight doors in the sidecar
+    unchanged; `scripts/validate_asset.py`: 0 FAIL, every door on its slab
+    on `LOD0` and `LOD1` and the lobby on every tier; the one WARN is
+    `source.dirty`.
+
 Pending, outside this repository:
 
 - Consumer import, LOD switching and runtime emission control.
@@ -947,6 +992,14 @@ Pending, outside this repository:
 
 ## Revision log
 
+- **2026-11-23 — every door floored.** The four service doors (rear, west
+  gable, both wings) and the loading door now stand on concrete slabs too,
+  on `LOD0` and `LOD1` where their reveals are cut: the service doors on one
+  shared 1.125 x 0.15 m region, the loading door on a 4.0 x 0.25 m one with
+  no worn path. `FLOORED` covers every wall, and `check_layout()` fails a
+  door at grade with no slab. Tiers 3850/2842/1476/496 to 3868/2860/1476/496;
+  `LOD2` and `LOD3` byte-identical; bounds, pivot, footprint, storeys and
+  doors unchanged; the emission map unchanged.
 - **2026-11-23 — entrance floor slabs.** The three entrances' reveals (the
   front lobby, the stair door, the porch's entrance) had no upward face under
   them, so a consumer's terrain showed inside. Each now stands on a concrete
