@@ -29,6 +29,11 @@ panels either side of the pier. A white crest caps the ridge from rake to
 rake, and the pharmacy's sign stands on it above the pier, a lit cube on four
 steel legs.
 
+The display windows and the door stand 0.18 m back in their openings, on the
+ground, and the door 0.43 m back from the pier's face: each set-back stands on
+a 0.02 m concrete floor slab (scripts/door_floor.py), the windows' and the
+door's in the wall, the portal's in the pier, so no terrain shows inside.
+
 Construction is a set of closed solids unioned with Blender's exact boolean:
 the wall ring, the roof, the ridge crest, the middle pier, the plaque over the
 door, the sign and its stand, the wall-hung air handler, the roof stacks, the
@@ -61,6 +66,7 @@ ASSET = L.ASSET
 EXPORT_DIR = os.path.join(HERE, "export")
 sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "scripts"))
 import asset_build  # noqa: E402
+import door_floor as DF  # noqa: E402
 import downpipes as DP  # noqa: E402
 import model_facts  # noqa: E402
 import roof_safety as RS  # noqa: E402
@@ -137,6 +143,14 @@ def opening_mode(level, where):
     switch. *where* is kept for the front, which could differ again.
     """
     return "cut" if level < 2 else "flush"
+
+
+def floored(level):
+    """Whether the shopfront's and the door's set-backs stand on their floor
+    slabs at *level*: on every tier that cuts them (opening_mode()); a flush
+    opening has no reveal to floor. The portal's slab is the pier's, on every
+    tier that keeps the pier."""
+    return opening_mode(level, "front") == "cut"
 
 
 def pier_kept(level):
@@ -503,7 +517,15 @@ def gable_apex(B, fr):
 
 # --------------------------------------------------------------- elevations
 def build_front(B, fr, level):
+    """The street front. While the openings are cut, the door and the two
+    display windows stand GLAZE_DEPTH back on concrete floor slabs
+    (door_floor.recess()): a nosing on the wall plane from the ground to the
+    slab's top, the reveal starting on that top. The piers' edges beside
+    them carry the nosings' top corners (door_floor.notch() round the door),
+    so wall, nosing, slab and cheeks meet on shared vertices and the floor
+    cap's rim runs straight along the wall line."""
     mode = opening_mode(level, "front")
+    slab = floored(level)
     d0, d1, _dz0, dz1 = DOOR_RECT
     for i, (a, b) in enumerate(L.PIERS):
         lb, rb = PIER_BREAK[i]
@@ -511,22 +533,30 @@ def build_front(B, fr, level):
         if i == MID_PIER:
             # the entrance stands on the ground, so it is a notch in the
             # pier's outline rather than a hole in it
-            poly += [(d0, 0.0), (d0, dz1), (d1, dz1), (d1, 0.0)]
+            poly += (DF.notch(DOOR_RECT) if slab else
+                     [(d0, 0.0), (d0, dz1), (d1, dz1), (d1, 0.0)])
         poly.append((b, 0.0))
         if rb:
+            if slab:
+                poly.append((b, DF.T))      # the window slab's nosing corner
             poly.append((b, L.Z_HEAD))
         poly += [(b, L.Z_FASCIA), (a, L.Z_FASCIA)]
         if lb:
             poly.append((a, L.Z_HEAD))
+            if slab:
+                poly.append((a, DF.T))
         fill_region(B, fr, poly, [], uv_stone(fr, 0.0))
 
-    # The door unit, recessed like the display windows while they are.
+    # The door unit, recessed like the display windows while they are. Its
+    # slab samples the portal's floor region where the door's reveal
+    # continues it (facade_atlas.DOOR_FLOOR); its nosing is buried in the
+    # pier's slab in front of it.
     door = rect_poly(DOOR_RECT)
-    out = 0.0
-    if mode == "cut":
-        reveal(B, fr, door, L.GLAZE_DEPTH, skip_z=0.0)
-        out = -L.GLAZE_DEPTH
-    B.face([fr.P(s, z, out) for s, z in door], uv_door(fr, d0))
+    if slab:
+        DF.recess(B, fr, DOOR_RECT, 0.0, -L.GLAZE_DEPTH, uv_door(fr, d0),
+                  [uv_reveal(fr, edge) for edge in SB.edges(door)], L.DOOR_FLOOR)
+    else:
+        B.face([fr.P(s, z) for s, z in door], uv_door(fr, d0))
 
     # The gable panels' outer jambs stand over the display windows' sign
     # boards, so the board's top edge carries them as breakpoints.
@@ -538,15 +568,17 @@ def build_front(B, fr, level):
                 + [(v, L.Z_FASCIA) for v in reversed(tops)]
                 + [(a, L.Z_FASCIA)]],
                uv_fascia(fr, name, a))
-        poly = rect_poly((a, b, 0.0, L.Z_HEAD))
-        out = 0.0
-        if mode == "cut":
-            reveal(B, fr, poly, L.GLAZE_DEPTH, skip_z=0.0)
-            out = -L.GLAZE_DEPTH
+        rect = (a, b, 0.0, L.Z_HEAD)
+        poly = rect_poly(rect)
         # Each window's lights are counted from its pier end, so the two
         # mirror each other about the entrance.
-        B.face([fr.P(s, z, out) for s, z in poly],
-               uv_shop(fr, a, b, flip=b <= L.ENTRANCE_S))
+        glass = uv_shop(fr, a, b, flip=b <= L.ENTRANCE_S)
+        if slab:
+            DF.recess(B, fr, rect, 0.0, -L.GLAZE_DEPTH, glass,
+                      [uv_reveal(fr, edge) for edge in SB.edges(poly)],
+                      L.FLOORS["shop"])
+        else:
+            B.face([fr.P(s, z) for s, z in poly], glass)
 
     breaks = [v for a, b in L.PIERS for v in (a, b)]
     gable_band(B, fr, L.GABLE_SILL, Z_CUT, notches=L.GABLE_PANELS,
@@ -679,7 +711,7 @@ def roof():
 
 
 # ============================================================ other solids
-PIER_OUT = 0.25             # how far the middle pier stands off the gable
+PIER_OUT = L.PIER_OUT       # how far the middle pier stands off the gable
 PIER_IN = 0.10              # and how far it sinks into it, so no face is
                             # coplanar with the wall it is unioned into
 
@@ -696,7 +728,15 @@ def mid_pier():
     The portal is an opening through the whole depth of the solid, lined in
     the pier's own coursing turned round its corners, PORTAL_REBATE clear of
     the door's reveal on every side so no face of the pier lies in the plane
-    of one of the wall's. It has no floor: the passage is pavement.
+    of one of the wall's. It stands on a concrete floor slab
+    (door_floor.recess()), its nosing on the pier's face and its top 0.02 m
+    over the ground through the whole depth of the solid, where the door's
+    own slab in the wall (build_front()) continues it to the door on the
+    same atlas region. The slab's top is the one face the pier shares with
+    the wall's plane: both are z = 0.02 over the door's reveal, and the exact
+    union merges them. Under it the solid's foot runs straight across the
+    portal, and its back face closes over the slab's 0.02 m at y_in, inside
+    the door's slab.
     """
     B = Builder()
     a, b = L.PIERS[MID_PIER]
@@ -710,14 +750,16 @@ def mid_pier():
     def top(x):
         return L.roof_under(x) + L.WALL_INTO_ROOF
 
-    portal = [(p0, 0.0), (p0, pz1), (p1, pz1), (p1, 0.0)]
+    portal = DF.notch(PORTAL_RECT)             # with the slab's top corners
     fill_region(B, fr, [(a, 0.0)] + portal + [(b, 0.0), (b, CUT), (a, CUT)],
                 [], uv_stone(fr, 0.0), out=PIER_OUT)
     fill_region(B, fr, rect_poly((a, b, CUT, Z_CUT)), [], uv_stone(fr, CUT),
                 out=PIER_OUT)
     fill_region(B, fr, [(a, Z_CUT), (b, Z_CUT), (b, top(x1)), (HX, top(0.0)),
                         (a, top(x0))], [], uv_stone(fr, Z_CUT), out=PIER_OUT)
-    reveal(B, face, rect_poly(PORTAL_RECT), PIER_OUT + PIER_IN, skip_z=0.0)
+    DF.recess(B, face, PORTAL_RECT, 0.0, -(PIER_OUT + PIER_IN), None,
+              [uv_reveal(face, edge) for edge in SB.edges(rect_poly(PORTAL_RECT))],
+              L.FLOORS["portal"])
 
     blank = uv_patch("blank")
     fill_region(B, fr, [(a, 0.0)] + portal
@@ -732,7 +774,10 @@ def mid_pier():
     for xa, xb in ((x0, 0.0), (0.0, x1)):
         B.face([(xa, y_in, top(xa)), (xb, y_in, top(xb)),
                 (xb, y_out, top(xb)), (xa, y_out, top(xa))], blank)
-    for xa, xb in ((x0, xp0), (xp1, x1)):         # the portal's two feet
+    # the back of the slab under the portal, inside the door's own slab
+    B.face([fr.P(p1, 0.0, -PIER_IN), fr.P(p0, 0.0, -PIER_IN),
+            fr.P(p0, DF.T, -PIER_IN), fr.P(p1, DF.T, -PIER_IN)], blank)
+    for xa, xb in ((x0, xp0), (xp0, xp1), (xp1, x1)):   # the foot, under the slab
         B.face([(xa, y_in, 0.0), (xa, y_out, 0.0), (xb, y_out, 0.0),
                 (xb, y_in, 0.0)], blank)
     return B
@@ -1011,6 +1056,22 @@ def check_layout():
     if p0 - a < 0.3 - EPS or b - p1 < 0.3 - EPS:
         bad.append("the portal leaves the middle pier less than 0.3 m of stone "
                    "either side")
+    # the set-backs' floor slabs (scripts/door_floor.py): each region the
+    # opening's width and the set-back's depth, under an opening at grade;
+    # the portal's runs from the pier's face to the door, and the pier's
+    # solid ends inside the door's reveal, on the door's slab
+    for name, a_, b_ in L.BAYS:
+        bad += DF.problems(L.FLOORS["shop"], "the %s display window" % name,
+                           (a_, b_, 0.0, L.Z_HEAD), L.GLAZE_DEPTH)
+    bad += DF.problems(L.DOOR_FLOOR, "the entrance", DOOR_RECT, L.GLAZE_DEPTH)
+    bad += DF.problems(L.FLOORS["portal"], "the portal", PORTAL_RECT,
+                       PIER_OUT + L.GLAZE_DEPTH)
+    if not 0.0 < PIER_IN < L.GLAZE_DEPTH:
+        bad.append("the pier's portal slab does not end inside the door's reveal")
+    portal_floor = L.FLOORS["portal"]
+    if (abs(L.DOOR_FLOOR.x - portal_floor.x - (DOOR_RECT[0] - p0) * PPM) > EPS
+            or abs(L.DOOR_FLOOR.y - portal_floor.y - PIER_OUT * PPM) > EPS):
+        bad.append("the door's floor does not continue the portal's on its region")
     if abs(L.ENTRANCE_S - HX) > EPS:
         bad.append("the entrance is %.2f m off the front's centre"
                    % (L.ENTRANCE_S - HX))

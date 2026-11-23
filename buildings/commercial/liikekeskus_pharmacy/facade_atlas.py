@@ -22,8 +22,10 @@ courses at the wrap lines and the band carries periodic padding at both, so the
 seam samples the artwork that actually continues there rather than a neighbour.
 
 Everything singular -- the entrance doors, the two sign boards, the gable
-curtain wall, the roof, the plant -- gets a region of its own above the bands. atlas.pad() fills
-every sample no region claims from the nearest region's own edge.
+curtain wall, the roof, the plant -- gets a region of its own above the bands,
+and so do the concrete floor slabs at the foot of the shopfront and through
+the entrance's portal (scripts/door_floor.py). atlas.pad() fills every sample
+no region claims from the nearest region's own edge.
 
 Rasterising is scripts/atlas.py's: a canvas supersampled SS x SS per pixel,
 with a height channel the normal map is derived from, so the sign board's
@@ -50,6 +52,7 @@ import numpy as np
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "scripts"))
 import atlas  # noqa: E402
+import door_floor as DF  # noqa: E402
 import glazing  # noqa: E402
 import lettering  # noqa: E402
 import weathering  # noqa: E402
@@ -116,6 +119,7 @@ ENTRANCE_W = 2.0
 PORTAL_REBATE = 0.05
 PORTAL_W = ENTRANCE_W + 2.0 * PORTAL_REBATE      # 2.10
 PORTAL_HEAD = Z_HEAD + PORTAL_REBATE             # 3.30
+PIER_OUT = 0.25             # how far the middle pier stands off the gable
 
 # The pharmacy mark over the entrance, a lit plaque on the pier's face: the
 # same square artwork as the sign on the ridge (LOGO), at 1.2 m rather than
@@ -237,6 +241,23 @@ FASCIA = {"left": (254, SHELF_B, FASCIA_W, FASCIA_H),
 GABLE_PPM = 48.0
 ROOF_PPM = 13.0
 
+# The concrete floor slabs (scripts/door_floor.py), each unfolded at 64 px/m:
+# U along the wall, V up the 0.02 m nosing and back across the top.
+# - "shop": the foot of a display window's 0.18 m set-back, 9.0 m wide; both
+#   windows take it, from their own left jamb (its shading is symmetric). No
+#   one walks there, so it has no worn path.
+# - "portal": the entrance's passage, from the middle pier's face through
+#   the portal and the door's reveal to the door, 2.10 x 0.43 m. The pier's
+#   solid floors the portal; the door's reveal in the wall floors the rest
+#   through DOOR_FLOOR, a window on the same region PORTAL_REBATE in from its
+#   left and PIER_OUT back, so the two meet without a seam. DOOR_FLOOR is
+#   never painted on its own.
+FLOORS = {"shop": DF.Floor(254, 932, SHOP_W, GLAZE_DEPTH, tread=-1e3),
+          "portal": DF.Floor(254, 954, PORTAL_W, PIER_OUT + GLAZE_DEPTH,
+                             tread=PORTAL_W / 2.0)}
+DOOR_FLOOR = DF.Floor(FLOORS["portal"].x + PORTAL_REBATE * PPM,
+                      FLOORS["portal"].y + PIER_OUT * PPM, ENTRANCE_W, GLAZE_DEPTH)
+
 # Only surfaces with genuinely nothing to say get a flat swatch: caps buried
 # by the union, the sign box's lid and underside, its stand, and the painted
 # returns of the plant. Every stone reveal and return samples the stone band
@@ -257,6 +278,7 @@ def item_size_m(kind):
 ID_BLANK, ID_STONE, ID_ROOF, ID_EAVE, ID_GLASS = 0, 1, 2, 3, 4
 ID_FRAME, ID_DOOR, ID_KICK, ID_STEEL, ID_METAL = 5, 6, 7, 8, 9
 ID_SIGN, ID_SIGN_G, ID_SIGN_T, ID_GUTTER = 10, 11, 12, 13
+ID_FLOOR = 14           # the cast concrete floor slabs (scripts/door_floor.py)
 
 # (roughness, metallic). Painted steel stays dielectric: the paint is what the
 # light sees. The shopfront sections are anodised aluminium and the roof stacks
@@ -267,7 +289,7 @@ SURFACE = {
     ID_FRAME: (0.32, 0.74), ID_DOOR: (0.36, 0.70), ID_KICK: (0.62, 0.0),
     ID_STEEL: (0.52, 0.0), ID_METAL: (0.44, 0.72),
     ID_SIGN: (0.18, 0.0), ID_SIGN_G: (0.20, 0.0), ID_SIGN_T: (0.22, 0.0),
-    ID_GUTTER: (0.48, 0.0),
+    ID_GUTTER: (0.48, 0.0), ID_FLOOR: DF.SURFACE,
 }
 
 # ---------------------------------------------------------------- palettes
@@ -294,6 +316,7 @@ FIXED = {
     ID_GLASS: glazing.BASE, ID_FRAME: (74, 78, 76), ID_BLANK: (52, 52, 52),
     ID_STEEL: (38, 39, 40), ID_METAL: (150, 152, 154),
     ID_SIGN: (233, 237, 234), ID_SIGN_G: (20, 98, 64), ID_SIGN_T: (34, 46, 42),
+    ID_FLOOR: DF.COLOUR,
 }
 
 # A stray pixel in a tiling band is not a local blemish: every surface that
@@ -707,6 +730,7 @@ REGIONS = {"door_double": DOOR_DOUBLE,
            "vent_box": VENT_BOX, "vent_pipe": VENT_PIPE}
 REGIONS.update({"fascia_" + k: v for k, v in FASCIA.items()})
 REGIONS.update(PATCHES)
+REGIONS.update({"floor_" + k: f.rect for k, f in FLOORS.items()})
 
 
 def check_regions():
@@ -717,6 +741,10 @@ def check_regions():
     for y0, h in ((STONE_Y0, STONE_H), (SHOP_Y0, SHOP_H), (SOF_Y0, SOF_H)):
         if y0 - PAD < 0:
             problems.append("band at %d has no gutter below it" % y0)
+    px, py, pw, ph = FLOORS["portal"].rect
+    dx, dy, dw, dh = DOOR_FLOOR.rect
+    if dx < px or dy < py or dx + dw > px + pw + 1e-6 or dy + dh > py + ph + 1e-6:
+        problems.append("the door's floor runs off the portal's floor region")
     if problems:
         raise ValueError("atlas layout: " + "; ".join(sorted(set(problems))))
 
@@ -764,6 +792,9 @@ def weather(c):
     # the plant and the vents: runs down their cases
     for x, y, pw, ph in (AHU_SIDE, LOUVRE, VENT_BOX):
         w.runs(x, x + pw, y, y + ph, (ID_STEEL,), 0.12, fall=ph / 2.0)
+    # the floor slabs: trodden-in dirt
+    for f in FLOORS.values():
+        DF.weather(w, f, ID_FLOOR)
     return w
 
 
@@ -796,6 +827,8 @@ def paint(ss=atlas.SS):
     for key in FASCIA:
         paint_fascia(c, key)
     paint_logo(c)
+    for f in FLOORS.values():
+        DF.paint(c, f, ID_FLOOR)
     paint_patches(c)
 
     sheeted = np.isin(c.mid, (ID_EAVE, ID_ROOF, ID_STEEL, ID_METAL, ID_DOOR,
@@ -803,6 +836,7 @@ def paint(ss=atlas.SS):
     grain = atlas.noise(c, 5, 60.0, 0.35)
     soft = atlas.noise(c, 11, 20.0)
     c.shade[sheeted] *= 1.0 + 0.014 * grain[sheeted] + 0.02 * soft[sheeted]
+    DF.grain(c, ID_FLOOR, atlas.noise(c, 9, 0.8))
 
     weather(c)
     atlas.pad_periodic(c, STONE_Y0, STONE_H, PAD)
