@@ -25,9 +25,8 @@ and its underside are regions of their own:
                               bays, 33 px/m both ways, V = plan depth
     y  500 ..  712   INT      the bays' back wall: footing, bare boards, girts
     y  716 ..  984   unique   bay side walls, both doors, post and corner
-                              strips, flat patches, the concrete floor slab
-                              in the workshop door's reveal
-                              (scripts/door_floor.py)
+                              strips, flat patches, the concrete floor slabs
+                              in both doors' reveals (scripts/door_floor.py)
     y  984 .. 1004   FASC_R   the rear (low) eave's fascia with the gutter
     y 1004 .. 1024   FASCIA   the slab's front and rake edges: white board,
                               sheet flashing
@@ -127,14 +126,20 @@ CORNER = (704.0, UNI_Y0, CW * PPM, Z_WALL_MAX * PPM)
 PATCHES = {name: (722.0 + 14.0 * i, UNI_Y0, 8.0, 8.0) for i, name in enumerate(
     ("header", "soffit", "reveal", "blank"))}
 
-# The concrete floor slab in the workshop door's reveal (scripts/door_floor.py),
-# unfolded at 64 px/m in the free rows over the door's region: U across the
-# casing's 1.15 m from its left side, V up the 0.02 m nosing and back across
-# the 0.12 m reveal to the leaf. LOD1's recess is the casing's width; LOD0's,
-# inside the casing ring, samples the middle 0.9 m of it. The vehicle pair's
-# reveal has none.
-FLOOR = DF.Floor(600, 872, OPENINGS["door"][0] + 2 * OPENINGS["door"][2],
-                 REVEAL_DEPTH["door"])
+# The concrete floor slabs in the two doors' reveals (scripts/door_floor.py),
+# one region an opening kind, unfolded at 64 px/m: U across the casing from
+# its left side, V up the 0.02 m nosing and back across the reveal to the
+# leaf. LOD1's recess is the casing's width; LOD0's, inside the casing ring,
+# samples the leaf's middle stretch of it. The workshop door's (1.15 x 0.12 m)
+# lies in the free rows over the door's region, with a worn path to the leaf;
+# the machine door's (3.25 x 0.15 m), a vehicle door that no one walks in on
+# a path, lies right of the flat patches and has none.
+def _floor(kind, x, y, **kw):
+    return DF.Floor(x, y, OPENINGS[kind][0] + 2 * OPENINGS[kind][2], REVEAL_DEPTH[kind], **kw)
+
+
+FLOORS = {"door": _floor("door", 600, 872),
+          "door_pair": _floor("door_pair", 790, 720, tread=-1e3)}
 
 # The two fascia bands, above the unique regions, V = height over the slab's
 # underside: the rear (low) edge's with the gutter across its top (FASC_R),
@@ -166,7 +171,7 @@ def item_size_px(kind):
 ID_WALL, ID_TRIM, ID_FOOT, ID_ROOF, ID_DOOR, ID_INNER, ID_SHEET, ID_BLANK, ID_HW = (
     0, 1, 2, 3, 4, 5, 6, 7, 8)
 ID_GUTTER = 9                # gutter, downpipes and snow guard: galvanised steel
-ID_FLOOR = 10                # the cast concrete floor slab in the workshop door's reveal
+ID_FLOOR = 10                # the cast concrete floor slabs in the doors' reveals
 # (roughness, metallic). Red ochre (punamulta) is a very matte paint; the
 # sheet's underside is bare galvanised steel gone dull under dust and
 # condensation, kept nearly dielectric: a brighter metallic underside reflected
@@ -627,8 +632,9 @@ def weather(c):
         hx = (ox0 + ox1) / 2.0 if kind == "door_pair" else ox1 - m(0.10)
         w.door(ox0, ox1, oy0, oy1, (ID_DOOR, ID_TRIM), handle=(hx, oy0 + m(1.10)))
         w.splash(x0 - 2, x0 + item_size_px(kind)[0] + 2, yb, yb + m(0.8), (ID_TRIM,))
-    # the floor slab in the workshop door's reveal: trodden-in dirt
-    DF.weather(w, FLOOR, ID_FLOOR)
+    # the floor slabs in the doors' reveals: trodden-in dirt
+    for f in FLOORS.values():
+        DF.weather(w, f, ID_FLOOR)
     return w
 
 
@@ -646,7 +652,8 @@ def paint(ss=atlas.SS):
         paint_opening(c, kind)
     paint_post(c)
     paint_corner(c)
-    DF.paint(c, FLOOR, ID_FLOOR)
+    for f in FLOORS.values():
+        DF.paint(c, f, ID_FLOOR)
     paint_patches(c)
 
     wear = 0.025 * atlas.noise(c, 3, 40.0) + 0.015 * atlas.noise(c, 4, 8.0)

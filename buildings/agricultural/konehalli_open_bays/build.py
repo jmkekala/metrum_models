@@ -19,8 +19,9 @@ farm: a low 10.5 x 6.0 m board-and-batten shed under a mono-pitch roof that
 falls from the yard side to the rear, three 3.5 m bays along it. Two bays are
 open to the yard, the full depth of the shed, with a white post between them
 and a white header over them; the third is a closed workshop with a pair of
-framed board doors on the front and a pedestrian door in its end wall, whose
-reveal stands on a 0.02 m concrete floor slab (scripts/door_floor.py).
+framed board doors on the front and a pedestrian door in its end wall. Both
+doors' reveals stand on a 0.02 m concrete floor slab (scripts/door_floor.py);
+the open bays' floor is the ground.
 
 Construction is a set of closed solids unioned with Blender's exact boolean:
 the wall ring, the roof slab, the post and the header. The wall ring is not a
@@ -282,10 +283,10 @@ def recess(B, fr, rect, depth, fn, rev, floor=True):
     """Push a rectangle *depth* back from the wall and close it
     (shell_build.recess()).
 
-    An opening that stands on the ground gets no floor of its own, as in
-    lahikauppa_corner: the strip it would lay at z = 0 would sit on top of the
-    floor the wall ring is capped with. Left out, the ring's rim detours
-    round the recess and the floor cap covers it.
+    Without *floor* the recess lays no strip at z = 0, where it would sit on
+    the floor the wall ring is capped with: the ring's rim detours round it
+    and the cap covers it. Both doors now stand on door_floor slabs instead
+    (floored()), so this serves only an opening floored() leaves out.
     """
     SB.recess(B, fr, rect_poly(rect), 0.0, depth, fn, rev,
               skip_z=None if floor else rect[2])
@@ -296,18 +297,18 @@ def item_rects(kind, s, z):
 
 
 def floored(kind, z, level):
-    """Whether the opening stands on the door_floor slab at *level*: the
-    workshop door (the pedestrian "door"; the vehicle pair is left on the
-    ground), at grade, on every tier that recesses it (ring or cut); a flush
-    door has no reveal to floor."""
-    return kind == "door" and abs(z) < EPS and item_mode(kind, level) != "flush"
+    """Whether the opening stands on its door_floor slab (L.FLOORS[kind]) at
+    *level*: both doors, the workshop's and the machine pair, at grade, on
+    every tier that recesses them (ring or cut); a flush door has no reveal
+    to floor."""
+    return kind in L.FLOORS and abs(z) < EPS and item_mode(kind, level) != "flush"
 
 
 def build_item(B, fr, kind, s, z, level):
     """Faces for one door standing on the ground; returns the notch it cuts
     in the bottom edge of its wall region, as outline points left to right.
 
-    The workshop door's reveal stands on a concrete floor slab
+    Each door's reveal stands on a concrete floor slab
     (scripts/door_floor.py, floored()): its nosing on the wall plane under
     the opening, its top door_floor.T over the ground and the reveal's foot,
     so the consumer's terrain cannot show inside. LOD1's recess is the
@@ -328,7 +329,7 @@ def build_item(B, fr, kind, s, z, level):
         return notch
     if mode == "cut":
         if slab:
-            DF.recess(B, fr, (ol, orr, ob, ot), 0.0, depth, fn, rev, L.FLOOR)
+            DF.recess(B, fr, (ol, orr, ob, ot), 0.0, depth, fn, rev, L.FLOORS[kind])
             return DF.notch((ol, orr, ob, ot))
         recess(B, fr, (ol, orr, ob, ot), depth, fn, rev, floor=False)
         return notch
@@ -343,7 +344,7 @@ def build_item(B, fr, kind, s, z, level):
             ring.insert(3, (il, zf))
         B.face([fr.P(*p) for p in ring], fn)
     if slab:
-        DF.recess(B, fr, (il, ir, ib, it), 0.0, depth, fn, rev, L.FLOOR, u0=ol)
+        DF.recess(B, fr, (il, ir, ib, it), 0.0, depth, fn, rev, L.FLOORS[kind], u0=ol)
     else:
         recess(B, fr, (il, ir, ib, it), depth, fn, rev, floor=False)
     return notch
@@ -578,23 +579,28 @@ def check_layout():
         problems.append("the roof or ceiling region runs into S1 or INT")
     if L.UNI_Y0 + L.Z_WALL_MAX * PPM + 2 > L.FASC_R_Y0 - 2:
         problems.append("the unique regions run into the rear fascia band")
-    # the workshop door's reveal on its floor slab (scripts/door_floor.py):
-    # the slab's region the casing's width and the reveal's depth, under a
-    # door at grade, clear of the other unique regions and of the fascia band
-    east = next(w for w in WALLS if w["name"] == "east")
-    kind, s, z = east["items"][0]
-    if kind != "door":
-        problems.append("the east wall's item is not the workshop door")
-    problems += DF.problems(L.FLOOR, "the workshop door", item_rects(kind, s, z)[0],
-                            L.REVEAL_DEPTH[kind])
-    unique = {"side": L.SIDE, "post": L.POST, "corner": L.CORNER, "floor": L.FLOOR.rect}
+    # both doors' reveals on their floor slabs (scripts/door_floor.py): each
+    # slab's region the casing's width and the reveal's depth, under a door
+    # at grade, clear of the other unique regions and of the fascia band;
+    # every door the walls carry has one
+    for spec in WALLS:
+        for kind, s, z in spec.get("items", []):
+            name = "%s: %s" % (spec["name"], kind)
+            if kind not in L.FLOORS:
+                problems.append("%s has no floor slab" % name)
+                continue
+            problems += DF.problems(L.FLOORS[kind], name, item_rects(kind, s, z)[0],
+                                    L.REVEAL_DEPTH[kind])
+    unique = {"side": L.SIDE, "post": L.POST, "corner": L.CORNER}
+    unique.update(("floor_" + k, f.rect) for k, f in L.FLOORS.items())
     for k in L.OPENINGS:
         unique[k] = L.ITEM_ORIGIN[k] + L.item_size_px(k)
     unique.update(("patch_" + k, r) for k, r in L.PATCHES.items())
     problems += L.atlas.region_problems(unique, L.ATLAS, bands_top=L.BAND_IDS["INT"][0][1])
-    fx, fy, fw, fh = L.FLOOR.rect
-    if fy + fh + 2 > L.FASC_R_Y0 - 2:
-        problems.append("the floor slab's region runs into the rear fascia band")
+    for k, f in L.FLOORS.items():
+        fx, fy, fw, fh = f.rect
+        if fy + fh + 2 > L.FASC_R_Y0 - 2:
+            problems.append("the %s's floor slab region runs into the rear fascia band" % k)
     return problems
 
 

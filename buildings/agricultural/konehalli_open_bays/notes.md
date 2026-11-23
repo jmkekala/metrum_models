@@ -23,8 +23,8 @@ variants. The roof sheds to the rear, so the rear (low) eave carries a
 galvanised half-round gutter, with a downpipe at each end of the rear wall
 and a snow guard (*lumieste*) on the roof just above the eave, all three in
 the same galvanised steel as the gutters of the farm's barn and grain dryer.
-It has no chimney, roof plant, fences, ground or slab; only the workshop
-door's reveal stands on a small concrete entrance slab (Construction).
+It has no chimney, roof plant, fences, ground or slab; only the two doors'
+reveals stand on small concrete floor slabs (Construction).
 
 ## Category and secondary use
 
@@ -62,8 +62,8 @@ included). That puts it 0.10 m in front of the walls' centre. It is taken from
 
 ## Story height
 
-**One storey, 3.00–4.00 m.** The floor is the ground; the workshop door's
-0.02 m floor slab (Construction) is a floor finish in its reveal, not a
+**One storey, 3.00–4.00 m.** The floor is the ground; the doors' 0.02 m
+floor slabs (Construction) are a floor finish in their reveals, not a
 step. The clear height under
 the roof falls from 4.00 m at the front wall to 3.00 m at the rear, and the
 open bays' opening is 3.70 m under the header. That is above the
@@ -82,7 +82,9 @@ at the door.
   not apply. The 2.10 m pedestrian door beside it in the end wall carries
   the scale. The pair's frames and braces are painted at full size: a
   0.10 m frame, a mid rail at 1.54 m and one diagonal brace per panel,
-  rising away from the hinges.
+  rising away from the hinges. Its threshold is at ground level; its reveal
+  stands on a 0.02 m concrete floor slab (Construction), which leaves the
+  3.20 m as built.
 - The open bays have no door leaf.
 
 ## Window sills
@@ -123,10 +125,8 @@ underside there is the bays' ceiling.
 
 The bays have no floor face. The ground is their floor, so the shell's bottom
 is the ring's own floor cap and the post's foot. Both doors stand on the
-ground too. The vehicle pair's recess is built with `floor=False`, so the
-ring's rim detours round it and the floor cap closes it; the workshop door's
-reveal stands on a concrete floor slab (Entrance floor slab below). No
-coplanar floor is left anywhere.
+ground too, and each door's reveal stands on a concrete floor slab (Door
+floor slabs below). No coplanar floor is left anywhere.
 
 The front of the open end wall (0.20 m) and the first 0.15 m of each bay
 side wall are painted as white posts. With the free post and the header,
@@ -182,19 +182,21 @@ The header is 0.20 m deep and runs from 3.70 m up into the slab. It sits
 0.05 m behind the post's face, and its ends run 0.10 m into the end wall and
 into the closed bay. No face of it is coplanar with a wall's.
 
-### Entrance floor slab
+### Door floor slabs
 
-The workshop door (sidecar `workshop`, the main entrance) stands on the
-ground in a 0.12 m reveal that had no upward face under it (the ring's floor
-cap faces down), so a consumer's terrain showed inside, at the foot of the
-leaf. The reveal is floored with a concrete slab from the shared
-`scripts/door_floor.py` (`build_item()` calls `door_floor.recess()`; at
-`LOD1` the wall's outline takes `door_floor.notch()`):
+Both doors stand on the ground in a reveal that would have no upward face
+under it (the ring's floor cap faces down), so a consumer's terrain would
+show inside, at the foot of the leaf. Each reveal is floored with a concrete
+slab from the shared `scripts/door_floor.py` (`build_item()` calls
+`door_floor.recess()`; at `LOD1` the wall's outline takes
+`door_floor.notch()`), its region `facade_atlas.FLOORS[kind]`:
 
-| Entrance | Sidecar door | Slab, width x depth | Tiers |
+| Door | Sidecar door | Slab, width x depth | Tiers |
 | --- | --- | --- | --- |
-| the workshop door, east end wall | `workshop` | 0.90 x 0.12 m inside the casing ring | `LOD0` |
+| the workshop door, east end wall | `workshop` (entrance) | 0.90 x 0.12 m inside the casing ring | `LOD0` |
 | | | 1.15 x 0.12 m, the casing's recess | `LOD1` |
+| the machine door pair, front wall | `machine` (vehicle) | 3.00 x 0.15 m inside the casing ring | `LOD0` |
+| | | 3.25 x 0.15 m, the casing's recess | `LOD1` |
 
 - **Top 0.02 m over the ground** (`door_floor.T`), clear of terrain at
   z = 0 and too low to read as a step.
@@ -207,16 +209,15 @@ leaf. The reveal is floored with a concrete slab from the shared
   its region from the casing's left side (`u0`), so both tiers share one
   region. Wall (or ring), nosing, slab and cheeks meet on shared vertices,
   and under the nosing the floor cap runs straight along the wall line
-  instead of round the reveal. The door's artwork keeps its place, so the
-  slab covers the bottom 1.3 px of the leaf.
+  instead of round the reveal. The doors' artwork keeps its place, so the
+  slab covers the bottom 1.3 px of each leaf.
 - **Its own atlas region** (Texture set).
 
-`floored()` gives the door its slab on every tier that recesses it
-(`item_mode()` ring or cut): `LOD0` and `LOD1`. `LOD2` and `LOD3` paint it
-flat on the wall with no reveal, so they are unchanged. The vehicle pair's
-0.15 m reveal on the front keeps standing on the ground with no floor, and
-the open bays, which are not doors, keep the consumer's terrain as their
-floor by design (Known simplifications).
+`floored()` gives each door its slab on every tier that recesses it
+(`item_mode()` ring or cut): `LOD0` and `LOD1`. `LOD2` and `LOD3` paint the
+doors flat on the wall with no reveal, so they are unchanged. The open bays,
+which are not doors, keep the consumer's terrain as their floor by design
+(Known simplifications).
 
 ### Authored parameters
 
@@ -238,17 +239,18 @@ breakpoints (`X_PART`, `T_WALL`, post and header boxes).
 - the snow guard lies on the roof, the slab's length matches the roof and
   ceiling regions, and the regions clear each other, S1, INT and the fascia
   bands;
-- `door_floor.problems()` finds the workshop door's floor slab region not
-  the casing's width and the reveal's depth, or the door off the ground; and
-  `atlas.region_problems()` finds the slab's region overlapping another
-  unique region, the INT band or the rear fascia band.
+- every door the walls carry has a floor slab region, and
+  `door_floor.problems()` finds none of them not the casing's width and the
+  reveal's depth, or its door off the ground; and
+  `atlas.region_problems()` finds no slab region overlapping another unique
+  region, the INT band or the rear fascia band.
 
 ## Per-tier triangle counts
 
 | Tier | Triangles | Ceiling | What changes |
 | --- | --- | --- | --- |
-| `LOD0` | 336 | 12,000 | full-depth open bays, post, header; both doors with a casing ring and a 0.15/0.12 m recess, the workshop door's on its floor slab; two eight-sided downpipes with shoes |
-| `LOD1` | 272 | 4,000 | each door one recess the size of its casing, the workshop door's on its floor slab; downpipes four-sided, shoes kept |
+| `LOD0` | 340 | 12,000 | full-depth open bays, post, header; both doors with a casing ring and a 0.15/0.12 m recess on its floor slab; two eight-sided downpipes with shoes |
+| `LOD1` | 276 | 4,000 | each door one recess the size of its casing, on its floor slab; downpipes four-sided, shoes kept |
 | `LOD2` | 192 | 1,500 | doors flush painted rectangles; coplanar boolean subdivisions dissolved (UV and material seams kept); downpipes straight and four-sided |
 | `LOD3` | 186 | 500 | as `LOD2`, the header kept; downpipes three-sided |
 
@@ -261,11 +263,11 @@ face. The post and header cost about 30. The two downpipes cost about 98
 triangles at `LOD0`, 50 at `LOD1`, 34 at `LOD2` and 28 at `LOD3`, with the
 holes they leave in the rear soffit. The header costs 24 at `LOD3`, which
 keeps it (LOD review). Modelled trim (slab overhangs, post, header, downpipes) is about
-150 triangles at `LOD0`, far under the quarter-budget cap. The workshop
-door's floor slab costs 4 triangles, the nosing and the top, on `LOD0` and
-`LOD1` (332 / 268 before it); the east wall and the floor cap
-re-triangulate round its corners with no net change. `LOD2` and `LOD3`
-are byte-identical to the tiers before it.
+150 triangles at `LOD0`, far under the quarter-budget cap. Each door's
+floor slab costs 4 triangles, the nosing and the top, on `LOD0` and `LOD1`
+(332 / 268 without either, 336 / 272 with the workshop door's alone); the
+walls and the floor cap re-triangulate round their corners with no net
+change. `LOD2` and `LOD3` are byte-identical to the tiers before them.
 
 ## LOD review
 
@@ -354,13 +356,13 @@ so this is specular light, not albedo. The roof's metallic went from 0.30
 to 0.10, and on 2026-11-22 to 0, because painted steel is dielectric. The
 sheen remains in that one view; it is not measured, only compared by eye.
 
-**The workshop door's floor slab (2026-11-23)** adds no transition of its
-own. It goes with the door's 0.12 m reveal at the `LOD1`/`LOD2` switch,
-where the door is already painted flat: a 0.02 m nosing and 0.12 m of slab
-are under a pixel at 70 m and at the consumer's 45 m. Checked from a
-standing eye (1.7 m, 75 degree vertical FOV, 1280 x 720), from 0.35 m over
-a terrain plane at z = 0 and from above, 1-5 m from the door, noon and
-reversed sun, every tier (Review status).
+**The doors' floor slabs (2026-11-23)** add no transition of their own.
+Each goes with its door's reveal (0.12 m, 0.15 m) at the `LOD1`/`LOD2`
+switch, where the door is already painted flat: a 0.02 m nosing and 0.15 m
+of slab are under a pixel at 70 m and at the consumer's 45 m. Checked from a
+standing eye (1.7 m, 75 degree vertical FOV, 1280 x 720), from 0.35-0.5 m
+over a terrain plane at z = 0 and from above, 1-5 m from each door, noon
+and reversed sun, every tier (Review status).
 
 Pending in the consumer: real LOD switching, its shadows and ambient
 occlusion inside the bays, and performance.
@@ -383,10 +385,10 @@ The triangle counts did not change. The open bays' walls, ceiling and back wall 
 surface, reachable from the front, and the test agrees. The closed bay is
 solid: no interior is modelled, and its lid and the slab's underside over it
 are removed by the union. The only closure faces kept are the floor caps on
-the ground under the walls and the post. Under the workshop door's floor
-slab (`LOD0`, `LOD1`) the ring's cap runs straight along the wall line, so
-no face lies at grade inside the reveal; the slab is exterior surface and
-adds no face inside the shell. The downpipes' tops are buried in
+the ground under the walls and the post. Under each door's floor slab
+(`LOD0`, `LOD1`) the ring's cap runs straight along the wall line, so no
+face lies at grade inside the reveal; the slab is exterior surface and adds
+no face inside the shell. The downpipes' tops are buried in
 the slab and removed by the union like the walls' lid.
 
 ## Known simplifications
@@ -400,9 +402,8 @@ the slab and removed by the union like the walls' lid.
   trapezoid ribs are normal-map relief on a flat slab.
 - The closed bay's floor is the ground, at the door thresholds. The footing
   strip is painted on the walls' foot, and the doorways cut it.
-- **Floors:** only the workshop door's reveal has one, a flat concrete slab
-  with no mat or threshold strip (Construction). The vehicle pair's 0.15 m
-  reveal stands on the consumer's ground, as before.
+- **Floors:** only the two doors' reveals have one, a flat concrete slab
+  with no mat, threshold strip or wheel ruts (Construction).
 - The gutter is painted on the rear fascia, with its relief in the normal
   map; its ends are not modelled and stop at the slab's corners. Its
   outlets are not modelled: the downpipes run up into the soffit 0.07 m
@@ -429,7 +430,7 @@ from the bottom:
 | 274–499, x 2–379 | ROOF | the roof's top, 11.30 × 6.69 m at 33 px/m both ways: U = plan x from the rake edge, V up the slope from the low edge; the snow guard near its foot |
 | 274–496, x 382–759 | CEIL, the underside | 11.30 × 6.60 m at 33 px/m both ways: U = plan x, V = plan depth from the front edge |
 | 500–712 | INT, the bays' back wall | U along the wall, V = height, 64 px/m |
-| 716–984 | unique | bay side walls (5.80 × 4.15 m, one region for both, U = depth); door pair; pedestrian door; post strip; corner strip; flat patches (header, soffit, reveal, blank); the workshop door's floor slab |
+| 716–984 | unique | bay side walls (5.80 × 4.15 m, one region for both, U = depth); door pair; pedestrian door; post strip; corner strip; flat patches (header, soffit, reveal, blank); the two doors' floor slabs |
 | 984–1004 | FASC_R, the rear eave | the rear fascia, V = height over the underside, 64 px/m, with the gutter across its top; its top row is the roof's edge |
 | 1004–1024 | FASCIA | the front and rake edges, V = height over the underside, 64 px/m |
 
@@ -477,7 +478,7 @@ Relief heights for the normal map:
 - girts and rafters 40 mm;
 - the gutter's roll 70 mm, its hangers 4 mm over it;
 - the snow guard's tubes 35 mm and brackets 30 mm;
-- the floor slab's pores, 0.4 mm;
+- the floor slabs' pores, 0.4 mm;
 - in the ROOF and CEIL regions every height scaled by 33/64.
 
 The girts and rafters are kept shallower than their real 50–150 mm. They
@@ -508,26 +509,34 @@ is bare.
   farm's other two gutters; light dust on the snow guard, rust at its
   brackets, debris held on the sheet above it;
 - settled dust inside the bays, thickest at the floor;
-- trodden-in dirt on the workshop door's floor slab.
+- trodden-in dirt on both doors' floor slabs.
 
-### The entrance floor slab
+### The door floor slabs
 
 Painted by `scripts/door_floor.py` (`paint()`, `grain()`, `weather()`), as
-the catalog's other entrance slabs are, in the free rows over the pedestrian
-door's region (`FLOOR`): 73.6 x 8.96 px at (600, 872), 64 px/m, the slab
-unfolded, U across the casing's 1.15 m from its left side, V the nosing's
-0.02 m (1.28 px) and then the top from the wall plane to the leaf (0.12 m).
+the catalog's other door slabs are, one region a door (`FLOORS`), 64 px/m,
+each slab unfolded: U across the casing from its left side, V the nosing's
+0.02 m (1.28 px) and then the top from the wall plane to the leaf.
+
+| Region | Door | Size, px | At (x, y) | Slab, m |
+| --- | --- | --- | --- | --- |
+| `FLOORS["door"]` | workshop | 73.6 x 8.96 | (600, 872), over the pedestrian door's region | 1.15 x 0.12 |
+| `FLOORS["door_pair"]` | machine | 208 x 10.88 | (790, 720), right of the flat patches | 3.25 x 0.15 |
+
 Float-finished cast concrete, `ID_FLOOR`, sRGB **(132, 130, 124)** in every
 variant, roughness **0.88**, nonmetallic. Occlusion deepens toward the jambs
-and the door (within 0.048 m), a slightly paler path is worn toward the
-leaf, the pores are the footing's noise at 5 % shade and 0.4 mm of height,
-and blotchy trodden-in dirt lies over it. It bleeds 2 px into its gutter.
+and the door (within 0.048 m and 0.06 m), the pores are the footing's noise
+at 5 % shade and 0.4 mm of height, and blotchy trodden-in dirt lies over
+both. The workshop slab has a slightly paler path worn toward its leaf; the
+machine door's has none (`tread` off the slab), since a vehicle door is
+driven through, not walked in on one path. Each bleeds 2 px into its
+gutter.
 
-Adding it changed only the free block it stands in: the normal map differs
-only in the slab's rows (x 598-675, y 870-882), and the albedos and the ORM
-elsewhere only in that block's padding (x 592-680, y 861-927), which now
-carries the slab's edges instead of the pedestrian door's drip flashing,
-and by at most 3/255 in the four rows over the flashing's top (y 863-866).
+Adding the machine door's slab changed only the free block it stands in:
+the normal map differs only in its rows (x 788-999, y 718-732), and the
+albedos and the ORM elsewhere only in padding: the empty block right of the
+patches (x 755-1023, y 712-863), which now carries the slab's edges, and by
+at most 1/255 in the gutter columns at the atlas's left edge (x 0-2).
 
 ### Filtering
 
@@ -711,6 +720,30 @@ Checked here, in Blender:
   - `scripts/validate_asset.py`: 0 FAIL; the one WARN is `source.dirty`,
     the sidecar written from an uncommitted tree, to be rewritten with
     `build.py -- facts` once committed.
+- The machine door's floor slab (Construction, Revision log), from a
+  snapshot in `review/review_2026_11_23/konehalli_open_bays_pass2/before_src/`:
+  - **Door views** (`review/review_2026_11_23/konehalli_open_bays_pass2/door_views.py`,
+    every tier, noon and reversed sun, over a green terrain plane at
+    z = 0): the pair from 4.6 m and 2.6 m at eye level, from both sides,
+    0.35 m and 0.5 m up at its foot and corner, and from above. Before,
+    grass filled the reveal along the foot of both leaves; after, concrete
+    fills it wall to wall (between the casing's legs on `LOD0`, across the
+    casing's recess on `LOD1`), its nosing a light line on the wall plane
+    with nothing past it, no dark seam or stretched texels, no worn path.
+    `LOD2` and `LOD3` unchanged (at most 1/255).
+  - **`review_asset.py`** from both: the six orthographic views, and every
+    tier front and oblique at 20, 35, 70 and 120 m under noon; mean
+    differences at most 0.11/255 (`LOD0`/`LOD1`, at the door's foot), `LOD2`
+    and `LOD3` at most 1/255; `review_compare.py` sheets in
+    `review/review_2026_11_23/konehalli_open_bays_pass2/compare/`.
+  - Bounds, pivot, footprint, storeys and both doors in the sidecar
+    unchanged; `LOD2` and `LOD3` byte-identical. Measured on the reimported
+    tiers (`check_slab.py` in the same folder): an upward face at 0.020 m
+    under 15 of 15 sample points of the pair's reveal on `LOD0` and `LOD1`,
+    upward faces under 0.1 m only the slab's top, welded and closed.
+  - `scripts/validate_asset.py`: 0 FAIL, `door floors` PASS on every tier
+    (`LOD0`/`LOD1` on the slab, workshop 0.12 m, machine 0.15 m); the one
+    WARN is `source.dirty`.
 
 Pending in the consumer:
 
@@ -728,6 +761,16 @@ with numpy, scipy and Pillow.
 
 ## Revision log
 
+- **2026-11-23 — machine door floor slab.** The vehicle door pair's 0.15 m
+  reveal had no upward face under it, so a consumer's terrain showed
+  inside, along the foot of both leaves. It now stands on a concrete slab
+  like the workshop door's, 0.02 m over the ground, nosing on the wall
+  plane, on its own atlas region with no worn path, on `LOD0` (3.00 m,
+  inside the casing ring) and `LOD1` (3.25 m, the casing's recess);
+  `facade_atlas.FLOOR` became `FLOORS`, one region a door kind. Tiers
+  336 / 272 / 192 / 186 to 340 / 276 / 192 / 186; bounds, pivot,
+  footprint and doors unchanged. Every door is now floored; the open bays
+  keep the ground.
 - **2026-11-23 — workshop door floor slab.** The workshop door's 0.12 m
   reveal had no upward face under it, so a consumer's terrain showed
   inside, at the foot of the leaf. It now stands on a concrete slab 0.02 m
