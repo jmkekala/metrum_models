@@ -20,15 +20,16 @@ drive-through truck lane, which runs straight through it from the front long
 side to the rear: 5.00 m clear between its concrete side walls and 5.20 m to
 its ceiling, from which three steel hoppers hang to 4.60 m. West of the lane
 is a 1.60 m concrete leg; east of it, under the bunker, the control and
-stair room with the operators' steel door, whose reveal stands on a 0.02 m
-concrete floor slab (scripts/door_floor.py). Over the lane, a concrete ring
+stair room with the operators' steel door. Over the lane, a concrete ring
 beam carries the screen house: a concrete frame clad in profiled sheet to a
 1:10 mono-pitch roof falling to the rear, 13.1 m at its front fascia, a row
 of small steel windows at the screen floor. East of it, on the side the
 catalog camera sees, a 2.0 x 2.0 m conveyor gallery rises at 30 degrees from
 a low concrete intake hopper house into the screen house's east wall, clear
 of the lane and both of its approaches, carried at mid-span on a steel
-trestle.
+trestle. The operators' door and the intake's vehicle door each stand in
+their reveals on a 0.02 m concrete floor slab (scripts/door_floor.py); the
+lane is a passage, not a door, and has none.
 
 Construction is a set of closed solids unioned with Blender's exact boolean
 (asset_build.union): the bunker house, the roof slab, the gallery, the intake
@@ -120,10 +121,11 @@ WALLS = [
          cols=[(0.0, CW), (2 * HY - CW, 2 * HY)],
          items=[("win", 4.00, L.Z_WIN)], u_off=0.9),
 ]
-# The entrances' floor slabs, by wall and kind (facade_atlas.FLOORS): the
-# control room's door. The intake's vehicle door keeps its reveal on the
-# ground with no floor.
-FLOORED = {"front": {"door": L.FLOORS["control"]}}
+# The doors' floor slabs, by wall and kind (facade_atlas.FLOORS): the
+# control room's door and the intake's vehicle door. The lane's mouths are
+# a passage, not doors, and the ground is the lane's floor.
+FLOORED = {"front": {"door": L.FLOORS["control"]},
+           "int_front": {"door_v": L.FLOORS["intake"]}}
 (IX0, IX1), (IY0, IY1) = L.INT_X, L.INT_Y
 INTAKE_WALLS = [
     dict(name="int_front", p0=(IX0, IY0), p1=(IX1, IY0), lane=None, cols=[],
@@ -293,9 +295,9 @@ def item_rects(kind, s, z):
 
 
 def floor_for(wall, kind, level):
-    """The floor slab under *kind*'s reveal on *wall* at *level*, or None: an
-    entrance's, on every tier that recesses it (item_mode() not flush); a
-    flush door has no reveal to floor."""
+    """The floor slab under *kind*'s reveal on *wall* at *level*, or None: a
+    door's, on every tier that recesses it (item_mode() not flush); a flush
+    door has no reveal to floor."""
     floor = FLOORED.get(wall, {}).get(kind)
     if floor is None or item_mode(kind, level) == "flush":
         return None
@@ -306,7 +308,7 @@ def build_item(B, fr, kind, s, z, level, floor=None):
     """Faces for one opening. A door on the ground returns the notch it cuts
     in its region's bottom edge, left to right; a window returns its hole.
 
-    An entrance (*floor*, a door_floor.Floor) stands on a concrete slab: its
+    A door (*floor*, a door_floor.Floor) stands on a concrete slab: its
     nosing on the wall plane across the recessed opening, its top 0.02 m
     over the ground and the reveal's foot, so the consumer's terrain cannot
     show inside. At LOD1 the recess is the casing's rect and the slab spans
@@ -820,11 +822,14 @@ def check_layout():
                 a, b_ = rects[i], rects[j]
                 if SB.overlap(a[1:], b_[1:], gap):
                     problems.append("%s: %s and %s overlap" % (spec["name"], a[0], b_[0]))
-    # every entrance's reveal on its floor slab (scripts/door_floor.py): the
+    # every door's reveal on its floor slab (scripts/door_floor.py): the
     # slab's region the casing's width and the reveal's depth (LOD1 recesses
     # the casing), under a door at grade, and clear of the atlas's other
-    # unique regions
-    for spec in WALLS:
+    # unique regions; every door at grade floored
+    for spec in WALLS + INTAKE_WALLS:
+        for kind, c, z in spec["items"]:
+            if z < EPS and kind not in FLOORED.get(spec["name"], {}):
+                problems.append("%s: %s at grade has no floor slab" % (spec["name"], kind))
         for kind, floor in FLOORED.get(spec["name"], {}).items():
             (c, z), = [(c, z) for k, c, z in spec["items"] if k == kind]
             outer, _ = item_rects(kind, c, z)

@@ -3,7 +3,7 @@
   "version": 1,
   "name": "hiilisiilo_drive_through",
   "path": "buildings/industrial/hiilisiilo_drive_through",
-  "source": {"commit": "0b15e6b548672109bc1d89c4dacd2c92ee7c4d64", "dirty": false, "blender": "5.3.0"},
+  "source": {"commit": "27b8d9f46c1ae8efcc32126cbcb2477c1a6e5160", "dirty": true, "blender": "5.3.0"},
   "license": "CC-BY-4.0",
   "bounds": {"min": [-10.325, 0.0, -4.35], "max": [10.325, 13.08, 4.35]},
   "footprint": [
@@ -32,21 +32,21 @@
     {"id": "truck_lane", "position": [-5.925, 0.0, 4.35], "forward": [0.0, 0.0, -1.0], "width_m": 5.0, "length_m": 8.7, "clear_height_m": 4.6, "through": true}
   ],
   "lods": [
-    {"file": "hiilisiilo_drive_through_lod0.glb", "triangles": 1058, "sha256": "2867ada2e0b84a982b5dc3893b657341f7a2a8233a0176f9e29a594ce3867ea5"},
-    {"file": "hiilisiilo_drive_through_lod1.glb", "triangles": 906, "sha256": "9f8f0410a46db2a2f47a8915a735ac4481c3caee7e37fb4f859c3cf20351cf56"},
+    {"file": "hiilisiilo_drive_through_lod0.glb", "triangles": 1062, "sha256": "645b7d0bfa81e02975524cbb45228f7499eb49ea22b26636651bf48a795dce24"},
+    {"file": "hiilisiilo_drive_through_lod1.glb", "triangles": 910, "sha256": "cb1dddcd71846e2f58e232916a17e8a806fb187c79e1679bd22c618aa14123bc"},
     {"file": "hiilisiilo_drive_through_lod2.glb", "triangles": 718, "sha256": "973a9ac518189239bcc600f0aeef639152d0d8dbd3a7ebb3985c7bd86394c58d"},
     {"file": "hiilisiilo_drive_through_lod3.glb", "triangles": 486, "sha256": "01388613a44037a4867bfe1d853898d64d034c96d6c7b4aa13e30f16123a6e0e"}
   ],
   "textures": {
-    "orm": {"file": "hiilisiilo_drive_through_orm.png", "sha256": "20c8b808d03ebeea9840507ad815551e18b342aaa3a45643c09910a02dcdd61f"},
-    "normal": {"file": "hiilisiilo_drive_through_normal.png", "sha256": "fa827b0dd94f5072360df64b72ee8bce4a01d53c88a79955fa79f1c4883e0de1"},
+    "orm": {"file": "hiilisiilo_drive_through_orm.png", "sha256": "4d2f231a629198ab2d816b3d435dd82aab682162e964d9e3e5b4526d6325aaa4"},
+    "normal": {"file": "hiilisiilo_drive_through_normal.png", "sha256": "0a0bd32f518e2ff4f5630c8a8f764100b8e8925f8a0161524fb7c5c03541c571"},
     "emission": {"file": "hiilisiilo_drive_through_emission.png", "sha256": "832eb1da9f43c2bae67014eaa96a9b39b63015644f814d3d173e8cb9c2b1e96c"}
   },
   "variants": [
-    {"id": "grey_sheet", "albedo": "hiilisiilo_drive_through_albedo_grey_sheet.png", "sha256": "ffc36029e55b3fc0dc830d1a5d33fcaa76ba7fa1caeffba4120841768b5360b2"},
-    {"id": "red_sheet", "albedo": "hiilisiilo_drive_through_albedo_red_sheet.png", "sha256": "9e09d30c928d4af69c849fc377562d81529cd3aa7da4fed4bf3dc98c67bf32f9"}
+    {"id": "grey_sheet", "albedo": "hiilisiilo_drive_through_albedo_grey_sheet.png", "sha256": "e191f8d2f37b69e4a0ad22d9842c0069451371229a5ec7e3a31efd98ce8f6235"},
+    {"id": "red_sheet", "albedo": "hiilisiilo_drive_through_albedo_red_sheet.png", "sha256": "f7022dd95579737075cbeeee84d27007b34a499a4c919ab75d023f497868a512"}
   ],
   "default_variant": "grey_sheet",
-  "preview": {"file": "../preview.png", "sha256": "767b84231f7bde7d165641c1da1aa0201d1d326850beab8ef4c82e638b0d723a"},
+  "preview": {"file": "../preview.png", "sha256": "2782897e5ff159328acc519e5086203b37ab7bcfe876ad5a1993eb99e42c12ca"},
   "hero": false
 }

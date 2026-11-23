@@ -28,7 +28,7 @@ A trim sheet. Rows from the bottom:
                              doors, the window, a hopper side, flat patches,
                              the intake's roof (32 px/m), the trestle's
                              steel (32 px/m, V = height from the ground) and
-                             the control door's floor slab
+                             the two doors' floor slabs
     y  960 ..  980   FASCIA  the roof slab's front and rake edges
     y  988 .. 1024   EAVE_R  the rear (low) eave: fascia with the gutter, then
                              the roof's lowest 0.40 m with the snow guard
@@ -213,14 +213,21 @@ TR_UX0 = TR_X - 1.25
 # under the coal that spills where the gallery's tail stands through it.
 INT_ROOF = (444.0, UNI_Y0 + 148.0, (INT_X[1] - INT_X[0] + 2 * INT_OV) * LPM,
             (INT_Y[1] - INT_Y[0] + 2 * INT_OV) * LPM)      # 112 x 105.6
-# The concrete floor slab in the control door's reveal (scripts/door_floor.py),
-# unfolded at 64 px/m in the free block under the window: U across the
-# casing's width (LOD1 recesses the whole casing; LOD0's slab, between the
-# casing's legs, samples its middle), V up the nosing and back to the door.
-# 1.11 x 0.14 m, 71.04 x 8.96 px. The intake's vehicle door has none.
+# The concrete floor slabs in the doors' reveals (scripts/door_floor.py),
+# each unfolded at 64 px/m: U across the casing's width (LOD1 recesses the
+# whole casing; LOD0's slab, between the casing's legs, samples its middle),
+# V up the nosing and back to the door.
+# - "control": the control room's door, in the free block under the window,
+#   1.11 x 0.14 m, 71.04 x 8.96 px.
+# - "intake": the intake's vehicle door, above the intake door's own region,
+#   2.60 x 0.17 m, 166.4 x 10.88 px. Wheels, not feet, cross it, so it has no
+#   worn path (tread off the slab).
 FLOORS = {"control": DF.Floor(522.0, UNI_Y0 + 82.0,
                               OPENINGS["door"][0] + 2 * OPENINGS["door"][2],
-                              REVEAL_DEPTH["door"])}
+                              REVEAL_DEPTH["door"]),
+          "intake": DF.Floor(608.0, UNI_Y0 + 190.0,
+                             OPENINGS["door_v"][0] + 2 * OPENINGS["door_v"][2],
+                             REVEAL_DEPTH["door_v"], tread=-1e3)}
 
 # The rear eave band, as konehalli_open_bays: the rear fascia (V = height over
 # the slab's underside) with the gutter across its top, and from its top row
@@ -252,7 +259,7 @@ def hop_at_deck():
 # ----------------------------------------------------------- material ids
 (ID_CONC, ID_CLAD, ID_METAL, ID_ROOF, ID_SASH, ID_GLASS, ID_DOOR, ID_STEEL,
  ID_COAL, ID_FELT, ID_BLANK, ID_HW, ID_GUTTER) = range(13)
-ID_FLOOR = 13           # the cast concrete floor slab in the control door's reveal
+ID_FLOOR = 13           # the cast concrete floor slabs in the doors' reveals
 # (roughness, metallic). One ORM for both variants, so the cladding is a
 # painted sheet in both, grey or red oxide; it, the roof, the flashings, the
 # sashes, the doors and the painted steel (hoppers, trestle) are paint to
@@ -928,8 +935,8 @@ def weather(c):
             w.door(ox0, ox1, oy0, oy1, (ID_DOOR, ID_STEEL), handle=(hx_, oy0 + m(1.02)))
             w.coal(ix - 2, ix + rw + 2, iy - 2, iy + m(0.8),
                    lambda Y, X, nz, iy=iy: 0.45 * np.exp(-np.clip(Y - iy, 0, None) / m(0.35)))
-    # the control door's floor slab: trodden-in dirt, and the coal the
-    # door's foot carries, as the plinth beside it
+    # the doors' floor slabs: trodden-in dirt, and the coal the doors' feet
+    # carry, as the plinth beside them
     for f in FLOORS.values():
         DF.weather(w, f, ID_FLOOR)
         x, y, rw, rh = f.rect
